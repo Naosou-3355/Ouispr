@@ -59,6 +59,9 @@ public struct PolishLostWordsLexicon: Sendable {
     public let droppablePhrases: [[String]]
     /// Register lifts that are licensed only when their standard form is in the output.
     public let registerPairs: [RegisterPair]
+    /// Cues by which a speaker takes back what they just said (rule 10). The words
+    /// just before a cue, and the cue itself, may vanish. Longest first.
+    public let selfCorrectionCues: [[String]]
 
     /// The lexicon for an `NLLanguage` raw code, or `nil` when there is none — and then
     /// the check does not run. See the type's doc.
@@ -81,7 +84,10 @@ public struct PolishLostWordsLexicon: Sendable {
             .sorted { $0.count > $1.count },
         registerPairs: frenchRegisterPairs.map { dictated, standard in
             RegisterPair(dictated: words(dictated), standardPrefixes: standard)
-        }
+        },
+        selfCorrectionCues: frenchSelfCorrectionCues
+            .map { PolishLostWords.keys(in: $0) }
+            .sorted { $0.count > $1.count }
     )
 
     /// D-lost's `STOP` list (`docs/research/575-normal-polish-damage/harness/detect.py`)
@@ -215,6 +221,20 @@ public struct PolishLostWordsLexicon: Sendable {
         (["tjrs", "tjs"], ["toujours"]),
         (["qqch"], ["quelque"]),
         (["frigo"], ["refrigerateur", "frigidaire"])
+    ]
+
+    /// Spoken self-corrections the Natural prompt's rule 10 names, plus their usual
+    /// variants. Only cues that announce a retraction: a bare `non` or `pardon` is far
+    /// more often an answer or a courtesy, and would open a window for nothing.
+    ///
+    /// **The cost is a hole**: around a cue, a dictated word the model drops by
+    /// mistake passes too. The window is bounded by
+    /// `PolishLostWords.retractionWindowWords` and the words AFTER the cue — the
+    /// right version — stay protected.
+    static let frenchSelfCorrectionCues = [
+        "en fait non", "non en fait", "ah non", "euh non", "non pardon", "pardon non",
+        "enfin non", "non attends", "attends non", "je veux dire", "ou plutôt",
+        "je me suis trompé", "je me suis trompée", "je me trompe", "je corrige"
     ]
 
     private static func words(_ written: [String]) -> Set<String> {

@@ -39,6 +39,7 @@ enum PolishNaturalPromptFR {
         7. Remove gratuitous oral fillers: `euh`, `hum`, `bah` always; `tu vois` / `tu sais` only at sentence-end; `en fait` when it appears twice in one sentence (keep the first occurrence). KEEP `voilà`, `bon`, `bref`, `donc`, and the first instance of `en fait` / `tu vois` / `tu sais` when they carry transition or intent.
         8. ASR error repair: when a segment of the input is clearly incoherent in context — pseudo-words, an off-language fragment that does not fit, words that do not exist — reconstruct the speaker's intent in French using the surrounding context. The goal is the message they tried to say, not the bytes the STT emitted.
         9. Fix obvious one-letter typos that don't rise to the level of rule 8.
+        10. Spoken self-corrections: when the speaker corrects themselves aloud — a cue such as `ah non`, `en fait non`, `non pardon`, `enfin non`, `non attends`, `je veux dire`, `ou plutôt`, `je me suis trompé`, followed by the right version — keep ONLY the right version. Remove the retracted words AND the cue, and write the sentence once, as if the speaker had said it right the first time. Keep every word the correction does not replace. Apply only when the speaker clearly takes back what they just said: a `non` that answers a question or negates a fact stays.
 
         PRESERVE — DO NOT change these:
 
@@ -51,7 +52,7 @@ enum PolishNaturalPromptFR {
 
         FORBIDDEN:
         - Do NOT add words or content that weren't in the input. No inventing endings like "Merci.", no inserting context, no completing cut-off sentences with imagined words.
-        - Do NOT delete words that carry meaning. Every noun, verb, adjective, number, name and complement the speaker DICTATED appears in the output. Rules 4, 6 and 7 are the only licence to remove a word — rule 4 removes a spoken punctuation command because the mark replaces it, rules 6 and 7 remove stutters and fillers — and rule 8 the only licence to change one. A phrase that sounds clumsy is still what the speaker said.
+        - Do NOT delete words that carry meaning. Every noun, verb, adjective, number, name and complement the speaker DICTATED appears in the output. Rules 4, 6 and 7 are the only licence to remove a word — rule 4 removes a spoken punctuation command because the mark replaces it, rules 6 and 7 remove stutters and fillers — plus rule 10, which removes what the speaker took back aloud, and rule 8 the only licence to change one. A phrase that sounds clumsy is still what the speaker said.
         - Do NOT reorder words.
         - Do NOT translate.
         - Do NOT add `<<NL>>` markers where none existed. Do NOT split or alter existing markers.
@@ -68,6 +69,14 @@ enum PolishNaturalPromptFR {
 
         INPUT: j'ai voulu passer voir Marie hier soir but the thing yet would happen sense thinks et finalement j'ai abandonné
         OUTPUT: J’ai voulu passer voir Marie hier soir, et finalement j’ai abandonné.
+
+        Self-correction examples. The speaker takes something back aloud; keep only the right version, once:
+
+        INPUT: je vais aller au cinéma dimanche à 15h ah en fait non c'est samedi à 17h
+        OUTPUT: Je vais aller au cinéma samedi à 17h.
+
+        INPUT: on se retrouve devant la gare euh non pardon devant la mairie vers midi
+        OUTPUT: On se retrouve devant la mairie vers midi.
 
         Line-break marker example. `<<NL>>` represents a hard line break. Keep it at the same position; capitalize the sentence that follows:
 
