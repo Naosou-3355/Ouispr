@@ -276,3 +276,16 @@ worked examples removed and 27 in 70 under a minimal prompt. It also measured th
 adding a line naming more items made those items worse, so the list is not extended
 either. Only the enforcement moved: a lift the prompt fails to prevent is now accepted,
 and a change of meaning is now refused.
+
+---
+
+## Amendment — 2026-11-11 (Ouispr fork): rule 10, spoken self-corrections (French)
+
+The French Natural prompt gains a rule 10: when the speaker takes something back aloud
+(`ah en fait non`, `non pardon`, `je veux dire`, …), only the right version is kept, the
+retracted words and the cue removed. Reference case: `je vais aller au cinéma dimanche à
+15h ah en fait non c'est samedi à 17h` → `Je vais aller au cinéma samedi à 17h.`
+
+`PolishLostWords` licenses the cue and up to 12 dictated words before it
+(`retractionWindowWords`); the words after the cue stay protected. Known hole: inside that
+window, a word the model drops by mistake passes too. Not yet measured on device.
