@@ -8,13 +8,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dictus needs microphone access to transcribe your voice."
+            "value" : "Ouispr needs microphone access to transcribe your voice."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dictus a besoin du micro pour transcrire votre voix."
+            "value" : "Ouispr a besoin du micro pour transcrire votre voix."
           }
         }
       }
