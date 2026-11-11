@@ -1,0 +1,104 @@
+name: Unsigned IPA
+
+# Builds an unsigned Ouispr .ipa for sideloading (SideStore re-signs it with a
+# free Apple ID on the iPhone). Runs on every push to main, or by hand.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    name: Build unsigned IPA
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same toolchain as ci.yml (see the comment there for why 26.4.1).
+      - name: Select Xcode 26.4.1
+        run: sudo xcode-select -s /Applications/Xcode_26.4.1.app
+
+      - name: Install xcbeautify (if missing)
+        run: |
+          if ! command -v xcbeautify >/dev/null 2>&1; then
+            brew install xcbeautify
+          fi
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+            ~/Library/Caches/org.swift.swiftpm
+          key: spm-fa015-${{ runner.os }}-${{ hashFiles('Dictus.xcodeproj/project.pbxproj', 'DictusCore/Package.swift') }}
+          restore-keys: |
+            spm-fa015-${{ runner.os }}-
+
+      - name: Resolve SwiftPM dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project Dictus.xcodeproj \
+            -scheme DictusApp
+
+      # Device build without signing: SideStore signs it on the phone.
+      - name: Build DictusApp for iPhone (Release, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Dictus.xcodeproj \
+            -scheme DictusApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY="" \
+            | xcbeautify --renderer github-actions
+
+      - name: Package Ouispr.ipa
+        run: |
+          set -euo pipefail
+          APP=build/DerivedData/Build/Products/Release-iphoneos/DictusApp.app
+          test -d "$APP"
+          mkdir -p ipa/Payload
+          cp -R "$APP" ipa/Payload/
+          (cd ipa && zip -qry ../Ouispr.ipa Payload)
+          ls -lh Ouispr.ipa
+
+      - name: Upload Ouispr.ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ouispr-ipa
+          path: Ouispr.ipa
+          retention-days: 30
+
+      # A fixed release whose Ouispr.ipa link never changes, so AltStore on the
+      # iPhone can download it directly (artifacts need a GitHub login and come zipped).
+      - name: Publish to the "latest" release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest Ouispr.ipa \
+            --title "Ouispr (dernière version)" \
+            --notes "Version fabriquée depuis ${GITHUB_SHA::7}. À installer avec AltStore Classic." \
+            --target "$GITHUB_SHA"
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa-build-logs
+          path: build/DerivedData/Logs/Build
+          retention-days: 7
+          if-no-files-found: ignore
