@@ -78,6 +78,12 @@ public enum PolishLostWords {
     /// the shape this check exists for — can never make a run.
     static let offLanguageRunMinimumWords = 3
 
+    /// How many dictated words before a self-correction cue the speaker may have
+    /// taken back (rule 10). Sized on the shape it exists for — `je vais aller au
+    /// cinéma dimanche à 15h`, nine words — with headroom; a word further back stays
+    /// protected.
+    static let retractionWindowWords = 12
+
     /// One word of a text: what it looked like, and what it compares as.
     struct Token: Equatable {
         let surface: String
@@ -135,6 +141,10 @@ public enum PolishLostWords {
         /// carries as digits. Only those may go: `vingt` → `20` excuses `vingt`, never
         /// a `trente` dropped beside it.
         let convertedNumberWords: [String: Int]
+        /// How many of each dictated word sit in a stretch the speaker took back aloud,
+        /// cue included (rule 10). Only those may go: the same word dictated again
+        /// after the cue is still counted.
+        let retractedWords: [String: Int]
 
         init(input: [Token], output: [Token], lexicon: PolishLostWordsLexicon) {
             self.input = input
@@ -161,6 +171,8 @@ public enum PolishLostWords {
             convertedNumberWords = PolishLostWords.convertedNumberWords(input: inputKeys,
                                                                         output: outputKeys,
                                                                         values: lexicon.numberValues)
+            retractedWords = PolishLostWords.retractedWords(in: inputKeys,
+                                                            cues: lexicon.selfCorrectionCues)
         }
 
         /// Dictated words the output carries fewer of, before any licence.
@@ -182,6 +194,12 @@ public enum PolishLostWords {
                     return true
                 }
             }
+            // Rule 10: what the speaker took back aloud, and the cue that took it back.
+            // Before the negation guard, because the cues themselves carry a `non`.
+            if let retracted = retractedWords[key],
+               (inputCounts[key] ?? 0) - retracted <= (outputCounts[key] ?? 0) {
+                return true
+            }
             // A negation is never forgiven by a pair or a prefix: `plus` → `plusieurs`
             // would otherwise read as an abbreviation growing into its full form.
             guard !lexicon.negations.contains(key) else { return false }
@@ -202,6 +220,35 @@ public enum PolishLostWords {
             }
             return PolishLostWords.isJoinOrSplit(key, input: inputKeys, output: outputKeys)
         }
+    }
+
+    /// How many of each key sit in a retracted stretch: a self-correction cue and up to
+    /// `retractionWindowWords` keys before it, never reaching back past the previous
+    /// cue. See `PolishLostWordsLexicon.frenchSelfCorrectionCues`.
+    static func retractedWords(in keys: [String], cues: [[String]]) -> [String: Int] {
+        var marked = [Bool](repeating: false, count: keys.count)
+        var floor = 0
+        var index = 0
+        while index < keys.count {
+            guard let cue = cues.first(where: { cue in
+                !cue.isEmpty && index + cue.count <= keys.count
+                    && keys[index..<(index + cue.count)].elementsEqual(cue)
+            }) else {
+                index += 1
+                continue
+            }
+            let end = index + cue.count
+            for position in max(floor, index - retractionWindowWords)..<end {
+                marked[position] = true
+            }
+            floor = end
+            index = end
+        }
+        var counts: [String: Int] = [:]
+        for (position, key) in keys.enumerated() where marked[position] {
+            counts[key, default: 0] += 1
+        }
+        return counts
     }
 
     /// Whether `key` is one word written as two or three, or the reverse:
