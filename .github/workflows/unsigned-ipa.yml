@@ -4,7 +4,7 @@ name: Unsigned IPA
 # free Apple ID on the iPhone). Runs on every push to main, or by hand.
 on:
   push:
-    branches: [main, feature/unsigned-ipa]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
