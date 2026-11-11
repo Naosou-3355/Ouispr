@@ -1,3 +1,6 @@
+> **Ouispr** est une version personnelle de [Dictus](https://github.com/getdictus/dictus-ios) (licence MIT), pour un usage privé.
+> Ajouts par rapport à Dictus : le nettoyage français ne garde que la version corrigée quand on se reprend à l'oral (« dimanche… ah non, samedi »).
+
 <p align="center">
   <img src="assets/brand/appicon-light.svg" alt="Dictus" width="120" height="120" />
 </p>
