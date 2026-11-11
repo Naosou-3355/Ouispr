@@ -7,6 +7,9 @@ on:
     branches: [main, feature/unsigned-ipa]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ipa-${{ github.ref }}
   cancel-in-progress: true
@@ -76,6 +79,20 @@ jobs:
           name: Ouispr-ipa
           path: Ouispr.ipa
           retention-days: 30
+
+      # A fixed release whose Ouispr.ipa link never changes, so AltStore on the
+      # iPhone can download it directly (artifacts need a GitHub login and come zipped).
+      - name: Publish to the "latest" release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest Ouispr.ipa \
+            --title "Ouispr (dernière version)" \
+            --notes "Version fabriquée depuis ${GITHUB_SHA::7}. À installer avec AltStore Classic." \
+            --target "$GITHUB_SHA"
 
       - name: Upload build logs on failure
         if: failure()
