@@ -1,7 +1,7 @@
 name: Unsigned IPA
 
-# Builds an unsigned Ouispr .ipa for sideloading (SideStore re-signs it with a
-# free Apple ID on the iPhone). Runs on every push to main, or by hand.
+# Builds an Ouispr .ipa for sideloading (AltStore re-signs it with a free
+# Apple ID on the iPhone). Runs on every push to main, or by hand.
 on:
   push:
     branches: [main]
@@ -48,7 +48,7 @@ jobs:
             -project Dictus.xcodeproj \
             -scheme DictusApp
 
-      # Device build without signing: SideStore signs it on the phone.
+      # Device build without signing: AltStore signs it on the phone.
       - name: Build DictusApp for iPhone (Release, unsigned)
         run: |
           set -o pipefail
@@ -62,6 +62,33 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_IDENTITY="" \
             | xcbeautify --renderer github-actions
+
+      # AltStore reads the entitlements from the binaries' signature to know
+      # which App Group to grant. An unsigned build carries none, so the app and
+      # the keyboard would end up in two separate sandboxes. An ad-hoc signature
+      # (no certificate needed) embeds them; AltStore replaces it on install.
+      - name: Embed entitlements (ad-hoc signature)
+        run: |
+          set -euo pipefail
+          APP=build/DerivedData/Build/Products/Release-iphoneos/DictusApp.app
+          sign_nested_code() {
+            find "$1" -maxdepth 2 \( -name '*.framework' -o -name '*.dylib' \) -path '*/Frameworks/*' -print0 |
+              while IFS= read -r -d '' f; do codesign -f -s - "$f"; done
+          }
+          for EXT in "$APP"/PlugIns/*.appex "$APP"/Extensions/*.appex; do
+            [ -d "$EXT" ] || continue
+            NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$EXT/Info.plist")
+            sign_nested_code "$EXT"
+            codesign -f -s - --entitlements "$NAME/$NAME.entitlements" "$EXT"
+          done
+          sign_nested_code "$APP"
+          codesign -f -s - --entitlements DictusApp/DictusApp.entitlements "$APP"
+          for B in "$APP" "$APP"/PlugIns/*.appex "$APP"/Extensions/*.appex; do
+            [ -d "$B" ] || continue
+            echo "== $B"
+            codesign -d --entitlements - --xml "$B" 2>/dev/null | grep -q 'group.solutions.pivi.dictus' \
+              || { echo "::error::No App Group entitlement in $B"; exit 1; }
+          done
 
       - name: Package Ouispr.ipa
         run: |
