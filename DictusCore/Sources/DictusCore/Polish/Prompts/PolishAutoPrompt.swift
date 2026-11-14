@@ -36,6 +36,11 @@ import Foundation
 ///   here would buy nothing and cost input headroom — instructions and input
 ///   share one 4096-token window (#270) — on the prompt that is already the
 ///   longest one this build sends.
+/// - Rule 9 (spoken self-corrections) is an Ouispr addition, the twin of rule 10
+///   in `PolishNaturalPromptFR`: without it, a dictation made with the
+///   transcription language set to Auto kept both versions of a correction.
+///   Its cues are French and English; the lost-word check opens its window on
+///   the French cues only (`PolishLostWordsLexicon.frenchSelfCorrectionCues`).
 enum PolishAutoPrompt {
     static func instructions() -> String {
         """
@@ -67,6 +72,7 @@ enum PolishAutoPrompt {
         6. Remove pure hesitation fillers (`uh`, `um`, `euh`, `ähm`, `este`, `eeh`) when they carry no meaning. KEEP transition words that carry intent.
         7. `<<NL>>` markers represent hard line breaks. Keep them character-for-character at the same position. Capitalize the first letter of the sentence that follows each marker where the language uses capitalization. Do NOT alter, paraphrase, surround with spaces, or add new markers.
         8. Fix obvious one-letter typos.
+        9. Spoken self-corrections: when the speaker corrects themselves aloud — a cue such as French `ah non`, `en fait non`, `non pardon`, `enfin non`, `je veux dire`, `ou plutôt`, or English `no wait`, `I mean`, `sorry I meant`, `or rather`, followed by the right version — keep ONLY the right version. Remove the retracted words AND the cue, and write the sentence once, as if the speaker had said it right the first time. Keep every word the correction does not replace. Apply only when the speaker clearly takes back what they just said: a `no` / `non` that answers a question or negates a fact stays.
 
         PRESERVE — DO NOT change these:
 
@@ -78,7 +84,7 @@ enum PolishAutoPrompt {
         FORBIDDEN:
         - Do NOT translate. Not even partially. If you cannot identify the language, return the input with only punctuation fixed.
         - Do NOT add words or content that weren't in the input. No inventing endings, no inserting context, no completing cut-off sentences.
-        - Do NOT delete words that carry meaning. Every noun, verb, adjective, number, name and complement the speaker DICTATED appears in the output. Rules 4, 5 and 6 are the only licence to remove a word — rule 4 removes a spoken punctuation command because the mark replaces it, rules 5 and 6 remove stutters and hesitation fillers.
+        - Do NOT delete words that carry meaning. Every noun, verb, adjective, number, name and complement the speaker DICTATED appears in the output. Rules 4, 5 and 6 are the only licence to remove a word — rule 4 removes a spoken punctuation command because the mark replaces it, rules 5 and 6 remove stutters and hesitation fillers — plus rule 9, which removes what the speaker took back aloud.
         - Do NOT reorder words.
         - Do NOT add `<<NL>>` markers where none existed. Do NOT split or alter existing markers.
 
@@ -95,6 +101,11 @@ enum PolishAutoPrompt {
 
         INPUT: allora domani andiamo al mare se il tempo è bello
         OUTPUT: Allora domani andiamo al mare, se il tempo è bello.
+
+        Self-correction example. The speaker takes something back aloud; keep only the right version, once:
+
+        INPUT: je vais aller au cinéma dimanche à 15h ah en fait non c'est samedi à 17h
+        OUTPUT: Je vais aller au cinéma samedi à 17h.
 
         Verbal-command example. The speaker dictates punctuation in their own language; convert it and remove the words:
 

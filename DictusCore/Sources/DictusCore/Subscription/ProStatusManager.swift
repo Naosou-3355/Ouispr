@@ -24,17 +24,22 @@ public struct ProTrialEnvironment {
     public var defaults: UserDefaults
     /// Where the trial is recorded. Built from `defaults` in `.live`.
     public var store: ProTrialStore
+    /// `PremiumFlags.proUnlocked` (Ouispr). True reads as paid. Defaults to false so
+    /// the tests keep driving the StoreKit and trial branches.
+    public var proUnlocked: Bool
 
     public init(now: @escaping () -> Date,
                 deviceIsCapable: @escaping () -> Bool,
                 paywallVisible: Bool,
                 defaults: UserDefaults,
-                store: ProTrialStore) {
+                store: ProTrialStore,
+                proUnlocked: Bool = false) {
         self.now = now
         self.deviceIsCapable = deviceIsCapable
         self.paywallVisible = paywallVisible
         self.defaults = defaults
         self.store = store
+        self.proUnlocked = proUnlocked
     }
 
     /// Production: the real clock, the real device, the shipping flag, the App Group
@@ -45,7 +50,8 @@ public struct ProTrialEnvironment {
             deviceIsCapable: { SmartModeAvailability.deviceIsCapable },
             paywallVisible: PremiumFlags.paywallVisible,
             defaults: AppGroup.defaults,
-            store: .live
+            store: .live,
+            proUnlocked: PremiumFlags.proUnlocked
         )
     }
 }
@@ -106,10 +112,10 @@ public final class ProStatusManager: ObservableObject {
         // Through the static rule rather than reading the key directly, so the app's own
         // observed value and every `FeatureGate` answer come from one expression (#460).
         let now = environment.now()
-        self.isProActive = ProStatusManager.entitlement(
+        self.isProActive = environment.proUnlocked || ProStatusManager.entitlement(
             in: environment.defaults, now: now, trialsEnabled: environment.paywallVisible
         )
-        self.isPaid = ProStatusManager.isPaid(in: environment.defaults)
+        self.isPaid = environment.proUnlocked || ProStatusManager.isPaid(in: environment.defaults)
         self.trialState = ProTrialState(record: environment.store.mirroredRecord, now: now)
     }
 
@@ -187,10 +193,10 @@ public final class ProStatusManager: ObservableObject {
     /// which publishes nothing, so DictusApp calls this whenever it becomes active.
     public func refreshFromAppGroup() {
         let now = environment.now()
-        isProActive = ProStatusManager.entitlement(
+        isProActive = environment.proUnlocked || ProStatusManager.entitlement(
             in: environment.defaults, now: now, trialsEnabled: environment.paywallVisible
         )
-        isPaid = ProStatusManager.isPaid(in: environment.defaults)
+        isPaid = environment.proUnlocked || ProStatusManager.isPaid(in: environment.defaults)
         trialState = ProTrialState(record: environment.store.mirroredRecord, now: now)
     }
 
@@ -372,7 +378,8 @@ public final class ProStatusManager: ObservableObject {
     /// path per surface. Since #593 it answers "paid or trial running", and no call site
     /// had to change for it.
     nonisolated public static var isProActiveStatic: Bool {
-        entitlement(in: AppGroup.defaults, now: Date(), trialsEnabled: PremiumFlags.paywallVisible)
+        PremiumFlags.proUnlocked
+            || entitlement(in: AppGroup.defaults, now: Date(), trialsEnabled: PremiumFlags.paywallVisible)
     }
 
     /// The entitlement rule against explicit inputs: which store, which instant, and
@@ -407,7 +414,8 @@ public final class ProStatusManager: ObservableObject {
     /// running and nothing is paid (#593). The mark is how a user on trial learns which
     /// features they would lose; a subscriber loses nothing and gets no mark.
     nonisolated public static func showsTrialProMarks(now: Date) -> Bool {
-        guard PremiumFlags.paywallVisible, !isPaid(in: AppGroup.defaults) else { return false }
+        guard PremiumFlags.paywallVisible, !PremiumFlags.proUnlocked,
+              !isPaid(in: AppGroup.defaults) else { return false }
         return ProTrialState(record: ProTrialStore.mirroredRecord(in: AppGroup.defaults), now: now).isRunning
     }
 
@@ -422,7 +430,7 @@ public final class ProStatusManager: ObservableObject {
         return ProPromotion.entry(
             paywallVisible: PremiumFlags.paywallVisible,
             deviceIsCapable: deviceIsCapable,
-            isPaid: isPaid(in: defaults),
+            isPaid: PremiumFlags.proUnlocked || isPaid(in: defaults),
             isEntitled: isProActiveStatic,
             trial: ProTrialState(record: ProTrialStore.mirroredRecord(in: defaults), now: now),
             now: now

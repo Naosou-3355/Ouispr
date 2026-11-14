@@ -18,6 +18,8 @@ final class PremiumFlagsDebugOverrideTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // Ouispr unlocks Pro in every build; these tests drive the locked branches.
+        PremiumFlags.proUnlocked = false
         keys.forEach { defaults.removeObject(forKey: $0) }
         // The per-feature toggles are half of `FeatureGate.isAvailable`, and another
         // suite in this process may have removed them. Seeding is what happens at every
@@ -27,6 +29,7 @@ final class PremiumFlagsDebugOverrideTests: XCTestCase {
     }
 
     override func tearDown() {
+        PremiumFlags.proUnlocked = true
         keys.forEach { defaults.removeObject(forKey: $0) }
         super.tearDown()
     }
