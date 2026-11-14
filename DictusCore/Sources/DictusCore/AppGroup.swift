@@ -5,7 +5,30 @@ import Security
 #endif
 
 public enum AppGroup {
-    public static let identifier = "group.solutions.pivi.dictus"
+    /// The App Group declared in the four `.entitlements` files.
+    public static let baseIdentifier = "group.solutions.pivi.dictus"
+
+    /// The App Group this process is actually in.
+    ///
+    /// WHY not always `baseIdentifier`: a free Apple ID cannot register someone
+    /// else's group, so AltStore re-signs a sideloaded app with
+    /// `<group>.<TEAMID>` and writes the groups it granted into each bundle's
+    /// Info.plist under `ALTAppGroups`. Keeping the base name there would give the
+    /// app and the keyboard two private, unrelated stores: the keyboard would
+    /// never see the onboarding, the model or the transcriptions the app writes.
+    public static let identifier = resolve(
+        base: baseIdentifier,
+        altAppGroups: Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String]
+    )
+
+    /// Pick the AltStore-granted variant of `base`, or `base` itself.
+    ///
+    /// The shortest match wins, as in AltStore's own remapping: the team-suffixed
+    /// group is `base` plus one component, anything longer is another group.
+    static func resolve(base: String, altAppGroups: [String]?) -> String {
+        let candidates = (altAppGroups ?? []).filter { $0 == base || $0.hasPrefix(base + ".") }
+        return candidates.min(by: { $0.count < $1.count }) ?? base
+    }
 
     /// Shared UserDefaults for cross-process data.
     /// Force-unwrap justified: if this fails, the App Group entitlement

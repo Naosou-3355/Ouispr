@@ -246,7 +246,7 @@ final class AOSPTrieEngine {
         print("[AOSPTrieEngine] N-grams \(language): \(success ? "loaded" : "failed") (\(fileSize / 1024) KiB)")
 
         // Write diagnostic to App Group so app logs can confirm n-gram loading
-        if let defaults = UserDefaults(suiteName: "group.solutions.pivi.dictus") {
+        if let defaults = UserDefaults(suiteName: AppGroup.identifier) {
             defaults.set("lang=\(language) ok=\(success) size=\(fileSize)", forKey: "ngramDiagnostic")
         }
     }
