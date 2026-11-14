@@ -5,6 +5,10 @@ name: Unsigned IPA
 on:
   push:
     branches: [main]
+  # Also on pull requests, so a change to this pipeline is proven before it
+  # reaches main. Only main publishes the release (see the last step).
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
