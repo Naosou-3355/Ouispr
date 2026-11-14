@@ -6,8 +6,13 @@ import Foundation
 /// the defaults it writes when a key is missing.
 public enum AppLaunchDefaults {
 
-    /// Write the defaults a missing key stands for: `language = "fr"` and
-    /// `liveActivityEnabled = true`.
+    /// Write the defaults a missing key stands for: `language = "fr"`,
+    /// `liveActivityEnabled = true` and `polishEnabled = true`.
+    ///
+    /// WHY polish defaults to on in Ouispr: keeping only the corrected version of a
+    /// spoken self-correction ("dimanche… ah non, samedi") is the polish's job, and it
+    /// is the reason this fork exists. Off by default, it never ran for a user who had
+    /// not found the toggle. A user who switched it off keeps their choice (`if nil`).
     ///
     /// WHY at launch: `@AppStorage` defaults live in memory only, and the transcription
     /// service and the keyboard read the stored value. `if nil` keeps a user's own choice.
@@ -32,6 +37,9 @@ public enum AppLaunchDefaults {
         }
         if store.object(forKey: SharedKeys.liveActivityEnabled) == nil {
             store.set(true, forKey: SharedKeys.liveActivityEnabled)
+        }
+        if store.object(forKey: SharedKeys.polishEnabled) == nil {
+            store.set(true, forKey: SharedKeys.polishEnabled)
         }
         return true
     }

@@ -38,10 +38,13 @@ final class ProGatingTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // Ouispr unlocks Pro in every build; these tests drive the locked branches.
+        PremiumFlags.proUnlocked = false
         proKeys.forEach { defaults.removeObject(forKey: $0) }
     }
 
     override func tearDown() {
+        PremiumFlags.proUnlocked = true
         proKeys.forEach { defaults.removeObject(forKey: $0) }
         super.tearDown()
     }

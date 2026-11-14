@@ -30,6 +30,23 @@ public enum PremiumFlags {
     /// `false` = the app looks like there is no subscription at all.
     public static let paywallVisible = true
 
+    /// Ouispr: every Pro feature is owned, in every build, with no purchase.
+    ///
+    /// WHY: Ouispr is a personal fork installed outside the App Store (AltStore), where
+    /// no purchase can go through, and the MIT licence allows it. Without this, the
+    /// 14-day trial ran out and closed Vocabulary, History, Smart Modes and voice notes.
+    ///
+    /// WHY it reads as *paid* rather than flipping `paywallVisible` off: with the
+    /// paywall hidden, #460 also hides the keyboard's Smart Mode surface. Reading as
+    /// paid keeps every surface, starts no trial and shows no trial mark, the way a
+    /// subscriber sees the app. Applied in `ProStatusManager` (`isProActiveStatic`, the
+    /// keyboard's static reads, and `ProTrialEnvironment.live`), never in the pure rules
+    /// the tests drive.
+    ///
+    /// A `var` only so the tests can switch it off to reach the locked branches;
+    /// nothing in the app writes it.
+    public static var proUnlocked = true
+
     /// Last day of the lifetime founder window, or `nil` while it is not
     /// scheduled (#350).
     ///

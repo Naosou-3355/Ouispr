@@ -70,7 +70,7 @@ struct SettingsView: View {
 
     /// Post-STT polish toggle (issue #141). Off by default — opt-in measurement at round 1.
     @AppStorage(SharedKeys.polishEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
-    private var polishEnabled = false
+    private var polishEnabled = true  // Mirrors AppLaunchDefaults (on in Ouispr)
 
     #if DEBUG
     /// Debug-only: logs autocorrect decisions with user text to the debug log.
