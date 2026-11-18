@@ -7,12 +7,12 @@ tags: [swiftui, onboarding, settings, appstorage, avaudiosession, tabview]
 # Dependency graph
 requires:
   - phase: 04-main-app-onboarding-and-polish
-    provides: "Design system (GlassModifier, DictusColors, BrandWaveform, AnimatedMicButton, DictusTypography), TabView structure, hasCompletedOnboarding placeholder"
+    provides: "Design system (GlassModifier, OuisprColors, BrandWaveform, AnimatedMicButton, OuisprTypography), TabView structure, hasCompletedOnboarding placeholder"
 provides:
   - "5-step onboarding flow (welcome, mic, keyboard, model, test)"
   - "SettingsView with 3 sections persisted via App Group"
   - "LicensesView with MIT attributions"
-  - "Onboarding gate wired in DictusApp.swift"
+  - "Onboarding gate wired in OuisprApp.swift"
 affects: [04-03-polish, future-localization]
 
 # Tech tracking
@@ -22,18 +22,18 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Onboarding/OnboardingView.swift
-    - DictusApp/Onboarding/WelcomePage.swift
-    - DictusApp/Onboarding/MicPermissionPage.swift
-    - DictusApp/Onboarding/KeyboardSetupPage.swift
-    - DictusApp/Onboarding/ModelDownloadPage.swift
-    - DictusApp/Onboarding/TestRecordingPage.swift
-    - DictusApp/Views/SettingsView.swift
-    - DictusApp/Views/LicensesView.swift
+    - OuisprApp/Onboarding/OnboardingView.swift
+    - OuisprApp/Onboarding/WelcomePage.swift
+    - OuisprApp/Onboarding/MicPermissionPage.swift
+    - OuisprApp/Onboarding/KeyboardSetupPage.swift
+    - OuisprApp/Onboarding/ModelDownloadPage.swift
+    - OuisprApp/Onboarding/TestRecordingPage.swift
+    - OuisprApp/Views/SettingsView.swift
+    - OuisprApp/Views/LicensesView.swift
   modified:
-    - DictusApp/DictusApp.swift
-    - DictusApp/Views/MainTabView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprApp/OuisprApp.swift
+    - OuisprApp/Views/MainTabView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Don't block onboarding on mic denial -- user can proceed and grant later"
@@ -68,7 +68,7 @@ completed: 2026-03-06
 - Each onboarding page validates completion before enabling advancement
 - Settings screen with Transcription, Clavier, and A propos sections
 - All preferences persist via @AppStorage with App Group UserDefaults
-- Both targets build successfully, 52 DictusCore tests passing
+- Both targets build successfully, 52 OuisprCore tests passing
 
 ## Task Commits
 
@@ -78,22 +78,22 @@ Each task was committed atomically:
 2. **Task 2: Settings screen with preferences persistence** - `effc017` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/OnboardingView.swift` - Paged TabView container for 5 onboarding steps
-- `DictusApp/Onboarding/WelcomePage.swift` - Animated BrandWaveform + wordmark + tagline
-- `DictusApp/Onboarding/MicPermissionPage.swift` - Microphone permission request with grant/deny handling
-- `DictusApp/Onboarding/KeyboardSetupPage.swift` - Settings deep-link + auto-detection + manual fallback
-- `DictusApp/Onboarding/ModelDownloadPage.swift` - Whisper Small download with progress via ModelManager
-- `DictusApp/Onboarding/TestRecordingPage.swift` - Live recording + transcription test via DictationCoordinator
-- `DictusApp/Views/SettingsView.swift` - 3-section grouped List with App Group @AppStorage
-- `DictusApp/Views/LicensesView.swift` - MIT license attribution for WhisperKit and Dictus
-- `DictusApp/DictusApp.swift` - Wired OnboardingView, set hasCompletedOnboarding default to false
-- `DictusApp/Views/MainTabView.swift` - Replaced settings placeholder with SettingsView
+- `OuisprApp/Onboarding/OnboardingView.swift` - Paged TabView container for 5 onboarding steps
+- `OuisprApp/Onboarding/WelcomePage.swift` - Animated BrandWaveform + wordmark + tagline
+- `OuisprApp/Onboarding/MicPermissionPage.swift` - Microphone permission request with grant/deny handling
+- `OuisprApp/Onboarding/KeyboardSetupPage.swift` - Settings deep-link + auto-detection + manual fallback
+- `OuisprApp/Onboarding/ModelDownloadPage.swift` - Whisper Small download with progress via ModelManager
+- `OuisprApp/Onboarding/TestRecordingPage.swift` - Live recording + transcription test via DictationCoordinator
+- `OuisprApp/Views/SettingsView.swift` - 3-section grouped List with App Group @AppStorage
+- `OuisprApp/Views/LicensesView.swift` - MIT license attribution for WhisperKit and Ouispr
+- `OuisprApp/OuisprApp.swift` - Wired OnboardingView, set hasCompletedOnboarding default to false
+- `OuisprApp/Views/MainTabView.swift` - Replaced settings placeholder with SettingsView
 
 ## Decisions Made
 - Don't block onboarding on mic permission denial -- user can proceed and grant later in iOS Settings
 - Manual "J'ai ajoute le clavier" button always visible as fallback (UITextInputMode auto-detection is unreliable)
 - Pre-select whisper-small model for onboarding download (good accuracy/speed balance for most devices)
-- SF Pro Rounded ultraLight for "dictus" wordmark instead of DM Sans (system font, no bundling needed)
+- SF Pro Rounded ultraLight for "ouispr" wordmark instead of DM Sans (system font, no bundling needed)
 
 ## Deviations from Plan
 
@@ -101,10 +101,10 @@ Each task was committed atomically:
 
 **1. [Rule 3 - Blocking] Committed uncommitted keyboard Design files from Plan 04-01**
 - **Found during:** Task 2 (build verification)
-- **Issue:** DictusKeyboard/Design/ directory with 5 design system files existed on disk but was not committed. FullAccessBanner, KeyButton, RecordingOverlay, and ToolbarView referenced .dictusCaption, .dictusAccent, .dictusGlass() from these uncommitted files, causing build failure.
-- **Fix:** Registered DictusKeyboard/Design files in pbxproj (auto-handled by project linter), committed the files.
-- **Files modified:** Dictus.xcodeproj/project.pbxproj, DictusKeyboard/Design/*.swift, DictusKeyboard/Views/*.swift
-- **Verification:** Build succeeds for both DictusApp and DictusKeyboard targets
+- **Issue:** OuisprKeyboard/Design/ directory with 5 design system files existed on disk but was not committed. FullAccessBanner, KeyButton, RecordingOverlay, and ToolbarView referenced .ouisprCaption, .ouisprAccent, .ouisprGlass() from these uncommitted files, causing build failure.
+- **Fix:** Registered OuisprKeyboard/Design files in pbxproj (auto-handled by project linter), committed the files.
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj, OuisprKeyboard/Design/*.swift, OuisprKeyboard/Views/*.swift
+- **Verification:** Build succeeds for both OuisprApp and OuisprKeyboard targets
 - **Committed in:** effc017 (Task 2 commit)
 
 ---

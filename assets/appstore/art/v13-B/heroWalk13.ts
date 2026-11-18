@@ -2,13 +2,13 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 
-// DICTUS HERO V13-B · "hands full", round 5 (V12-B is art/v12-B/heroWalk12.ts). Round 5: slide 2
+// OUISPR HERO V13-B · "hands full", round 5 (V12-B is art/v12-B/heroWalk12.ts). Round 5: slide 2
 // has no zoomed panel any more; its phone, turned in depth, shows its own recording keyboard, and
 // the voice lands on that keyboard's waveform (PANEL_IN, measured as window.PANEL_EDGE on
 // screenshots.html). The S comes down sooner, so a long, gently curved, almost level run carries
 // the voice across the cut. Character, strokes, lettering, pavement and shadow are V12-B's.
 //
-// DICTUS HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
+// OUISPR HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
 // left to right into slide 2's phone. Round 4: the stride reads unmistakably rightward (the front
 // foot far out on the right, heel down and toes high; the back foot on the left, heel lifted, toes
 // bent flat on the slabs); the voice is three uneven marker strokes on ONE soft S-curve, no straight
@@ -424,6 +424,6 @@ const drawFor = (end: P) => (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroWalk13: Film = {
-  meta: { title: "Dictus hero V13-B · hands full, round 5", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: "Ouispr hero V13-B · hands full, round 5", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id: "heroWalk13", start: 0, end: 1, draw: drawFor(PANEL_IN) }],
 };

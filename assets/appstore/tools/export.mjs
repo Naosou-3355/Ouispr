@@ -115,7 +115,7 @@ for (const locale of locales) {
     // The same cut view for an alternative layout (window.CUT_ALT), shot to a temporary folder:
     // its slides are only for the comparison, never delivered.
     if (meta.cutAlt && meta.cut) {
-      const tmp = mkdtempSync(join(tmpdir(), "dictus-cut-alt-"));
+      const tmp = mkdtempSync(join(tmpdir(), "ouispr-cut-alt-"));
       await load(locale, theme, { name: "alt", query: meta.cutAlt.query });
       const alt = meta.cut.slides.map((n) => join(tmp, `${n}.png`));
       for (const [k, n] of meta.cut.slides.entries()) await shoot(alt[k], n);

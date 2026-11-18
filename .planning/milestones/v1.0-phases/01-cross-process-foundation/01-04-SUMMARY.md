@@ -25,12 +25,12 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/InputView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardState.swift
-    - DictusApp/DictationCoordinator.swift
+    - OuisprKeyboard/InputView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprApp/DictationCoordinator.swift
 
 key-decisions:
   - "UIInputView subclass required for playInputClick — UIView with UIInputViewAudioFeedback is insufficient"
@@ -60,7 +60,7 @@ completed: 2026-03-05
 
 ## Accomplishments
 - Keyboard click sounds now work on all key types (letters, space, return, delete) when Full Access and keyboard clicks are enabled
-- Cross-process transcription reliably displays in keyboard after dictation completes in DictusApp
+- Cross-process transcription reliably displays in keyboard after dictation completes in OuisprApp
 - StatusBar spinner only shows during active states (recording, transcribing), not on ready/failed
 - Layout regression discovered and fixed during UAT (inputView autoresizing masks)
 
@@ -79,12 +79,12 @@ Each task was committed atomically:
 3. **Task 3: Verify UAT fixes on device** - human checkpoint, approved by user
 
 ## Files Created/Modified
-- `DictusKeyboard/InputView.swift` - Changed to UIInputView subclass with .keyboard style
-- `DictusKeyboard/KeyboardViewController.swift` - Hosting view added as subview of KeyboardInputView, assigned to self.inputView
-- `DictusKeyboard/Views/KeyboardView.swift` - Added playInputClick() calls to onSpace, onReturn, onDelete closures
-- `DictusKeyboard/KeyboardRootView.swift` - StatusBar accepts showSpinner parameter, conditional ProgressView
-- `DictusKeyboard/KeyboardState.swift` - refreshFromDefaults reads lastTranscription when status is .ready
-- `DictusApp/DictationCoordinator.swift` - Single consolidated notification after both UserDefaults writes
+- `OuisprKeyboard/InputView.swift` - Changed to UIInputView subclass with .keyboard style
+- `OuisprKeyboard/KeyboardViewController.swift` - Hosting view added as subview of KeyboardInputView, assigned to self.inputView
+- `OuisprKeyboard/Views/KeyboardView.swift` - Added playInputClick() calls to onSpace, onReturn, onDelete closures
+- `OuisprKeyboard/KeyboardRootView.swift` - StatusBar accepts showSpinner parameter, conditional ProgressView
+- `OuisprKeyboard/KeyboardState.swift` - refreshFromDefaults reads lastTranscription when status is .ready
+- `OuisprApp/DictationCoordinator.swift` - Single consolidated notification after both UserDefaults writes
 
 ## Decisions Made
 - UIInputView subclass is required (not just UIView + UIInputViewAudioFeedback) because UIInputViewController.inputView is typed as UIInputView?
@@ -99,7 +99,7 @@ Each task was committed atomically:
 - **Found during:** Task 3 (UAT verification)
 - **Issue:** After changing KeyboardInputView to UIInputView subclass, setting translatesAutoresizingMaskIntoConstraints = false on the inputView prevented iOS from sizing the keyboard correctly, resulting in a narrow keyboard
 - **Fix:** Removed the translatesAutoresizingMaskIntoConstraints = false line from KeyboardInputView, keeping the default autoresizing masks that iOS uses to size the inputView
-- **Files modified:** DictusKeyboard/InputView.swift
+- **Files modified:** OuisprKeyboard/InputView.swift
 - **Verification:** Keyboard displays at full screen width on device
 - **Committed in:** `a2d847d`
 
@@ -116,7 +116,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - Phase 1 is now fully complete with all UAT tests passing
-- Cross-process architecture proven on device: keyboard triggers DictusApp, DictusApp writes transcription, keyboard displays result
+- Cross-process architecture proven on device: keyboard triggers OuisprApp, OuisprApp writes transcription, keyboard displays result
 - Ready to proceed to Phase 2 (Transcription Pipeline) with WhisperKit integration
 
 ## Self-Check: PASSED

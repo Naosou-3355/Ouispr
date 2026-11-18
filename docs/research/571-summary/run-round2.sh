@@ -1,7 +1,7 @@
 #!/bin/sh
 # Round 2 of the Résumé bench (#571). Run from anywhere; writes runs/r2-*.
 set -e
-cd "$(dirname "$0")/../../../DictusCore"
+cd "$(dirname "$0")/../../../OuisprCore"
 R=../docs/research/571-summary/runs
 F=Sources/polish-harness/fixtures
 for set in fr en device-r1 i18n; do

@@ -23,7 +23,7 @@ severity: major
 hotfix: "Changed .foregroundStyle(.primary) to .foregroundColor(.white) on all 4 buttons in MicPermissionPage.swift and ModelDownloadPage.swift"
 
 ### 2. Onboarding — Keyboard Setup Doesn't Reset Progress
-expected: Reach step 3 (Keyboard Setup). Tap the link to open iOS Settings. After enabling the keyboard, return to Dictus. Onboarding should resume at step 3 (or later), NOT reset to step 1.
+expected: Reach step 3 (Keyboard Setup). Tap the link to open iOS Settings. After enabling the keyboard, return to Ouispr. Onboarding should resume at step 3 (or later), NOT reset to step 1.
 result: pass
 
 ### 3. Onboarding — Waveform Visible in Light Mode
@@ -35,7 +35,7 @@ expected: Go to Models tab — model cards should have frosted glass styling (ma
 result: pass
 
 ### 5. Keyboard — Key Size & No Layout Shift
-expected: Open Dictus keyboard. Keys should feel native-sized (46pt height, comparable to standard iOS keyboard). Tap the mic button — recording overlay appears covering the full keyboard+toolbar area with NO upward shift or clipped buttons.
+expected: Open Ouispr keyboard. Keys should feel native-sized (46pt height, comparable to standard iOS keyboard). Tap the mic button — recording overlay appears covering the full keyboard+toolbar area with NO upward shift or clipped buttons.
 result: issue
 reported: "Key size OK but key colors too dark (nearly black vs native gray) and corners too rectangular. Need to match native iOS keyboard appearance more closely."
 severity: cosmetic
@@ -56,7 +56,7 @@ severity: major
 hotfix: "Restructured RecordingOverlay: buttons fixed at top, timer+status fixed at bottom, waveform uses GeometryReader to fill remaining space (70% of available height). No more overflow."
 
 ### 8. Keyboard — Dynamic Type Does Not Scale Keys
-expected: Go to iOS Settings > Accessibility > Larger Text, set to maximum. Open Dictus keyboard. Key labels should remain fixed size (like native iOS keyboard) — no overflow, no giant letters.
+expected: Go to iOS Settings > Accessibility > Larger Text, set to maximum. Open Ouispr keyboard. Key labels should remain fixed size (like native iOS keyboard) — no overflow, no giant letters.
 result: pass
 
 ## Summary

@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dictus · App Store screenshots 2.0 (Direction B, Panorama, iteration 2)</title>
+<title>Ouispr · App Store screenshots 2.0 (Direction B, Panorama, iteration 2)</title>
 <!--
-  Dictus App Store screenshot template, 2.0 (issue #643, Direction B "Panorama",
+  Ouispr App Store screenshot template, 2.0 (issue #643, Direction B "Panorama",
   design iteration 2). Iteration 1 is commit 171c93b0; the 1.7.1 template is
   e5018943.
 
@@ -113,7 +113,7 @@
   .ba .mode {
     display: flex; align-items: center; gap: 16px; padding: 16px 30px; border-radius: 40px;
     font: 500 40px/1 "DM Sans", sans-serif; color: #fff;
-    /* Dictus blue: there is no purple in the app. Accent #3D7EFF to #2563EB rather
+    /* Ouispr blue: there is no purple in the app. Accent #3D7EFF to #2563EB rather
        than the brand gradient's #6BA3FF, so white text keeps a 3:1 contrast. */
     background: linear-gradient(135deg, #3D7EFF 0%, #2563EB 100%);
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
@@ -126,7 +126,7 @@
      Dictation saves the most time on long text, and an email differs from the
      chats of slides 2 and 3. The simulator has no Mail app, and copying Apple
      Mail, Gmail or Outlook would be someone else's trade dress, so this is an
-     unbranded compose screen in Dictus's restrained style. It stops above the
+     unbranded compose screen in Ouispr's restrained style. It stops above the
      keyboard panel's own shadow; the status bar and the recording panel stay real. */
   .compose-screen {
     position: absolute; left: 0; top: 150px; width: 1320px; height: 1590px; background: #FFFFFF;
@@ -158,11 +158,11 @@
   }
 
   /* ── Slide 3: a generic chat screen, drawn in capture pixels ──
-     Voice notes reach Dictus from chat apps through the share sheet (#620), but
+     Voice notes reach Ouispr from chat apps through the share sheet (#620), but
      WhatsApp and Telegram do not install on the simulator, and drawing either
      would be third-party trade dress in App Store metadata (guideline 5.2). Apple
      Messages is the wrong host too: iOS already transcribes its audio messages.
-     So the conversation is an unbranded chat in Dictus's own restrained style:
+     So the conversation is an unbranded chat in Ouispr's own restrained style:
      no Apple header or bubble colours, no WhatsApp/Telegram wallpaper, header or
      green. The status bar above and the keyboard reader below stay real. */
   .chat {
@@ -225,12 +225,12 @@
   .hero-brand { position: absolute; top: 150px; z-index: 6; display: flex; align-items: center; gap: 26px; }
   .hero-brand .bars { width: 92px; height: 92px; }
   .hero-brand span { font: 200 104px/1 "DM Sans", sans-serif; letter-spacing: -0.04em; color: #0A1628; }
-  /* V15-B: the app's Home header, Text("Dictus").font(.dictusHeading).foregroundColor(.dictusAccent),
-     dictusHeading = .system(.title, design: .rounded, weight: .bold). Headless Chromium has no
+  /* V15-B: the app's Home header, Text("Ouispr").font(.ouisprHeading).foregroundColor(.ouisprAccent),
+     ouisprHeading = .system(.title, design: .rounded, weight: .bold). Headless Chromium has no
      ui-rounded, so SF Pro Rounded is loaded from the macOS system file (never copied, never
      committed); the page reports the font missing if it fails, and the export stops. */
-  @font-face { font-family: "Dictus Rounded"; src: url("file:///System/Library/Fonts/SFNSRounded.ttf"); font-weight: 1 1000; }
-  .hero-brand.rounded span { font: 700 78px/1 "Dictus Rounded"; letter-spacing: 0; color: #3D7EFF; }
+  @font-face { font-family: "Ouispr Rounded"; src: url("file:///System/Library/Fonts/SFNSRounded.ttf"); font-weight: 1 1000; }
+  .hero-brand.rounded span { font: 700 78px/1 "Ouispr Rounded"; letter-spacing: 0; color: #3D7EFF; }
   .hero-brand.rounded .bars { width: 72px; height: 72px; }
   .hero-brand.rounded { gap: 20px; }
   .hero-headline {
@@ -264,7 +264,7 @@ const THEME = params.get("theme") || "light";
    2026-10-05) or message. ?variant= is the V3 name of the same switch. */
 const VARIANT = params.get("smart") || params.get("variant") || "translate";
 /* The app-icon ribbon of slides 1 and 2: ?ribbon=logos (default, real icons) or
-   tiles (neutral Dictus-blue tiles, the fallback if App Review objects, 5.2). */
+   tiles (neutral Ouispr-blue tiles, the fallback if App Review objects, 5.2). */
 const RIBBON = params.get("ribbon") || "logos";
 const NOLOGO = RIBBON === "tiles" ? "-nologos" : "";
 /* The hero's illustration style (V5): ?hero=comic (marker comic, default) or paper
@@ -298,7 +298,7 @@ window.ITERATION_CAST = false;
    there, behind the phone, into slides 3 to 7. The ribbon holds 20 apps on one regular wave. */
 /* V15-B (round 7): the strokes stop at slide 1's right edge and slide 2's band grows
    from small blue bars at its left edge; an airier ribbon from slide 1's left edge to slide 2's
-   right edge, icons squarely on the curve; the wordmark is the app's: "Dictus", SF Pro Rounded
+   right edge, icons squarely on the curve; the wordmark is the app's: "Ouispr", SF Pro Rounded
    Bold, accent blue (art/v15-B/heroWalk15.ts). */
 /* V16-B (#758, default): V15-B with the onboarding intro's woman on slide 1 (bob, hands, phone
    held out, two-leg trousers), drawn by the intro's own woman.ts (art/v16-B/heroWalk16.ts). Only
@@ -342,7 +342,7 @@ const PANEL_W = 1320, PANEL_H = 2868;   // PANELS and STRIP_W follow SLIDES, bel
 const BEZEL = ".bezels/iPhone 17 Pro Max - Deep Blue - Portrait.png";
 
 /* Phone geometry shared by every phone slide: the WHOLE phone, same size and
-   baseline everywhere, with a margin below. Dictus is a keyboard and the keyboard
+   baseline everywhere, with a margin below. Ouispr is a keyboard and the keyboard
    is the bottom of the screen: a bottom crop hid the product (V2). */
 const PHONE = { width: 1000, top: 737 };   // 2041 px tall, 90 px margin below
 /* Keyboard band of a capture, in capture pixels: from the top edge of the
@@ -401,7 +401,7 @@ function loadImg(img, file) {
   img.src = captureSrc(file);
 }
 
-const S = window.DICTUS_STRINGS;
+const S = window.OUISPR_STRINGS;
 const strip = document.getElementById("strip");
 strip.style.width = `${STRIP_W}px`;
 const el = (cls, html) => { const d = document.createElement("div"); d.className = cls; if (html) d.innerHTML = html; return d; };
@@ -551,7 +551,7 @@ function addGreetings(list, i) {
    HERO (slide 1, V4): no phone.
    ════════════════════════════════════════════════════════════ */
 /* The illustration (art/hero-illustration.png, drawn in code with anidoodle:
-   art/dictusHero.ts) and where its voice line ends, in its own pixels. */
+   art/ouisprHero.ts) and where its voice line ends, in its own pixels. */
 const ILLU = LAYOUT === "v8"
   ? { src: "art/v8/hero.png", w: 2640, h: 2000, panelIn: [1400, 1387] }   // V7 cast: art/v7/hero-${CAST}.png
   : { src: S.heroArt?.[ART] ?? (ART === "v15-B" ? "art/v15-B/hero.png" : ART === "v14-B" ? "art/v14-B/hero.png" : ART === "v13-B" ? "art/v13-B/hero.png" : ART === "v12-B" ? `art/v12-B/hero-${S2}.png` : `art/${ART}/hero.png`), w: 2640, h: 2868, panelIn: [1396, 1838.5] };   // S.heroArt: a locale's own lettering (fr-FR)
@@ -563,7 +563,7 @@ const LIFTS = [], DEVICES = [];
 
 /* App icons on the ribbon. Real icons are fetched by tools/fetch-icons.sh into the
    git-ignored .icons/ (third-party marks, never committed). The fallback draws
-   neutral tiles in Dictus blues with simple writing glyphs. */
+   neutral tiles in Ouispr blues with simple writing glyphs. */
 // V5 order (Pierre): Apple Messages and Mail included, AI chats added.
 /* V14-B: twenty apps, the brief's order with a few swaps so no two dark or two blue icons touch. */
 const RIBBON_APPS_14 = ["messages", "gmail", "whatsapp", "mail", "chatgpt", "messenger", "claude", "gemini", "perplexity", "notion", "lechat", "notes", "obsidian", "slack", "signal", "instagram", "discord", "x", "telegram", "linkedin"];
@@ -683,14 +683,14 @@ function addRibbon() {
   });
 }
 
-/* The Dictus mark from assets/brand/appicon-dark.svg (#636): bars 9 wide, 18 / 42 / 27
+/* The Ouispr mark from assets/brand/appicon-dark.svg (#636): bars 9 wide, 18 / 42 / 27
    tall, capsule ends, 7.5 apart; centre bar #6BA3FF → #2563EB. On a light background
-   the side bars are grey, as DictusLogo does in light mode. Never redrawn by hand. */
+   the side bars are grey, as OuisprLogo does in light mode. Never redrawn by hand. */
 const LOGO_BARS = `<svg class="bars" viewBox="19 19 42 42"><defs><linearGradient id="hb" x1="0" y1="19" x2="0" y2="61" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6BA3FF"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>
   <rect x="19" y="31" width="9" height="18" rx="4.5" fill="#8E8E93" opacity="0.45"/><rect x="35.5" y="19" width="9" height="42" rx="4.5" fill="url(#hb)"/><rect x="52" y="26" width="9" height="27" rx="4.5" fill="#8E8E93" opacity="0.65"/></svg>`;
 
 function addHero(copy, i) {
-  const brand = el(`hero-brand${LAYOUT === "v15-B" ? " rounded" : ""}`, `${LOGO_BARS}<span>${LAYOUT === "v15-B" ? "Dictus" : S.wordmark}</span>`);
+  const brand = el(`hero-brand${LAYOUT === "v15-B" ? " rounded" : ""}`, `${LOGO_BARS}<span>${LAYOUT === "v15-B" ? "Ouispr" : S.wordmark}</span>`);
   brand.style.left = `${i * PANEL_W + 110}px`;
   strip.appendChild(brand);
   const h = el("hero-headline", copy.headline);
@@ -833,7 +833,7 @@ window.whenReady = Promise.all([
   }))),
 ]).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
   .then(() => {
-    if (LAYOUT === "v15-B" && !document.fonts.check('700 100px "Dictus Rounded"')) {
+    if (LAYOUT === "v15-B" && !document.fonts.check('700 100px "Ouispr Rounded"')) {
       document.getElementById("missing").innerHTML = "SF Pro Rounded missing<br>/System/Library/Fonts/SFNSRounded.ttf"; document.getElementById("missing").style.display = "flex";
     }
     return document.getElementById("missing").style.display !== "flex";

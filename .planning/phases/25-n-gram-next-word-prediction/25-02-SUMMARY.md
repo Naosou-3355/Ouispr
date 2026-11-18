@@ -11,7 +11,7 @@ provides:
   - ObjC++ bridge methods for n-gram prediction (load, predict, bigramScore)
   - Swift AOSPTrieEngine n-gram wrapper (predictNextWords, bigramScore)
   - SuggestionState .predictions mode with updatePredictions()
-  - handlePredictionTap in DictusKeyboardBridge (bypasses autocorrect, chains predictions)
+  - handlePredictionTap in OuisprKeyboardBridge (bypasses autocorrect, chains predictions)
   - Full space-to-prediction-to-tap pipeline
 affects: [25-03-context-boosted-corrections, prediction-ui, keyboard-bridge]
 
@@ -22,17 +22,17 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h
-    - DictusKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.mm
-    - DictusKeyboard/TextPrediction/AOSPTrieEngine.swift
-    - DictusKeyboard/TextPrediction/TextPredictionEngine.swift
-    - DictusKeyboard/TextPrediction/SuggestionState.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Views/SuggestionBarView.swift
-    - DictusCore/Sources/DictusCore/FrequencyDictionary.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h
+    - OuisprKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.mm
+    - OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift
+    - OuisprKeyboard/TextPrediction/TextPredictionEngine.swift
+    - OuisprKeyboard/TextPrediction/SuggestionState.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Views/SuggestionBarView.swift
+    - OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Swift ObjC bridge renames predictAfterWord to predict(afterWord:) -- used Swift-generated names"
@@ -82,11 +82,11 @@ Each task was committed atomically:
 - `TextPredictionEngine.swift` - predictNextWords with frequency fallback
 - `FrequencyDictionary.swift` - topWords(count:) for fallback predictions
 - `SuggestionState.swift` - .predictions case, updatePredictions(), extractLastWords()
-- `DictusKeyboardBridge.swift` - handleSpace calls updatePredictions, handlePredictionTap method
+- `OuisprKeyboardBridge.swift` - handleSpace calls updatePredictions, handlePredictionTap method
 - `KeyboardRootView.swift` - bridge property, .predictions handler in handleSuggestionTap
 - `KeyboardViewController.swift` - Pass bridge to KeyboardRootView init
 - `SuggestionBarView.swift` - Equal-weight styling for prediction mode (no bold center)
-- `project.pbxproj` - dictus_ngram.cpp in Sources, headers in include, .dict binaries in Resources
+- `project.pbxproj` - ouispr_ngram.cpp in Sources, headers in include, .dict binaries in Resources
 
 ## Decisions Made
 - Swift ObjC bridge auto-renames `predictAfterWord:maxResults:` to `predict(afterWord:maxResults:)` -- used the Swift-generated selector names
@@ -108,7 +108,7 @@ Each task was committed atomically:
 
 **2. [Rule 3 - Blocking] Bridge reference missing in KeyboardRootView**
 - **Found during:** Task 2 (wiring prediction tap)
-- **Issue:** KeyboardRootView had no access to DictusKeyboardBridge, needed for handlePredictionTap
+- **Issue:** KeyboardRootView had no access to OuisprKeyboardBridge, needed for handlePredictionTap
 - **Fix:** Added `bridge` property to KeyboardRootView, passed from KeyboardViewController
 - **Files modified:** KeyboardRootView.swift, KeyboardViewController.swift
 - **Verification:** xcodebuild succeeds, prediction tap path compiles

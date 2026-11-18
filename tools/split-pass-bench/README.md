@@ -11,7 +11,7 @@ xcrun simctl boot <udid>      # headless; any iOS 17+ simulator
 tools/split-pass-bench/run.sh --udid <udid> > report.md
 ```
 
-About two minutes: one to compile DictusCore, a few seconds to measure. The report
+About two minutes: one to compile OuisprCore, a few seconds to measure. The report
 (markdown tables, then every case that did not come out right) goes to stdout; one row
 per case goes to `build/split-pass-bench/out/cases.tsv`.
 
@@ -20,9 +20,9 @@ per case goes to `build/split-pass-bench/out/cases.tsv`.
 `run.sh` compiles, for the iOS Simulator and with the Release settings of the
 keyboard target (no `DEBUG`):
 
-- `DictusCore/Sources/DictusCore`, as a static library;
-- the vendored C++ trie and its Objective-C++ bridge (`DictusKeyboard/Vendored/AOSPTrie`);
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` and `AOSPTrieEngine.swift`,
+- `OuisprCore/Sources/OuisprCore`, as a static library;
+- the vendored C++ trie and its Objective-C++ bridge (`OuisprKeyboard/Vendored/AOSPTrie`);
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` and `AOSPTrieEngine.swift`,
   unmodified;
 - `main.swift`, the bench.
 
@@ -30,7 +30,7 @@ and runs the binary with `xcrun simctl spawn`. The dictionaries are copied next 
 binary, where `Bundle.main` finds them. No app is installed and no window opens.
 
 Each case goes through `TextPredictionEngine.shared.spellCheck(_:previousWord:isAtSentenceStart:)`,
-the call the space bar makes (`DictusKeyboardBridge.autocorrectBeforeCursor`), once
+the call the space bar makes (`OuisprKeyboardBridge.autocorrectBeforeCursor`), once
 mid-sentence and once autocapitalised at the start of a field. The word's language is
 activated first, so the layout, and with it the spacebar neighbours, is that
 language's default.
@@ -41,7 +41,7 @@ It never decides an outcome.
 
 ## Corpus
 
-`DictusCore/Tests/DictusCoreTests/Fixtures/split-pass-corpus.tsv`, built by
+`OuisprCore/Tests/OuisprCoreTests/Fixtures/split-pass-corpus.tsv`, built by
 `make_corpus.py` (its header says from what). `SplitPassCorpusTests` checks its
 format in `swift test`; the bench itself needs a simulator and does not run in CI.
 

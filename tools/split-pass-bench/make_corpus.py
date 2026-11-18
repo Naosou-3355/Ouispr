@@ -2,7 +2,7 @@
 """
 make_corpus.py -- Build the glued-word corpus the split-pass bench measures (#499).
 
-Writes DictusCore/Tests/DictusCoreTests/Fixtures/split-pass-corpus.tsv. The file is
+Writes OuisprCore/Tests/OuisprCoreTests/Fixtures/split-pass-corpus.tsv. The file is
 committed; this script exists so it can be rebuilt and audited, not run on every
 measurement.
 
@@ -11,7 +11,7 @@ Sources:
     https://downloads.tatoeba.org/exports/per_language/<fra|eng|deu|spa>/<lang>_sentences.tsv.bz2
     Adjacent word pairs give the glued cases; long words absent from the keyboard's
     frequency list give the rare legitimate words.
-  - DictusKeyboard/Resources/<lang>_frequency.json, the keyboard's own word list:
+  - OuisprKeyboard/Resources/<lang>_frequency.json, the keyboard's own word list:
     long words that are two shorter words end to end ("longtemps").
   - The eight words glued on the simulator keyboard in the spacebar research
     (2026-10-30/31), with what the typist meant.
@@ -19,8 +19,8 @@ Sources:
 Usage (the exports are downloaded data, so run the interpreter isolated):
     python3 -I tools/split-pass-bench/make_corpus.py \
         --tatoeba <dir with the four .tsv.bz2> \
-        --resources DictusKeyboard/Resources \
-        --out DictusCore/Tests/DictusCoreTests/Fixtures/split-pass-corpus.tsv
+        --resources OuisprKeyboard/Resources \
+        --out OuisprCore/Tests/OuisprCoreTests/Fixtures/split-pass-corpus.tsv
 """
 
 import argparse
@@ -47,8 +47,8 @@ COUNTS = {
     "es": {"missed-space": 50, "neighbour-key": 25, "legit-compound": 20, "legit-rare": 20},
 }
 
-# Typed on the Dictus keyboard in the simulator (spacebar research,
-# logs/dictus-split-pass-samples.csv). "expected" is what the typist meant.
+# Typed on the Ouispr keyboard in the simulator (spacebar research,
+# logs/ouispr-split-pass-samples.csv). "expected" is what the typist meant.
 OBSERVED = [
     ("pasmal", "pas mal"),
     ("jesuis", "je suis"),

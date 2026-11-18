@@ -300,7 +300,7 @@
     "wasAccepted": true,
     "raw": "Chops chop cheats chop kickpapiti papu papati tsu pa t.",
     "output": "Je suis désolé, mais je ne peux pas fournir une sortie polie pour ce texte. Il semble contenir des mots ou une structure inappropriée pour une sortie acceptable.",
-    "note": "#349, captured on device 2026-08-12, build 1.8.0 (26), export dictus-polish-debug-20260812-135525.json. Apple FM refused and the apology was inserted as the user's dictation with outcome=success. Ratio 2.93, inside Repair's wider band; the refusal is fluent French against a French target; it names nobody, which is the miss PolishGrounding declared in advance."
+    "note": "#349, captured on device 2026-08-12, build 1.8.0 (26), export ouispr-polish-debug-20260812-135525.json. Apple FM refused and the apology was inserted as the user's dictation with outcome=success. Ratio 2.93, inside Repair's wider band; the refusal is fluent French against a French target; it names nobody, which is the miss PolishGrounding declared in advance."
   },
   {
     "source": "device-20260902-1632",

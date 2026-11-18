@@ -14,7 +14,7 @@ import urllib.request
 
 LEXIQUE_URL = "http://www.lexique.org/databases/Lexique383/Lexique383.tsv"
 TSV_FILE = "Lexique383.tsv"
-OUTPUT = os.path.join(os.path.dirname(__file__), "..", "DictusKeyboard", "Resources", "fr_frequency.json")
+OUTPUT = os.path.join(os.path.dirname(__file__), "..", "OuisprKeyboard", "Resources", "fr_frequency.json")
 
 # --- SMS / texting abbreviations with moderate frequency counts ---
 SMS_ABBREVS = {

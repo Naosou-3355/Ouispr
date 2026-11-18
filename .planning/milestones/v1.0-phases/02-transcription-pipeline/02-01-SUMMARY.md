@@ -7,9 +7,9 @@ tags: [whisperkit, spm, avaudiosession, swiftui, waveform, french-stt]
 # Dependency graph
 requires:
   - phase: 01-cross-process-foundation
-    provides: "DictationCoordinator stubs, App Group signaling, Darwin notifications, DictusCore shared types"
+    provides: "DictationCoordinator stubs, App Group signaling, Darwin notifications, OuisprCore shared types"
 provides:
-  - "WhisperKit SPM dependency integrated into DictusApp"
+  - "WhisperKit SPM dependency integrated into OuisprApp"
   - "AudioRecorder wrapping WhisperKit AudioProcessor with energy levels"
   - "TranscriptionService with French language transcription"
   - "RecordingView with waveform, stop button, elapsed time"
@@ -23,13 +23,13 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Audio/AudioRecorder.swift
-    - DictusApp/Audio/TranscriptionService.swift
-    - DictusApp/Views/RecordingView.swift
+    - OuisprApp/Audio/AudioRecorder.swift
+    - OuisprApp/Audio/TranscriptionService.swift
+    - OuisprApp/Views/RecordingView.swift
   modified:
-    - Dictus.xcodeproj/project.pbxproj
-    - DictusApp/DictationCoordinator.swift
-    - DictusApp/ContentView.swift
+    - Ouispr.xcodeproj/project.pbxproj
+    - OuisprApp/DictationCoordinator.swift
+    - OuisprApp/ContentView.swift
 
 key-decisions:
   - "WhisperKit AudioProcessor used directly — no custom AVAudioEngine pipeline needed"
@@ -58,7 +58,7 @@ completed: 2026-03-05
 - **Files modified:** 3
 
 ## Accomplishments
-- WhisperKit added as SPM dependency linked to DictusApp target only (not DictusKeyboard due to 50MB memory limit)
+- WhisperKit added as SPM dependency linked to OuisprApp target only (not OuisprKeyboard due to 50MB memory limit)
 - AudioRecorder wraps WhisperKit's AudioProcessor for 16kHz mono recording with live energy levels for waveform
 - TranscriptionService transcribes with French language hint and greedy decoding (temperature 0.0)
 - RecordingView displays animated waveform, stop button, and elapsed time counter
@@ -74,12 +74,12 @@ Each task was committed atomically:
 3. **Task 3: Verify recording and transcription on device** - checkpoint:human-verify (approved)
 
 ## Files Created/Modified
-- `DictusApp/Audio/AudioRecorder.swift` - WhisperKit AudioProcessor wrapper with energy levels and recording timer
-- `DictusApp/Audio/TranscriptionService.swift` - WhisperKit transcription with French language, greedy decoding
-- `DictusApp/Views/RecordingView.swift` - Waveform visualization, stop button, elapsed time, transcribing/ready states
-- `Dictus.xcodeproj/project.pbxproj` - WhisperKit SPM reference, new file registrations
-- `DictusApp/DictationCoordinator.swift` - Replaced Phase 1 stubs with real WhisperKit pipeline
-- `DictusApp/ContentView.swift` - Routes to RecordingView when status is recording/transcribing/ready
+- `OuisprApp/Audio/AudioRecorder.swift` - WhisperKit AudioProcessor wrapper with energy levels and recording timer
+- `OuisprApp/Audio/TranscriptionService.swift` - WhisperKit transcription with French language, greedy decoding
+- `OuisprApp/Views/RecordingView.swift` - Waveform visualization, stop button, elapsed time, transcribing/ready states
+- `Ouispr.xcodeproj/project.pbxproj` - WhisperKit SPM reference, new file registrations
+- `OuisprApp/DictationCoordinator.swift` - Replaced Phase 1 stubs with real WhisperKit pipeline
+- `OuisprApp/ContentView.swift` - Routes to RecordingView when status is recording/transcribing/ready
 
 ## Decisions Made
 - WhisperKit's built-in AudioProcessor handles 16kHz mono Float32 conversion internally, so no custom AVAudioEngine pipeline was needed
@@ -93,7 +93,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (AudioRecorder implementation)
 - **Issue:** WhisperKit's `audioProcessor.audioSamples` returns `ContiguousArray<Float>`, but the method signature returns `[Float]`
 - **Fix:** Wrapped with `Array()` initializer: `return Array(samples)`
-- **Files modified:** DictusApp/Audio/AudioRecorder.swift
+- **Files modified:** OuisprApp/Audio/AudioRecorder.swift
 - **Verification:** Build succeeds, transcription works on device
 - **Committed in:** 3076787 (Task 1 commit)
 

@@ -119,7 +119,7 @@ fix: |
           VStack(spacing: 2) {
               ProgressView(value: progress, total: 1.0)
                   .frame(width: 60)
-                  .tint(.dictusAccent)
+                  .tint(.ouisprAccent)
               Text("\(Int(progress * 100))%")
                   .font(.caption2)
                   .foregroundStyle(.secondary)

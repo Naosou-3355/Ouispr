@@ -46,7 +46,7 @@ clause while doing it.
 - **The real defect is upstream and is not #441's.** Spoken punctuation works because a
   regex pass in code does it, and that pass only knows four languages. Every other
   language gets whatever Apple FM decides, which is measured here as "nothing". A user
-  dictating Italian into Dictus says "virgola" and reads `virgola`.
+  dictating Italian into Ouispr says "virgola" and reads `virgola`.
 - **Same shape as bar 1.** #439 already measured that Apple FM will not repair a homophone
   under any instruction tried. This is a second instruction the model does not honour, and
   the answer is the same: put it in code or do not promise it.

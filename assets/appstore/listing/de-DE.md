@@ -10,7 +10,7 @@ Register: **du**, Apple's own German convention. German typography („…“ qu
 
 ## Name
 
-**`Dictus: AI Voice Keyboard`** (25/30), the English name, kept as in fr-FR. Its words are indexed for this locale, so none of them is repeated below.
+**`Ouispr: AI Voice Keyboard`** (25/30), the English name, kept as in fr-FR. Its words are indexed for this locale, so none of them is repeated below.
 
 ## Subtitle
 
@@ -20,7 +20,7 @@ Register: **du**, Apple's own German convention. German typography („…“ qu
 
 ## Promotional text
 
-> Neu in 2.0: Dictus Pro. Übersetze beim Sprechen und lies Sprachnachrichten aus deinen Chats direkt in der Tastatur. 14 Tage gratis auf iPhones mit Apple Intelligence.
+> Neu in 2.0: Ouispr Pro. Übersetze beim Sprechen und lies Sprachnachrichten aus deinen Chats direkt in der Tastatur. 14 Tage gratis auf iPhones mit Apple Intelligence.
 
 "Apple Intelligence" is load-bearing, as in English: the trial never starts on a device that cannot run Smart Modes (#593 decision 2).
 
@@ -29,7 +29,7 @@ Register: **du**, Apple's own German convention. German typography („…“ qu
 **Proposed:** `tastatur,text,ki,diktieren,transkription,übersetzen,offline,whisper,open source,zusammenfassung`
 
 - **No ranking data was read.** Chosen from the product's vocabulary and the English set's reasoning; nothing from App Store Connect analytics, Apple Ads or an ASO tool was consulted.
-- Not repeated, because they are already indexed from the name or the subtitle: `dictus`, `ai`, `voice`, `keyboard`, `diktat`, `sprachnachrichten`.
+- Not repeated, because they are already indexed from the name or the subtitle: `ouispr`, `ai`, `voice`, `keyboard`, `diktat`, `sprachnachrichten`.
 - `tastatur` and `ki`: the German for the English name's `Keyboard` and `AI`, indexed nowhere else.
 - `text` with `diktieren` and the name's `voice` covers "Sprache zu Text"; `transkription` the generic search.
 - `übersetzen` for Translate (Pro), `zusammenfassung` for Summary.
@@ -42,11 +42,11 @@ Register: **du**, Apple's own German convention. German typography („…“ qu
 Follows the seven V15-B slides, in order and with their headlines. Smart Mode names stay in English because that is how the app shows them in this locale.
 
 ```
-Sprich, statt zu tippen. Dictus ist eine Tastatur, die schreibt, was du sagst: Tippe auf das Mikrofon, sprich, und deine Worte erscheinen in jeder App. Die Spracherkennung läuft auf deinem iPhone, auch ohne Verbindung.
+Sprich, statt zu tippen. Ouispr ist eine Tastatur, die schreibt, was du sagst: Tippe auf das Mikrofon, sprich, und deine Worte erscheinen in jeder App. Die Spracherkennung läuft auf deinem iPhone, auch ohne Verbindung.
 
 DIKTIERE IN JEDER APP
 
-Nachrichten, E-Mails, Notizen, Erinnerungen: Überall, wo du schreiben kannst, ist Dictus einen Tipp entfernt. Sprich ganz natürlich, und der Text erscheint dort, wo dein Cursor steht.
+Nachrichten, E-Mails, Notizen, Erinnerungen: Überall, wo du schreiben kannst, ist Ouispr einen Tipp entfernt. Sprich ganz natürlich, und der Text erscheint dort, wo dein Cursor steht.
 
 ÜBERSETZE BEIM SPRECHEN (PRO)
 
@@ -61,17 +61,17 @@ Smart Modes laufen mit Apple Intelligence auf deinem iPhone (iPhone 15 Pro oder 
 
 SPRACHNACHRICHTEN IN DER TASTATUR LESEN (PRO)
 
-Eine Sprachnachricht, die du gerade nicht anhören kannst? Teile sie aus deiner Chat-App mit Dictus. Sie wird auf deinem iPhone transkribiert, und die Abschrift wartet in der Tastatur, wenn du zum Chat zurückkehrst. Lies sie und füge sie mit einem Tipp ein, wenn du sie zitieren willst.
+Eine Sprachnachricht, die du gerade nicht anhören kannst? Teile sie aus deiner Chat-App mit Ouispr. Sie wird auf deinem iPhone transkribiert, und die Abschrift wartet in der Tastatur, wenn du zum Chat zurückkehrst. Lies sie und füge sie mit einem Tipp ein, wenn du sie zitieren willst.
 
 EINE ECHTE TASTATUR IN DEINER SPRACHE
 
-Dictus ist eine vollständige Tastatur, nicht nur ein Mikrofon-Button. QWERTZ-, QWERTY- und AZERTY-Layouts mit Autokorrektur und Vorschlägen auf Deutsch, Englisch, Französisch und Spanisch. Tippe, wenn du willst, sprich, wenn es dir lieber ist.
+Ouispr ist eine vollständige Tastatur, nicht nur ein Mikrofon-Button. QWERTZ-, QWERTY- und AZERTY-Layouts mit Autokorrektur und Vorschlägen auf Deutsch, Englisch, Französisch und Spanisch. Tippe, wenn du willst, sprich, wenn es dir lieber ist.
 
 DEINE STIMME BLEIBT AUF DEINEM IPHONE
 
 Die Spracherkennung läuft auf dem Gerät. Kein Konto, kein Tracking, keine Nutzungsstatistiken. Diktiere im Flugzeug, in der U-Bahn, überall. Die Modelle liegen auf deinem iPhone: Lade eines einmal herunter und nutze es dann offline, vom kompakten und schnellen bis zum genauesten.
 
-Dictus ist Open Source (MIT-Lizenz). Jeder kann den Code lesen und diese Datenschutzversprechen prüfen: github.com/getdictus/dictus-ios
+Ouispr ist Open Source (MIT-Lizenz). Jeder kann den Code lesen und diese Datenschutzversprechen prüfen: github.com/getdictus/dictus-ios
 
 DIKTIERE IN ÜBER 40 SPRACHEN
 
@@ -79,16 +79,16 @@ Das Diktieren funktioniert in über 40 Sprachen in guter oder ordentlicher Quali
 
 Die App selbst ist auf Englisch und Französisch verfügbar; Diktat und Tastatur funktionieren auf Deutsch.
 
-DICTUS PRO
+OUISPR PRO
 
 Pro bringt die Smart Modes, Sprachnachrichten in der Tastatur, einen Verlauf deiner Diktate und dein eigenes Vokabular für Namen und Fachbegriffe.
 
-Teste Pro 14 Tage lang kostenlos. Der Test erfordert keine Zahlung und verlängert sich nicht: Nach 14 Tagen wechselt Dictus zurück zur kostenlosen Version und bietet dir an, Pro zu behalten, im Monats- oder Jahresabo oder als einmaligen Kauf auf Lebenszeit. Dein Verlauf und dein Vokabular bleiben erhalten. Der Test wird auf iPhones angeboten, auf denen Smart Modes laufen können. Diktieren und Tastatur bleiben kostenlos.
+Teste Pro 14 Tage lang kostenlos. Der Test erfordert keine Zahlung und verlängert sich nicht: Nach 14 Tagen wechselt Ouispr zurück zur kostenlosen Version und bietet dir an, Pro zu behalten, im Monats- oder Jahresabo oder als einmaligen Kauf auf Lebenszeit. Dein Verlauf und dein Vokabular bleiben erhalten. Der Test wird auf iPhones angeboten, auf denen Smart Modes laufen können. Diktieren und Tastatur bleiben kostenlos.
 
 Um Pro zu behalten, wähle ein sich automatisch verlängerndes Monats- oder Jahresabo oder den einmaligen Kauf auf Lebenszeit, der kein Abo ist. Preis und Laufzeit jedes Angebots werden in der App und im App Store für dein Land angezeigt. Die Zahlung wird bei Bestätigung des Kaufs über deinen Apple Account abgerechnet. Das Abo verlängert sich automatisch um denselben Zeitraum, wenn die automatische Verlängerung nicht mindestens 24 Stunden vor Ende des laufenden Zeitraums deaktiviert wird; die Verlängerung wird innerhalb der 24 Stunden vor diesem Ende abgerechnet. Verwalte oder kündige dein Abo in den Einstellungen deines Apple Accounts.
 
 Nutzungsbedingungen: https://getdictus.com/en/terms
-Dictus erhebt keine Daten. Datenschutzerklärung: https://getdictus.com/en/privacy
+Ouispr erhebt keine Daten. Datenschutzerklärung: https://getdictus.com/en/privacy
 ```
 
 ## Length check

@@ -22,14 +22,14 @@ Archive the app, upload to App Store Connect, distribute via TestFlight.
 - **Private beta only** (no public TestFlight link) — Pierre wants to rework the keyboard before going public
 - **App Group migrated** from `group.com.pivi.dictus` to `group.solutions.pivi.dictus` (old ID taken by personal team)
 - **App icons alpha channel removed** — App Store Connect rejects icons with transparency
-- **CFBundleDisplayName added** to DictusWidgets Info.plist (required by App Store Connect)
-- **No encryption compliance** — Dictus uses no custom encryption (ML only)
+- **CFBundleDisplayName added** to OuisprWidgets Info.plist (required by App Store Connect)
+- **No encryption compliance** — Ouispr uses no custom encryption (ML only)
 - **Versioning strategy documented** in DEVELOPMENT.md — semantic versioning + git tags
 
 ## Deviations from plan
 
 - Plan expected public TestFlight link + README update — deferred (Pierre's decision)
-- Plan expected 4 DEVELOPMENT_TEAM entries — actually 6 (includes DictusWidgets)
+- Plan expected 4 DEVELOPMENT_TEAM entries — actually 6 (includes OuisprWidgets)
 - App Group migration was unplanned — required because old ID was claimed by personal team
 - Two upload attempts: first rejected (icon alpha + missing CFBundleDisplayName), second succeeded
 

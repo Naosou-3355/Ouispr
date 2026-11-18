@@ -46,8 +46,8 @@ human_verification:
 | 1  | User can hold backspace and characters delete with accelerating repeat speed            | VERIFIED    | `deleteRepeatCount`, `wordModeThreshold=10`, 3-stage timer in `increaseKeyRepeatRateIfNeeded` (KeyboardView.swift:444,763) |
 | 2  | User can long-press vowels to see French accent characters and drag to select one       | VERIFIED    | `frenchLongPress` wired to `AccentedCharacters.mappings`, case-insensitive lookup with `key.lowercased()`, uppercase transformation for shifted page (FrenchKeyboardLayouts.swift:188, KeyboardView.swift:774) |
 | 3  | User can drag the spacebar to move the cursor with haptic ticks at each character       | VERIFIED    | `LongPressCursorMovementController` with `deadZone=8.0`, `baseDelta=12.0`, `minMoveInterval`, `HapticFeedback.trackpadActivated()` (LongPressController.swift:36-115) |
-| 4  | User sees adaptive accent key that shows apostrophe after consonants, accent after vowels | VERIFIED  | `alternate: "accent"` sentinel in AZERTY row 3, `handleAdaptiveAccentKey()` routes via `AccentedCharacters.adaptiveKeyLabel` and `shouldReplace` (FrenchKeyboardLayouts.swift:74,90; DictusKeyboardBridge.swift:64,280) |
-| 5  | Double-space inserts a period followed by a space                                       | VERIFIED    | `handleAutoFullStop()` checks `text.hasSuffix(" ")` (not the broken `suffix(2)=="  "`) before inserting ". " (DictusKeyboardBridge.swift:402,409) |
+| 4  | User sees adaptive accent key that shows apostrophe after consonants, accent after vowels | VERIFIED  | `alternate: "accent"` sentinel in AZERTY row 3, `handleAdaptiveAccentKey()` routes via `AccentedCharacters.adaptiveKeyLabel` and `shouldReplace` (FrenchKeyboardLayouts.swift:74,90; OuisprKeyboardBridge.swift:64,280) |
+| 5  | Double-space inserts a period followed by a space                                       | VERIFIED    | `handleAutoFullStop()` checks `text.hasSuffix(" ")` (not the broken `suffix(2)=="  "`) before inserting ". " (OuisprKeyboardBridge.swift:402,409) |
 | 6  | Edge keys produce haptic feedback and popup on touchDown, not touchUp                   | VERIFIED    | `clampedPoint()` replaces nil-returning `indexPathForItem`, `disableWindowGestureDelay()` sets `delaysTouchesBegan=false` on UIWindow gesture recognizers (KeyboardView.swift:581, KeyboardViewController.swift:150,301) |
 
 **Score:** 6/6 truths verified
@@ -56,23 +56,23 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusKeyboard/FrenchKeyboardLayouts.swift` | French accent data from AccentedCharacters.mappings | VERIFIED | Line 188: computed property iterates `AccentedCharacters.mappings`; lines 74,90: `alternate: "accent"` sentinel in AZERTY normal and shifted row 3 |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | Fixed double-space, lastInsertedCharacter, word delete, adaptive accent key | VERIFIED | `hasSuffix(" ")` at line 409; `lastInsertedCharacter` at line 57; `handleWordDelete()` at line 205; `handleAdaptiveAccentKey()` at line 280 |
-| `DictusKeyboard/Vendored/Views/KeyboardView.swift` | Point clamping for edge keys, delete acceleration, accent key label update | VERIFIED | `clampedPoint()` at line 581; `deleteRepeatCount` at line 444; `updateAccentKeyLabel()` at line 169; `accentKeyLabel` at line 158 |
-| `DictusKeyboard/Vendored/Controllers/LongPressController.swift` | Enhanced trackpad with dead zone, acceleration, haptic, rate limiter | VERIFIED | `deadZone=8.0` at line 36; `baseDelta=12.0` at line 40; `minMoveInterval` at line 57; `HapticFeedback.trackpadActivated()` at line 77 |
-| `DictusKeyboard/KeyboardViewController.swift` | UIWindow gesture delay override | VERIFIED | `disableWindowGestureDelay()` called in `viewWillAppear` (line 150); implementation sets `delaysTouchesBegan=false` on window gesture recognizers (lines 301-326) |
-| `DictusCore/Sources/DictusCore/AccentedCharacters.swift` | mappings, adaptiveKeyLabel, shouldReplace | VERIFIED | All three static members present: `mappings` at line 15, `adaptiveKeyLabel` at line 57, `shouldReplace` at line 71 |
+| `OuisprKeyboard/FrenchKeyboardLayouts.swift` | French accent data from AccentedCharacters.mappings | VERIFIED | Line 188: computed property iterates `AccentedCharacters.mappings`; lines 74,90: `alternate: "accent"` sentinel in AZERTY normal and shifted row 3 |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | Fixed double-space, lastInsertedCharacter, word delete, adaptive accent key | VERIFIED | `hasSuffix(" ")` at line 409; `lastInsertedCharacter` at line 57; `handleWordDelete()` at line 205; `handleAdaptiveAccentKey()` at line 280 |
+| `OuisprKeyboard/Vendored/Views/KeyboardView.swift` | Point clamping for edge keys, delete acceleration, accent key label update | VERIFIED | `clampedPoint()` at line 581; `deleteRepeatCount` at line 444; `updateAccentKeyLabel()` at line 169; `accentKeyLabel` at line 158 |
+| `OuisprKeyboard/Vendored/Controllers/LongPressController.swift` | Enhanced trackpad with dead zone, acceleration, haptic, rate limiter | VERIFIED | `deadZone=8.0` at line 36; `baseDelta=12.0` at line 40; `minMoveInterval` at line 57; `HapticFeedback.trackpadActivated()` at line 77 |
+| `OuisprKeyboard/KeyboardViewController.swift` | UIWindow gesture delay override | VERIFIED | `disableWindowGestureDelay()` called in `viewWillAppear` (line 150); implementation sets `delaysTouchesBegan=false` on window gesture recognizers (lines 301-326) |
+| `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` | mappings, adaptiveKeyLabel, shouldReplace | VERIFIED | All three static members present: `mappings` at line 15, `adaptiveKeyLabel` at line 57, `shouldReplace` at line 71 |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `FrenchKeyboardLayouts.swift` | `DictusCore/AccentedCharacters.swift` | `AccentedCharacters.mappings` | WIRED | Line 190: `for (baseKey, accents) in AccentedCharacters.mappings` populates `frenchLongPress` |
+| `FrenchKeyboardLayouts.swift` | `OuisprCore/AccentedCharacters.swift` | `AccentedCharacters.mappings` | WIRED | Line 190: `for (baseKey, accents) in AccentedCharacters.mappings` populates `frenchLongPress` |
 | `KeyboardView.swift` | touch handling | `clampedPoint()` in handleTouches, touchesMoved, touchesFoundLongpress | WIRED | Lines 532, 618, 688 all call `clampedPoint()` before `indexPathForItem` lookup |
-| `KeyboardView.swift` | `DictusKeyboardBridge.swift` | `delegate?.didTriggerHoldKey` for word-level delete | WIRED | Line 742: `delegate?.didTriggerHoldKey(activeKey.key)` when `deleteRepeatCount > wordModeThreshold` |
-| `LongPressController.swift` | `DictusKeyboardBridge.swift` | `delegate?.longpress(movedCursor:)` for cursor movement | WIRED | Line 100: `delegate?.longpress(movedCursor: charsToMove)` with accumulated movement |
-| `DictusKeyboardBridge.swift` | `AccentedCharacters.swift` | `adaptiveKeyLabel` and `shouldReplace` | WIRED | Lines 283,285: both methods called in `handleAdaptiveAccentKey()`; line 310: called in `updateAccentKeyDisplay()` |
-| `FrenchKeyboardLayouts.swift` | `KeyboardView.swift` | `alternate: "accent"` sentinel routing | WIRED | DictusKeyboardBridge line 64 checks `alternate == "accent"`; KeyboardView line 865 reads `accentKeyLabel` in `cellForItemAt` |
+| `KeyboardView.swift` | `OuisprKeyboardBridge.swift` | `delegate?.didTriggerHoldKey` for word-level delete | WIRED | Line 742: `delegate?.didTriggerHoldKey(activeKey.key)` when `deleteRepeatCount > wordModeThreshold` |
+| `LongPressController.swift` | `OuisprKeyboardBridge.swift` | `delegate?.longpress(movedCursor:)` for cursor movement | WIRED | Line 100: `delegate?.longpress(movedCursor: charsToMove)` with accumulated movement |
+| `OuisprKeyboardBridge.swift` | `AccentedCharacters.swift` | `adaptiveKeyLabel` and `shouldReplace` | WIRED | Lines 283,285: both methods called in `handleAdaptiveAccentKey()`; line 310: called in `updateAccentKeyDisplay()` |
+| `FrenchKeyboardLayouts.swift` | `KeyboardView.swift` | `alternate: "accent"` sentinel routing | WIRED | OuisprKeyboardBridge line 64 checks `alternate == "accent"`; KeyboardView line 865 reads `accentKeyLabel` in `cellForItemAt` |
 
 ### Requirements Coverage
 
@@ -90,7 +90,7 @@ No orphaned requirements — all 5 IDs declared across plans and all covered in 
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `DictusKeyboard/Vendored/Views/KeyboardView.swift` | 763 | Stale comment: "speed up to 0.05s" but code uses `0.1` | Info | Comment was not updated when UAT tuned the stage 3 timer from 0.05 to 0.1 (UAT commit `03ab852`). Behavior is correct — the comment is wrong. |
+| `OuisprKeyboard/Vendored/Views/KeyboardView.swift` | 763 | Stale comment: "speed up to 0.05s" but code uses `0.1` | Info | Comment was not updated when UAT tuned the stage 3 timer from 0.05 to 0.1 (UAT commit `03ab852`). Behavior is correct — the comment is wrong. |
 
 ### Build Verification
 

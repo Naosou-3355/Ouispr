@@ -23,11 +23,11 @@ Requirements: COLD-01, COLD-02, COLD-03, BETA-01
 - Already confirmed out of scope: `LSApplicationWorkspace` (private API, App Store rejection), `_hostBundleID` (private API)
 
 ### Swipe-back overlay redesign (Wispr Flow style)
-- **Style:** Wispr Flow approach -- NOT the current simple mockup. Large iPhone mockup showing actual Dictus recording state (waveform + "Listening"), animated finger/circle on the home bar showing the swipe-right gesture
+- **Style:** Wispr Flow approach -- NOT the current simple mockup. Large iPhone mockup showing actual Ouispr recording state (waveform + "Listening"), animated finger/circle on the home bar showing the swipe-right gesture
 - **Layout (2-zone):** Title at top ("Swipe right to speak" or similar), large iPhone mockup in center with animated swipe gesture on home bar, empathetic explanation text below mockup, "Swipe right at the bottom" instruction pinned at bottom
-- **Mockup content:** Show Dictus waveform canvas + recording state inside the iPhone outline. User should understand the app is recording while they're looking at this screen
+- **Mockup content:** Show Ouispr waveform canvas + recording state inside the iPhone outline. User should understand the app is recording while they're looking at this screen
 - **Swipe animation:** Animated circle/finger sliding right on the home bar area of the mockup -- recreating the iOS swipe-back gesture visually so users who don't know the gesture can learn it
-- **Text tone:** Empathetic, Wispr Flow-inspired. Adapted for Dictus: something like "Nous aimerions ne pas avoir a changer d'app, mais iOS l'exige pour activer le micro." Honest, explains WHY the user has to do this, de-guilt the user
+- **Text tone:** Empathetic, Wispr Flow-inspired. Adapted for Ouispr: something like "Nous aimerions ne pas avoir a changer d'app, mais iOS l'exige pour activer le micro." Honest, explains WHY the user has to do this, de-guilt the user
 - **Text must be localized:** FR + EN via String Catalog (existing localization pattern)
 - **Key fix:** Current text says "Swipe back to the keyboard" which is wrong/confusing -- users need to return to their PREVIOUS APP, not "the keyboard". Text must reference the previous app, not the keyboard
 - **Problem to solve:** Real user tested and didn't know the iOS swipe-back gesture existed. The overlay must TEACH the gesture, not just mention it
@@ -55,29 +55,29 @@ Requirements: COLD-01, COLD-02, COLD-03, BETA-01
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Cold start architecture
-- `DictusApp/DictusApp.swift` -- Cold start URL handling, `coldStartActive` flag management (lines 81, 144, 153)
-- `DictusApp/DictationCoordinator.swift` -- Cold start retry logic, `coldStartActive` cleanup (lines 179, 503, 684)
-- `DictusKeyboard/KeyboardState.swift` -- Cold start grace period, Darwin fallback (lines 73, 173, 255-266)
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` -- `coldStartActive` shared key (line 60)
-- `DictusCore/Sources/DictusCore/KnownAppSchemes.swift` -- URL scheme registry for top 10 messaging apps (extend to 15-20)
+- `OuisprApp/OuisprApp.swift` -- Cold start URL handling, `coldStartActive` flag management (lines 81, 144, 153)
+- `OuisprApp/DictationCoordinator.swift` -- Cold start retry logic, `coldStartActive` cleanup (lines 179, 503, 684)
+- `OuisprKeyboard/KeyboardState.swift` -- Cold start grace period, Darwin fallback (lines 73, 173, 255-266)
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` -- `coldStartActive` shared key (line 60)
+- `OuisprCore/Sources/OuisprCore/KnownAppSchemes.swift` -- URL scheme registry for top 10 messaging apps (extend to 15-20)
 
 ### Swipe-back overlay (to redesign)
-- `DictusApp/Views/SwipeBackOverlayView.swift` -- Current overlay implementation (replace with Wispr Flow-style design)
-- `DictusApp/Views/MainTabView.swift` -- Where SwipeBackOverlayView is conditionally shown (lines 39-42)
+- `OuisprApp/Views/SwipeBackOverlayView.swift` -- Current overlay implementation (replace with Wispr Flow-style design)
+- `OuisprApp/Views/MainTabView.swift` -- Where SwipeBackOverlayView is conditionally shown (lines 39-42)
 
 ### Competitor references (screenshots captured during discussion)
 - Super Whisper: Simple hand icon under iPhone mockup, same "Swipe back to the keyboard" text
 - Wispr Flow: Large iPhone mockup with real app content, animated circle on home bar, empathetic text explaining Apple's microphone requirement, "Swipe right at the bottom" instruction. THIS IS THE TARGET STYLE.
 
 ### Localization
-- `DictusApp/Localizable.xcstrings` -- App String Catalog (add overlay text here)
-- `DictusKeyboard/Localizable.xcstrings` -- Keyboard String Catalog
+- `OuisprApp/Localizable.xcstrings` -- App String Catalog (add overlay text here)
+- `OuisprKeyboard/Localizable.xcstrings` -- Keyboard String Catalog
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` -- COLD-01 (sourceApplication investigation), COLD-02 (auto-return if viable), COLD-03 (overlay polish if not viable), BETA-01 (beta bug triage)
 
 ### Brand
-- `assets/brand/dictus-brand-kit.html` -- Brand colors, gradients, logo specs for overlay styling
+- `assets/brand/ouispr-brand-kit.html` -- Brand colors, gradients, logo specs for overlay styling
 
 </canonical_refs>
 
@@ -87,7 +87,7 @@ Requirements: COLD-01, COLD-02, COLD-03, BETA-01
 ### Reusable Assets
 - `SwipeBackOverlayView`: Existing overlay with SwipeAnimationView -- needs full redesign but file/integration point stays the same
 - `KnownAppSchemes`: 10 app URL schemes -- extend to 15-20 during investigation
-- `Color.dictusAccent`, brand gradient colors -- reuse for overlay redesign
+- `Color.ouisprAccent`, brand gradient colors -- reuse for overlay redesign
 - Cold start flag system (`SharedKeys.coldStartActive`) -- working infrastructure
 - `PersistentLog` cold start events -- logging already in place
 - String Catalog localization pattern -- established in Phase 23.1
@@ -100,7 +100,7 @@ Requirements: COLD-01, COLD-02, COLD-03, BETA-01
 
 ### Integration Points
 - `MainTabView` line 42: `SwipeBackOverlayView()` shown conditionally -- same integration point for redesigned overlay
-- `DictusApp.swift` `handleIncomingURL`: where sourceApplication detection would hook in
+- `OuisprApp.swift` `handleIncomingURL`: where sourceApplication detection would hook in
 - GitHub issue #23: update with investigation findings
 
 </code_context>

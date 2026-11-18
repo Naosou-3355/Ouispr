@@ -43,14 +43,14 @@ human_verification:
 |----|-------|--------|----------|
 | 1  | fr_frequency.json contains 30,000-50,000 French words with frequency counts | ✓ VERIFIED | 40,292 entries, {word: int} format, min=15, max=2,933,327 |
 | 2  | en_frequency.json contains 30,000-50,000 English words with frequency counts | ✓ VERIFIED | 40,000 entries, {word: int} format, "the" = 23,135,851,162 |
-| 3  | SymSpellSwift source files are vendored and compile in DictusKeyboard target | ✓ VERIFIED | 3 files in DictusKeyboard/Vendored/SymSpell/, all with MIT license headers, added to project.pbxproj PBXBuildFile + PBXSourcesBuildPhase |
+| 3  | SymSpellSwift source files are vendored and compile in OuisprKeyboard target | ✓ VERIFIED | 3 files in OuisprKeyboard/Vendored/SymSpell/, all with MIT license headers, added to project.pbxproj PBXBuildFile + PBXSourcesBuildPhase |
 | 4  | SymSpellEngine loads JSON dictionary and returns frequency-ranked corrections | ✓ VERIFIED | SymSpellEngine.swift: load() with async background queue, spellCheck() returns (correction:, alternatives:) tuple |
 | 5  | spellCheck() delegates to SymSpellEngine instead of UITextChecker | ✓ VERIFIED | TextPredictionEngine.spellCheck() calls symSpellEngine.spellCheck(). UITextChecker retained only for suggestions(for:) completions |
 | 6  | Suggestion bar layout is standard mobile: verbatim (left) | correction bold (center) | alternative (right) | ✓ VERIFIED | SuggestionBarView.swift line 47: `.fontWeight(index == 1 ? .semibold : .regular)`. Correction mode puts original at index 0, correction at index 1 |
 | 7  | Autocorrect rejection tracking prevents re-correction after undo | ✓ VERIFIED | SuggestionState.rejectedWords: Set<String>. Bridge inserts on undo (line 236), checks on space (line 332), clears on new word (lines 187, 377) |
 | 8  | Accent suggestions removed — no .accents case in SuggestionMode | ✓ VERIFIED | SuggestionState.swift SuggestionMode has only .idle, .completions, .corrections. No accentSuggestions() method in TextPredictionEngine |
 | 9  | FrequencyDictionary updated for count format (higher = more common) | ✓ VERIFIED | FrequencyDictionary.swift: property named `counts`, rank(of:) returns `?? 0`. TextPredictionEngine.suggestions() sorts descending (>) |
-| 10 | User dictionary learning persists learned words via App Group | ✓ VERIFIED | UserDictionary.swift in DictusCore: rejection+repetition learning, threshold=2, cap=1000, stored in AppGroup.defaults |
+| 10 | User dictionary learning persists learned words via App Group | ✓ VERIFIED | UserDictionary.swift in OuisprCore: rejection+repetition learning, threshold=2, cap=1000, stored in AppGroup.defaults |
 
 **Score:** 10/10 truths verified
 
@@ -58,18 +58,18 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusKeyboard/Resources/fr_frequency.json` | French frequency dictionary 30-50K words | ✓ VERIFIED | 40,292 words, has "mdr", "paris", "café"-form |
-| `DictusKeyboard/Resources/en_frequency.json` | English frequency dictionary 30-50K words | ✓ VERIFIED | 40,000 words, "the" has highest count as expected |
-| `DictusKeyboard/Vendored/SymSpell/SymSpell.swift` | SymSpell algorithm implementation | ✓ VERIFIED | `public class SymSpell`, MIT license header |
-| `DictusKeyboard/Vendored/SymSpell/SuggestItem.swift` | SymSpell suggestion result type | ✓ VERIFIED | MIT license header, in DictusKeyboard target |
-| `DictusKeyboard/Vendored/SymSpell/StringExtension.swift` | Damerau-Levenshtein string distance | ✓ VERIFIED | MIT license header, in DictusKeyboard target |
-| `DictusKeyboard/TextPrediction/SymSpellEngine.swift` | Wrapper class with load() and spellCheck() | ✓ VERIFIED | `final class SymSpellEngine`, async load, tuple spellCheck return, French overrides, user word injection |
-| `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` | spellCheck() delegates to SymSpellEngine | ✓ VERIFIED | `private let symSpellEngine = SymSpellEngine()`, loaded in init() and setLanguage() |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | Autocorrect rejection tracking, no .accents mode | ✓ VERIFIED | rejectedWords: Set<String>, SuggestionMode has .corrections not .accents |
-| `DictusKeyboard/Views/SuggestionBarView.swift` | Standard bar layout with bold center slot (index 1) | ✓ VERIFIED | `index == 1 ? .semibold : .regular`, displayText wraps index-0 in quotes in correction mode |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | Autocorrect rejection logic in handleBackspace/handleSpace | ✓ VERIFIED | rejectedWords.insert on undo, rejectedWords.contains check before space correction, result.correction tuple usage |
-| `DictusCore/Sources/DictusCore/FrequencyDictionary.swift` | Updated to work with count format | ✓ VERIFIED | `private var counts`, rank(of:) returns `?? 0` |
-| `DictusCore/Sources/DictusCore/UserDictionary.swift` | User dictionary learning with App Group persistence | ✓ VERIFIED | Created in Plan 02, rejection + repetition learning, threshold=2, cap=1000 |
+| `OuisprKeyboard/Resources/fr_frequency.json` | French frequency dictionary 30-50K words | ✓ VERIFIED | 40,292 words, has "mdr", "paris", "café"-form |
+| `OuisprKeyboard/Resources/en_frequency.json` | English frequency dictionary 30-50K words | ✓ VERIFIED | 40,000 words, "the" has highest count as expected |
+| `OuisprKeyboard/Vendored/SymSpell/SymSpell.swift` | SymSpell algorithm implementation | ✓ VERIFIED | `public class SymSpell`, MIT license header |
+| `OuisprKeyboard/Vendored/SymSpell/SuggestItem.swift` | SymSpell suggestion result type | ✓ VERIFIED | MIT license header, in OuisprKeyboard target |
+| `OuisprKeyboard/Vendored/SymSpell/StringExtension.swift` | Damerau-Levenshtein string distance | ✓ VERIFIED | MIT license header, in OuisprKeyboard target |
+| `OuisprKeyboard/TextPrediction/SymSpellEngine.swift` | Wrapper class with load() and spellCheck() | ✓ VERIFIED | `final class SymSpellEngine`, async load, tuple spellCheck return, French overrides, user word injection |
+| `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` | spellCheck() delegates to SymSpellEngine | ✓ VERIFIED | `private let symSpellEngine = SymSpellEngine()`, loaded in init() and setLanguage() |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | Autocorrect rejection tracking, no .accents mode | ✓ VERIFIED | rejectedWords: Set<String>, SuggestionMode has .corrections not .accents |
+| `OuisprKeyboard/Views/SuggestionBarView.swift` | Standard bar layout with bold center slot (index 1) | ✓ VERIFIED | `index == 1 ? .semibold : .regular`, displayText wraps index-0 in quotes in correction mode |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | Autocorrect rejection logic in handleBackspace/handleSpace | ✓ VERIFIED | rejectedWords.insert on undo, rejectedWords.contains check before space correction, result.correction tuple usage |
+| `OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift` | Updated to work with count format | ✓ VERIFIED | `private var counts`, rank(of:) returns `?? 0` |
+| `OuisprCore/Sources/OuisprCore/UserDictionary.swift` | User dictionary learning with App Group persistence | ✓ VERIFIED | Created in Plan 02, rejection + repetition learning, threshold=2, cap=1000 |
 | `scripts/curate_fr_dictionary.py` | Reproducible French dictionary curation script | ✓ VERIFIED | Exists in scripts/ |
 | `scripts/curate_en_dictionary.py` | Reproducible English dictionary curation script | ✓ VERIFIED | Exists in scripts/ |
 
@@ -80,7 +80,7 @@ human_verification:
 | SymSpellEngine.swift | SymSpell.swift | `SymSpell(maxDictionaryEditDistance: 1, prefixLength: 7)` | ✓ WIRED | Line 102: `let ss = SymSpell(maxDictionaryEditDistance: 1, prefixLength: 7)` |
 | SymSpellEngine.swift | fr_frequency.json | `bundle.url(forResource: "\(language)_frequency", withExtension: "json")` | ✓ WIRED | Lines 84-86: URL lookup + JSONDecoder decode |
 | TextPredictionEngine.swift | SymSpellEngine.swift | `symSpellEngine.spellCheck()` | ✓ WIRED | Line 89: `return symSpellEngine.spellCheck(word)` |
-| DictusKeyboardBridge.swift | SuggestionState.swift | `rejectedWords` tracking on undo + check on space | ✓ WIRED | Line 236 (insert on undo), line 332 (check on space), line 377 (clear after space) |
+| OuisprKeyboardBridge.swift | SuggestionState.swift | `rejectedWords` tracking on undo + check on space | ✓ WIRED | Line 236 (insert on undo), line 332 (check on space), line 377 (clear after space) |
 | SuggestionBarView.swift | SuggestionState.swift | `fontWeight` bolds index 1 | ✓ WIRED | Line 47: `index == 1 ? .semibold : .regular` |
 
 ### Requirements Coverage
@@ -105,7 +105,7 @@ No TODO/FIXME/placeholder comments or empty implementations found in any modifie
 
 #### 1. French Spell Correction Quality
 
-**Test:** In any app with a text field, enable Dictus keyboard (French). Type "helo" (no space). Observe suggestion bar. Then press space.
+**Test:** In any app with a text field, enable Ouispr keyboard (French). Type "helo" (no space). Observe suggestion bar. Then press space.
 **Expected:** Suggestion bar shows three slots: `"helo"` (quoted, left) | `hello` (bold, center) | nothing or alternative (right). Space autocorrects to "hello ".
 **Why human:** Requires live keyboard extension rendering and SymSpell runtime lookup.
 
@@ -129,13 +129,13 @@ No TODO/FIXME/placeholder comments or empty implementations found in any modifie
 
 #### 5. English Language Switch
 
-**Test:** Switch keyboard language to English (via Dictus settings). Type "teh". Observe bar. Press space.
+**Test:** Switch keyboard language to English (via Ouispr settings). Type "teh". Observe bar. Press space.
 **Expected:** Bar shows `"teh"` | `the` (bold). Space autocorrects to "the ". Also test "recieve" → "receive".
 **Why human:** Requires language switch and en_frequency.json runtime lookup.
 
 #### 6. Memory Ceiling Under 50 MB
 
-**Test:** Attach Instruments (Allocations) to the DictusKeyboard extension process. Type normally for 2+ minutes, including a dictation recording session. Note peak memory.
+**Test:** Attach Instruments (Allocations) to the OuisprKeyboard extension process. Type normally for 2+ minutes, including a dictation recording session. Note peak memory.
 **Expected:** Peak memory stays under 50 MB with the final 10K word dictionary. The Plan 02 Summary reports a 58 MiB transient peak "during recording" — this must be re-verified with the final 10K dictionary commit (99b7777). A sustained value of 29-41 MiB (FR/EN) is documented but the recording peak is a risk.
 **Why human:** Requires physical device and Instruments profiling. Cannot be verified statically.
 

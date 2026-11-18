@@ -35,7 +35,7 @@ a constant speaking rate.
 4. **Cut at the surviving silences and transcribe each speech segment separately**
    (whisper.cpp `ggml-small`, `-l fr`). Every pause is then bracketed by its exact text
    on both sides.
-5. Map segments onto the Dictus polished sentences. For each sentence boundary report
+5. Map segments onto the Ouispr polished sentences. For each sentence boundary report
    the silence on it, zero when the boundary falls inside a segment.
 
 ### The instrument failure, recorded

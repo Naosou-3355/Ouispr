@@ -13,7 +13,7 @@ updated: 2026-03-28T12:30:00Z
 ## Tests
 
 ### 1. AZERTY Layout Display
-expected: Open any text field and switch to the Dictus keyboard. The keyboard shows a French AZERTY layout with the correct key arrangement: top row AZERTYUIOP, middle row QSDFGHJKLM, bottom row WXCVBN with shift and backspace.
+expected: Open any text field and switch to the Ouispr keyboard. The keyboard shows a French AZERTY layout with the correct key arrangement: top row AZERTYUIOP, middle row QSDFGHJKLM, bottom row WXCVBN with shift and backspace.
 result: pass
 
 ### 2. Character Input

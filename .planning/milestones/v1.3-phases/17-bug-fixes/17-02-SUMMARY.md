@@ -20,11 +20,11 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - "DictusCore/Sources/DictusCore/PersistentLog.swift"
-    - "DictusCore/Sources/DictusCore/LogEvent.swift"
-    - "DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift"
-    - "DictusCore/Tests/DictusCoreTests/LogCoverageTests.swift"
-    - "DictusApp/Views/SettingsView.swift"
+    - "OuisprCore/Sources/OuisprCore/PersistentLog.swift"
+    - "OuisprCore/Sources/OuisprCore/LogEvent.swift"
+    - "OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift"
+    - "OuisprCore/Tests/OuisprCoreTests/LogCoverageTests.swift"
+    - "OuisprApp/Views/SettingsView.swift"
 
 key-decisions:
   - "200KB maxFileSize threshold: ~1300 lines at ~150 bytes/line, checked via O(1) FileManager.attributesOfItem"
@@ -68,11 +68,11 @@ Each task was committed atomically:
 2. **Task 2: Verify export spinner UX and add export duration logging** - `69ed47e` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/PersistentLog.swift` - Size-based trim, pruneOldEntries, updated test helpers
-- `DictusCore/Sources/DictusCore/LogEvent.swift` - New logExportCompleted case
-- `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` - Size-based and retention tests replacing line-count tests
-- `DictusCore/Tests/DictusCoreTests/LogCoverageTests.swift` - Added logExportCompleted to coverage array
-- `DictusApp/Views/SettingsView.swift` - Export duration measurement and logging
+- `OuisprCore/Sources/OuisprCore/PersistentLog.swift` - Size-based trim, pruneOldEntries, updated test helpers
+- `OuisprCore/Sources/OuisprCore/LogEvent.swift` - New logExportCompleted case
+- `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` - Size-based and retention tests replacing line-count tests
+- `OuisprCore/Tests/OuisprCoreTests/LogCoverageTests.swift` - Added logExportCompleted to coverage array
+- `OuisprApp/Views/SettingsView.swift` - Export duration measurement and logging
 
 ## Decisions Made
 - Used 200KB as maxFileSize threshold (~1300 lines at ~150 bytes/line) -- matches the old 1000-line limit approximately but is O(1) to check
@@ -87,7 +87,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (test replacement)
 - **Issue:** Existing test `testMaxLinesIs500` asserted maxLines == 500 but actual value was 1000 (discrepancy noted in RESEARCH.md)
 - **Fix:** Replaced entire line-count test suite with size-based tests; the bug is now irrelevant
-- **Files modified:** DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift
+- **Files modified:** OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift
 - **Verification:** All 13 tests pass
 - **Committed in:** bd00fae (Task 1 commit)
 
@@ -97,8 +97,8 @@ Each task was committed atomically:
 **Impact on plan:** Existing test bug was eliminated by replacing the entire line-counting test suite. No scope creep.
 
 ## Issues Encountered
-- DictusCore Swift Package cannot run `swift test` on macOS due to iOS-only SwiftUI dependencies; used `xcodebuild test` with iOS Simulator destination instead
-- Pre-existing build errors in LiveActivityStateMachineTests (unrelated) -- used `-only-testing:DictusCoreTests/PersistentLogTests` to isolate
+- OuisprCore Swift Package cannot run `swift test` on macOS due to iOS-only SwiftUI dependencies; used `xcodebuild test` with iOS Simulator destination instead
+- Pre-existing build errors in LiveActivityStateMachineTests (unrelated) -- used `-only-testing:OuisprCoreTests/PersistentLogTests` to isolate
 
 ## User Setup Required
 

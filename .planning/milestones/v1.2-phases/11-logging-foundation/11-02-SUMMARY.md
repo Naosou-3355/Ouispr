@@ -20,15 +20,15 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/DictusApp.swift
-    - DictusApp/DictationCoordinator.swift
-    - DictusApp/Audio/AudioRecorder.swift
-    - DictusApp/Audio/TranscriptionService.swift
-    - DictusApp/Models/ModelManager.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/KeyboardState.swift
-    - DictusApp/Views/DebugLogView.swift
-    - DictusApp/Views/SettingsView.swift
+    - OuisprApp/OuisprApp.swift
+    - OuisprApp/DictationCoordinator.swift
+    - OuisprApp/Audio/AudioRecorder.swift
+    - OuisprApp/Audio/TranscriptionService.swift
+    - OuisprApp/Models/ModelManager.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprApp/Views/DebugLogView.swift
+    - OuisprApp/Views/SettingsView.swift
 
 key-decisions:
   - "Level color/icon defined in DebugLogView (UI concern) rather than LogLevel enum (data layer)"
@@ -58,7 +58,7 @@ completed: 2026-03-11
 
 ## Accomplishments
 - Migrated all 12 free-text PersistentLog.log("...") calls to typed LogEvent API across 7 files
-- Zero remaining free-text log calls in DictusApp or DictusKeyboard code
+- Zero remaining free-text log calls in OuisprApp or OuisprKeyboard code
 - DebugLogView rewritten with parsed log entries, color-coded level icons, and ScrollViewReader auto-scroll
 - Export button in Settings writes logs to temp file and presents UIActivityViewController share sheet
 
@@ -70,19 +70,19 @@ Each task was committed atomically:
 2. **Task 2: Upgrade DebugLogView and add export to Settings** - `14c16a6` (feat)
 
 ## Files Created/Modified
-- `DictusApp/DictusApp.swift` - Lifecycle logging (appLaunched, scenePhase changes)
-- `DictusApp/DictationCoordinator.swift` - Dictation events (started, completed, failed, deferred) replacing ~10 free-text calls
-- `DictusApp/Audio/AudioRecorder.swift` - Audio engine start/stop/configure events
-- `DictusApp/Audio/TranscriptionService.swift` - Transcription start/complete/fail with duration and word count
-- `DictusApp/Models/ModelManager.swift` - Model download/compile/select events
-- `DictusKeyboard/KeyboardViewController.swift` - Keyboard appear/disappear events
-- `DictusKeyboard/KeyboardState.swift` - Mic tap and text insertion events
-- `DictusApp/Views/DebugLogView.swift` - Full rewrite with color-coded parsed entries and auto-scroll
-- `DictusApp/Views/SettingsView.swift` - Added export button with UIActivityViewController
+- `OuisprApp/OuisprApp.swift` - Lifecycle logging (appLaunched, scenePhase changes)
+- `OuisprApp/DictationCoordinator.swift` - Dictation events (started, completed, failed, deferred) replacing ~10 free-text calls
+- `OuisprApp/Audio/AudioRecorder.swift` - Audio engine start/stop/configure events
+- `OuisprApp/Audio/TranscriptionService.swift` - Transcription start/complete/fail with duration and word count
+- `OuisprApp/Models/ModelManager.swift` - Model download/compile/select events
+- `OuisprKeyboard/KeyboardViewController.swift` - Keyboard appear/disappear events
+- `OuisprKeyboard/KeyboardState.swift` - Mic tap and text insertion events
+- `OuisprApp/Views/DebugLogView.swift` - Full rewrite with color-coded parsed entries and auto-scroll
+- `OuisprApp/Views/SettingsView.swift` - Added export button with UIActivityViewController
 
 ## Decisions Made
-- Level color and icon mapping defined in DebugLogView (UI concern) rather than extending LogLevel in DictusCore. This keeps the data layer framework-agnostic (no SwiftUI Color dependency in DictusCore).
-- URL handler free-text logs in DictusApp.swift removed entirely rather than converted, since the dictation start event in DictationCoordinator already captures the relevant information.
+- Level color and icon mapping defined in DebugLogView (UI concern) rather than extending LogLevel in OuisprCore. This keeps the data layer framework-agnostic (no SwiftUI Color dependency in OuisprCore).
+- URL handler free-text logs in OuisprApp.swift removed entirely rather than converted, since the dictation start event in DictationCoordinator already captures the relevant information.
 
 ## Deviations from Plan
 
@@ -92,7 +92,7 @@ Each task was committed atomically:
 - **Found during:** Task 2 (DebugLogView rewrite)
 - **Issue:** Plan interface referenced LogLevel.color and LogLevel.icon properties, but Plan 01 did not implement them on the LogLevel enum
 - **Fix:** Defined levelColor and levelIcon as computed properties on the private LogEntry struct in DebugLogView
-- **Files modified:** DictusApp/Views/DebugLogView.swift
+- **Files modified:** OuisprApp/Views/DebugLogView.swift
 - **Verification:** Build succeeds, colors match design spec
 - **Committed in:** 14c16a6 (Task 2 commit)
 
@@ -102,7 +102,7 @@ Each task was committed atomically:
 **Impact on plan:** Minor -- color/icon mapping placed in view layer instead of enum. No scope creep.
 
 ## Issues Encountered
-- DictusCore `swift test` fails due to pre-existing SwiftUI Color availability issue (macOS vs iOS). This is out of scope -- xcodebuild verification passes for both DictusApp and DictusKeyboard schemes.
+- OuisprCore `swift test` fails due to pre-existing SwiftUI Color availability issue (macOS vs iOS). This is out of scope -- xcodebuild verification passes for both OuisprApp and OuisprKeyboard schemes.
 
 ## User Setup Required
 None - no external service configuration required.
@@ -110,7 +110,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 - Logging foundation complete: typed events flow from all subsystems, users can view and export logs
 - Ready for Phase 12 (error handling) which can use the structured log events for error reporting
-- All DictusLogger calls remain as secondary console output alongside PersistentLog structured events
+- All OuisprLogger calls remain as secondary console output alongside PersistentLog structured events
 
 ---
 *Phase: 11-logging-foundation*

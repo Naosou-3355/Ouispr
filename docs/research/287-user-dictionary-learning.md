@@ -30,15 +30,15 @@ Every claim carries one, and the label is part of the claim.
 
 Five things, in the order they matter.
 
-1. **A learned word in Dictus does exactly one thing: it makes autocorrect leave it alone, forever.** It never reaches the suggestion bar by any path. The maintainer's device observation is fully explained by the code, and the `learnWord` call that looks like it feeds the engine is a documented no-op in both engines. **[code]**
-2. **So the feature is not inert — it is the opposite.** Of the three things a learned word could do, Dictus grants only the one that is invisible to the user and cannot be dismissed. The cost side of the issue's framing is right; the "all of the cost and none of the benefit" phrasing understates the cost, because permanent autocorrect immunity is a stronger commitment than appearing in a suggestion bar.
-3. **AOSP LatinIME does the opposite of Dictus on the single most important axis.** Its learned words are *never* treated as valid words — `UserHistoryDictionary.isValidWord()` hard-returns `false` — so AOSP will happily autocorrect away from a word it has learned. It grants learned words the *weak* trust level (they can be suggested) and withholds the strong one. Dictus grants the strong one and withholds the weak one. **[source]**
-4. **The maintainer's "Apple probably also learns in one shot" premise is not supported by Apple's own documentation, and the documentation points somewhere more interesting.** Apple documents the trigger as *rejecting a suggestion*, and says "if you reject the same suggestion **a few times**, iPhone stops suggesting it". The documented mechanism is repeated rejection — which maps onto Dictus's undo path, not its repetition path. Everything *after* learning (threshold, capacity, decay, eviction) is undocumented, confirmed by a full-text search of the 14,000-line Apple Platform Security guide. **[source]**
+1. **A learned word in Ouispr does exactly one thing: it makes autocorrect leave it alone, forever.** It never reaches the suggestion bar by any path. The maintainer's device observation is fully explained by the code, and the `learnWord` call that looks like it feeds the engine is a documented no-op in both engines. **[code]**
+2. **So the feature is not inert — it is the opposite.** Of the three things a learned word could do, Ouispr grants only the one that is invisible to the user and cannot be dismissed. The cost side of the issue's framing is right; the "all of the cost and none of the benefit" phrasing understates the cost, because permanent autocorrect immunity is a stronger commitment than appearing in a suggestion bar.
+3. **AOSP LatinIME does the opposite of Ouispr on the single most important axis.** Its learned words are *never* treated as valid words — `UserHistoryDictionary.isValidWord()` hard-returns `false` — so AOSP will happily autocorrect away from a word it has learned. It grants learned words the *weak* trust level (they can be suggested) and withholds the strong one. Ouispr grants the strong one and withholds the weak one. **[source]**
+4. **The maintainer's "Apple probably also learns in one shot" premise is not supported by Apple's own documentation, and the documentation points somewhere more interesting.** Apple documents the trigger as *rejecting a suggestion*, and says "if you reject the same suggestion **a few times**, iPhone stops suggesting it". The documented mechanism is repeated rejection — which maps onto Ouispr's undo path, not its repetition path. Everything *after* learning (threshold, capacity, decay, eviction) is undocumented, confirmed by a full-text search of the 14,000-line Apple Platform Security guide. **[source]**
 5. **Nobody in the open-source field implements the categorical rule "suggestable but not allowed to autocorrect".** HeliBoard's two-tier promotion is the closest prior art, it is opt-in and off by default, and it is GPL-3.0 so only the design is reusable. This is a genuine gap in the field, not a gap in the search. **[source]**
 
 ---
 
-## Question 1 — What does a learned word actually do in Dictus today?
+## Question 1 — What does a learned word actually do in Ouispr today?
 
 Answered entirely from this repository. This is the strongest section of the document.
 
@@ -46,7 +46,7 @@ Answered entirely from this repository. This is the strongest section of the doc
 
 `UserDictionary.isLearned` is called from **one** place in the whole codebase:
 
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift:165`, inside `spellCheck(_:isAtSentenceStart:)`. **[code]**
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift:165`, inside `spellCheck(_:isAtSentenceStart:)`. **[code]**
 
 ```swift
 if UserDictionary.shared.isLearned(wordToCheck) {
@@ -58,7 +58,7 @@ if UserDictionary.shared.isLearned(wordToCheck) {
 
 Both `spellCheck` overloads funnel through it: the context-aware one (`TextPredictionEngine.swift:343`) calls the base overload at line 363 after its language-override early return. **[code]**
 
-The other two `UserDictionary` reads are not runtime consumers: `UserDictionary.shared.reload()` at `KeyboardViewController.swift:476` (cross-process cache refresh) and `.count` / `.resetAll()` at `DictusApp/Views/SettingsView.swift:197-206` (the reset button). **[code]**
+The other two `UserDictionary` reads are not runtime consumers: `UserDictionary.shared.reload()` at `KeyboardViewController.swift:476` (cross-process cache refresh) and `.count` / `.resetAll()` at `OuisprApp/Views/SettingsView.swift:197-206` (the reset button). **[code]**
 
 ### 1.2 The call that looks like it feeds the engine is a no-op
 
@@ -66,7 +66,7 @@ Both learning sites do the same thing on promotion:
 
 ```swift
 if UserDictionary.shared.recordUsage(word) {
-    state.learnWord(word)          // DictusKeyboardBridge.swift:495-497
+    state.learnWord(word)          // OuisprKeyboardBridge.swift:495-497
 }
 ```
 ```swift
@@ -92,7 +92,7 @@ The bar has three content modes (`SuggestionState.swift:14-20`): `.completions`,
 | `.corrections` | `engine.spellCheck(...)` (`SuggestionState.swift:162-168`) | Yes — and a learned word makes it return `nil`, so the bar shows **nothing** |
 | `.predictions` | `engine.predictNextWords(after:)` (`TextPredictionEngine.swift:327`) → AOSP trie n-grams, falling back to `frequencyDict.topWords` | **No** |
 
-The `.completions` path is the one that would surface a learned word, and it is backed by `UITextChecker`, Apple's system spell checker. **Dictus never calls `UITextChecker.learnWord`** — a grep for `UITextChecker` across the tree returns only the instantiation, `availableLanguages` checks, `completions(...)`, and comments. **[code]** So the system checker has no idea the word exists, and the learned set is not consulted separately.
+The `.completions` path is the one that would surface a learned word, and it is backed by `UITextChecker`, Apple's system spell checker. **Ouispr never calls `UITextChecker.learnWord`** — a grep for `UITextChecker` across the tree returns only the instantiation, `availableLanguages` checks, `completions(...)`, and comments. **[code]** So the system checker has no idea the word exists, and the learned set is not consulted separately.
 
 The `.corrections` interaction is worth stating plainly, because it is counter-intuitive: learning a word does not put it in the bar, it **removes** the bar. A learned word produces `mode = .idle` where an unlearned one would have produced a correction row.
 
@@ -102,7 +102,7 @@ The `.corrections` interaction is worth stating plainly, because it is counter-i
 
 The issue says "a typo typed once is learned and kept". The code says something narrower and more useful.
 
-Learning from typing is gated by `wordWasEvaluated` (`DictusKeyboardBridge.swift:442`), and the correction path `return`s before reaching `recordUsage` when a correction actually fires. **[code]** So the set of words that get learned by repetition is:
+Learning from typing is gated by `wordWasEvaluated` (`OuisprKeyboardBridge.swift:442`), and the correction path `return`s before reaching `recordUsage` when a correction actually fires. **[code]** So the set of words that get learned by repetition is:
 
 > every word the autocorrect pipeline **evaluated and declined to correct**.
 
@@ -124,7 +124,7 @@ Three things a keyboard can grant a learned word, in increasing order of commitm
 2. **Immune** — autocorrect will not rewrite it. Invisible to the user; affects only that word.
 3. **Authoritative** — the keyboard rewrites *other* words into it. Strongest; can damage text the user did not ask about.
 
-Dictus today grants **level 2 on a single use**, and never grants level 1. That is the finding that reframes the issue: this is not a feature with cost and no benefit, it is a feature that hands out the harder-to-notice permission on the weakest possible evidence, while withholding the safe one entirely.
+Ouispr today grants **level 2 on a single use**, and never grants level 1. That is the finding that reframes the issue: this is not a feature with cost and no benefit, it is a feature that hands out the harder-to-notice permission on the weakest possible evidence, while withholding the safe one entirely.
 
 ---
 
@@ -138,7 +138,7 @@ Two navigational corrections for anyone following up: `DynamicLanguageModelProba
 
 **What triggers learning.** One entry point: `performAdditionToUserHistoryDictionary` from `commitChosenWord` (`InputLogic.java:2191`). Four blockers, all in `InputLogic.java:1424-1444`: autocorrect setting off, slow `InputConnection`, empty word, and length > 48. **[source]**
 
-There is **no distinction between a word the user typed and a word the IME autocorrected to**. `commitType` is not even passed to the learning call, and the code carries a TODO admitting it cannot tell them apart at that point (`InputLogic.java:2201-2204`). **[source]** This is worth knowing before assuming AOSP is more careful than Dictus about signal quality — on this specific axis it is less careful.
+There is **no distinction between a word the user typed and a word the IME autocorrected to**. `commitType` is not even passed to the learning call, and the code carries a TODO admitting it cannot tell them apart at that point (`InputLogic.java:2201-2204`). **[source]** This is worth knowing before assuming AOSP is more careful than Ouispr about signal quality — on this specific axis it is less careful.
 
 The slow-`InputConnection` blocker is the piece of reasoning most worth borrowing, and its comment states the principle directly:
 
@@ -196,7 +196,7 @@ The famous forgetting curve (`ForgettingCurveUtils`, `MAX_LEVEL = 15`, `MIN_VISI
 
 **Competition with the base lexicon: a single scored list, no override.** Every dictionary is queried independently and results go into one bounded `TreeSet` ranked by pure score (`SuggestionResults.java:74-82`). There are **no per-dictionary-type weights** — `mConfidence` is declared and never read again, and `mWeightForTypingInLocale` never leaves `1.0f` since multi-locale support was removed. **[source]**
 
-**The asymmetry that matters most for Dictus** (`UserHistoryDictionary.java:131-135`):
+**The asymmetry that matters most for Ouispr** (`UserHistoryDictionary.java:131-135`):
 
 ```java
 @Override
@@ -206,7 +206,7 @@ public boolean isValidWord(final String word) {
 }
 ```
 
-A learned word contributes suggestions but is **never** a valid word. It cannot suppress autocorrect. **AOSP will autocorrect away from a word it has learned.** **[source]** This is the exact inverse of Dictus, where the only thing a learned word does is suppress autocorrect.
+A learned word contributes suggestions but is **never** a valid word. It cannot suppress autocorrect. **AOSP will autocorrect away from a word it has learned.** **[source]** This is the exact inverse of Ouispr, where the only thing a learned word does is suppress autocorrect.
 
 **Unlearning.** `unlearnFromUserHistory` hard-**deletes** the unigram (not a demotion) on `EVENT_REVERT` — a reverted autocorrect removes the autocorrected word from history. `EVENT_BACKSPACE` is explicitly excluded by an unresolved TODO, so backspacing over a word does not currently unlearn it. **[source]**
 
@@ -248,9 +248,9 @@ Learning is blocked in incognito, which is broader than a user toggle: `mIncogni
 | **Thumb-Key** | AGPL-3.0 | No, as a design principle | Nothing. **[source]** |
 | **Presage / libpresage** | **GPL-2.0, no LGPL carve-out** | Yes, and badly | A useful **negative** example — see below. **[source]** |
 
-**Presage is the failure mode Dictus is trying to design against.** Its `SmoothedNgramPredictor` is fixed-weight linear interpolation with hand-configured deltas (`<DELTAS>0.01 0.1 0.89</DELTAS>`), not Witten-Bell. `learn()` only ever increments or inserts; `removeNgram` exists but its only callers are unit tests. **No decay, no demotion, no eviction, no lexicon validation on the learn path at all.** Learned scores are simply *summed* on top of corpus scores by `MeritocracyCombiner`, whose own doc comment admits this "might introduce some imbalance". It learns any typo you type twice, forever, and adds its score to the corpus score. **[source]**
+**Presage is the failure mode Ouispr is trying to design against.** Its `SmoothedNgramPredictor` is fixed-weight linear interpolation with hand-configured deltas (`<DELTAS>0.01 0.1 0.89</DELTAS>`), not Witten-Bell. `learn()` only ever increments or inserts; `removeNgram` exists but its only callers are unit tests. **No decay, no demotion, no eviction, no lexicon validation on the learn path at all.** Learned scores are simply *summed* on top of corpus scores by `MeritocracyCombiner`, whose own doc comment admits this "might introduce some imbalance". It learns any typo you type twice, forever, and adds its score to the corpus score. **[source]**
 
-The one Presage idea worth keeping is structural: a read-only corpus DB (`<LEARN>false</LEARN>`) and a writable user DB (`<LEARN>true</LEARN>`) are never mixed at the storage layer and meet only in the combiner. Dictus already has this shape — a read-only mmap'd trie and a separate `UserDictionary` — so this is corroboration of the existing architecture rather than a new idea.
+The one Presage idea worth keeping is structural: a read-only corpus DB (`<LEARN>false</LEARN>`) and a writable user DB (`<LEARN>true</LEARN>`) are never mixed at the storage layer and meet only in the combiner. Ouispr already has this shape — a read-only mmap'd trie and a separate `UserDictionary` — so this is corroboration of the existing architecture rather than a new idea.
 
 ### 2.4 Android's platform personal dictionary, for reference
 
@@ -285,19 +285,19 @@ The confidence on "nothing else exists" is **medium-high**, not high — this is
 
 ## Question 3 — How is false learning contained?
 
-Consolidating the mechanisms actually observed in source, and what each would cost Dictus.
+Consolidating the mechanisms actually observed in source, and what each would cost Ouispr.
 
-| Technique | Who does it | What Dictus would need to record |
+| Technique | Who does it | What Ouispr would need to record |
 | --- | --- | --- |
 | **Validate against the base lexicon before committing** | AOSP (`isValid = maxFreq > 0`); HeliBoard (inverted, to detect novelty) | **Nothing new.** `AOSPTrieEngine.wordExists(_:)` already answers this and `recordUsage` does not currently ask. This is the one containment mechanism available at zero storage cost today. **[code]** |
-| **Probation: N occurrences before an entry is visible** | AOSP (2 commits, via a `count = 0` placeholder) | Nothing new. Dictus already has a `pendingWords` store; at `repetitionThreshold = 1` it is structurally unreachable, which is why the below-threshold test is skipped. The machinery exists and is switched off. **[code]** |
-| **Frequency weighting so a learned word starts weak** | AOSP (`ASSUMED_MIN_COUNTS[0] = 8192`, backoff `−32`) | Only meaningful if learned words are scored against the lexicon on a common scale. Dictus has no unified scoring — that is #114's item 3. Not available without it. |
+| **Probation: N occurrences before an entry is visible** | AOSP (2 commits, via a `count = 0` placeholder) | Nothing new. Ouispr already has a `pendingWords` store; at `repetitionThreshold = 1` it is structurally unreachable, which is why the below-threshold test is skipped. The machinery exists and is switched off. **[code]** |
+| **Frequency weighting so a learned word starts weak** | AOSP (`ASSUMED_MIN_COUNTS[0] = 8192`, backoff `−32`) | Only meaningful if learned words are scored against the lexicon on a common scale. Ouispr has no unified scoring — that is #114's item 3. Not available without it. |
 | **Two-tier promotion (history → permanent)** | HeliBoard only (`getFrequency > 120`, ~4 uses, opt-in, default off) | A tier flag per entry: 1 bit. |
 | **Decay over time / demotion on non-reuse** | **Nobody, in shipped code.** AOSP's decay function is an identity function with a TODO; its forgetting curve is dead code | A last-used timestamp per entry: 1 `Int`. |
-| **Hard eviction after long non-use** | AOSP (300 days, plus LRU under capacity pressure) | Same timestamp. Note Dictus's current eviction is by *count ascending*, which is backwards (§1.4). |
-| **Unlearn on reverted autocorrect** | AOSP (`EVENT_REVERT` → hard delete); HeliBoard (same) | Nothing new — but note Dictus does the **opposite**: an undo *teaches* the word (`KeyboardRootView.swift:479`). Both are defensible; they are different products. AOSP deletes the word it *corrected to*; Dictus learns the word the user *restored*. These are not in conflict, and it is worth being precise about that before anyone "fixes" it. **[code]** |
+| **Hard eviction after long non-use** | AOSP (300 days, plus LRU under capacity pressure) | Same timestamp. Note Ouispr's current eviction is by *count ascending*, which is backwards (§1.4). |
+| **Unlearn on reverted autocorrect** | AOSP (`EVENT_REVERT` → hard delete); HeliBoard (same) | Nothing new — but note Ouispr does the **opposite**: an undo *teaches* the word (`KeyboardRootView.swift:479`). Both are defensible; they are different products. AOSP deletes the word it *corrected to*; Ouispr learns the word the user *restored*. These are not in conflict, and it is worth being precise about that before anyone "fixes" it. **[code]** |
 | **Unlearn on backspace** | **Nobody** — AOSP and HeliBoard both explicitly exclude `EVENT_BACKSPACE` behind an unresolved TODO | A record of what was just deleted. |
-| **Block learning when the undo cannot be observed** | AOSP + HeliBoard (slow `InputConnection`) | Dictus has the analogous guard already: `wordWasEvaluated` blocks learning in fields where autocorrect never ran, and on aborted replacements (#191, #200). **[code]** |
+| **Block learning when the undo cannot be observed** | AOSP + HeliBoard (slow `InputConnection`) | Ouispr has the analogous guard already: `wordWasEvaluated` blocks learning in fields where autocorrect never ran, and on aborted replacements (#191, #200). **[code]** |
 | **Block learning in password / code / no-learning fields** | FUTO (`mIsPasswordField \|\| mIsCodeField`); HeliBoard (OS `IME_FLAG_NO_PERSONALIZED_LEARNING`) | Whether `HostInputTraits` already covers this needs checking against `HostFieldPolicy`; it is a field-traits question, not a storage question. |
 | **Block learning on auto-capitalized words** | HeliBoard (`!wasAutoCapitalized` — "we can't be 100% sure what the user intended to type") | Nothing new; the information is at the call site. |
 
@@ -305,7 +305,7 @@ Consolidating the mechanisms actually observed in source, and what each would co
 
 **Storage is not the constraint, and it would be dishonest to present it as one.**
 
-Dictus stores `[String: Int]` for at most 1000 entries, about 30 KB. **[code]** Adding a last-used timestamp and a source/tier flag to every entry is on the order of 8–12 bytes per entry, so **under 12 KB at the cap** — roughly 0.02 % of the keyboard extension's ~50 MB ceiling. Every per-entry containment mechanism in the table above is free at this scale.
+Ouispr stores `[String: Int]` for at most 1000 entries, about 30 KB. **[code]** Adding a last-used timestamp and a source/tier flag to every entry is on the order of 8–12 bytes per entry, so **under 12 KB at the cap** — roughly 0.02 % of the keyboard extension's ~50 MB ceiling. Every per-entry containment mechanism in the table above is free at this scale.
 
 The real costs are elsewhere, and they are worth naming:
 
@@ -335,7 +335,7 @@ And from the predictive-text page:
 
 > To reject a correction, tap the "x." **If you reject the same suggestion a few times, iPhone stops suggesting it.**
 
-**This is the finding that contradicts the issue.** The maintainer's framing is "Apple probably also learns in one shot, so a threshold of 1 may not be wrong". Apple's own documentation describes the mechanism as *repeated rejection* — "a few times", not once — and describes the trigger as rejection rather than mere typing. That maps onto Dictus's **undo** path, not its **repetition** path.
+**This is the finding that contradicts the issue.** The maintainer's framing is "Apple probably also learns in one shot, so a threshold of 1 may not be wrong". Apple's own documentation describes the mechanism as *repeated rejection* — "a few times", not once — and describes the trigger as rejection rather than mere typing. That maps onto Ouispr's **undo** path, not its **repetition** path.
 
 Two caveats, so this is not over-read. Apple never quantifies "a few times". And a support page describes user-visible behaviour, not implementation — it is entirely possible that some other, faster path also writes to the dictionary. But on the evidence available, the premise "Apple learns in one shot" is **not supported by anything Apple has published**, and the observation that prompted it (teaching iOS a word appears to register almost immediately) was a small number of device taps.
 
@@ -349,7 +349,7 @@ Two caveats, so this is not over-read. Apple never quantifies "a few times". And
 
 ### 4.2 The load-bearing negative: `UILexicon` does not expose learned words
 
-This closes off an idea Dictus might otherwise reach for. `UILexicon`'s documentation names exactly three sources:
+This closes off an idea Ouispr might otherwise reach for. `UILexicon`'s documentation names exactly three sources:
 
 > - Unpaired first names and last names from the user's Address Book database
 > - Text shortcuts defined in the Settings > General > Keyboard > Shortcuts list
@@ -359,7 +359,7 @@ This closes off an idea Dictus might otherwise reach for. `UILexicon`'s document
 
 **Words the system keyboard has learned are not among them.** The QuickType learned-vocabulary store is not mentioned on any of the `UILexicon`, `UILexiconEntry`, or `requestSupplementaryLexicon` pages. The list is hedged with "including", so it is not sworn to be exhaustive, but nothing anywhere expands it.
 
-What `UILexicon` *is*: an Apple-blessed source of high-confidence user vocabulary — contact names and the user's own text replacements — available to a keyboard extension **regardless of open access** (per the archived App Extension Programming Guide: *"Every custom keyboard (independent of the value of its `RequestsOpenAccess` key) has access to a basic autocorrection lexicon through the `UILexicon` class"*). Whether Dictus already consumes it is outside this issue's scope, but it is the cheapest source of trustworthy proper nouns on the platform and it is not the same thing as the learned dictionary.
+What `UILexicon` *is*: an Apple-blessed source of high-confidence user vocabulary — contact names and the user's own text replacements — available to a keyboard extension **regardless of open access** (per the archived App Extension Programming Guide: *"Every custom keyboard (independent of the value of its `RequestsOpenAccess` key) has access to a basic autocorrection lexicon through the `UILexicon` class"*). Whether Ouispr already consumes it is outside this issue's scope, but it is the cheapest source of trustworthy proper nouns on the platform and it is not the same thing as the learned dictionary.
 
 ### 4.3 What Apple does not document
 
@@ -415,19 +415,19 @@ No implementation proposal here, per the brief. What follows is the trust model 
 
 ### 5.1 Three levels, not two
 
-The brief asks for two levels of trust. The code (§1.5) shows there are three, and Dictus currently sits on the middle one:
+The brief asks for two levels of trust. The code (§1.5) shows there are three, and Ouispr currently sits on the middle one:
 
-| Level | What it means | Failure mode when wrong | Dictus today |
+| Level | What it means | Failure mode when wrong | Ouispr today |
 | --- | --- | --- | --- |
 | **L1 — Offered** | The word appears in the suggestion bar. The user must tap it. | A junk row in the bar. Visible, ignorable, costless. | **Never granted** |
 | **L2 — Immune** | Autocorrect will not rewrite this word. | A real typo silently survives forever, everywhere. Invisible to the user; no affordance to undo it. | **Granted on one use** |
 | **L3 — Authoritative** | The keyboard rewrites *other* words into this one. | The keyboard corrupts text the user did not ask about. | Never granted |
 
-Dictus grants L2 on the weakest evidence available and never grants L1. AOSP does the reverse: L1 from the second commit, L2 never (`isValidWord() → false`), L3 only through the shared scoring function where the 8192 floor keeps a learned unigram weak. HeliBoard grants a permanent L2+L3 through its tier-2 promotion at ~4 uses, behind an opt-in that is off by default.
+Ouispr grants L2 on the weakest evidence available and never grants L1. AOSP does the reverse: L1 from the second commit, L2 never (`isValidWord() → false`), L3 only through the shared scoring function where the 8192 floor keeps a learned unigram weak. HeliBoard grants a permanent L2+L3 through its tier-2 promotion at ~4 uses, behind an opt-in that is off by default.
 
 **That HeliBoard's author shipped the only aggressive design in the field as opt-in and default-off is itself a data point about confidence.**
 
-### 5.2 Signals, and which ones Dictus already has
+### 5.2 Signals, and which ones Ouispr already has
 
 | Signal | Discriminates | Available today? |
 | --- | --- | --- |
@@ -445,14 +445,14 @@ The first two are the interesting ones: **both are already knowable at the momen
 Framed as questions for the maintainer to decide, not as a design.
 
 - **L1 (offered)** is cheap and low-risk, and the field agrees: AOSP grants it from the second occurrence. Its precondition is not a confidence signal at all — it is a **missing consumer**. No amount of tuning `repetitionThreshold` produces a suggestion; the `.completions` path has to learn to consult the user set alongside `UITextChecker`, and the `.predictions` path has to decide whether a learned word with no n-gram context can ever be predicted. That is real work and it is independent of the threshold question.
-- **L2 (immunity)** is what Dictus grants today and is the level that most needs a gate, because it is the invisible one. On the evidence, the two cheapest gates that need no new stored data are: *is this word absent from the base lexicon* (otherwise immunity is meaningless — the `wordExists` guard already covers it), and *did this come from an explicit rejection or from passive typing*. A gate that needs new data — recency across sessions — is where the #222 class of accident actually gets caught.
-- **L3 (authoritative)** is the only level where the field is unanimous in *not* trusting learned words on their own: AOSP reaches it only through a shared scoring function whose constants are chosen to keep learned unigrams weak. Getting there in Dictus means the unified candidate scoring of #114 item 3, not a threshold change. Until every candidate is scored on one scale, "let learned words autocorrect" has no safe implementation, because there is nothing to weigh them against.
+- **L2 (immunity)** is what Ouispr grants today and is the level that most needs a gate, because it is the invisible one. On the evidence, the two cheapest gates that need no new stored data are: *is this word absent from the base lexicon* (otherwise immunity is meaningless — the `wordExists` guard already covers it), and *did this come from an explicit rejection or from passive typing*. A gate that needs new data — recency across sessions — is where the #222 class of accident actually gets caught.
+- **L3 (authoritative)** is the only level where the field is unanimous in *not* trusting learned words on their own: AOSP reaches it only through a shared scoring function whose constants are chosen to keep learned unigrams weak. Getting there in Ouispr means the unified candidate scoring of #114 item 3, not a threshold change. Until every candidate is scored on one scale, "let learned words autocorrect" has no safe implementation, because there is nothing to weigh them against.
 
 ### 5.4 The finding that most constrains the answer
 
 **Nobody implements the categorical rule "suggestable but never allowed to autocorrect".** Both AOSP-lineage autocorrect gates were read directly and neither tests the source dictionary of the autocorrect target. Everywhere in the field, probation is probabilistic — a learned word that accumulates enough score becomes an autocorrect target — and it is enforced by *scoring*, not by *categorisation*.
 
-If Dictus wants the categorical rule, it would be building something the field does not have. That may still be right for a keyboard with no unified scoring function, where a category is the only thing available to reason about. But it should be chosen with the knowledge that there is no implementation to copy and no shipped product to point at.
+If Ouispr wants the categorical rule, it would be building something the field does not have. That may still be right for a keyboard with no unified scoring function, where a category is the only thing available to reason about. But it should be chosen with the knowledge that there is no implementation to copy and no shipped product to point at.
 
 ---
 

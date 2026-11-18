@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 24 replaces UITextChecker's `spellCheck()` with SymSpell (Symmetric Delete algorithm) for frequency-ranked spell corrections. The core work involves: (1) vendoring SymSpellSwift (~3 source files, MIT license) into DictusKeyboard, (2) expanding French and English frequency dictionaries from ~1.3K to 30-50K words, (3) rewiring the suggestion bar to the standard mobile pattern (verbatim | correction | alternative), (4) implementing autocorrect rejection (undo + re-space does not re-apply), and (5) removing the now-redundant `accentSuggestions()` mode.
+Phase 24 replaces UITextChecker's `spellCheck()` with SymSpell (Symmetric Delete algorithm) for frequency-ranked spell corrections. The core work involves: (1) vendoring SymSpellSwift (~3 source files, MIT license) into OuisprKeyboard, (2) expanding French and English frequency dictionaries from ~1.3K to 30-50K words, (3) rewiring the suggestion bar to the standard mobile pattern (verbatim | correction | alternative), (4) implementing autocorrect rejection (undo + re-space does not re-apply), and (5) removing the now-redundant `accentSuggestions()` mode.
 
 SymSpellSwift by gdetari is a clean Swift implementation with 3 source files (SymSpell.swift, SuggestItem.swift, String+Extension.swift). It supports `lookup()` with verbosity levels (Top/Closest/All), `loadDictionary()` from text files, and configurable edit distance + prefix length. The algorithm pre-calculates delete candidates at dictionary load time, enabling sub-millisecond lookups at query time. Memory for 30-50K words with edit distance 2 and prefix length 7 is estimated at 3-8MB -- within the keyboard extension budget.
 
@@ -83,7 +83,7 @@ SymSpellSwift by gdetari is a clean Swift implementation with 3 source files (Sy
 
 ### Recommended Project Structure
 ```
-DictusKeyboard/
+OuisprKeyboard/
 ├── TextPrediction/
 │   ├── TextPredictionEngine.swift    # Modified: delegates spellCheck() to SymSpellEngine
 │   ├── SuggestionState.swift         # Modified: autocorrect rejection flag, remove .accents mode
@@ -98,7 +98,7 @@ DictusKeyboard/
 ├── Resources/
 │   ├── fr_frequency.json             # REPLACED: 30-50K words from Lexique 3.83
 │   └── en_frequency.json             # REPLACED: 30-50K words from Norvig/Google 1T
-└── DictusKeyboardBridge.swift        # Modified: autocorrect rejection tracking
+└── OuisprKeyboardBridge.swift        # Modified: autocorrect rejection tracking
 ```
 
 ### Pattern 1: SymSpellEngine Wrapper
@@ -138,10 +138,10 @@ class SymSpellEngine {
 
 ### Pattern 2: Autocorrect Rejection State
 **What:** Track when a user has undone an autocorrection so the same word is not re-corrected on the next space.
-**When to use:** In `DictusKeyboardBridge.handleSpace()` and `handleBackspace()`.
+**When to use:** In `OuisprKeyboardBridge.handleSpace()` and `handleBackspace()`.
 **Example:**
 ```swift
-// In SuggestionState or DictusKeyboardBridge
+// In SuggestionState or OuisprKeyboardBridge
 /// Words the user has rejected correction for (undo'd). Cleared on new word.
 private var rejectedWords: Set<String> = []
 
@@ -190,7 +190,7 @@ if rejectedWords.contains(state.currentWord.lowercased()) {
 ## Common Pitfalls
 
 ### Pitfall 1: SymSpell Loads Dictionary in Wrong Format
-**What goes wrong:** SymSpellSwift's `loadDictionary(from: URL)` expects a TSV/space-separated text file, not JSON. Dictus uses JSON `{word: rank}`.
+**What goes wrong:** SymSpellSwift's `loadDictionary(from: URL)` expects a TSV/space-separated text file, not JSON. Ouispr uses JSON `{word: rank}`.
 **Why it happens:** The library was designed for text file dictionaries.
 **How to avoid:** Use `createDictionaryEntry(key:count:)` in a loop over the decoded JSON dictionary instead of `loadDictionary()`. This is the programmatic entry point.
 **Warning signs:** Empty lookup results despite dictionary file existing.
@@ -437,7 +437,7 @@ print(f"Wrote {len(result)} entries")
 - [ ] Python/Swift dictionary curation scripts for Lexique 3.83 and Norvig count_1w.txt
 - [ ] Expanded fr_frequency.json (30-50K entries)
 - [ ] Expanded en_frequency.json (30-50K entries)
-- [ ] Vendored SymSpellSwift source files in DictusKeyboard/Vendored/SymSpell/
+- [ ] Vendored SymSpellSwift source files in OuisprKeyboard/Vendored/SymSpell/
 
 ## Sources
 
@@ -446,7 +446,7 @@ print(f"Wrote {len(result)} entries")
 - [SymSpell original (wolfgarbe)](https://github.com/wolfgarbe/SymSpell) - Algorithm design, edit distance mechanics, verbosity levels
 - [Lexique 3.83](http://www.lexique.org/?page_id=790&lang=en) - French lexicon with frequency data, TSV format with ortho/freqfilms2/freqlivres columns
 - [Norvig ngrams](https://norvig.com/ngrams/) - count_1w.txt English frequency data, MIT license
-- Current codebase: TextPredictionEngine.swift, SuggestionState.swift, SuggestionBarView.swift, DictusKeyboardBridge.swift, FrequencyDictionary.swift
+- Current codebase: TextPredictionEngine.swift, SuggestionState.swift, SuggestionBarView.swift, OuisprKeyboardBridge.swift, FrequencyDictionary.swift
 
 ### Secondary (MEDIUM confidence)
 - [Google 10000 English](https://github.com/first20hours/google-10000-english) - 20K word list from Google Trillion Word Corpus (may be too small, Norvig count_1w.txt preferred)

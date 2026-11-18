@@ -66,9 +66,9 @@ require_env ASC_KEY_ID "${ASC_KEY_ID:-}" "<your-key-id>"
 require_env ASC_ISSUER_ID "${ASC_ISSUER_ID:-}" "<your-issuer-id>"
 ASC_KEY_PATH="$HOME/.asc/keys/AuthKey_${ASC_KEY_ID}.p8"
 
-VERSION=$($PB -c "Print :CFBundleShortVersionString" DictusApp/Info.plist)
-BUILD=$($PB -c "Print :CFBundleVersion" DictusApp/Info.plist)
-STEM="Dictus-${VERSION}-${BUILD}"
+VERSION=$($PB -c "Print :CFBundleShortVersionString" OuisprApp/Info.plist)
+BUILD=$($PB -c "Print :CFBundleVersion" OuisprApp/Info.plist)
+STEM="Ouispr-${VERSION}-${BUILD}"
 ARCHIVE=".asc/artifacts/${STEM}.xcarchive"
 IPA=".asc/artifacts/${STEM}.ipa"
 DERIVED="build/DerivedData"
@@ -98,13 +98,13 @@ echo "→ archive : $ARCHIVE"
 # No FluidAudio patch step any more: 0.15.7 compiles unpatched, and the
 # Swift 5 patch script was deleted with that bump (#558).
 xcodebuild -resolvePackageDependencies \
-  -project Dictus.xcodeproj -scheme DictusApp -derivedDataPath "$DERIVED" >/dev/null
+  -project Ouispr.xcodeproj -scheme OuisprApp -derivedDataPath "$DERIVED" >/dev/null
 
 # --- 2. Archive -------------------------------------------------------------
 mkdir -p .asc/artifacts
 asc xcode archive \
-  --project "Dictus.xcodeproj" \
-  --scheme "DictusApp" \
+  --project "Ouispr.xcodeproj" \
+  --scheme "OuisprApp" \
   --configuration Release \
   --archive-path "$ARCHIVE" \
   --overwrite \
@@ -129,8 +129,8 @@ asc xcode export \
 # get-task-allow is the bit that separates a development build from a store one,
 # and Apple rejects the upload rather than the archive. Cheaper to catch here.
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
-unzip -q "$IPA" "Payload/DictusApp.app/embedded.mobileprovision" -d "$WORK"
-security cms -D -i "$WORK/Payload/DictusApp.app/embedded.mobileprovision" > "$WORK/pp.plist"
+unzip -q "$IPA" "Payload/OuisprApp.app/embedded.mobileprovision" -d "$WORK"
+security cms -D -i "$WORK/Payload/OuisprApp.app/embedded.mobileprovision" > "$WORK/pp.plist"
 if ! $PB -c "Print :Entitlements:get-task-allow" "$WORK/pp.plist" 2>/dev/null | grep -q false; then
   echo "error: $IPA is not signed for distribution (get-task-allow is not false)." >&2
   exit 1

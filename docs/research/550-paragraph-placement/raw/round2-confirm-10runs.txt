@@ -175,11 +175,11 @@ Build of product 'polish-harness' complete! (0.21s)
 
 ━━ [P6-unscripted] 1161 chars, 6 sentences, N=3
    cut: 1. Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix, c'est pas naturel.
-        2. L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus.
+        2. L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr.
         3. L'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes, les organiser, s'il met éventuellement des listes, s'il met des espaces entre les lignes.
         4. Et voilà, tout simplement, l'idée ça va être de voir tout ça.
         5. Et ensuite, on va analyser tout ça.
-        6. Comme ça, ça va nous permettre d'essayer de créer par la suite soit un mode différent, soit améliorer notre polish et je pense que ça ça peut être vraiment très intéressant parce que ça va vraiment améliorer l'expérience des utilisateurs et même les utilisateurs qui sont gratuits parce que c'est vrai que là pour l'instant quand tu lances un grand un grand audio comme je peux le faire là tout de suite ça fait un gros pavé sur dictus alors quand je fais du développement c'est pas dérangeant mais c'est vrai que si tu veux l'utiliser pour discuter avec quelqu'un c'est un peu moyen.
+        6. Comme ça, ça va nous permettre d'essayer de créer par la suite soit un mode différent, soit améliorer notre polish et je pense que ça ça peut être vraiment très intéressant parce que ça va vraiment améliorer l'expérience des utilisateurs et même les utilisateurs qui sont gratuits parce que c'est vrai que là pour l'instant quand tu lances un grand un grand audio comme je peux le faire là tout de suite ça fait un gros pavé sur ouispr alors quand je fais du développement c'est pas dérangeant mais c'est vrai que si tu veux l'utiliser pour discuter avec quelqu'un c'est un peu moyen.
   #1 469ms breaks=2/N=3 starts=2,3 fidelity=ok inSentence=0
      engineOut: 1, 2, 3
   #2 487ms breaks=2/N=3 starts=2,3 fidelity=ok inSentence=0
@@ -206,9 +206,9 @@ Build of product 'polish-harness' complete! (0.21s)
         2. Ce que j'ai remarqué, c'est que concrètement, avec Gicus, quand on fait un audio de plusieurs secondes voire plusieurs minutes, on a un seul gros paragraphe.
         3. Alors qu'avec Tapeless, à contrario, on va avoir une sortie qui va être beaucoup plus structurée, avec deux ou trois paragraphes et parfois des puces.
         4. Bref, on va avoir un truc qui va être beaucoup plus structuré.
-        5. Le but, ce n'est pas forcément de faire exactement la même chose avec Dictus, parce que j'ai une petite idée en tête et peut-être qu'on fera un truc un peu équivalent à Type Lest, avec vraiment beaucoup de paragraphes, des puces, des choses comme ça.
-        6. Et ça sera un mode intelligent de Dictus.
-        7. Mais l'idée, c'est au moins peut-être d'aérer les outputs de Dictus, qui sont actuellement des gros pavés et qui ne sont pas forcément agréables à lire.
+        5. Le but, ce n'est pas forcément de faire exactement la même chose avec Ouispr, parce que j'ai une petite idée en tête et peut-être qu'on fera un truc un peu équivalent à Type Lest, avec vraiment beaucoup de paragraphes, des puces, des choses comme ça.
+        6. Et ça sera un mode intelligent de Ouispr.
+        7. Mais l'idée, c'est au moins peut-être d'aérer les outputs de Ouispr, qui sont actuellement des gros pavés et qui ne sont pas forcément agréables à lire.
         8. Encore une fois, si on arrive à faire un truc qui nous sort juste plusieurs paragraphes avec une légère structure, ça peut être vraiment intéressant.
   #1 477ms breaks=3/N=3 starts=2,4,7 fidelity=ok inSentence=0
      engineOut: 2, 4, 7

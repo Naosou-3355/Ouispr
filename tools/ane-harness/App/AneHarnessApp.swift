@@ -6,10 +6,10 @@
 // backgrounded app cannot be tapped. So the harness is self-running: it loads
 // in the foreground, tells the maintainer to press Home, and then runs on its
 // own whether or not anyone is watching. It stays alive backgrounded the same
-// way DictusApp does — `UIBackgroundModes: audio` plus a running audio engine —
+// way OuisprApp does — `UIBackgroundModes: audio` plus a running audio engine —
 // because reproducing that state is the point, not a workaround for it.
 import SwiftUI
-import DictusCore
+import OuisprCore
 
 @main
 struct AneHarnessApp: App {

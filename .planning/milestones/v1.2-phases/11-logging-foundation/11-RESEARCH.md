@@ -6,11 +6,11 @@
 
 ## Summary
 
-Phase 11 upgrades the existing `PersistentLog` free-text logger into a structured, privacy-safe, level-aware logging system shared between DictusApp and DictusKeyboard via App Group. The existing codebase already has the foundation: `PersistentLog` writes to App Group file with trim logic, `DictusLogger` wraps os.log with subsystem categories, and `DebugLogView` displays logs in SwiftUI. The work is an evolution, not a greenfield build.
+Phase 11 upgrades the existing `PersistentLog` free-text logger into a structured, privacy-safe, level-aware logging system shared between OuisprApp and OuisprKeyboard via App Group. The existing codebase already has the foundation: `PersistentLog` writes to App Group file with trim logic, `OuisprLogger` wraps os.log with subsystem categories, and `DebugLogView` displays logs in SwiftUI. The work is an evolution, not a greenfield build.
 
 The core challenge is designing a structured event API that enforces privacy by construction (no free-text strings that could leak transcription content) while remaining ergonomic enough for instrumentation across 6+ subsystems. Cross-process file writes (app + keyboard extension writing to the same file) require careful serialization -- the existing serial dispatch queue approach works within a single process but needs file-level coordination for cross-process safety.
 
-**Primary recommendation:** Evolve `PersistentLog` into a structured logger with typed `LogEvent` entries (level, subsystem, event enum, parameters dictionary). Keep `DictusLogger` as the os.log companion. Add share sheet export to `DebugLogView`. Privacy is enforced by the event type system -- callers pass enum cases with structured parameters, never raw strings.
+**Primary recommendation:** Evolve `PersistentLog` into a structured logger with typed `LogEvent` entries (level, subsystem, event enum, parameters dictionary). Keep `OuisprLogger` as the os.log companion. Add share sheet export to `DebugLogView`. Privacy is enforced by the event type system -- callers pass enum cases with structured parameters, never raw strings.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -40,7 +40,7 @@ The core challenge is designing a structured event API that enforces privacy by 
 ### Claude's Discretion
 - Color-coding of log entries by level in DebugLogView
 - Exact structured event type definitions and parameter lists per subsystem
-- Internal architecture: evolve PersistentLog or build fresh, relationship with DictusLogger
+- Internal architecture: evolve PersistentLog or build fresh, relationship with OuisprLogger
 - Thread-safety approach for cross-process file writes
 
 ### Deferred Ideas (OUT OF SCOPE)
@@ -53,7 +53,7 @@ The core challenge is designing a structured event API that enforces privacy by 
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| LOG-01 | App logs events with 4 levels (debug/info/warning/error) across all subsystems | LogLevel enum + Subsystem enum + structured LogEvent type in DictusCore |
+| LOG-01 | App logs events with 4 levels (debug/info/warning/error) across all subsystems | LogLevel enum + Subsystem enum + structured LogEvent type in OuisprCore |
 | LOG-02 | Logs never contain transcription text, keystrokes, or audio content | Privacy enforced by typed event API -- no free-text parameter; event enums define allowed data |
 | LOG-03 | User can export logs with device header for GitHub issues | Share sheet via UIActivityViewController from Settings; device header assembled from UIDevice + Bundle APIs |
 | LOG-04 | Logs rotate automatically at 500 lines max | Upgrade existing PersistentLog.maxLines from 200 to 500; trim logic already exists |
@@ -65,8 +65,8 @@ The core challenge is designing a structured event API that enforces privacy by 
 ### Core
 | Component | Source | Purpose | Why Standard |
 |-----------|--------|---------|--------------|
-| `PersistentLog` (evolved) | DictusCore (existing) | File-based structured logging to App Group | Already handles file I/O, trim, App Group path -- extend rather than replace |
-| `DictusLogger` (kept) | DictusCore (existing) | os.log companion for Xcode console | Separate concern: console debugging vs. persistent export |
+| `PersistentLog` (evolved) | OuisprCore (existing) | File-based structured logging to App Group | Already handles file I/O, trim, App Group path -- extend rather than replace |
+| `OuisprLogger` (kept) | OuisprCore (existing) | os.log companion for Xcode console | Separate concern: console debugging vs. persistent export |
 | `UIActivityViewController` | UIKit | Share sheet for log export | Standard iOS sharing pattern, no dependencies needed |
 | `UIDevice` / `Bundle` | UIKit/Foundation | Device header info | Native APIs for iOS version, device model, app version |
 
@@ -88,23 +88,23 @@ The core challenge is designing a structured event API that enforces privacy by 
 
 ### Recommended Project Structure
 ```
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
   PersistentLog.swift          # Evolved: structured events, 500-line trim, file coordination
   Logger.swift                 # Kept: os.log companion (add subsystem categories)
   LogEvent.swift               # NEW: LogLevel, Subsystem, LogEvent enums + formatting
 
-DictusApp/Views/
+OuisprApp/Views/
   DebugLogView.swift           # Evolved: color-coded entries, auto-scroll, share button
   SettingsView.swift           # Modified: add export button
 
-DictusApp/
-  DictusApp.swift              # Migrate existing PersistentLog.log() calls
+OuisprApp/
+  OuisprApp.swift              # Migrate existing PersistentLog.log() calls
   DictationCoordinator.swift   # Migrate ~10 existing calls to structured API
   Audio/AudioRecorder.swift    # NEW instrumentation
   Audio/TranscriptionService.swift  # NEW instrumentation
   Models/ModelManager.swift    # NEW instrumentation
 
-DictusKeyboard/
+OuisprKeyboard/
   KeyboardViewController.swift # NEW instrumentation
 ```
 
@@ -113,7 +113,7 @@ DictusKeyboard/
 **When to use:** Every log call site.
 **Example:**
 ```swift
-// LogEvent.swift in DictusCore
+// LogEvent.swift in OuisprCore
 
 public enum LogLevel: String, CaseIterable {
     case debug, info, warning, error
@@ -206,7 +206,7 @@ static func exportContent() -> String {
     let activeModel = AppGroup.defaults.string(forKey: SharedKeys.selectedModel) ?? "none"
 
     let header = """
-    Dictus Debug Log
+    Ouispr Debug Log
     iOS \(device.systemVersion) | App \(version) (\(build)) | \(device.model) | Model: \(activeModel)
     ---
 
@@ -276,7 +276,7 @@ ScrollViewReader { proxy in
 ### Pitfall 4: Keyboard Extension Memory Pressure
 **What goes wrong:** Logging infrastructure uses too much memory in the keyboard extension (~50MB limit).
 **Why it happens:** Loading entire log file into memory for trim, or buffering too many entries.
-**How to avoid:** The structured log API lives in DictusCore (already loaded by keyboard). Keep log reads lazy -- only load full content in DebugLogView (app only). Trim reads the file but this is infrequent.
+**How to avoid:** The structured log API lives in OuisprCore (already loaded by keyboard). Keep log reads lazy -- only load full content in DebugLogView (app only). Trim reads the file but this is infrequent.
 **Warning signs:** Keyboard extension crashes with memory warnings.
 
 ### Pitfall 5: UIActivityViewController in SwiftUI
@@ -297,7 +297,7 @@ ScrollViewReader { proxy in
 
 ### Export File Format
 ```
-Dictus Debug Log
+Ouispr Debug Log
 iOS 18.2 | App 1.2 (42) | iPhone 14 | Model: base
 ---
 
@@ -310,7 +310,7 @@ iOS 18.2 | App 1.2 (42) | iPhone 14 | Model: base
 // In SettingsView or a helper
 func shareLogFile() {
     let content = PersistentLog.exportContent()
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("dictus-logs.txt")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ouispr-logs.txt")
     try? content.write(to: tempURL, atomically: true, encoding: .utf8)
 
     let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
@@ -374,30 +374,30 @@ extension LogLevel {
 | Property | Value |
 |----------|-------|
 | Framework | Swift Testing / XCTest (SPM) |
-| Config file | DictusCore/Package.swift (test target: DictusCoreTests) |
-| Quick run command | `cd DictusCore && swift test --filter LogEventTests` |
-| Full suite command | `cd DictusCore && swift test` |
+| Config file | OuisprCore/Package.swift (test target: OuisprCoreTests) |
+| Quick run command | `cd OuisprCore && swift test --filter LogEventTests` |
+| Full suite command | `cd OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| LOG-01 | LogEvent produces correct level + subsystem for each event | unit | `cd DictusCore && swift test --filter LogEventTests` | No -- Wave 0 |
-| LOG-02 | No event format string contains sensitive patterns | unit | `cd DictusCore && swift test --filter LogPrivacyTests` | No -- Wave 0 |
-| LOG-03 | Export content includes device header | unit | `cd DictusCore && swift test --filter LogExportTests` | No -- Wave 0 |
-| LOG-04 | Trim keeps exactly 500 lines after exceeding limit | unit | `cd DictusCore && swift test --filter PersistentLogTests` | No -- Wave 0 |
-| LOG-05 | Each subsystem has at least one LogEvent case | unit | `cd DictusCore && swift test --filter LogCoverageTests` | No -- Wave 0 |
+| LOG-01 | LogEvent produces correct level + subsystem for each event | unit | `cd OuisprCore && swift test --filter LogEventTests` | No -- Wave 0 |
+| LOG-02 | No event format string contains sensitive patterns | unit | `cd OuisprCore && swift test --filter LogPrivacyTests` | No -- Wave 0 |
+| LOG-03 | Export content includes device header | unit | `cd OuisprCore && swift test --filter LogExportTests` | No -- Wave 0 |
+| LOG-04 | Trim keeps exactly 500 lines after exceeding limit | unit | `cd OuisprCore && swift test --filter PersistentLogTests` | No -- Wave 0 |
+| LOG-05 | Each subsystem has at least one LogEvent case | unit | `cd OuisprCore && swift test --filter LogCoverageTests` | No -- Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** `cd DictusCore && swift test --filter Log`
-- **Per wave merge:** `cd DictusCore && swift test`
+- **Per task commit:** `cd OuisprCore && swift test --filter Log`
+- **Per wave merge:** `cd OuisprCore && swift test`
 - **Phase gate:** Full suite green before `/gsd:verify-work`
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/LogEventTests.swift` -- covers LOG-01 (level/subsystem mapping)
-- [ ] `DictusCore/Tests/DictusCoreTests/LogPrivacyTests.swift` -- covers LOG-02 (no sensitive data patterns)
-- [ ] `DictusCore/Tests/DictusCoreTests/LogExportTests.swift` -- covers LOG-03 (header format)
-- [ ] `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` -- covers LOG-04 (500-line rotation)
-- [ ] `DictusCore/Tests/DictusCoreTests/LogCoverageTests.swift` -- covers LOG-05 (all subsystems have events)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift` -- covers LOG-01 (level/subsystem mapping)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LogPrivacyTests.swift` -- covers LOG-02 (no sensitive data patterns)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LogExportTests.swift` -- covers LOG-03 (header format)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` -- covers LOG-04 (500-line rotation)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LogCoverageTests.swift` -- covers LOG-05 (all subsystems have events)
 
 ## Sources
 

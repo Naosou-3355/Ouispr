@@ -2,7 +2,7 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 
-// DICTUS HERO V10-B · "hands full", round 2 (V9-B is art/v9-B/heroWalk9.ts). One action: she walks
+// OUISPR HERO V10-B · "hands full", round 2 (V9-B is art/v9-B/heroWalk9.ts). One action: she walks
 // and dictates. The tote fills one hand, so typing is out; the other hand holds her iPhone up near
 // her mouth, its BACK to us (the camera module in marker), and she speaks into it. Slide 2 is then
 // the screen of the phone she holds. Her voice is three thin blue marker strokes, V6 to V8's, with
@@ -392,6 +392,6 @@ const draw = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroWalk10: Film = {
-  meta: { title: "Dictus hero V10-B · hands full, round 2", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: "Ouispr hero V10-B · hands full, round 2", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id: "heroWalk10", start: 0, end: 1, draw }],
 };

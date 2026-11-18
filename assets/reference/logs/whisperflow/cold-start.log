@@ -8003,7 +8003,7 @@ default	18:29:12.573951+0200	audiomxd	SpatializationManager.cpp:184   Spatial in
 		spatialAudioSources = [ 'mlti' ]
 	}
 }
-default	18:29:12.575601+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e5ce","name":"DictusKeyboard(7349)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
+default	18:29:12.575601+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e5ce","name":"OuisprKeyboard(7349)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
 default	18:29:12.575918+0200	audiomxd	SpatializationManager.cpp:614   Returning cached value mEntitlementsCache[kUntrackedHeadphoneEntitlement][com.pivi.dictus.keyboard] = 0
 default	18:29:12.575934+0200	audiomxd	SpatializationManager.cpp:614   Returning cached value mEntitlementsCache[k3rdPartyUntrackedHeadphoneEntitlement][com.pivi.dictus.keyboard] = 0
 default	18:29:12.575983+0200	audiomxd	           AQMEIO_HAL.cpp:1555  User-selected BT device category is 0
@@ -16422,7 +16422,7 @@ default	18:29:16.048320+0200	audiomxd	AudioApplicationInfoImpl.mm:395   Successf
 ]
 default	18:29:16.048338+0200	audiomxd	AudioSessionServerImpPlayState.mm:715   { "action":"set_play_state", "session":{"ID":"0x72e5f1","name":"Flow(7451)"}, "details":{"IOs":[0,0,0,0,0],"IsRecording":false,"IsRecordingMuted":false,"IsRecordingMutedForRemoteDevice":false,"active":true,"modes":" Input","player":"0x7929b7600","state":"Stopped","type":"Remote IO"} }
 default	18:29:16.048362+0200	Flow	AudioConverter -> 0x13d204db0: The in-process SetProperty call returned 1886547824 for property 1886547309 with size 4.
-default	18:29:16.048597+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e5ce","name":"DictusKeyboard(7349)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
+default	18:29:16.048597+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e5ce","name":"OuisprKeyboard(7349)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
 default	18:29:16.048629+0200	audiomxd	SpatializationManager.cpp:614   Returning cached value mEntitlementsCache[kUntrackedHeadphoneEntitlement][com.pivi.dictus.keyboard] = 0
 default	18:29:16.048636+0200	audiomxd	SpatializationManager.cpp:614   Returning cached value mEntitlementsCache[k3rdPartyUntrackedHeadphoneEntitlement][com.pivi.dictus.keyboard] = 0
 default	18:29:16.048657+0200	audiomxd	           AQMEIO_HAL.cpp:1555  User-selected BT device category is 0

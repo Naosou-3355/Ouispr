@@ -1,15 +1,15 @@
-> **Ouispr** est une version personnelle de [Dictus](https://github.com/getdictus/dictus-ios) (licence MIT), pour un usage privé.
-> Ajouts par rapport à Dictus : le nettoyage français ne garde que la version corrigée quand on se reprend à l'oral (« dimanche… ah non, samedi »).
+> **Ouispr** est une version personnelle de [Ouispr](https://github.com/getdictus/dictus-ios) (licence MIT), pour un usage privé.
+> Ajouts par rapport à Ouispr : le nettoyage français ne garde que la version corrigée quand on se reprend à l'oral (« dimanche… ah non, samedi »).
 
 <p align="center">
-  <img src="assets/brand/appicon-light.svg" alt="Dictus" width="120" height="120" />
+  <img src="assets/brand/appicon-light.svg" alt="Ouispr" width="120" height="120" />
 </p>
 
-<h1 align="center">Dictus for iOS</h1>
+<h1 align="center">Ouispr for iOS</h1>
 
 <p align="center">
   <strong>Free, open-source iOS keyboard for voice dictation — 100% on-device.</strong><br />
-  Speak in any app. No cloud, no account. Dictation is free, Dictus Pro is optional.
+  Speak in any app. No cloud, no account. Dictation is free, Ouispr Pro is optional.
 </p>
 
 <p align="center">
@@ -30,19 +30,19 @@
 
 ---
 
-Dictus is a free, open-source iOS keyboard that adds voice dictation to any app. All speech recognition runs on-device via [WhisperKit](https://github.com/argmaxinc/WhisperKit) (Apple CoreML), with no server and no account. Dictation is free; an optional [Dictus Pro](#dictus-pro) adds Smart Modes, History, Vocabulary and voice notes. French-first, with English and German support.
+Ouispr is a free, open-source iOS keyboard that adds voice dictation to any app. All speech recognition runs on-device via [WhisperKit](https://github.com/argmaxinc/WhisperKit) (Apple CoreML), with no server and no account. Dictation is free; an optional [Ouispr Pro](#ouispr-pro) adds Smart Modes, History, Vocabulary and voice notes. French-first, with English and German support.
 
-## Why Dictus?
+## Why Ouispr?
 
 - 🔒 **100% on-device** — your voice never leaves the iPhone. No cloud, no telemetry, no account.
-- 🆓 **Free dictation, open source**: MIT licensed, fully auditable code. [Dictus Pro](#dictus-pro) is optional.
+- 🆓 **Free dictation, open source**: MIT licensed, fully auditable code. [Ouispr Pro](#ouispr-pro) is optional.
 - ⌨️ **Works in every app** — system-wide keyboard with AZERTY / QWERTY / QWERTZ layouts.
 - 🇫🇷 **French-first** — built for FR, with EN & DE; multiple Whisper sizes (tiny / base / small).
 - ✨ **Native iOS feel** — iOS 26 Liquid Glass design.
 
-## How Dictus compares
+## How Ouispr compares
 
-| Feature | **Dictus** | Apple Dictation | Wispr Flow | SuperWhisper | MacWhisper |
+| Feature | **Ouispr** | Apple Dictation | Wispr Flow | SuperWhisper | MacWhisper |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Price | **Free** dictation + optional Pro | Built-in | Free / $15/mo | Free / $8.49/mo | Free / $6.99/mo |
 | 100% offline | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
@@ -55,17 +55,17 @@ See the full comparison on [getdictus.com](https://getdictus.com).
 
 ## Install the beta
 
-Join via TestFlight: **[Install Dictus Beta →](https://testflight.apple.com/join/b55atKYX)**
+Join via TestFlight: **[Install Ouispr Beta →](https://testflight.apple.com/join/b55atKYX)**
 
 > Requirements: iPhone 12 or later, iOS 17.0+
 
 1. Tap the link above on your iPhone (or scan it with your camera).
 2. Install TestFlight from the App Store if you don't have it.
-3. Open Dictus and follow the onboarding to download a speech model.
-4. Enable the keyboard: **Settings → General → Keyboard → Keyboards → Add New Keyboard → Dictus**.
+3. Open Ouispr and follow the onboarding to download a speech model.
+4. Enable the keyboard: **Settings → General → Keyboard → Keyboards → Add New Keyboard → Ouispr**.
 5. Allow **Full Access** when prompted (required for microphone).
 
-**Feedback:** shake your device in Dictus to send feedback via TestFlight, or open an [issue](https://github.com/getdictus/dictus-ios/issues).
+**Feedback:** shake your device in Ouispr to send feedback via TestFlight, or open an [issue](https://github.com/getdictus/dictus-ios/issues).
 
 ## Features
 
@@ -77,14 +77,14 @@ Join via TestFlight: **[Install Dictus Beta →](https://testflight.apple.com/jo
 - Sound feedback for recording start / stop
 - iOS 26 Liquid Glass design
 
-## Dictus Pro
+## Ouispr Pro
 
-Dictation and the keyboard are free. Dictus Pro is an optional upgrade in the app that adds:
+Dictation and the keyboard are free. Ouispr Pro is an optional upgrade in the app that adds:
 
 - **Smart Modes**: turn your dictation into the text you need (Translate, Message, List, Structured, Summary), with on-device AI. Requires Apple Intelligence (iPhone 15 Pro or later, iOS 26).
 - **History search**: find any past dictation in seconds.
-- **Vocabulary**: teach Dictus your names and technical terms.
-- **Voice notes**: transcribe the voice messages you receive, shared to Dictus from your chat app.
+- **Vocabulary**: teach Ouispr your names and technical terms.
+- **Voice notes**: transcribe the voice messages you receive, shared to Ouispr from your chat app.
 
 ## Roadmap
 
@@ -95,7 +95,7 @@ Dictation and the keyboard are free. Dictus Pro is an optional upgrade in the ap
 - [ ] Custom vocabulary (technical terms, names)
 - [ ] Searchable local transcription history
 - [ ] Audio-file transcription
-- [ ] Sync settings across Dictus iOS / Android / Desktop (offline-first)
+- [ ] Sync settings across Ouispr iOS / Android / Desktop (offline-first)
 
 Have an idea? Open a [feature request](https://github.com/getdictus/dictus-ios/issues/new) — we prioritize the most-upvoted ones.
 
@@ -103,14 +103,14 @@ Have an idea? Open a [feature request](https://github.com/getdictus/dictus-ios/i
 
 ```bash
 git clone https://github.com/getdictus/dictus-ios.git
-cd dictus-ios
-open Dictus.xcodeproj
+cd ouispr-ios
+open Ouispr.xcodeproj
 ```
 
-1. Select the **DictusApp** target and pick your device.
+1. Select the **OuisprApp** target and pick your device.
 2. Build and run (`Cmd + R`).
 3. Follow onboarding to download a speech model.
-4. Enable the Dictus keyboard in Settings → General → Keyboard → Keyboards.
+4. Enable the Ouispr keyboard in Settings → General → Keyboard → Keyboards.
 5. Allow **Full Access** (required for microphone).
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development guide.
@@ -124,15 +124,15 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development guide.
 
 ## Architecture
 
-Dictus is organized into three Xcode targets:
+Ouispr is organized into three Xcode targets:
 
 | Target | Role |
 | --- | --- |
-| **DictusApp** | Main app — onboarding, settings, model manager |
-| **DictusKeyboard** | Keyboard extension — custom keyboard + dictation trigger |
-| **DictusCore** | Shared framework — App Group storage, models, preferences |
+| **OuisprApp** | Main app — onboarding, settings, model manager |
+| **OuisprKeyboard** | Keyboard extension — custom keyboard + dictation trigger |
+| **OuisprCore** | Shared framework — App Group storage, models, preferences |
 
-The app and the keyboard extension communicate through an **App Group** (`group.solutions.pivi.dictus`). WhisperKit runs inside DictusApp (the keyboard extension has a ~50 MB memory limit), and an audio bridge handles cold start so dictation works seamlessly from the keyboard.
+The app and the keyboard extension communicate through an **App Group** (`group.solutions.pivi.dictus`). WhisperKit runs inside OuisprApp (the keyboard extension has a ~50 MB memory limit), and an audio bridge handles cold start so dictation works seamlessly from the keyboard.
 
 ## Contributing
 
@@ -144,11 +144,11 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good entry
 
 ## Privacy
 
-Dictus collects no user data. All speech processing happens on your device. See our [Privacy Policy](https://www.getdictus.com/en/privacy).
+Ouispr collects no user data. All speech processing happens on your device. See our [Privacy Policy](https://www.getdictus.com/en/privacy).
 
 ## Support the project
 
-Dictation in Dictus is free and the code is open source. If it helps you every day, there are two ways to support it: [Dictus Pro](#dictus-pro) in the iOS app, or a [donation](https://getdictus.com/donate). Donations fund development across Dictus, including [Dictus Desktop](https://github.com/getdictus/dictus-desktop), which is free.
+Dictation in Ouispr is free and the code is open source. If it helps you every day, there are two ways to support it: [Ouispr Pro](#ouispr-pro) in the iOS app, or a [donation](https://getdictus.com/donate). Donations fund development across Ouispr, including [Ouispr Desktop](https://github.com/getdictus/dictus-desktop), which is free.
 
 ## Community
 

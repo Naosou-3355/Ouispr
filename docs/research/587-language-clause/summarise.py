@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 RESEARCH = HERE.parent
-FIXTURES = RESEARCH.parent.parent / "DictusCore/Sources/polish-harness/fixtures"
+FIXTURES = RESEARCH.parent.parent / "OuisprCore/Sources/polish-harness/fixtures"
 TRANSLATED = "translated-structured.json"
 
 # mode -> (candidate capture, baseline capture, baseline arm label)

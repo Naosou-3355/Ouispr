@@ -8,7 +8,7 @@ that re-run. Sections 1-8 are macOS 26.5.1 throughout unless they say otherwise.
 **Brief:** #570's comment of 2026-09-17 16:40, *"The bench this issue needs, specified"*.
 **Bars:** `bars.md`, committed before the first arm ran, with its two calibration
 amendments recorded in §6.1.
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/device-structured-fr.json`
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/device-structured-fr.json`
 (the nine device `Structuré` runs of 2026-09-17) and `…/longform-fr.json` (the six of
 2026-08-27, every #523 number's corpus).
 **Captures:** `raw/`, four rounds. **JSON:** `capture-*.json`. **Aggregation:**
@@ -66,7 +66,7 @@ three runs cannot see a 1 % event at all.
 Model-free, re-runnable with Apple Intelligence off:
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness fidelity ../docs/research/570-structured-fidelity/device-corpus.json --replay --sweep
 ```
 
@@ -136,7 +136,7 @@ opinion, removed. That is decision 5's territory and it was in neither comment.
 **It misses `D2`'s term substitution.** `le même prix en calcul` → `le même temps de
 calcul` changes one content word in a clause that keeps the rest, so recall stays high
 and no axis reads it. **Term substitution is not one of the brief's four axes and the
-bench does not measure it.** It is the same class as the `dictus` → `dictée` defect
+bench does not measure it.** It is the same class as the `ouispr` → `dictée` defect
 #570's body opens on, and it remains unmeasured.
 
 **It misses `D4`'s hardened stance, and the reason is alignment, not the booster rule.**
@@ -324,7 +324,7 @@ prompt included. §9.
    possible deletion. Every flag is printed with its text because the number is a screen
    for a human read, not a verdict.
 3. **The four axes do not cover every defect in the corpus.** Term substitution
-   (`D2`, and the `dictus` → `dictée` case #570's body opens on), a fabricated intention
+   (`D2`, and the `ouispr` → `dictée` case #570's body opens on), a fabricated intention
    (`D4`), a reified disfluency in quotation marks (`D4`) and a misspelling (`D4`) are
    all real damage with no axis. The brief names four axes; this is what the other
    defects look like.

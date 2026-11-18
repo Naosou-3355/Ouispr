@@ -69,7 +69,7 @@ The ANE on Apple's mobile chips (A17 Pro included) cannot load the non-quantized
 
 ## Corrective action (rev a2b7a91 — Commit 3 of Phase 37)
 
-1. **Catalog identifier switched** to `openai_whisper-large-v3_turbo_954MB` in `DictusCore/Sources/DictusCore/ModelInfo.swift` — the variant Argmax explicitly lists as iPhone-supported.
+1. **Catalog identifier switched** to `openai_whisper-large-v3_turbo_954MB` in `OuisprCore/Sources/OuisprCore/ModelInfo.swift` — the variant Argmax explicitly lists as iPhone-supported.
 2. **Gate lowered to `physicalMemoryGB >= 6`** in `ModelInfo.isSupported(on:)`, matching Argmax's per-device support list (all iPhone 14+ families with 6 GB RAM or more).
 3. **120-second timeout** added on `WhisperKit(config)` in `ModelManager.downloadWhisperKitModel` via `withPrewarmTimeout`. If CoreML compilation hangs (ANE failure or otherwise), the task is cancelled, `.error` state is set, `cleanupModelFiles` runs, and a `modelPrewarmTimeout` LogEvent is emitted — no more indefinite UI spinner.
 4. **ModelInfoTests updated** — new assertions reflect that Turbo is now gated-in from 6 GB.
@@ -109,4 +109,4 @@ These remain open for TestFlight-driven observation once Turbo ships.
 
 - [WhisperKit config.json (device_support section)](https://huggingface.co/argmaxinc/whisperkit-coreml/resolve/main/config.json)
 - [WhisperKit Issue #268 — Unable to load model (or very very slow)](https://github.com/argmaxinc/WhisperKit/issues/268)
-- Dictus [issue #104](https://github.com/getdictus/dictus-ios/issues/104) + m13v's initial comment flagging `os_proc_available_memory` + Pierre's 3-stage checkpoint insight.
+- Ouispr [issue #104](https://github.com/getdictus/dictus-ios/issues/104) + m13v's initial comment flagging `os_proc_available_memory` + Pierre's 3-stage checkpoint insight.

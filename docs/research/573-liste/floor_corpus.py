@@ -10,7 +10,7 @@ length, and how many bullets each run produced.
     python3 floor_corpus.py build /tmp/573-floor-corpus.json ~/exports/*.json
 
     # 2. The run, 2 per dictation, transcript language detected:
-    cd DictusCore && .build/debug/polish-harness fidelity /tmp/573-floor-corpus.json \
+    cd OuisprCore && .build/debug/polish-harness fidelity /tmp/573-floor-corpus.json \
         --mode notes --runs 2 --json /tmp/573-floor-capture.json > /dev/null
 
     # 3. The curve and the per-dictation numbers that get committed:

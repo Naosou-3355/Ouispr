@@ -38,11 +38,11 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusApp/Audio/CallStateMonitor.swift` | CXCallObserver wrapper for call state detection | VERIFIED | Exists, 51 lines, contains `CXCallObserver`, `isCallActive`, `updateCallState()`, delegate method `callObserver(_:callChanged:)`, `import DictusCore` |
-| `DictusApp/Audio/UnifiedAudioEngine.swift` | Idle deactivation method that stops engine and deactivates session | VERIFIED | `deactivateAndIdle()` at line 267 — stops engine, calls `setActive(false, options: .notifyOthersOnDeactivation)`, resets `sessionConfigured = false` |
-| `DictusApp/DictationCoordinator.swift` | Call guard before recording + session deactivation after recording | VERIFIED | `callStateMonitor` property at line 39; `isCallActive` guard at line 263; `deactivateAndIdle()` at lines 356 and 429 |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | Numeric guard in handleSpace() before spell check | VERIFIED | `containsDigit` at line 346 — placed before autocorrect block at line 380; early return inserts space normally |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | Numeric guard in update() and updateAsync() before spell check | VERIFIED | 2 occurrences of `containsDigit` — lines 119 (`update()`) and 198 (`updateAsync()`); both guard before `spellCheck` calls |
+| `OuisprApp/Audio/CallStateMonitor.swift` | CXCallObserver wrapper for call state detection | VERIFIED | Exists, 51 lines, contains `CXCallObserver`, `isCallActive`, `updateCallState()`, delegate method `callObserver(_:callChanged:)`, `import OuisprCore` |
+| `OuisprApp/Audio/UnifiedAudioEngine.swift` | Idle deactivation method that stops engine and deactivates session | VERIFIED | `deactivateAndIdle()` at line 267 — stops engine, calls `setActive(false, options: .notifyOthersOnDeactivation)`, resets `sessionConfigured = false` |
+| `OuisprApp/DictationCoordinator.swift` | Call guard before recording + session deactivation after recording | VERIFIED | `callStateMonitor` property at line 39; `isCallActive` guard at line 263; `deactivateAndIdle()` at lines 356 and 429 |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | Numeric guard in handleSpace() before spell check | VERIFIED | `containsDigit` at line 346 — placed before autocorrect block at line 380; early return inserts space normally |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | Numeric guard in update() and updateAsync() before spell check | VERIFIED | 2 occurrences of `containsDigit` — lines 119 (`update()`) and 198 (`updateAsync()`); both guard before `spellCheck` calls |
 
 ### Key Link Verification
 
@@ -50,7 +50,7 @@ human_verification:
 |------|----|-----|--------|---------|
 | `DictationCoordinator.swift` | `CallStateMonitor.swift` | `callStateMonitor.isCallActive` before `startRecording` | WIRED | Property declared at line 39; guard at line 263 (`if callStateMonitor.isCallActive`) before dictation task starts |
 | `DictationCoordinator.swift` | `UnifiedAudioEngine.swift` | `audioEngine.deactivateAndIdle()` after `collectSamples` | WIRED | Line 356 (stopDictation, after collectSamples) and line 429 (cancelDictation, after collectSamples) — both call sites present |
-| `DictusKeyboardBridge.swift` | `SuggestionState.swift` | numeric guard mirrors update logic in handleSpace | VERIFIED | `containsDigit` pattern consistent across all 3 entry points; `handleSpace` returns early, `update`/`updateAsync` skip to completions-only mode |
+| `OuisprKeyboardBridge.swift` | `SuggestionState.swift` | numeric guard mirrors update logic in handleSpace | VERIFIED | `containsDigit` pattern consistent across all 3 entry points; `handleSpace` returns early, `update`/`updateAsync` skip to completions-only mode |
 
 ### Requirements Coverage
 
@@ -62,7 +62,7 @@ human_verification:
 
 **REQUIREMENTS.md cross-reference:** BUG-71, BUG-72, BUG-74 are referenced under ROADMAP.md Phase 27 (line 308: `**Requirements**: BUG-71, BUG-72, BUG-74`). These IDs are not defined as standalone entries in REQUIREMENTS.md — they map to `BETA-01` ("Critical bugs reported by public beta testers are triaged and fixed"). All three are accounted for across the two plans. No orphaned requirements.
 
-**Xcode project registration:** `CallStateMonitor.swift` registered in `project.pbxproj` with PBXBuildFile `AA0000C2` and PBXFileReference `AA1000C2`, placed in the Audio group, included in DictusApp Sources build phase.
+**Xcode project registration:** `CallStateMonitor.swift` registered in `project.pbxproj` with PBXBuildFile `AA0000C2` and PBXFileReference `AA1000C2`, placed in the Audio group, included in OuisprApp Sources build phase.
 
 ### Anti-Patterns Found
 
@@ -76,19 +76,19 @@ All `return nil` / `return []` occurrences in scanned files are legitimate guard
 
 #### 1. Phone Call Crash Prevention (BUG-71)
 
-**Test:** On a physical device, initiate a phone call, then open a text field, activate the Dictus keyboard, and tap the microphone button.
+**Test:** On a physical device, initiate a phone call, then open a text field, activate the Ouispr keyboard, and tap the microphone button.
 **Expected:** The keyboard displays "Recording unavailable during a call" — no crash, no SIGABRT, the keyboard remains functional.
 **Why human:** Requires a real device and an active telephony call. `CXCallObserver.calls` only reflects real calls; the SIGABRT itself (from `installTapOnBus` during an occupied AVAudioSession) cannot be reproduced statically.
 
 #### 2. AirPods / Media App Resumption (BUG-72)
 
-**Test:** Connect AirPods, start playing music in Spotify or Apple Music, switch to a text field with Dictus keyboard, record a short dictation, then stop.
-**Expected:** Within ~2 seconds of stopping, music resumes on AirPods. Pressing play/pause on AirPods controls the music app, not Dictus.
+**Test:** Connect AirPods, start playing music in Spotify or Apple Music, switch to a text field with Ouispr keyboard, record a short dictation, then stop.
+**Expected:** Within ~2 seconds of stopping, music resumes on AirPods. Pressing play/pause on AirPods controls the music app, not Ouispr.
 **Why human:** `.notifyOthersOnDeactivation` triggers iOS inter-app audio routing. Requires physical AirPods and a media app running concurrently; not verifiable from static code alone.
 
 #### 3. Numeric Token Autocorrect Guard (BUG-74)
 
-**Test:** In any text field with Dictus keyboard active (French layout), type "test123" and press space. Also type "42nd" + space and "h2o" + space.
+**Test:** In any text field with Ouispr keyboard active (French layout), type "test123" and press space. Also type "42nd" + space and "h2o" + space.
 **Expected:** All tokens are inserted as typed — no replacement. The suggestion bar may show completions but no correction in bold center slot.
 **Why human:** The guard logic is fully verified in code; device test confirms no regression in the space-insertion flow and that `lastAutocorrect` state is correctly cleared for subsequent undo behaviour.
 

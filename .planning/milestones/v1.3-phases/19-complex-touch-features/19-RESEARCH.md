@@ -18,7 +18,7 @@ The double-space period bug has a clear root cause: `handleAutoFullStop()` check
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- Accent character set: Use existing `AccentedCharacters.mappings` from DictusCore AS-IS, French-focused only
+- Accent character set: Use existing `AccentedCharacters.mappings` from OuisprCore AS-IS, French-focused only
 - Accent long-press UX: Use giellakbd-ios `LongPressOverlayController` as-is, data wiring only
 - Adaptive accent key: Re-implement existing v1.1 behavior on UIKit keyboard
 - Delete repeat: Use giellakbd-ios `keyRepeatTimer` infrastructure, accelerating speed pattern
@@ -64,7 +64,7 @@ The double-space period bug has a clear root cause: `handleAutoFullStop()` check
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | UIKit | iOS 17+ | Touch handling, UICollectionView, gesture recognizers | Native framework, zero overhead |
-| DictusCore | internal | AccentedCharacters, HapticFeedback, KeyTapSignposter | Already contains all accent logic and haptic infrastructure |
+| OuisprCore | internal | AccentedCharacters, HapticFeedback, KeyTapSignposter | Already contains all accent logic and haptic infrastructure |
 | giellakbd-ios (vendored) | custom | GiellaKeyboardView, LongPressOverlayController, LongPressCursorMovementController | Already handles long-press overlay system, cursor movement, key repeat |
 | os.signpost | iOS 17+ | OSSignposter for latency measurement | Apple's recommended performance instrumentation |
 
@@ -250,7 +250,7 @@ return true
 | Accent popup display | Custom popup UIView | LongPressOverlayController | Already handles positioning, drag-to-select, multi-row layout, edge clamping |
 | Cursor movement tracking | Custom drag handler | LongPressCursorMovementController | Already handles baseline, delta calculation, delegate callbacks |
 | Key repeat timer | Custom Timer/Task logic | Existing keyRepeatTimer in GiellaKeyboardView | Already wired into activeKey lifecycle, handles invalidation on release |
-| Haptic feedback | Direct UIImpactFeedbackGenerator calls | HapticFeedback enum (DictusCore) | Pre-allocated generators, caching, prepare() calls, enabled state check |
+| Haptic feedback | Direct UIImpactFeedbackGenerator calls | HapticFeedback enum (OuisprCore) | Pre-allocated generators, caching, prepare() calls, enabled state check |
 | Accent character data | Hardcoded dictionaries | AccentedCharacters.mappings | Already has French accents, case handling, adaptive key logic |
 | Word-level deletion | Character-counting loops | deleteWordBackward() pattern from SwiftUI KeyboardView | Already handles trailing spaces, word boundary detection |
 | Latency measurement | print(Date()) timestamps | KeyTapSignposter (OSSignposter) | Zero overhead when not profiling, Instruments integration |
@@ -330,7 +330,7 @@ override func viewDidLoad() {
 ### Adaptive Accent Key State Tracking
 
 ```swift
-// In DictusKeyboardBridge
+// In OuisprKeyboardBridge
 private var lastTypedCharacter: String?
 
 private func handleInputKey(_ character: String) {
@@ -359,7 +359,7 @@ func handleAdaptiveAccentKey() {
 ### Word-Level Deletion for Delete Repeat
 
 ```swift
-// In DictusKeyboardBridge, add word-level deletion method
+// In OuisprKeyboardBridge, add word-level deletion method
 private func handleWordDelete() {
     AudioServicesPlaySystemSound(KeySound.delete)
     guard let proxy = controller?.textDocumentProxy,
@@ -430,7 +430,7 @@ private func handleWordDelete() {
 |----------|-------|
 | Framework | Manual testing on physical device (keyboard extensions cannot run unit tests for touch pipeline) |
 | Config file | none |
-| Quick run command | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| Quick run command | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | Full suite command | Build + install on device + manual UAT |
 
 ### Phase Requirements -> Test Map
@@ -443,7 +443,7 @@ private func handleWordDelete() {
 | FEEL-06 | Adaptive accent key shows correct label | manual | Build + type vowel, check key label on device | N/A |
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild build -scheme DictusKeyboard` (compilation check)
+- **Per task commit:** `xcodebuild build -scheme OuisprKeyboard` (compilation check)
 - **Per wave merge:** Full manual test of all features + edge key dead zone validation
 - **Phase gate:** Full UAT covering all 5 requirements + edge key fix + zero dead zones
 
@@ -455,7 +455,7 @@ None -- existing build infrastructure covers compilation. Touch feature testing 
 ### Primary (HIGH confidence)
 - GiellaKeyboardView.swift source code -- touch pipeline, overlay system, key repeat timer, long-press handling
 - LongPressController.swift source code -- LongPressOverlayController and LongPressCursorMovementController
-- DictusKeyboardBridge.swift source code -- delegate implementation, double-space bug
+- OuisprKeyboardBridge.swift source code -- delegate implementation, double-space bug
 - AccentedCharacters.swift source code -- French accent mappings, adaptive key logic
 - HapticFeedback.swift source code -- pre-allocated generators, warmUp(), all feedback methods
 - SpecialKeyButton.swift source code -- reference delete repeat and trackpad implementations

@@ -20,11 +20,11 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Views/KeyboardModePicker.swift
-    - DictusApp/Onboarding/ModeSelectionPage.swift
+    - OuisprApp/Views/KeyboardModePicker.swift
+    - OuisprApp/Onboarding/ModeSelectionPage.swift
   modified:
-    - DictusApp/Views/SettingsView.swift
-    - DictusApp/Onboarding/OnboardingView.swift
+    - OuisprApp/Views/SettingsView.swift
+    - OuisprApp/Onboarding/OnboardingView.swift
 
 key-decisions:
   - "Empty string default in onboarding forces explicit mode selection"
@@ -65,10 +65,10 @@ Each task was committed atomically:
 2. **Task 2: Integrate mode picker into Settings and Onboarding** - `6d116fb` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/KeyboardModePicker.swift` - Reusable segmented picker with miniature previews (micro/emoji/full)
-- `DictusApp/Onboarding/ModeSelectionPage.swift` - Blocking onboarding step with Continuer disabled until selection
-- `DictusApp/Views/SettingsView.swift` - Mode picker in Clavier section, conditional toggles per mode
-- `DictusApp/Onboarding/OnboardingView.swift` - 6-step flow with ModeSelectionPage at case 3
+- `OuisprApp/Views/KeyboardModePicker.swift` - Reusable segmented picker with miniature previews (micro/emoji/full)
+- `OuisprApp/Onboarding/ModeSelectionPage.swift` - Blocking onboarding step with Continuer disabled until selection
+- `OuisprApp/Views/SettingsView.swift` - Mode picker in Clavier section, conditional toggles per mode
+- `OuisprApp/Onboarding/OnboardingView.swift` - 6-step flow with ModeSelectionPage at case 3
 
 ## Decisions Made
 - Empty string default for keyboardMode in onboarding forces explicit user choice (vs .full default in Settings for existing users)

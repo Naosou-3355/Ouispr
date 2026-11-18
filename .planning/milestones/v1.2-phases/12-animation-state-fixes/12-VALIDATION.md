@@ -18,16 +18,16 @@ created: 2026-03-11
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (bundled with Xcode) |
-| **Config file** | Dictus.xcodeproj scheme settings |
-| **Quick run command** | `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -20` |
-| **Full suite command** | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
+| **Config file** | Ouispr.xcodeproj scheme settings |
+| **Quick run command** | `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -20` |
+| **Full suite command** | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
 | **Estimated runtime** | ~30 seconds (build only — tests are manual) |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` (compilation check)
+- **After every task commit:** Run `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` (compilation check)
 - **After every plan wave:** Manual testing protocol on device (20 consecutive mic taps, rapid tap sequences, full dictation cycle)
 - **Before `/gsd:verify-work`:** All 3 success criteria pass manual verification on device
 - **Max feedback latency:** ~30 seconds (build time)
@@ -64,7 +64,7 @@ Existing infrastructure covers all phase requirements. No new test stubs needed 
 | Rapid taps don't create stale state | ANIM-02 | Cross-process timing + AVAudioSession state requires real device | Rapid start/stop/start within 1 second, 10 times. Verify no stuck overlay or waveform |
 | Mic button disabled during transitions | ANIM-02 | UI interaction state requires device testing | Tap mic during .requested/.transcribing states, verify tap is rejected |
 | Waveform stops cleanly on completion | ANIM-03 | Animation rendering + audio session cleanup requires device | Complete a dictation, verify waveform stops and mic button returns to ready state |
-| Watchdog resets stale state | ANIM-03 | Requires simulating a stuck state (kill app during recording) | Force-kill DictusApp during recording, reopen keyboard, verify state resets within watchdog interval |
+| Watchdog resets stale state | ANIM-03 | Requires simulating a stuck state (kill app during recording) | Force-kill OuisprApp during recording, reopen keyboard, verify state resets within watchdog interval |
 
 ---
 

@@ -67,11 +67,11 @@ Plans 09 and 10 closed all 5 gaps. Current code verified against actual files.
 | #  | Truth                                                                               | Status             | Evidence                                                                                             |
 |----|-------------------------------------------------------------------------------------|--------------------|------------------------------------------------------------------------------------------------------|
 | 1  | All French UI strings display correct accents                                       | VERIFIED           | MicPermissionPage "Réglages"/"autorisé". Zero unaccented French UI strings detected. Commit 7aecf8a |
-| 2  | Gauge bars for Vitesse and Précision use blue palette only                          | VERIFIED           | ModelCardView L122-134: `.dictusAccent` + `.dictusAccentHighlight` on gauge bars                    |
-| 3  | Mic button opacity during transcription is visually consistent                      | VERIFIED           | AnimatedMicButton: `.dictusAccentHighlight.opacity(0.5)` fill + shimmer for transcribing state      |
+| 2  | Gauge bars for Vitesse and Précision use blue palette only                          | VERIFIED           | ModelCardView L122-134: `.ouisprAccent` + `.ouisprAccentHighlight` on gauge bars                    |
+| 3  | Mic button opacity during transcription is visually consistent                      | VERIFIED           | AnimatedMicButton: `.ouisprAccentHighlight.opacity(0.5)` fill + shimmer for transcribing state      |
 | 4  | Settings list options show native iOS press highlight                               | VERIFIED           | SettingsView: no SettingsRowStyle; all rows are Button or NavigationLink (native highlight)          |
 | 5  | Log export button shows spinner during preparation                                  | VERIFIED           | SettingsView: `@State private var isExporting`; `ProgressView()` + `.disabled(isExporting)` wired   |
-| 6  | Active model card has blue background tint AND dark blue border                     | VERIFIED           | ModelCardView L149-166: `.fill(Color.dictusAccent.opacity(0.10))` background + `.stroke(...)` overlay|
+| 6  | Active model card has blue background tint AND dark blue border                     | VERIFIED           | ModelCardView L149-166: `.fill(Color.ouisprAccent.opacity(0.10))` background + `.stroke(...)` overlay|
 | 7  | Tapping anywhere on a downloaded model card selects it as active                   | VERIFIED           | ModelCardView: entire card wrapped in `Button { handleCardTap() }` with `.contentShape(Rectangle())`|
 | 8  | Tapping anywhere on a non-downloaded model card starts download                    | VERIFIED           | `handleCardTap()` `.notDownloaded` branch: `try await modelManager.downloadModel(...)` in Task       |
 | 9  | Swiping left on a downloaded non-active model card reveals Supprimer               | VERIFIED           | ModelManagerView: `.swipeActions` with `Label("Supprimer", systemImage: "trash")` + `.tint(.red)`   |
@@ -99,18 +99,18 @@ Plans 09 and 10 closed all 5 gaps. Current code verified against actual files.
 
 | Artifact                                                       | Expected                                                                            | Status   | Details                                                                                           |
 |----------------------------------------------------------------|-------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------------------|
-| `DictusApp/Onboarding/MicPermissionPage.swift`                 | "Réglages" and "autorisé" with correct accents                                      | VERIFIED | Line 53: "Réglages", line 48: "autorisé" — commit 7aecf8a                                       |
-| `DictusApp/Views/SettingsView.swift`                           | Native press feedback on all rows, log export spinner, no SettingsRowStyle          | VERIFIED | No SettingsRowStyle struct; GitHub is Button; `isExporting` + `ProgressView()` wired             |
-| `DictusApp/Views/ModelCardView.swift`                          | Blue tint + border on active, no isSwitching, full card tap, gauges in blue palette | VERIFIED | L149-166: tint + border. No isSwitching. contentShape. `.dictusAccent`/`.dictusAccentHighlight`  |
-| `DictusApp/Views/ModelManagerView.swift`                       | Swipe-to-delete with full-height button, section filters, loadState on appear       | VERIFIED | L101-109: Label + `.frame(maxHeight: .infinity)`. `.onAppear { modelManager.loadState() }`       |
-| `DictusKeyboard/Views/RecordingOverlay.swift`                  | Matched layout for stable waveform, 44pt PillButton, haptics, 'En écoute...'       | VERIFIED | transcribingContent mirrors recordingContent structure. PillButton 44pt. "En écoute..." L161     |
-| `DictusKeyboard/KeyboardRootView.swift`                        | Asymmetric transition + easeOut animation on overlay                                | VERIFIED | `.transition(.asymmetric(...))`. `.animation(.easeOut(duration: 0.25), value: showsOverlay)`      |
-| `DictusApp/Onboarding/OnboardingSuccessView.swift`             | Full-screen success overlay with animated checkmark, French text                   | VERIFIED | 91 lines; spring animation; "C'est prêt !"; "Commencer" button                                  |
-| `DictusApp/Views/RecordingView.swift`                          | Auto-advance after 1.5s in onboarding mode, no Terminer button                     | VERIFIED | 1500ms delay + `onComplete?()` call. No "Terminer" string present.                               |
-| `DictusApp/Onboarding/KeyboardSetupPage.swift`                 | Resilient keyboard detection, 800ms+2s retry, French accent fixes                  | VERIFIED | Debounce 800ms + 2s retry. "Réglages", "détecté" accented.                                      |
-| `DictusApp/Onboarding/ModelDownloadPage.swift`                 | French accent fixes + persistState after download                                   | VERIFIED | "Modèle vocal", "téléchargement", "Recommandé" accented; download calls `persistState()`         |
-| `DictusApp/Onboarding/TestRecordingPage.swift`                 | Transition to success screen after transcription                                    | VERIFIED | `showSuccess` state; ZStack overlay; `withAnimation(.easeOut(duration: 0.3))`                    |
-| `DictusApp/Models/ModelManager.swift`                          | `loadState()` callable, resyncs modelStates after onboarding download               | VERIFIED | `func loadState()` — internal access; resyncs `modelStates` for downloaded identifiers           |
+| `OuisprApp/Onboarding/MicPermissionPage.swift`                 | "Réglages" and "autorisé" with correct accents                                      | VERIFIED | Line 53: "Réglages", line 48: "autorisé" — commit 7aecf8a                                       |
+| `OuisprApp/Views/SettingsView.swift`                           | Native press feedback on all rows, log export spinner, no SettingsRowStyle          | VERIFIED | No SettingsRowStyle struct; GitHub is Button; `isExporting` + `ProgressView()` wired             |
+| `OuisprApp/Views/ModelCardView.swift`                          | Blue tint + border on active, no isSwitching, full card tap, gauges in blue palette | VERIFIED | L149-166: tint + border. No isSwitching. contentShape. `.ouisprAccent`/`.ouisprAccentHighlight`  |
+| `OuisprApp/Views/ModelManagerView.swift`                       | Swipe-to-delete with full-height button, section filters, loadState on appear       | VERIFIED | L101-109: Label + `.frame(maxHeight: .infinity)`. `.onAppear { modelManager.loadState() }`       |
+| `OuisprKeyboard/Views/RecordingOverlay.swift`                  | Matched layout for stable waveform, 44pt PillButton, haptics, 'En écoute...'       | VERIFIED | transcribingContent mirrors recordingContent structure. PillButton 44pt. "En écoute..." L161     |
+| `OuisprKeyboard/KeyboardRootView.swift`                        | Asymmetric transition + easeOut animation on overlay                                | VERIFIED | `.transition(.asymmetric(...))`. `.animation(.easeOut(duration: 0.25), value: showsOverlay)`      |
+| `OuisprApp/Onboarding/OnboardingSuccessView.swift`             | Full-screen success overlay with animated checkmark, French text                   | VERIFIED | 91 lines; spring animation; "C'est prêt !"; "Commencer" button                                  |
+| `OuisprApp/Views/RecordingView.swift`                          | Auto-advance after 1.5s in onboarding mode, no Terminer button                     | VERIFIED | 1500ms delay + `onComplete?()` call. No "Terminer" string present.                               |
+| `OuisprApp/Onboarding/KeyboardSetupPage.swift`                 | Resilient keyboard detection, 800ms+2s retry, French accent fixes                  | VERIFIED | Debounce 800ms + 2s retry. "Réglages", "détecté" accented.                                      |
+| `OuisprApp/Onboarding/ModelDownloadPage.swift`                 | French accent fixes + persistState after download                                   | VERIFIED | "Modèle vocal", "téléchargement", "Recommandé" accented; download calls `persistState()`         |
+| `OuisprApp/Onboarding/TestRecordingPage.swift`                 | Transition to success screen after transcription                                    | VERIFIED | `showSuccess` state; ZStack overlay; `withAnimation(.easeOut(duration: 0.3))`                    |
+| `OuisprApp/Models/ModelManager.swift`                          | `loadState()` callable, resyncs modelStates after onboarding download               | VERIFIED | `func loadState()` — internal access; resyncs `modelStates` for downloaded identifiers           |
 
 ---
 
@@ -135,12 +135,12 @@ Plans 09 and 10 closed all 5 gaps. Current code verified against actual files.
 | Requirement | Source Plans     | Description                                                      | Status    | Evidence                                                                                        |
 |-------------|-----------------|------------------------------------------------------------------|-----------|-------------------------------------------------------------------------------------------------|
 | DSGN-01     | 01, 04, 05, 10  | All French UI strings have correct accents                       | SATISFIED | MicPermissionPage, SettingsView, HomeView, RecordingView, ModelCardView, overlays all accented. Zero unaccented French UI strings detected. "En écoute..." in French (Plan 10). |
-| DSGN-02     | 02, 06, 09      | Active model has blue border highlight in model manager          | SATISFIED | ModelCardView: BOTH `Color.dictusAccent.opacity(0.10)` tint AND `.stroke(Color.dictusAccent.opacity(0.6))` border (Plan 09, commit a89650a) |
+| DSGN-02     | 02, 06, 09      | Active model has blue border highlight in model manager          | SATISFIED | ModelCardView: BOTH `Color.ouisprAccent.opacity(0.10)` tint AND `.stroke(Color.ouisprAccent.opacity(0.6))` border (Plan 09, commit a89650a) |
 | DSGN-03     | 02, 06, 09      | Model card layout improved (download button placement, gauges)   | SATISFIED | Full-width progress during download/prewarming. No separate action buttons. Instant selection without spinner. Swipe delete at full height (Plan 09). |
 | DSGN-04     | 02, 06          | Tap anywhere on downloaded model card to select it               | SATISFIED | Entire card is `Button { handleCardTap() }` with `.contentShape(Rectangle())` routing by state  |
 | DSGN-05     | 03, 07, 10      | X close button: 44pt hit area + haptic feedback                  | SATISFIED | PillButton `height: 44`, `contentShape(Rectangle())`, `HapticFeedback.recordingStopped()`      |
 | DSGN-06     | 03, 07, 10      | Recording overlay dismissal uses smooth animation                | SATISFIED | Asymmetric transition: fade+slide on insertion, fade-only on removal. `.animation(.easeOut(duration: 0.25))` |
-| DSGN-07     | 01, 08          | Mic button shows reduced opacity during transcription            | SATISFIED | AnimatedMicButton: `.dictusAccentHighlight.opacity(0.5)` + shimmer for transcribing state       |
+| DSGN-07     | 01, 08          | Mic button shows reduced opacity during transcription            | SATISFIED | AnimatedMicButton: `.ouisprAccentHighlight.opacity(0.5)` + shimmer for transcribing state       |
 
 All 7 DSGN requirements are satisfied. No orphaned requirements.
 
@@ -150,7 +150,7 @@ All 7 DSGN requirements are satisfied. No orphaned requirements.
 
 | File                                           | Line | Pattern                                                   | Severity | Impact                                        |
 |------------------------------------------------|------|-----------------------------------------------------------|----------|-----------------------------------------------|
-| `DictusApp/Views/GaugeBarView.swift`           | ~18  | `"Precision"` unaccented in doc comment                   | INFO     | Swift doc comment only — no user-visible impact |
+| `OuisprApp/Views/GaugeBarView.swift`           | ~18  | `"Precision"` unaccented in doc comment                   | INFO     | Swift doc comment only — no user-visible impact |
 | `.planning/phases/15-design-polish/deferred-items.md` | — | Documents build errors that are now fixed          | INFO     | Stale documentation, no code impact           |
 
 No blocker or warning anti-patterns detected.
@@ -234,7 +234,7 @@ No gaps remain. This is the third verification pass:
 
 The 7 human verification items are runtime/visual behaviors that cannot be confirmed through static analysis. The code implementing them is substantive, correctly structured, and wired. They do not block the phase goal from being considered achieved.
 
-Build confirmed: `xcodebuild` reports `BUILD SUCCEEDED` for DictusApp target (includes DictusKeyboard extension) with no compilation errors.
+Build confirmed: `xcodebuild` reports `BUILD SUCCEEDED` for OuisprApp target (includes OuisprKeyboard extension) with no compilation errors.
 
 ---
 

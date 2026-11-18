@@ -2,7 +2,7 @@
 #
 # THROWAWAY — #268 D2. xcodegen input for the benchmark app.
 #
-# A project of its own rather than a target in Dictus.xcodeproj, deliberately:
+# A project of its own rather than a target in Ouispr.xcodeproj, deliberately:
 # #268 puts "no change to any app target" in scope, and adding an SPM dependency
 # and a target to the shared project file to answer a research question would
 # make every other build resolve a package it does not need.
@@ -43,7 +43,7 @@ targets:
     #
     # No entitlements file at all, and #268 asked for one. The harness was first
     # built with `group.solutions.pivi.dictus` so its results would come out
-    # through DictusApp's persistent-log export, the way D1's did. Signing
+    # through OuisprApp's persistent-log export, the way D1's did. Signing
     # refuses it:
     #
     #   error: Provisioning profile "iOS Team Provisioning Profile: *" doesn't
@@ -59,7 +59,7 @@ targets:
     # UIFileSharingEnabled puts them in the Files app as a fallback.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.pivi.dictus.anebench
+        PRODUCT_BUNDLE_IDENTIFIER: com.pivi.ouispr.anebench
         DEVELOPMENT_TEAM: 9B8B36C2FA
         CODE_SIGN_STYLE: Automatic
         INFOPLIST_FILE: App/Info.plist

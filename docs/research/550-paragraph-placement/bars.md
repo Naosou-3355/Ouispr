@@ -74,11 +74,11 @@ the round:
    *whitespace-stripped output == whitespace-stripped input* is not a predicate that
    can be written against a raw transcript.
 3. Fixture 7, the 89 s sample the maintainer recorded on 2026-09-11, is a
-   Dictus **end-to-end** output — Parakeet v3 then Normal polish — so it is polished
+   Ouispr **end-to-end** output — Parakeet v3 then Normal polish — so it is polished
    text by construction. Putting it next to six raw transcripts would mix two kinds
    of text in one fixture file.
 
-**The probe set** is `DictusCore/Sources/polish-harness/fixtures/paragraph-fr.json`,
+**The probe set** is `OuisprCore/Sources/polish-harness/fixtures/paragraph-fr.json`,
 seven texts:
 
 | id | Source | Chars |
@@ -89,14 +89,14 @@ seven texts:
 | `P4-explanation` | idem | 838 |
 | `P5-rambling` | idem | 1 240 |
 | `P6-unscripted` | idem | 1 161 |
-| `P7-89s` | fixture 7, Dictus side, from the #550 issue body | 1 150 |
+| `P7-89s` | fixture 7, Ouispr side, from the #550 issue body | 1 150 |
 
 P1–P6 are run 1 of #437's shipping-prompt baseline capture, committed there and
 reused unchanged. Nothing is rebuilt.
 
 **Texts A and B are not in the probe set.** They have a Typeless output per take and
-**no Dictus transcription**. They serve as placement and count references only. No
-Dictus side is invented for them.
+**no Ouispr transcription**. They serve as placement and count references only. No
+Ouispr side is invented for them.
 
 ## 4. N, the break count — fitted, not asserted
 
@@ -122,7 +122,7 @@ paragraphing, and counting it as a break would fit N against a transformation th
 contract forbids. Four of six is also why the reference cannot be a bar.
 
 For A and B the character count is taken from the **Typeless** text, because no
-Dictus side exists. Typeless rewrites, so those two counts carry an unknown error of
+Ouispr side exists. Typeless rewrites, so those two counts carry an unknown error of
 a few percent. Stated here rather than smoothed over.
 
 **The fit.** Ordinary least squares on those five points:
@@ -270,7 +270,7 @@ number. They are not folded into any bar.
 
 The issue body calls this the first technical step and gates its own route on it:
 *"confirm `tokenTimings` is actually populated at runtime for Parakeet"*.
-`DictusApp/Audio/ParakeetEngine.swift:169` keeps `result.text` and discards the rest.
+`OuisprApp/Audio/ParakeetEngine.swift:169` keeps `result.text` and discards the rest.
 
 The pause hypothesis is dead, so nothing in this round depends on the answer. It is
 settled anyway, because it is cheap and it tells any future attempt whether acoustic

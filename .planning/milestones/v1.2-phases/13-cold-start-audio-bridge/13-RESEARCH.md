@@ -8,7 +8,7 @@
 
 Phase 13 implements the cold start dictation flow: when iOS has killed the app, the user taps mic in the keyboard, the app opens to activate the audio session and load WhisperKit, then the user returns to the keyboard where recording status is displayed. The app handles all audio recording and transcription; the keyboard displays the UI overlay.
 
-**CRITICAL FINDING: Keyboard extensions CANNOT access the microphone.** Apple documentation explicitly states: "Custom keyboards, like all app extensions in iOS, have no access to the device microphone, so dictation input is not possible." This is true even with `RequestsOpenAccess = true` (Full Access). This means the "Audio Bridge" concept where the keyboard captures audio directly is **not feasible**. The architecture must keep all audio recording in the main app, which is what Dictus already does. The cold start improvement is about UX flow (swipe-back overlay, auto-return) and ensuring the existing recording pipeline works smoothly on cold start.
+**CRITICAL FINDING: Keyboard extensions CANNOT access the microphone.** Apple documentation explicitly states: "Custom keyboards, like all app extensions in iOS, have no access to the device microphone, so dictation input is not possible." This is true even with `RequestsOpenAccess = true` (Full Access). This means the "Audio Bridge" concept where the keyboard captures audio directly is **not feasible**. The architecture must keep all audio recording in the main app, which is what Ouispr already does. The cold start improvement is about UX flow (swipe-back overlay, auto-return) and ensuring the existing recording pipeline works smoothly on cold start.
 
 Competitors like Wispr Flow confirm this pattern: tapping mic in the keyboard opens the main app, the app activates the microphone session, then the user returns to the keyboard. The main app records audio in the background while the keyboard shows the recording overlay.
 
@@ -36,7 +36,7 @@ Competitors like Wispr Flow confirm this pattern: tapping mic in the keyboard op
 - Audio transfer mechanism -- MOOT since keyboard cannot capture audio. App records directly as it already does.
 - Recording trigger on keyboard return -- research recommends: app starts recording immediately on URL open (current behavior is correct), keyboard picks up the recording state on viewWillAppear
 - Source app detection for auto-return -- research provides URL scheme mapping below
-- Launch mode detection -- URL parameter (dictus://dictate?mode=coldstart) vs App Group flag
+- Launch mode detection -- URL parameter (ouispr://dictate?mode=coldstart) vs App Group flag
 - Architecture: whether to unify both recording paths under one DictationCoordinator state machine or keep separate
 - iPhone outline + hand animation implementation details
 
@@ -70,7 +70,7 @@ None -- discussion stayed within phase scope.
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 17+ | Swipe-back overlay UI, animations | Native framework, already used throughout |
 | AVFoundation | iOS 17+ | Audio session, RawAudioCapture | Already used for all audio recording |
-| DictusCore | local | SharedKeys, DarwinNotifications, AppGroup | Existing shared framework |
+| OuisprCore | local | SharedKeys, DarwinNotifications, AppGroup | Existing shared framework |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
@@ -87,18 +87,18 @@ None -- discussion stayed within phase scope.
 
 ### Recommended Project Structure
 ```
-DictusApp/
+OuisprApp/
 ├── Views/
 │   ├── MainTabView.swift          # Modified: conditional swipe-back overlay
 │   └── SwipeBackOverlayView.swift # NEW: cold start swipe-back screen
 ├── DictationCoordinator.swift     # Modified: launch mode awareness
-└── DictusApp.swift                # Modified: handleIncomingURL with cold start mode
+└── OuisprApp.swift                # Modified: handleIncomingURL with cold start mode
 
-DictusKeyboard/
+OuisprKeyboard/
 ├── KeyboardViewController.swift   # Modified: viewWillAppear cold start detection
 └── KeyboardState.swift            # Modified: cold start state management
 
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 ├── SharedKeys.swift               # Modified: new keys for cold start state
 └── DarwinNotifications.swift      # Modified: new notification names if needed
 ```
@@ -106,7 +106,7 @@ DictusCore/Sources/DictusCore/
 ### Pattern 1: Launch Mode Detection
 **What:** Distinguish "opened from keyboard cold start" vs "opened normally"
 **When to use:** Every app launch via URL scheme
-**Recommendation:** Use URL parameter `dictus://dictate?source=keyboard` combined with App Group flag.
+**Recommendation:** Use URL parameter `ouispr://dictate?source=keyboard` combined with App Group flag.
 
 ```swift
 // In handleIncomingURL:
@@ -159,7 +159,7 @@ struct MainTabView: View {
 **When to use:** On cold start, after audio session is activated
 
 ```swift
-// In DictusApp or DictationCoordinator:
+// In OuisprApp or DictationCoordinator:
 func attemptAutoReturn() {
     guard let sourceScheme = AppGroup.defaults.string(forKey: SharedKeys.sourceAppScheme) else {
         // No source app detected -- show swipe-back overlay
@@ -175,13 +175,13 @@ func attemptAutoReturn() {
 
 ### Pattern 4: Keyboard Writes Source Context Before Opening URL
 **What:** Keyboard saves what it knows about the host app before triggering cold start
-**When to use:** In KeyboardState.startRecording() before opening dictus:// URL
+**When to use:** In KeyboardState.startRecording() before opening ouispr:// URL
 
 ```swift
 // In KeyboardState, before opening URL:
 // Keyboard has no direct API to detect the host app's bundle ID.
 // However, it can check canOpenURL for known schemes to identify the host.
-// This check must happen BEFORE opening the dictus:// URL.
+// This check must happen BEFORE opening the ouispr:// URL.
 func detectAndSaveSourceApp() {
     for (scheme, _) in KnownAppSchemes.all {
         // Note: canOpenURL requires LSApplicationQueriesSchemes in Info.plist
@@ -203,7 +203,7 @@ func detectAndSaveSourceApp() {
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Cross-process signaling | Custom IPC | Darwin notifications (existing) | Already proven, battle-tested in Dictus |
+| Cross-process signaling | Custom IPC | Darwin notifications (existing) | Already proven, battle-tested in Ouispr |
 | Audio recording | Keyboard AVAudioEngine | App-side RawAudioCapture (existing) | Keyboard cannot access mic |
 | Audio format conversion | Manual PCM conversion | RawAudioCapture's AVAudioConverter (existing) | Already handles 48kHz -> 16kHz conversion |
 | Transcription pipeline | New pipeline | DictationCoordinator (existing) | Cold start path with RawAudioCapture already works |
@@ -215,8 +215,8 @@ func detectAndSaveSourceApp() {
 ### Pitfall 1: Attempting Microphone Access in Keyboard Extension
 **What goes wrong:** Code compiles but crashes at runtime or silently fails
 **Why it happens:** Apple's sandbox blocks mic access regardless of RequestsOpenAccess
-**How to avoid:** Keep ALL audio recording in DictusApp. Keyboard only shows UI.
-**Warning signs:** Any `AVAudioEngine`, `AVAudioRecorder`, or `AVAudioSession.requestRecordPermission` in the DictusKeyboard target.
+**How to avoid:** Keep ALL audio recording in OuisprApp. Keyboard only shows UI.
+**Warning signs:** Any `AVAudioEngine`, `AVAudioRecorder`, or `AVAudioSession.requestRecordPermission` in the OuisprKeyboard target.
 
 ### Pitfall 2: Swipe-Back Overlay Persisting After Return
 **What goes wrong:** User returns to keyboard but app still shows swipe-back overlay on next open
@@ -233,12 +233,12 @@ func detectAndSaveSourceApp() {
 ### Pitfall 4: LSApplicationQueriesSchemes Missing
 **What goes wrong:** canOpenURL always returns false for known app schemes
 **Why it happens:** iOS requires declaring queried URL schemes in Info.plist (max 50)
-**How to avoid:** Add all target app schemes to both DictusApp AND DictusKeyboard Info.plist under LSApplicationQueriesSchemes
+**How to avoid:** Add all target app schemes to both OuisprApp AND OuisprKeyboard Info.plist under LSApplicationQueriesSchemes
 **Warning signs:** Auto-return never works despite apps being installed
 
 ### Pitfall 5: viewWillAppear Race with URL Scheme
 **What goes wrong:** Keyboard's viewWillAppear triggers state reset that kills an active recording
-**Why it happens:** Opening dictus:// URL causes keyboard to disappear then reappear within ~2s
+**Why it happens:** Opening ouispr:// URL causes keyboard to disappear then reappear within ~2s
 **How to avoid:** Phase 12 already solved this: use refreshFromDefaults + 5s watchdog instead of instant reset. Apply same pattern for cold start detection.
 **Warning signs:** Recording stops immediately after cold start URL open
 
@@ -322,7 +322,7 @@ enum KnownAppSchemes {
 
 ### LSApplicationQueriesSchemes for Info.plist
 ```xml
-<!-- Add to BOTH DictusApp and DictusKeyboard Info.plist -->
+<!-- Add to BOTH OuisprApp and OuisprKeyboard Info.plist -->
 <key>LSApplicationQueriesSchemes</key>
 <array>
     <string>whatsapp</string>
@@ -342,9 +342,9 @@ enum KnownAppSchemes {
 ```swift
 // Add to SharedKeys.swift
 /// Bool: true when app was opened from keyboard for cold start dictation
-public static let coldStartActive = "dictus.coldStartActive"
+public static let coldStartActive = "ouispr.coldStartActive"
 /// String: URL scheme of the source app (for auto-return), or "unknown"
-public static let sourceAppScheme = "dictus.sourceAppScheme"
+public static let sourceAppScheme = "ouispr.sourceAppScheme"
 ```
 
 ## State of the Art
@@ -387,16 +387,16 @@ public static let sourceAppScheme = "dictus.sourceAppScheme"
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (Xcode built-in) |
-| Config file | Dictus.xcodeproj test targets |
-| Quick run command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests` |
-| Full suite command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| Config file | Ouispr.xcodeproj test targets |
+| Quick run command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests` |
+| Full suite command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | COLD-01 | Audio session active when keyboard returns | manual-only | Device test: mic tap -> app opens -> return -> recording works | N/A |
 | COLD-02 | App activates audio session on cold start URL | manual-only | Device test: force-quit app -> mic tap -> verify audio session | N/A |
-| COLD-03 | App records audio, result available via App Group | unit | `xcodebuild test -only-testing:DictusCoreTests/SharedKeysExtensionTests` | Partial |
+| COLD-03 | App records audio, result available via App Group | unit | `xcodebuild test -only-testing:OuisprCoreTests/SharedKeysExtensionTests` | Partial |
 | COLD-04 | Transcription result delivery via Darwin + App Group | manual-only | Already working, regression test on device | N/A |
 | COLD-05 | Swipe-back overlay shows on cold start | manual-only | Device test: force-quit -> mic tap -> verify overlay | N/A |
 | COLD-06 | Direct recording still works | manual-only | Device test: HomeView mic button -> record -> stop -> verify | N/A |

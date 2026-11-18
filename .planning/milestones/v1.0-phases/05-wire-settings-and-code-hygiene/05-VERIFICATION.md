@@ -24,8 +24,8 @@ re_verification: false
 | 3 | Toggling haptics OFF suppresses all haptic feedback (dictation events and key taps) | VERIFIED | HapticFeedback.swift line 36-39: `isEnabled()` reads `SharedKeys.hapticsEnabled` from App Group; all 4 methods guard on it |
 | 4 | Default values are correct when user has never opened Settings (language=fr, fillerWords=on, haptics=on) | VERIFIED | All three use `object(forKey:) as? Bool ?? true` or `?? "fr"` pattern, avoiding `bool(forKey:)` false-default trap |
 | 5 | Every key tap on the keyboard produces a light haptic identical to native iOS keyboard | VERIFIED | KeyButton.swift lines 110 and 119: `HapticFeedback.keyTapped()` called on accent selection and normal tap in `.onEnded` |
-| 6 | AccentPopup selected state uses DictusColors.dictusAccent instead of hardcoded Color.blue | VERIFIED | AccentPopup.swift line 35: `Color.dictusAccent`; no `Color.blue` found anywhere in DictusKeyboard target |
-| 7 | BrandWaveform displays exactly 30 bars in both DictusApp and DictusKeyboard | VERIFIED | Both files: `private let barCount = 30`; no `barCount = 40` in any source file |
+| 6 | AccentPopup selected state uses OuisprColors.ouisprAccent instead of hardcoded Color.blue | VERIFIED | AccentPopup.swift line 35: `Color.ouisprAccent`; no `Color.blue` found anywhere in OuisprKeyboard target |
+| 7 | BrandWaveform displays exactly 30 bars in both OuisprApp and OuisprKeyboard | VERIFIED | Both files: `private let barCount = 30`; no `barCount = 40` in any source file |
 | 8 | BrandWaveform bar width adapts automatically to fill available container width | VERIFIED | Both files use `GeometryReader` with computed `barWidth = max((geometry.size.width - totalSpacing) / CGFloat(barCount), 2)` |
 
 **Score:** 8/8 truths verified
@@ -34,12 +34,12 @@ re_verification: false
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/HapticFeedback.swift` | isEnabled() guard + keyTapped() method | VERIFIED | 85 lines, contains `isEnabled()`, `keyTapped()`, guard on all 4 methods, reads `SharedKeys.hapticsEnabled` |
-| `DictusApp/Audio/TranscriptionService.swift` | Dynamic language + conditional filler filtering | VERIFIED | 148 lines, reads `SharedKeys.language` and `SharedKeys.fillerWordsEnabled` from App Group at transcription time |
-| `DictusKeyboard/Views/KeyButton.swift` | HapticFeedback.keyTapped() call on key press | VERIFIED | Lines 110 and 119: `HapticFeedback.keyTapped()` on both accent selection and normal tap |
-| `DictusKeyboard/Views/AccentPopup.swift` | Brand-consistent accent selection color | VERIFIED | Line 35: `Color.dictusAccent` replaces `Color.blue` |
-| `DictusKeyboard/Design/BrandWaveform.swift` | Unified 30-bar adaptive-width waveform (keyboard copy) | VERIFIED | 85 lines, `barCount = 30`, GeometryReader, sync comment present |
-| `DictusApp/Design/BrandWaveform.swift` | Unified 30-bar adaptive-width waveform (app copy) | VERIFIED | 127 lines, `barCount = 30`, GeometryReader, sync comment present, includes #Preview blocks |
+| `OuisprCore/Sources/OuisprCore/HapticFeedback.swift` | isEnabled() guard + keyTapped() method | VERIFIED | 85 lines, contains `isEnabled()`, `keyTapped()`, guard on all 4 methods, reads `SharedKeys.hapticsEnabled` |
+| `OuisprApp/Audio/TranscriptionService.swift` | Dynamic language + conditional filler filtering | VERIFIED | 148 lines, reads `SharedKeys.language` and `SharedKeys.fillerWordsEnabled` from App Group at transcription time |
+| `OuisprKeyboard/Views/KeyButton.swift` | HapticFeedback.keyTapped() call on key press | VERIFIED | Lines 110 and 119: `HapticFeedback.keyTapped()` on both accent selection and normal tap |
+| `OuisprKeyboard/Views/AccentPopup.swift` | Brand-consistent accent selection color | VERIFIED | Line 35: `Color.ouisprAccent` replaces `Color.blue` |
+| `OuisprKeyboard/Design/BrandWaveform.swift` | Unified 30-bar adaptive-width waveform (keyboard copy) | VERIFIED | 85 lines, `barCount = 30`, GeometryReader, sync comment present |
+| `OuisprApp/Design/BrandWaveform.swift` | Unified 30-bar adaptive-width waveform (app copy) | VERIFIED | 127 lines, `barCount = 30`, GeometryReader, sync comment present, includes #Preview blocks |
 
 ### Key Link Verification
 
@@ -47,7 +47,7 @@ re_verification: false
 |------|----|-----|--------|---------|
 | HapticFeedback.swift | App Group UserDefaults | `isEnabled()` reads `SharedKeys.hapticsEnabled` | WIRED | Line 38: `defaults?.object(forKey: SharedKeys.hapticsEnabled) as? Bool ?? true` |
 | TranscriptionService.swift | App Group UserDefaults | Reads `SharedKeys.language` and `SharedKeys.fillerWordsEnabled` | WIRED | Lines 104 and 138: both read from `UserDefaults(suiteName: AppGroup.identifier)` |
-| KeyButton.swift | DictusCore HapticFeedback | `HapticFeedback.keyTapped()` in gesture onEnded | WIRED | Lines 110 and 119, DictusCore imported on line 3 |
+| KeyButton.swift | OuisprCore HapticFeedback | `HapticFeedback.keyTapped()` in gesture onEnded | WIRED | Lines 110 and 119, OuisprCore imported on line 3 |
 | Keyboard BrandWaveform | App BrandWaveform | Identical 30-bar adaptive implementation | WIRED | Both files functionally identical: same barCount, spacing, GeometryReader logic, animation duration (0.08s) |
 
 ### Requirements Coverage

@@ -1,9 +1,9 @@
 # Does Parakeet hand us token timings? (#550 §8)
 
-A standalone SPM package, deliberately outside `DictusCore` so it cannot drift into
+A standalone SPM package, deliberately outside `OuisprCore` so it cannot drift into
 a shipping target. It depends on FluidAudio at the same pin the app uses
 (`.upToNextMinor(from: "0.12.3")`) and calls the same
-`AsrManager.transcribe([Float])` that `DictusApp/Audio/ParakeetEngine.swift:169`
+`AsrManager.transcribe([Float])` that `OuisprApp/Audio/ParakeetEngine.swift:169`
 calls — the line that keeps `result.text` and drops everything else.
 
 It prints, per audio file: whether `tokenTimings` is nil, how many entries it holds,

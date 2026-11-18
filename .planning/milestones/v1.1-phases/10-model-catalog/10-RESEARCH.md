@@ -8,7 +8,7 @@
 
 Phase 10 involves three distinct work streams: (1) cleaning up the WhisperKit model catalog by removing underperforming tiny/base models and re-evaluating large-v3-turbo, (2) integrating NVIDIA Parakeet v3 as an alternative STT engine via FluidAudio SDK behind a SpeechModel protocol abstraction, and (3) redesigning the model selection UI with gauge-based metadata and engine badges.
 
-The WhisperKit catalog cleanup is straightforward -- the codebase already has `ModelInfo.all` as a single source of truth. The Parakeet integration is the highest-risk item: FluidAudio (v0.12.3, March 2025) is a young SDK requiring iOS 17+, while Dictus targets iOS 16+. The FluidAudio API is clean (`AsrManager.transcribe()`) but French accuracy is unverified, and the 0.6B parameter model will be significantly larger than WhisperKit small (~250MB). The user explicitly accepted that Parakeet may need to be deferred if FluidAudio proves unstable.
+The WhisperKit catalog cleanup is straightforward -- the codebase already has `ModelInfo.all` as a single source of truth. The Parakeet integration is the highest-risk item: FluidAudio (v0.12.3, March 2025) is a young SDK requiring iOS 17+, while Ouispr targets iOS 16+. The FluidAudio API is clean (`AsrManager.transcribe()`) but French accuracy is unverified, and the 0.6B parameter model will be significantly larger than WhisperKit small (~250MB). The user explicitly accepted that Parakeet may need to be deferred if FluidAudio proves unstable.
 
 **Primary recommendation:** Start with catalog cleanup + UI redesign (low risk, high value), then attempt Parakeet integration with a clear go/no-go gate after French accuracy testing. Keep the SpeechModel protocol only if Parakeet ships; otherwise remove the abstraction to avoid unnecessary complexity.
 
@@ -76,7 +76,7 @@ The WhisperKit catalog cleanup is straightforward -- the codebase already has `M
 
 ### Installation
 
-FluidAudio SPM (add to Xcode project, NOT DictusCore Package.swift since it depends on CoreML/AVFoundation):
+FluidAudio SPM (add to Xcode project, NOT OuisprCore Package.swift since it depends on CoreML/AVFoundation):
 ```swift
 // In Xcode: File > Add Package Dependencies
 // URL: https://github.com/FluidInference/FluidAudio.git
@@ -87,12 +87,12 @@ FluidAudio SPM (add to Xcode project, NOT DictusCore Package.swift since it depe
 
 ### Recommended Project Structure
 ```
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 ├── ModelInfo.swift          # Extended with engine type, gauge values, descriptions
 ├── SpeechEngine.swift       # NEW: Engine enum (.whisperKit, .parakeet)
 ├── SharedKeys.swift         # Add activeEngine key
 
-DictusApp/
+OuisprApp/
 ├── Audio/
 │   ├── TranscriptionService.swift    # Refactored to use SpeechModel protocol
 │   ├── WhisperKitEngine.swift        # NEW: WhisperKit conformance to SpeechModel
@@ -111,7 +111,7 @@ DictusApp/
 **When to use:** Only if Parakeet integration succeeds; otherwise keep direct WhisperKit usage
 **Example:**
 ```swift
-// DictusApp/Audio/SpeechModel.swift
+// OuisprApp/Audio/SpeechModel.swift
 protocol SpeechModel {
     /// Human-readable engine name for UI
     var engineName: String { get }
@@ -182,8 +182,8 @@ public enum SpeechEngine: String, Codable {
 
 ## Common Pitfalls
 
-### Pitfall 1: FluidAudio iOS 17+ vs Dictus iOS 16 Target
-**What goes wrong:** FluidAudio requires iOS 17+. Dictus targets iOS 16.
+### Pitfall 1: FluidAudio iOS 17+ vs Ouispr iOS 16 Target
+**What goes wrong:** FluidAudio requires iOS 17+. Ouispr targets iOS 16.
 **Why it happens:** FluidAudio uses CoreML APIs only available on iOS 17+.
 **How to avoid:** Use `@available(iOS 17.0, *)` guards around ALL FluidAudio code. Parakeet models should only appear in the catalog on iOS 17+ devices. On iOS 16, only WhisperKit models are shown.
 **Warning signs:** Build errors or runtime crashes on iOS 16 devices.
@@ -247,7 +247,7 @@ struct GaugeBarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.dictusCaption)
+                .font(.ouisprCaption)
                 .foregroundStyle(.secondary)
             HStack(spacing: 2) {
                 ForEach(0..<segments, id: \.self) { index in
@@ -289,7 +289,7 @@ let availableModels = ModelInfo.all
 | Distil-large-v3 | distil-whisper_distil-large-v3 | varies | NEW candidate - distilled, faster |
 | Distil-large-v3 turbo | distil-whisper_distil-large-v3_turbo | ~600 MB | NEW candidate - distilled + turbo |
 
-**Key insight:** The `openai_whisper-large-v3-v20240930` variant is a newer Whisper checkpoint (September 2024) that was not available when Dictus started. The 547MB quantized version could be an excellent addition -- large model accuracy at medium model size. The distil variants are also worth testing as they trade minimal accuracy for significant speed gains.
+**Key insight:** The `openai_whisper-large-v3-v20240930` variant is a newer Whisper checkpoint (September 2024) that was not available when Ouispr started. The 547MB quantized version could be an excellent addition -- large model accuracy at medium model size. The distil variants are also worth testing as they trade minimal accuracy for significant speed gains.
 
 ### FluidAudio / Parakeet Status
 | Property | Value |
@@ -312,7 +312,7 @@ SmartModelRouter should be **removed entirely**:
 3. It's explicitly listed as out of scope in REQUIREMENTS.md ("Smart Model Routing at runtime")
 4. It's currently bypassed in DictationCoordinator (user selects model once)
 
-Remove `SmartModelRouter.swift` and `SmartModelRouterTests.swift` from DictusCore.
+Remove `SmartModelRouter.swift` and `SmartModelRouterTests.swift` from OuisprCore.
 
 ## Open Questions
 
@@ -332,7 +332,7 @@ Remove `SmartModelRouter.swift` and `SmartModelRouterTests.swift` from DictusCor
    - Recommendation: Re-test on physical device early in the phase; if it works, add to catalog as premium option
 
 4. **FluidAudio iOS 16 compatibility**
-   - What we know: FluidAudio requires iOS 17+; Dictus targets iOS 16
+   - What we know: FluidAudio requires iOS 17+; Ouispr targets iOS 16
    - What's unclear: Whether importing FluidAudio via SPM breaks compilation for iOS 16 target
    - Recommendation: Use `#if canImport(FluidAudio)` or conditional SPM dependency. May need to make FluidAudio an optional import that only compiles on iOS 17+. Alternatively, wrap all Parakeet code in availability checks.
 
@@ -346,10 +346,10 @@ Remove `SmartModelRouter.swift` and `SmartModelRouterTests.swift` from DictusCor
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | XCTest (already configured in DictusCore) |
-| Config file | DictusCore/Package.swift (test target exists) |
-| Quick run command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter ModelInfoTests` |
-| Full suite command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| Framework | XCTest (already configured in OuisprCore) |
+| Config file | OuisprCore/Package.swift (test target exists) |
+| Quick run command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter ModelInfoTests` |
+| Full suite command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -361,8 +361,8 @@ Remove `SmartModelRouter.swift` and `SmartModelRouterTests.swift` from DictusCor
 | MOD-03 | All visible models have gauge values in valid range | unit | `swift test --filter ModelInfoTests` | Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter ModelInfoTests`
-- **Per wave merge:** `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test`
+- **Per task commit:** `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter ModelInfoTests`
+- **Per wave merge:** `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test`
 - **Phase gate:** Full suite green before `/gsd:verify-work`
 
 ### Wave 0 Gaps

@@ -22,13 +22,13 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/KeyboardMetrics.swift
+    - OuisprKeyboard/KeyboardMetrics.swift
   modified:
-    - Dictus.xcodeproj/project.pbxproj
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Extracted 4 types (DeviceClass, KeyMetrics, KeySound, KeyPopup) from LegacyCompat into permanent KeyboardMetrics.swift"
-  - "Removed imports DictusCore and AVFoundation from extracted file -- only needed by dead placeholder KeyboardView"
+  - "Removed imports OuisprCore and AVFoundation from extracted file -- only needed by dead placeholder KeyboardView"
 
 patterns-established:
   - "KeyboardMetrics.swift: single source of truth for keyboard layout constants and feedback types"
@@ -56,7 +56,7 @@ completed: 2026-03-30
 - Extracted DeviceClass, KeyMetrics, KeySound, KeyPopup from LegacyCompat.swift into permanent KeyboardMetrics.swift
 - Deleted 6 dead SwiftUI keyboard files: LegacyCompat.swift, KeyButton.swift, KeyRow.swift, KeyboardView.swift, SpecialKeyButton.swift, AccentPopup.swift (1686 lines removed)
 - Cleaned all 19 ghost references from project.pbxproj and added KeyboardMetrics.swift registration
-- Verified DictusKeyboard scheme builds successfully with BUILD SUCCEEDED
+- Verified OuisprKeyboard scheme builds successfully with BUILD SUCCEEDED
 
 ## Task Commits
 
@@ -66,17 +66,17 @@ Each task was committed atomically:
 2. **Task 2: Clean pbxproj and add KeyboardMetrics.swift, then verify build** - `1e19df4` (chore)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardMetrics.swift` - Permanent file with DeviceClass, KeyMetrics, KeySound, KeyPopup types
-- `Dictus.xcodeproj/project.pbxproj` - Removed 19 ghost references, added KeyboardMetrics.swift
-- `DictusKeyboard/LegacyCompat.swift` - DELETED (types extracted to KeyboardMetrics.swift)
-- `DictusKeyboard/Views/KeyButton.swift` - DELETED (dead SwiftUI code)
-- `DictusKeyboard/Views/KeyRow.swift` - DELETED (dead SwiftUI code)
-- `DictusKeyboard/Views/KeyboardView.swift` - DELETED (dead SwiftUI code, not the Vendored UIKit one)
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - DELETED (dead SwiftUI code)
-- `DictusKeyboard/Views/AccentPopup.swift` - DELETED (dead SwiftUI code)
+- `OuisprKeyboard/KeyboardMetrics.swift` - Permanent file with DeviceClass, KeyMetrics, KeySound, KeyPopup types
+- `Ouispr.xcodeproj/project.pbxproj` - Removed 19 ghost references, added KeyboardMetrics.swift
+- `OuisprKeyboard/LegacyCompat.swift` - DELETED (types extracted to KeyboardMetrics.swift)
+- `OuisprKeyboard/Views/KeyButton.swift` - DELETED (dead SwiftUI code)
+- `OuisprKeyboard/Views/KeyRow.swift` - DELETED (dead SwiftUI code)
+- `OuisprKeyboard/Views/KeyboardView.swift` - DELETED (dead SwiftUI code, not the Vendored UIKit one)
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - DELETED (dead SwiftUI code)
+- `OuisprKeyboard/Views/AccentPopup.swift` - DELETED (dead SwiftUI code)
 
 ## Decisions Made
-- Removed `import DictusCore` and `import AVFoundation` from extracted file -- these were only needed by the dead placeholder KeyboardView struct, not by the 4 extracted types
+- Removed `import OuisprCore` and `import AVFoundation` from extracted file -- these were only needed by the dead placeholder KeyboardView struct, not by the 4 extracted types
 - Used `import AudioToolbox` (for SystemSoundID in KeySound) instead of AVFoundation
 
 ## Deviations from Plan
@@ -92,7 +92,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 - Codebase is clean with no dead SwiftUI keyboard code
 - Ready for Plan 02 (memory profiling)
-- All consumers (EmojiPickerView, EmojiCategoryBar, DictusKeyboardBridge) compile with the new KeyboardMetrics.swift
+- All consumers (EmojiPickerView, EmojiCategoryBar, OuisprKeyboardBridge) compile with the new KeyboardMetrics.swift
 
 ---
 *Phase: 21-cleanup-memory-profiling*

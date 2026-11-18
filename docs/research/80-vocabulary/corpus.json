@@ -160,15 +160,15 @@
   ],
   "entries": [
    {
-    "term": "Dictus",
+    "term": "Ouispr",
     "variants": [
-     "dictus",
-     "dictusse"
+     "ouispr",
+     "ouisprse"
     ]
    }
   ],
-  "raw": "j'ai ouvert dictus puis dictusse encore une fois",
-  "expected": "j'ai ouvert Dictus puis Dictus encore une fois"
+  "raw": "j'ai ouvert ouispr puis ouisprse encore une fois",
+  "expected": "j'ai ouvert Ouispr puis Ouispr encore une fois"
  },
  {
   "source": "constructed-2026-09-07",
@@ -390,9 +390,9 @@
  },
  {
   "source": "device-2026-09-10",
-  "fixture": "C3-dictus-lowercase",
+  "fixture": "C3-ouispr-lowercase",
   "origin": "captured",
-  "note": "Captured on device 2026-09-10, same session. 'Dictus' came out lowercase twice and correct once. This is the case-only variant, which is a fixed point rather than a cycle.",
+  "note": "Captured on device 2026-09-10, same session. 'Ouispr' came out lowercase twice and correct once. This is the case-only variant, which is a fixed point rather than a cycle.",
   "covers": [
    "case normalisation",
    "fixed point",
@@ -400,14 +400,14 @@
   ],
   "entries": [
    {
-    "term": "Dictus",
+    "term": "Ouispr",
     "variants": [
-     "dictus"
+     "ouispr"
     ]
    }
   ],
-  "raw": "j'ai ouvert dictus pour dicter la note, et Dictus a transcrit tout de suite",
-  "expected": "j'ai ouvert Dictus pour dicter la note, et Dictus a transcrit tout de suite"
+  "raw": "j'ai ouvert ouispr pour dicter la note, et Ouispr a transcrit tout de suite",
+  "expected": "j'ai ouvert Ouispr pour dicter la note, et Ouispr a transcrit tout de suite"
  },
  {
   "source": "device-2026-09-10",

@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Users perceive the Dictus keyboard as equal to or better than Apple's native keyboard in core interactions, with a polished mic button and recording experience. Covers spacebar trackpad, adaptive accent key, haptics on all keys, bottom row cleanup (emoji button, remove Apple mic), mic/recording pill redesign, waveform rework, and performance optimization.
+Users perceive the Ouispr keyboard as equal to or better than Apple's native keyboard in core interactions, with a polished mic button and recording experience. Covers spacebar trackpad, adaptive accent key, haptics on all keys, bottom row cleanup (emoji button, remove Apple mic), mic/recording pill redesign, waveform rework, and performance optimization.
 
 Requirements: KBD-01, KBD-02, KBD-03, KBD-04, KBD-05, KBD-06, VIS-01, VIS-02, VIS-03
 
@@ -81,7 +81,7 @@ Requirements: KBD-01, KBD-02, KBD-03, KBD-04, KBD-05, KBD-06, VIS-01, VIS-02, VI
 
 ### Full Access Banner "Activer" Button Fix
 - The "Activer" button in FullAccessBanner currently opens `app-settings:` URL which doesn't work reliably in keyboard extensions
-- Should open Dictus app via `dictus://` URL scheme, which can then guide the user to enable Full Access
+- Should open Ouispr app via `ouispr://` URL scheme, which can then guide the user to enable Full Access
 - This is the most reliable approach from a keyboard extension
 
 ### Claude's Discretion
@@ -100,7 +100,7 @@ Requirements: KBD-01, KBD-02, KBD-03, KBD-04, KBD-05, KBD-06, VIS-01, VIS-02, VI
 - Haptic pattern on spacebar trackpad tested by user on Apple keyboard: tap → different haptic on mode activation → no haptics during drag
 - Mic pill should carry the Liquid Glass aesthetic from AnimatedMicButton (existing circle design adapted to pill shape)
 - BrandWaveform sinusoidal processing animation (Phase 6) is "really not bad" — reuse it for keyboard overlay
-- User confirmed: typing on Dictus keyboard feels noticeably slower than Apple keyboard — priority performance issue
+- User confirmed: typing on Ouispr keyboard feels noticeably slower than Apple keyboard — priority performance issue
 - User confirmed: haptic feedback triggers later than Apple — likely UIImpactFeedbackGenerator instantiation overhead
 
 </specifics>
@@ -109,11 +109,11 @@ Requirements: KBD-01, KBD-02, KBD-03, KBD-04, KBD-05, KBD-06, VIS-01, VIS-02, VI
 ## Existing Code Insights
 
 ### Reusable Assets
-- `DictusCore/HapticFeedback.swift`: Already has keyTapped() (light impact) — needs to be called on ALL keys, not just letters. Generator pre-allocation needed for performance.
-- `DictusCore/Design/AnimatedMicButton.swift`: 72pt circle with 4 states (idle/recording/transcribing/success) + Liquid Glass ring — adapt to pill shape for VIS-01
-- `DictusCore/Design/BrandWaveform.swift`: 30-bar waveform with TimelineView for processing sinusoidal animation — upgrade to Canvas for 60fps, fix zero-energy stillness
-- `DictusCore/AccentedCharacters.swift`: Accent lookup table already exists — extend for adaptive key context logic
-- `DictusCore/Design/GlassModifier.swift`: .dictusGlass() modifier available for pill buttons
+- `OuisprCore/HapticFeedback.swift`: Already has keyTapped() (light impact) — needs to be called on ALL keys, not just letters. Generator pre-allocation needed for performance.
+- `OuisprCore/Design/AnimatedMicButton.swift`: 72pt circle with 4 states (idle/recording/transcribing/success) + Liquid Glass ring — adapt to pill shape for VIS-01
+- `OuisprCore/Design/BrandWaveform.swift`: 30-bar waveform with TimelineView for processing sinusoidal animation — upgrade to Canvas for 60fps, fix zero-energy stillness
+- `OuisprCore/AccentedCharacters.swift`: Accent lookup table already exists — extend for adaptive key context logic
+- `OuisprCore/Design/GlassModifier.swift`: .ouisprGlass() modifier available for pill buttons
 
 ### Established Patterns
 - KeyDefinition model with KeyType enum — add new .emoji type for the emoji button
@@ -128,7 +128,7 @@ Requirements: KBD-01, KBD-02, KBD-03, KBD-04, KBD-05, KBD-06, VIS-01, VIS-02, VI
 - `SpecialKeyButton.swift` — add EmojiKey view, modify SpaceKey for trackpad behavior
 - `ToolbarView.swift` — replace AnimatedMicButton circle with pill variant
 - `RecordingOverlay.swift` — replace SF Symbol buttons with Liquid Glass pills
-- `KeyboardRootView.swift` — fix FullAccessBanner URL from `app-settings:` to `dictus://`
+- `KeyboardRootView.swift` — fix FullAccessBanner URL from `app-settings:` to `ouispr://`
 - `KeyboardViewController.swift` — may need clipsToBounds override for popup overflow fix
 
 </code_context>

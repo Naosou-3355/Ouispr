@@ -6,9 +6,9 @@
 
 ## Summary
 
-This phase adds bigram/trigram next-word prediction to the Dictus keyboard by extending the existing Phase 24.1 AOSP C++ trie infrastructure. After the user completes a word and presses space, the suggestion bar shows 3 predicted next words based on n-gram context. The core technical challenge is threefold: (1) sourcing and processing n-gram frequency data for French and English, (2) designing a compact binary format for n-gram lookup via mmap, and (3) integrating n-gram context into the existing spell correction scoring pipeline.
+This phase adds bigram/trigram next-word prediction to the Ouispr keyboard by extending the existing Phase 24.1 AOSP C++ trie infrastructure. After the user completes a word and presses space, the suggestion bar shows 3 predicted next words based on n-gram context. The core technical challenge is threefold: (1) sourcing and processing n-gram frequency data for French and English, (2) designing a compact binary format for n-gram lookup via mmap, and (3) integrating n-gram context into the existing spell correction scoring pipeline.
 
-The existing AOSP trie infrastructure (C++ with ObjC++ bridge, mmap loading, proximity scoring) provides the foundation. The n-gram data will be stored in a separate binary file (not embedded in the spell-check trie) using a flat hash-map or sorted-array format optimized for two lookups: "given word W, return top-3 next words" (bigram) and "given words W1 W2, return top-3 next words" (trigram). The AOSP/HeliBoard .combined wordlist format stores bigrams inline with word entries, but Dictus already has a custom DTRI binary format -- extending with a separate n-gram binary is cleaner than adopting the AOSP binary dict format wholesale.
+The existing AOSP trie infrastructure (C++ with ObjC++ bridge, mmap loading, proximity scoring) provides the foundation. The n-gram data will be stored in a separate binary file (not embedded in the spell-check trie) using a flat hash-map or sorted-array format optimized for two lookups: "given word W, return top-3 next words" (bigram) and "given words W1 W2, return top-3 next words" (trigram). The AOSP/HeliBoard .combined wordlist format stores bigrams inline with word entries, but Ouispr already has a custom DTRI binary format -- extending with a separate n-gram binary is cleaner than adopting the AOSP binary dict format wholesale.
 
 **Primary recommendation:** Build a separate `{lang}_ngrams.dict` binary file per language using a Python pipeline that processes OpenSubtitles + Google Books n-gram data. Use a simple sorted-array format with mmap for O(log n) lookup. Implement Stupid Backoff scoring for blending trigram > bigram > unigram. Keep the n-gram engine as a new C++ module in `Vendored/AOSPTrie/` with bridge methods added to `AOSPTrieBridge`.
 
@@ -71,7 +71,7 @@ None -- discussion stayed within phase scope.
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| Custom binary format | AOSP binary dict format | AOSP format bundles unigrams+bigrams together; Dictus already has separate spell-check trie; separate n-gram file is cleaner |
+| Custom binary format | AOSP binary dict format | AOSP format bundles unigrams+bigrams together; Ouispr already has separate spell-check trie; separate n-gram file is cleaner |
 | OpenSubtitles corpus processing | Google Books n-grams only | Google Books is written language, less natural for keyboard; OpenSubtitles has spoken-language patterns |
 | Stupid Backoff | Katz Backoff / Kneser-Ney | Stupid Backoff is simpler (one constant lambda=0.4), comparable quality on large data, much faster, no need for true probabilities |
 
@@ -79,13 +79,13 @@ None -- discussion stayed within phase scope.
 
 ### Recommended Project Structure
 ```
-DictusKeyboard/
+OuisprKeyboard/
   Vendored/AOSPTrie/
     include/
-      dictus_ngram.h          # NEW: n-gram lookup API
-      dictus_ngram_format.h   # NEW: binary format constants
+      ouispr_ngram.h          # NEW: n-gram lookup API
+      ouispr_ngram_format.h   # NEW: binary format constants
     src/
-      dictus_ngram.cpp        # NEW: n-gram engine (mmap, lookup, scoring)
+      ouispr_ngram.cpp        # NEW: n-gram engine (mmap, lookup, scoring)
     bridge/
       AOSPTrieBridge.h        # EXTEND: add n-gram methods
       AOSPTrieBridge.mm       # EXTEND: implement n-gram bridge
@@ -257,7 +257,7 @@ enum SuggestionMode {
 
 ### Prediction Trigger in handleSpace()
 ```swift
-// In DictusKeyboardBridge.swift, after existing handleSpace() logic:
+// In OuisprKeyboardBridge.swift, after existing handleSpace() logic:
 
 // After space insertion and autocorrect, trigger n-gram prediction
 let context = controller?.textDocumentProxy.documentContextBeforeInput
@@ -329,7 +329,7 @@ func handlePredictionTap(word: String) {
 |--------------|------------------|--------------|--------|
 | Katz Backoff / Kneser-Ney smoothing | Stupid Backoff (lambda=0.4) | 2007 (Google) | 10x simpler, comparable quality on large data, no need for true probabilities |
 | KenLM (C++ ARPA n-gram) | Custom compact binary + mmap | N/A (KenLM rejected in REQUIREMENTS.md) | KenLM is LGPL, 50-500MB models, C++ complexity. Custom binary fits in <15 MiB |
-| AOSP combined dict (unigrams + bigrams in one file) | Separate spell-check trie + n-gram binary | Dictus architecture decision | Cleaner separation, independent optimization, reuses existing DTRI format for spell-check |
+| AOSP combined dict (unigrams + bigrams in one file) | Separate spell-check trie + n-gram binary | Ouispr architecture decision | Cleaner separation, independent optimization, reuses existing DTRI format for spell-check |
 
 **Deprecated/outdated:**
 - KenLM: Explicitly out of scope per REQUIREMENTS.md (LGPL, too large for 50MB keyboard extension)
@@ -396,8 +396,8 @@ Implementation: In the Scorer::correct() method, when evaluating accent substitu
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (Xcode) + manual device testing |
-| Config file | Dictus.xcodeproj (no separate test config) |
-| Quick run command | `xcodebuild test -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests` |
+| Config file | Ouispr.xcodeproj (no separate test config) |
+| Quick run command | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests` |
 | Full suite command | Manual device testing (keyboard extension cannot be unit-tested in simulator for proxy interactions) |
 
 ### Phase Requirements to Test Map
@@ -408,7 +408,7 @@ Implementation: In the Scorer::correct() method, when evaluating accent substitu
 | PRED-06 | Under 20MB total per language | manual | `ls -la *.dict *.json` + device memory profiling | No -- manual |
 
 ### Sampling Rate
-- **Per task commit:** Build succeeds (`xcodebuild build -scheme DictusKeyboard`)
+- **Per task commit:** Build succeeds (`xcodebuild build -scheme OuisprKeyboard`)
 - **Per wave merge:** Device testing on physical iPhone
 - **Phase gate:** All 3 PRED requirements verified on device before `/gsd:verify-work`
 
@@ -437,9 +437,9 @@ Implementation: In the Scorer::correct() method, when evaluating accent substitu
 ## Sources
 
 ### Primary (HIGH confidence)
-- Existing codebase: `DictusKeyboard/Vendored/AOSPTrie/` -- C++ trie, ObjC++ bridge, mmap loading pattern
+- Existing codebase: `OuisprKeyboard/Vendored/AOSPTrie/` -- C++ trie, ObjC++ bridge, mmap loading pattern
 - Existing codebase: `tools/dict_builder.py` -- Python binary serialization pipeline
-- Existing codebase: `DictusKeyboard/TextPrediction/` -- SuggestionState, TextPredictionEngine, AOSPTrieEngine
+- Existing codebase: `OuisprKeyboard/TextPrediction/` -- SuggestionState, TextPredictionEngine, AOSPTrieEngine
 - Phase 24.1 CONTEXT.md -- AOSP architecture decisions, binary format, bridge pattern
 
 ### Secondary (MEDIUM confidence)

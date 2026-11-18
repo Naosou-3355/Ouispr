@@ -3,9 +3,9 @@ phase: 34.1
 type: device-verification
 created: 2026-04-16
 device: iPhone (iOS 26.3.1)
-build: Dictus 1.6.0 (10)
+build: Ouispr 1.6.0 (10)
 model: parakeet-tdt-0.6b-v3
-log_file: "dictus-logs 134.txt (1277 lines, 200 KB, session window 2026-04-16T12:22:08Z → 12:25:54Z)"
+log_file: "ouispr-logs 134.txt (1277 lines, 200 KB, session window 2026-04-16T12:22:08Z → 12:25:54Z)"
 status: PASSED
 ---
 
@@ -14,9 +14,9 @@ status: PASSED
 ## Protocol
 
 15-run sanity verification. Each run must:
-1. Dictate via Dictus keyboard in a host app.
+1. Dictate via Ouispr keyboard in a host app.
 2. Confirm inserted text appears exactly once in the host field (no duplicates).
-3. Confirm no red banner appears in the Dictus toolbar.
+3. Confirm no red banner appears in the Ouispr toolbar.
 4. Export log and record the probe line.
 
 Mix of scenarios:
@@ -27,7 +27,7 @@ Mix of scenarios:
 
 Include at least:
 - One empty-field insertion (cursor in brand new text field).
-- One cold-start insertion (background Dictus before dictating).
+- One cold-start insertion (background Ouispr before dictating).
 - One chained dictation (two back-to-back in the same field without leaving the app).
 
 ## Results Log

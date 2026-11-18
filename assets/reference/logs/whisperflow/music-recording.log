@@ -27866,7 +27866,7 @@ default	21:44:29.936645+0200	audiomxd	SpatializationManager.cpp:184   Spatial in
 		spatialAudioSources = [ 'mlti', 'binh', 'most' ]
 	}
 }
-default	21:44:29.936664+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e7aa","name":"DictusKeyboard(8673)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
+default	21:44:29.936664+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e7aa","name":"OuisprKeyboard(8673)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
 default	21:44:29.936753+0200	storekitd	nw_protocol_instance_report_ready [C57.1.1.1:2] Calling notify with interface <private> for flow_registration <private>
 default	21:44:29.936858+0200	audiomxd	           AQMEIO_HAL.cpp:1688  kBluetoothAudioDevicePropertySpatialAudioUserEnableFeature = 1, err = 0
 default	21:44:29.936863+0200	audiomxd	           AQMEIO_HAL.cpp:1693  Port has Bluetooth spatial audio enabled
@@ -61466,7 +61466,7 @@ default	21:44:38.863928+0200	backboardd	touchstats 100000A4C-<main> events start
         MobileNotes.8597 contextID AF05897E: {
             touchIDs: 31647-31648 31651-31653;
         };
-        DictusApp.8657 contextID 4FB9FE07: {
+        OuisprApp.8657 contextID 4FB9FE07: {
             touchIDs: 31642;
         };
         Spotlight.7203 contextID 2DA7B8C0: {
@@ -142110,7 +142110,7 @@ default	21:45:08.022295+0200	audiomxd	SpatializationManager.cpp:184   Spatial in
 		spatialAudioSources = [ 'mlti', 'binh', 'most' ]
 	}
 }
-default	21:45:08.022365+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e7aa","name":"DictusKeyboard(8673)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
+default	21:45:08.022365+0200	audiomxd	AudioSessionServerImpNotificationHandlers.mm:421   { "action":"property_change", "session":{"ID":"0x72e7aa","name":"OuisprKeyboard(8673)","type":"Auxiliary"}, "details":{"key":"ActiveAudioRouteDidChange"} }
 default	21:45:08.022886+0200	audiomxd	           AQMEIO_HAL.cpp:1688  kBluetoothAudioDevicePropertySpatialAudioUserEnableFeature = 1, err = 0
 default	21:45:08.022898+0200	runningboardd	Incoming connection from 8694, user 501/501
 default	21:45:08.022924+0200	audiomxd	           AQMEIO_HAL.cpp:1693  Port has Bluetooth spatial audio enabled

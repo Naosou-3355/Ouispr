@@ -26,15 +26,15 @@ Deux tentatives ont été refusées à vue, ne les reproposez pas :
 - **Pill entièrement violet** (`#8B5CF6` en remplissage) — « ça dénature l'app ».
 - **Anneau violet 3 pt autour d'un pill bleu** — « vraiment pas beau », lu comme un contour collé sur le bouton.
 
-Une idée de Pierre, à creuser mais **pas** telle quelle : rester dans la palette de la waveform (gris et bleus), micro gris pour Normal, micro bleu pour Smart Mode. Argumentée contre dans `claudedocs/79-smart-mode-visual-coherence.md` §1, et l'argument tient : Dictus affiche déjà un micro grisé qui veut dire « tu ne peux pas dicter » (`fullAccessBar` à 0,4 d'opacité, `MicButtonDisabled.swift`), donc l'état par défaut aurait l'air cassé.
+Une idée de Pierre, à creuser mais **pas** telle quelle : rester dans la palette de la waveform (gris et bleus), micro gris pour Normal, micro bleu pour Smart Mode. Argumentée contre dans `claudedocs/79-smart-mode-visual-coherence.md` §1, et l'argument tient : Ouispr affiche déjà un micro grisé qui veut dire « tu ne peux pas dicter » (`fullAccessBar` à 0,4 d'opacité, `MicButtonDisabled.swift`), donc l'état par défaut aurait l'air cassé.
 
-**Le vrai problème n'a pas été résolu :** il faut un signal « un mode est armé » qui soit lisible du coin de l'œil et qui appartienne au langage visuel de Dictus. Ni le violet ni un anneau ne conviennent. Le document de design a raison sur le diagnostic (c'est une question de dose et de placement) et tort sur sa conclusion.
+**Le vrai problème n'a pas été résolu :** il faut un signal « un mode est armé » qui soit lisible du coin de l'œil et qui appartienne au langage visuel de Ouispr. Ni le violet ni un anneau ne conviennent. Le document de design a raison sur le diagnostic (c'est une question de dose et de placement) et tort sur sa conclusion.
 
 ## L'autre défaut visuel, réel et toujours ouvert
 
 Le texte de l'app hôte **se lit à travers les rangées de l'éventail** — visible sur les captures du 2026-08-24. Cause : le conteneur du clavier est translucide et ce sont les *touches* qui donnent normalement une surface opaque à l'œil ; l'éventail les remplace par du texte sur rien.
 
-`dictusGlass(in: Rectangle())` a été essayé et **refusé** : ça produit un bloc plus clair que le clavier, avec des arêtes nettes en haut et en bas — « une sorte de carré » posé par-dessus. Le correctif doit se fondre dans le clavier, pas s'y superposer.
+`ouisprGlass(in: Rectangle())` a été essayé et **refusé** : ça produit un bloc plus clair que le clavier, avec des arêtes nettes en haut et en bas — « une sorte de carré » posé par-dessus. Le correctif doit se fondre dans le clavier, pas s'y superposer.
 
 ## Ce qui bloque la livraison, indépendamment du design
 
@@ -53,7 +53,7 @@ Les écrans du bloc C (#395) — liste de modes, carte paywall marquée. Ils son
 - **Un geste SwiftUI ne survit pas à un changement de branche du `switch`** dans `KeyboardRootView`. L'identité est positionnelle. La toolbar est sortie du `switch` pour ça.
 - **`LongPressGesture` vaut « un appui est en cours »**, pas « l'appui a duré ». Ouvrir sur `.first(true)` = aucun seuil. Ouvrir sur `.second`.
 - **`axe touch --up` ne termine pas un `DragGesture`** SwiftUI. Utiliser un `swipe` comme dernière étape. Détaillé dans `docs/agents/simulator.md`.
-- Le worktree device est `/Users/pierreviviere/dev/dictus-wt/device`, jamais le clone principal.
+- Le worktree device est `/Users/pierreviviere/dev/ouispr-wt/device`, jamais le clone principal.
 
 ## Ce que je ferais maintenant
 

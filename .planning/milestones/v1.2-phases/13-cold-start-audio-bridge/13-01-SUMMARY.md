@@ -19,21 +19,21 @@ affects: [13-02-PLAN, 13-03-PLAN]
 # Tech tracking
 tech-stack:
   added: []
-  patterns: ["URL query parameter parsing for launch mode detection", "Dual onOpenURL pattern (DictusApp + MainTabView) for cross-process + local state"]
+  patterns: ["URL query parameter parsing for launch mode detection", "Dual onOpenURL pattern (OuisprApp + MainTabView) for cross-process + local state"]
 
 key-files:
   created:
-    - "DictusCore/Sources/DictusCore/KnownAppSchemes.swift"
-    - "DictusCore/Tests/DictusCoreTests/KnownAppSchemesTests.swift"
+    - "OuisprCore/Sources/OuisprCore/KnownAppSchemes.swift"
+    - "OuisprCore/Tests/OuisprCoreTests/KnownAppSchemesTests.swift"
   modified:
-    - "DictusCore/Sources/DictusCore/SharedKeys.swift"
-    - "DictusApp/DictusApp.swift"
-    - "DictusApp/Views/MainTabView.swift"
+    - "OuisprCore/Sources/OuisprCore/SharedKeys.swift"
+    - "OuisprApp/OuisprApp.swift"
+    - "OuisprApp/Views/MainTabView.swift"
 
 key-decisions:
-  - "onOpenURL in both DictusApp and MainTabView: App Group flag for cross-process, @State for local SwiftUI reactivity"
+  - "onOpenURL in both OuisprApp and MainTabView: App Group flag for cross-process, @State for local SwiftUI reactivity"
   - "Cold start state cleared on .background, not .inactive, to avoid premature cleanup during app transitions"
-  - "DictationCoordinator left untouched -- cold start log added in DictusApp.handleIncomingURL instead"
+  - "DictationCoordinator left untouched -- cold start log added in OuisprApp.handleIncomingURL instead"
 
 patterns-established:
   - "URL query parameter source=keyboard as cold start signal from keyboard to app"
@@ -60,7 +60,7 @@ completed: 2026-03-12
 
 ## Accomplishments
 - SharedKeys extended with coldStartActive and sourceAppScheme for cross-process cold start detection
-- KnownAppSchemes registry created with AppScheme struct and 10 messaging app URL schemes, accessible from both DictusApp and DictusKeyboard
+- KnownAppSchemes registry created with AppScheme struct and 10 messaging app URL schemes, accessible from both OuisprApp and OuisprKeyboard
 - MainTabView conditionally renders swipe-back placeholder (for Plan 02) vs normal tabs based on cold start mode
 - Cold start flag properly cleaned up on background transition to prevent stale state
 
@@ -69,26 +69,26 @@ completed: 2026-03-12
 Each task was committed atomically:
 
 1. **Task 1: Add SharedKeys + KnownAppSchemes contracts + unit tests** - `a4c10b0` (feat)
-2. **Task 2: Wire cold start detection in DictusApp + MainTabView** - `287138f` (feat)
+2. **Task 2: Wire cold start detection in OuisprApp + MainTabView** - `287138f` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` - Added coldStartActive and sourceAppScheme keys
-- `DictusCore/Sources/DictusCore/KnownAppSchemes.swift` - New file: AppScheme struct + KnownAppSchemes enum with 10 app URL schemes
-- `DictusCore/Tests/DictusCoreTests/KnownAppSchemesTests.swift` - New file: 5 unit tests for scheme integrity
-- `DictusApp/DictusApp.swift` - URL query param parsing in handleIncomingURL, cold start cleanup in .background
-- `DictusApp/Views/MainTabView.swift` - Conditional rendering with isColdStartMode, onOpenURL + scenePhase handlers
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` - Added coldStartActive and sourceAppScheme keys
+- `OuisprCore/Sources/OuisprCore/KnownAppSchemes.swift` - New file: AppScheme struct + KnownAppSchemes enum with 10 app URL schemes
+- `OuisprCore/Tests/OuisprCoreTests/KnownAppSchemesTests.swift` - New file: 5 unit tests for scheme integrity
+- `OuisprApp/OuisprApp.swift` - URL query param parsing in handleIncomingURL, cold start cleanup in .background
+- `OuisprApp/Views/MainTabView.swift` - Conditional rendering with isColdStartMode, onOpenURL + scenePhase handlers
 
 ## Decisions Made
-- onOpenURL registered in both DictusApp (sets App Group flag for cross-process) and MainTabView (drives local @State for SwiftUI reactivity). Both fire on the same URL event.
+- onOpenURL registered in both OuisprApp (sets App Group flag for cross-process) and MainTabView (drives local @State for SwiftUI reactivity). Both fire on the same URL event.
 - Cold start state cleared on .background (not .inactive) to avoid premature cleanup during rapid app transitions triggered by URL scheme opening.
-- DictationCoordinator left completely untouched -- cold start detection log placed in DictusApp.handleIncomingURL where the URL parsing happens. This preserves COLD-06 (direct recording from HomeView mic unaffected).
+- DictationCoordinator left completely untouched -- cold start detection log placed in OuisprApp.handleIncomingURL where the URL parsing happens. This preserves COLD-06 (direct recording from HomeView mic unaffected).
 
 ## Deviations from Plan
 
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- DictusCoreTests cannot run via `swift test` or `xcodebuild test -scheme DictusApp` because the DictusApp scheme has no test action configured and SPM builds fail for iOS-only package on macOS. This is a pre-existing limitation (documented in Phase 11 summaries). Tests verified structurally; xcodebuild build confirms compilation of all targets.
+- OuisprCoreTests cannot run via `swift test` or `xcodebuild test -scheme OuisprApp` because the OuisprApp scheme has no test action configured and SPM builds fail for iOS-only package on macOS. This is a pre-existing limitation (documented in Phase 11 summaries). Tests verified structurally; xcodebuild build confirms compilation of all targets.
 
 ## User Setup Required
 
@@ -98,7 +98,7 @@ None - no external service configuration required.
 - Cold start infrastructure ready for Plan 02 (SwipeBackOverlayView replaces the placeholder)
 - KnownAppSchemes data ready for Plan 03 (auto-return logic uses schemes to navigate back)
 - SharedKeys.coldStartActive contract established for keyboard extension to read in Plan 03
-- URL format dependency noted: keyboard needs to send `dictus://dictate?source=keyboard` (Plan 03 will update KeyboardState)
+- URL format dependency noted: keyboard needs to send `ouispr://dictate?source=keyboard` (Plan 03 will update KeyboardState)
 
 ---
 *Phase: 13-cold-start-audio-bridge*

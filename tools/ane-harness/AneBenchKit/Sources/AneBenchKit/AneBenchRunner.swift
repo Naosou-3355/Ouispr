@@ -11,7 +11,7 @@
 import Foundation
 import CoreML
 import AnemllCore
-import DictusCore
+import OuisprCore
 
 public actor AneBenchRunner {
 

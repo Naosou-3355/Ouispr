@@ -31,7 +31,7 @@ human_verification:
 
 ## Context
 
-The previous verification (2026-03-06T12:30:00Z) reported status: passed at 14/14. However, subsequent UAT testing (03-UAT.md) revealed 2 blockers: the mic button used `Link(destination: "dictus://dictate")` which opened DictusApp instead of showing the recording overlay within the keyboard. Plan 03-04 was executed to fix this by replacing the Link with a Button + onMicTap callback pattern.
+The previous verification (2026-03-06T12:30:00Z) reported status: passed at 14/14. However, subsequent UAT testing (03-UAT.md) revealed 2 blockers: the mic button used `Link(destination: "ouispr://dictate")` which opened OuisprApp instead of showing the recording overlay within the keyboard. Plan 03-04 was executed to fix this by replacing the Link with a Button + onMicTap callback pattern.
 
 This re-verification confirms the fix is in place and re-verifies all truths against the actual codebase.
 
@@ -41,12 +41,12 @@ This re-verification confirms the fix is in place and re-verifies all truths aga
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Tapping mic button triggers in-keyboard recording flow (not app switch) | VERIFIED | ToolbarView line 57: `Button(action: onMicTap)`. No `Link(destination: "dictus://dictate")` remains (grep confirmed 0 matches). startRecording() calls markRequested() first (sets .requested status locally), THEN opens URL. |
+| 1 | Tapping mic button triggers in-keyboard recording flow (not app switch) | VERIFIED | ToolbarView line 57: `Button(action: onMicTap)`. No `Link(destination: "ouispr://dictate")` remains (grep confirmed 0 matches). startRecording() calls markRequested() first (sets .requested status locally), THEN opens URL. |
 | 2 | Recording overlay replaces keyboard letters during recording | VERIFIED | KeyboardRootView line 48: `if state.dictationStatus == .recording \|\| .transcribing` renders RecordingOverlay instead of KeyboardView |
 | 3 | Recording overlay shows waveform, timer, cancel and stop buttons | VERIFIED | RecordingOverlay.swift: KeyboardWaveformView (30 bars), formattedTime (MM:SS), cancel (xmark.circle.fill) and stop (checkmark.circle.fill) buttons |
 | 4 | Transcribed text auto-inserts into active text field | VERIFIED | KeyboardState line 145: `controller?.textDocumentProxy.insertText(transcription)` with 100ms retry fallback |
-| 5 | Keyboard stop/cancel signals reach DictusApp via Darwin notifications | VERIFIED | KeyboardState.requestStop() posts DarwinNotificationName.stopRecording; DictationCoordinator line 266 observes it |
-| 6 | DictusApp forwards waveform energy to App Group | VERIFIED | DictationCoordinator line 310: `defaults.set(data, forKey: SharedKeys.waveformEnergy)` |
+| 5 | Keyboard stop/cancel signals reach OuisprApp via Darwin notifications | VERIFIED | KeyboardState.requestStop() posts DarwinNotificationName.stopRecording; DictationCoordinator line 266 observes it |
+| 6 | OuisprApp forwards waveform energy to App Group | VERIFIED | DictationCoordinator line 310: `defaults.set(data, forKey: SharedKeys.waveformEnergy)` |
 | 7 | QWERTY layout structurally correct (10-9-7-5 keys per row) | VERIFIED | QWERTYLayout.lettersRows in KeyboardLayoutData.swift has exact row counts. Test file exists. |
 | 8 | Accented character mappings for all French AZERTY keys | VERIFIED | AccentedCharacters.mappings has 8 entries (e,a,u,i,o,c,y,n) with precomposed Unicode. Test file exists. |
 | 9 | Haptic feedback fires three distinct types | VERIFIED | HapticFeedback.swift: recordingStarted() medium, recordingStopped() light, textInserted() success notification |
@@ -62,20 +62,20 @@ This re-verification confirms the fix is in place and re-verifies all truths aga
 
 | Artifact | Status | Details |
 |----------|--------|---------|
-| `DictusCore/Sources/DictusCore/SharedKeys.swift` | VERIFIED | 28 lines, 5 cross-process keys present (keyboardLayout, waveformEnergy, stopRequested, cancelRequested, recordingElapsedSeconds) |
-| `DictusCore/Sources/DictusCore/KeyboardLayoutData.swift` | VERIFIED | 44 lines, LayoutType enum with .active computed property, QWERTYLayout.lettersRows |
-| `DictusCore/Sources/DictusCore/AccentedCharacters.swift` | VERIFIED | 36 lines, 8 base letters, precomposed Unicode, case-insensitive accents(for:) |
-| `DictusCore/Sources/DictusCore/HapticFeedback.swift` | VERIFIED | 51 lines, 3 methods with #if canImport(UIKit) guard |
-| `DictusCore/Tests/DictusCoreTests/QWERTYLayoutTests.swift` | VERIFIED | Test file exists |
-| `DictusCore/Tests/DictusCoreTests/AccentedCharacterTests.swift` | VERIFIED | Test file exists |
-| `DictusKeyboard/Views/ToolbarView.swift` | VERIFIED | 99 lines, Button with onMicTap callback (NOT Link), 4 visual states. Gap fix confirmed. |
-| `DictusKeyboard/Views/RecordingOverlay.swift` | VERIFIED | 150 lines, waveform (30 bars), timer, cancel/stop, transcribing state |
-| `DictusKeyboard/KeyboardState.swift` | VERIFIED | 200 lines, startRecording() with openURL closure, requestStop/Cancel, auto-insert via textDocumentProxy. Gap fix confirmed. |
-| `DictusKeyboard/KeyboardRootView.swift` | VERIFIED | 74 lines, @Environment(\.openURL), onMicTap wired to state.startRecording(), openURL injected in .onAppear. Gap fix confirmed. |
-| `DictusKeyboard/Views/AccentPopup.swift` | VERIFIED | 52 lines, horizontal cells with selection highlighting |
-| `DictusKeyboard/Views/KeyButton.swift` | VERIFIED | 200 lines, 400ms long-press, AccentedCharacters lookup, drag-to-select |
-| `DictusApp/Views/TestDictationView.swift` | VERIFIED | 190 lines, 3-state mic button, transcription area, clear button, .onChange watcher |
-| `DictusApp/DictationCoordinator.swift` | VERIFIED | Stop/cancel observers (lines 266, 278), cancelDictation(), waveform energy writes (line 310) |
+| `OuisprCore/Sources/OuisprCore/SharedKeys.swift` | VERIFIED | 28 lines, 5 cross-process keys present (keyboardLayout, waveformEnergy, stopRequested, cancelRequested, recordingElapsedSeconds) |
+| `OuisprCore/Sources/OuisprCore/KeyboardLayoutData.swift` | VERIFIED | 44 lines, LayoutType enum with .active computed property, QWERTYLayout.lettersRows |
+| `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` | VERIFIED | 36 lines, 8 base letters, precomposed Unicode, case-insensitive accents(for:) |
+| `OuisprCore/Sources/OuisprCore/HapticFeedback.swift` | VERIFIED | 51 lines, 3 methods with #if canImport(UIKit) guard |
+| `OuisprCore/Tests/OuisprCoreTests/QWERTYLayoutTests.swift` | VERIFIED | Test file exists |
+| `OuisprCore/Tests/OuisprCoreTests/AccentedCharacterTests.swift` | VERIFIED | Test file exists |
+| `OuisprKeyboard/Views/ToolbarView.swift` | VERIFIED | 99 lines, Button with onMicTap callback (NOT Link), 4 visual states. Gap fix confirmed. |
+| `OuisprKeyboard/Views/RecordingOverlay.swift` | VERIFIED | 150 lines, waveform (30 bars), timer, cancel/stop, transcribing state |
+| `OuisprKeyboard/KeyboardState.swift` | VERIFIED | 200 lines, startRecording() with openURL closure, requestStop/Cancel, auto-insert via textDocumentProxy. Gap fix confirmed. |
+| `OuisprKeyboard/KeyboardRootView.swift` | VERIFIED | 74 lines, @Environment(\.openURL), onMicTap wired to state.startRecording(), openURL injected in .onAppear. Gap fix confirmed. |
+| `OuisprKeyboard/Views/AccentPopup.swift` | VERIFIED | 52 lines, horizontal cells with selection highlighting |
+| `OuisprKeyboard/Views/KeyButton.swift` | VERIFIED | 200 lines, 400ms long-press, AccentedCharacters lookup, drag-to-select |
+| `OuisprApp/Views/TestDictationView.swift` | VERIFIED | 190 lines, 3-state mic button, transcription area, clear button, .onChange watcher |
+| `OuisprApp/DictationCoordinator.swift` | VERIFIED | Stop/cancel observers (lines 266, 278), cancelDictation(), waveform energy writes (line 310) |
 
 ### Key Link Verification
 
@@ -114,13 +114,13 @@ No orphaned requirements found. All 8 IDs from the phase are accounted for.
 |------|------|---------|----------|--------|
 | None | - | - | - | No anti-patterns detected |
 
-No TODO/FIXME/PLACEHOLDER comments found in DictusKeyboard. No empty implementations. No stub returns. No residual `Link(destination: "dictus://dictate")` in ToolbarView (the UAT root cause is fully removed).
+No TODO/FIXME/PLACEHOLDER comments found in OuisprKeyboard. No empty implementations. No stub returns. No residual `Link(destination: "ouispr://dictate")` in ToolbarView (the UAT root cause is fully removed).
 
 ### Human Verification Required
 
 ### 1. Full Dictation Round-Trip from Keyboard (UAT Re-test -- Critical)
 
-**Test:** Build and deploy to physical iPhone. Open any text field, switch to Dictus keyboard, tap mic button. Verify the recording overlay appears IN THE KEYBOARD (not switching to DictusApp). Speak French, tap stop, verify text auto-inserts at cursor.
+**Test:** Build and deploy to physical iPhone. Open any text field, switch to Ouispr keyboard, tap mic button. Verify the recording overlay appears IN THE KEYBOARD (not switching to OuisprApp). Speak French, tap stop, verify text auto-inserts at cursor.
 **Expected:** Mic tap shows recording overlay within the keyboard area with waveform and timer. Stop inserts transcribed text at cursor position. Haptic feedback at start, stop, and insertion.
 **Why human:** This was the UAT blocker (tests 2 and 3). The code fix is verified (Button replaced Link, startRecording() added, openURL injected), but the cross-process IPC flow requires a real device with WhisperKit to confirm end-to-end behavior.
 
@@ -140,7 +140,7 @@ No TODO/FIXME/PLACEHOLDER comments found in DictusKeyboard. No empty implementat
 
 No code-level gaps found. All 14 observable truths verified at all three levels (exists, substantive, wired). All 8 requirement IDs satisfied. The UAT blocker (mic button using Link instead of Button) has been fixed in Plan 03-04 with commits `4687800` and `f157620`.
 
-Status is `human_needed` because the critical UAT fix must be re-tested on a physical device. The previous UAT (03-UAT.md) showed that the mic button opened DictusApp instead of showing the recording overlay in the keyboard. The code fix (Button + startRecording() + openURL injection) is verified correct in the codebase, but the cross-process behavior can only be confirmed on-device.
+Status is `human_needed` because the critical UAT fix must be re-tested on a physical device. The previous UAT (03-UAT.md) showed that the mic button opened OuisprApp instead of showing the recording overlay in the keyboard. The code fix (Button + startRecording() + openURL injection) is verified correct in the codebase, but the cross-process behavior can only be confirmed on-device.
 
 ---
 

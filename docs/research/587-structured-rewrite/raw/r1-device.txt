@@ -56,11 +56,11 @@
 
 ━━ [D6-issues-check] 433 chars, lang=fr
   #1 433→408 3432ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
   #2 433→408 3195ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
   #3 433→408 3382ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
 
 ━━ [D7-mod-rejects] 246 chars, lang=fr
   #1 246→348 3343ms success recall=6/6 inversions=0/15 LIST=1
@@ -140,11 +140,11 @@
 
 ━━ [D6-issues-check] 433 chars, lang=fr
   #1 433→407 6806ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
   #2 433→408 4182ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes.⏎⏎Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
   #3 433→407 3998ms success recall=9/9 inversions=0/36
-     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
+     engineOut: J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours.⏎⏎Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.
 
 ━━ [D7-mod-rejects] 246 chars, lang=fr
   #1 246→246 3316ms success recall=6/6 inversions=0/15

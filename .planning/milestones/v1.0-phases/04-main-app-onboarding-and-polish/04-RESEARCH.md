@@ -69,7 +69,7 @@ iOS 26 introduces `.glassEffect()` as the core Liquid Glass API. TabView gets au
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 16+ | All UI rendering | Project standard, already used throughout |
 | UIKit (bridged) | iOS 16+ | Permission APIs, keyboard detection | Required for AVAudioSession, UITextInputMode |
-| DictusCore | local SPM | SharedKeys, shared types | Existing shared framework |
+| OuisprCore | local SPM | SharedKeys, shared types | Existing shared framework |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
@@ -82,14 +82,14 @@ iOS 26 introduces `.glassEffect()` as the core Liquid Glass API. TabView gets au
 | TabView(.page) for onboarding | ScrollView + ScrollPosition (iOS 18+) | TabView(.page) works on iOS 16+, ScrollPosition requires iOS 18 minimum -- TabView is correct for this project |
 | Custom glass modifier | Raw .background(Material) everywhere | Custom modifier centralizes the iOS 26 availability check -- always use the modifier |
 
-**No new dependencies required.** This phase uses only SwiftUI, UIKit bridging, and existing DictusCore.
+**No new dependencies required.** This phase uses only SwiftUI, UIKit bridging, and existing OuisprCore.
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```
-DictusApp/
-├── DictusApp.swift              # App entry, TabView or Onboarding gate
+OuisprApp/
+├── OuisprApp.swift              # App entry, TabView or Onboarding gate
 ├── ContentView.swift            # REPLACED: becomes TabView with 3 tabs
 ├── Onboarding/
 │   ├── OnboardingView.swift     # Page container with TabView(.page)
@@ -108,7 +108,7 @@ DictusApp/
 │   ├── GlassModifier.swift      # .glassEffect / Material fallback
 │   ├── BrandWaveform.swift      # 3-bar logo-inspired waveform
 │   ├── MicButtonAnimated.swift  # Animated mic button states
-│   └── DictusColors.swift       # Color assets, no hardcoded values
+│   └── OuisprColors.swift       # Color assets, no hardcoded values
 ├── Audio/
 │   ├── AudioRecorder.swift      # Unchanged
 │   └── TranscriptionService.swift # Unchanged
@@ -116,14 +116,14 @@ DictusApp/
 │   └── ModelManager.swift       # Unchanged
 └── DictationCoordinator.swift   # Unchanged
 
-DictusKeyboard/Views/
+OuisprKeyboard/Views/
 ├── RecordingOverlay.swift       # MODIFIED: 3-bar waveform
 ├── ToolbarView.swift            # MODIFIED: animated mic button
 ├── KeyboardView.swift           # MODIFIED: glass styling
 ├── KeyButton.swift              # MODIFIED: glass key backgrounds
 └── FullAccessBanner.swift       # MODIFIED: glass styling
 
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 └── SharedKeys.swift             # EXTENDED: language, haptics, hasCompletedOnboarding
 ```
 
@@ -135,7 +135,7 @@ DictusCore/Sources/DictusCore/
 // Source: https://livsycode.com/swiftui/implementing-the-glasseffect-in-swiftui/
 extension View {
     @ViewBuilder
-    func dictusGlass(in shape: some Shape = RoundedRectangle(cornerRadius: 16)) -> some View {
+    func ouisprGlass(in shape: some Shape = RoundedRectangle(cornerRadius: 16)) -> some View {
         if #available(iOS 26.0, *) {
             self.glassEffect(.regular, in: shape)
         } else {
@@ -150,11 +150,11 @@ extension View {
 
 ### Pattern 2: Onboarding Gate at App Entry
 **What:** Fullscreen cover that blocks app access until onboarding is complete
-**When to use:** DictusApp.swift body
+**When to use:** OuisprApp.swift body
 **Example:**
 ```swift
 @main
-struct DictusApp: App {
+struct OuisprApp: App {
     @AppStorage("hasCompletedOnboarding",
                 store: UserDefaults(suiteName: "group.com.pivi.dictus"))
     private var hasCompletedOnboarding = false
@@ -204,13 +204,13 @@ struct OnboardingView: View {
 **When to use:** Every color reference in the app
 **Example:**
 ```swift
-// Define in DictusColors.swift using Color extension
+// Define in OuisprColors.swift using Color extension
 extension Color {
-    static let dictusBackground = Color("DictusBackground")  // from Assets.xcassets
-    static let dictusAccent = Color("DictusAccent")
-    static let dictusSurface = Color("DictusSurface")
-    static let dictusRecording = Color("DictusRecording")
-    static let dictusSuccess = Color("DictusSuccess")
+    static let ouisprBackground = Color("OuisprBackground")  // from Assets.xcassets
+    static let ouisprAccent = Color("OuisprAccent")
+    static let ouisprSurface = Color("OuisprSurface")
+    static let ouisprRecording = Color("OuisprRecording")
+    static let ouisprSuccess = Color("OuisprSuccess")
 }
 // These automatically adapt to light/dark mode via asset catalog variants
 ```
@@ -259,7 +259,7 @@ struct BrandWaveform: View {
 **Example:**
 ```swift
 // Headings: SF Pro Rounded via .rounded design
-Text("Dictus")
+Text("Ouispr")
     .font(.system(.largeTitle, design: .rounded, weight: .bold))
 
 // Body: SF Pro Text (default system design)
@@ -271,8 +271,8 @@ Text("Description text")
 ```
 
 ### Anti-Patterns to Avoid
-- **Hardcoded Color literals:** Never use `Color(red:green:blue:)` or hex directly in views. Always go through Color assets or the DictusColors extension for dark mode support.
-- **Nested #available checks:** Don't scatter `#available(iOS 26, *)` everywhere. Use the `dictusGlass()` modifier once and apply it. Same for any other iOS 26-specific API.
+- **Hardcoded Color literals:** Never use `Color(red:green:blue:)` or hex directly in views. Always go through Color assets or the OuisprColors extension for dark mode support.
+- **Nested #available checks:** Don't scatter `#available(iOS 26, *)` everywhere. Use the `ouisprGlass()` modifier once and apply it. Same for any other iOS 26-specific API.
 - **Glass on content views:** Glass is for the navigation layer (toolbars, tab bars, cards, controls). Never apply glass to list content, text bodies, or media.
 - **Blocking onboarding steps:** Don't force the user to wait on permission dialogs. If they deny microphone, show a message but let them proceed -- they can grant it later from Settings.
 - **Force-unwrapping UITextInputMode:** The `activeInputModes` array may not contain your keyboard's language identifier in a predictable way. Always handle the "not detected" case gracefully.
@@ -281,7 +281,7 @@ Text("Description text")
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Glass effect with fallback | Per-view `#available` checks | Single `dictusGlass()` ViewModifier | Consistency, single point of change |
+| Glass effect with fallback | Per-view `#available` checks | Single `ouisprGlass()` ViewModifier | Consistency, single point of change |
 | Dynamic Type support | Manual font size calculations | `.font(.system(.body))` text styles | System handles all 11 size categories automatically |
 | Color scheme adaptation | Manual `colorScheme` checks for every color | Color asset catalog with light/dark variants | System handles adaptation automatically |
 | Microphone permission | Custom permission manager | `AVAudioSession.sharedInstance().requestRecordPermission` | One-liner, system handles the dialog |
@@ -326,7 +326,7 @@ Text("Description text")
 ### Pitfall 6: App Group UserDefaults Not Syncing for New Settings
 **What goes wrong:** Settings changes in the main app are not reflected in the keyboard extension.
 **Why it happens:** Standard `UserDefaults.standard` doesn't share with extensions. Must use `UserDefaults(suiteName: "group.com.pivi.dictus")`.
-**How to avoid:** All new SharedKeys (language, hapticsEnabled, hasCompletedOnboarding) must use `AppGroup.defaults` -- the pattern already established in DictusCore.
+**How to avoid:** All new SharedKeys (language, hapticsEnabled, hasCompletedOnboarding) must use `AppGroup.defaults` -- the pattern already established in OuisprCore.
 **Warning signs:** Keyboard still using old settings after user changes preferences.
 
 ## Code Examples
@@ -359,12 +359,12 @@ func requestMicrophonePermission() async -> Bool {
 
 ### Keyboard Detection (Onboarding Step 3)
 ```swift
-// Check if Dictus keyboard is in the active input modes
-func isDictusKeyboardInstalled() -> Bool {
+// Check if Ouispr keyboard is in the active input modes
+func isOuisprKeyboardInstalled() -> Bool {
     // UITextInputMode.activeInputModes lists all enabled keyboards
     // Check for our keyboard's bundle identifier in the list
     let activeInputModes = UITextInputMode.activeInputModes
-    // Dictus keyboard has primaryLanguage "fr-FR" and belongs to our bundle
+    // Ouispr keyboard has primaryLanguage "fr-FR" and belongs to our bundle
     // Note: This is imperfect -- multiple keyboards may share a language.
     // Best approach: combine with checking the bundle identifier pattern.
     return activeInputModes.contains { mode in
@@ -389,23 +389,23 @@ if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
 
 // Note: Cannot deep-link directly to Keyboards settings page.
 // UIApplication.openSettingsURLString opens the app's own settings page.
-// User must navigate: Settings > Dictus > Keyboards manually.
+// User must navigate: Settings > Ouispr > Keyboards manually.
 // The onboarding UI should include a screenshot showing the path.
 ```
 
 ### iOS-Style Settings List (APP-03)
 ```swift
 struct SettingsView: View {
-    @AppStorage("dictus.language", store: AppGroup.defaults)
+    @AppStorage("ouispr.language", store: AppGroup.defaults)
     private var language = "fr"
 
-    @AppStorage("dictus.fillerWordsEnabled", store: AppGroup.defaults)
+    @AppStorage("ouispr.fillerWordsEnabled", store: AppGroup.defaults)
     private var fillerWordsEnabled = true
 
-    @AppStorage("dictus.keyboardLayout", store: AppGroup.defaults)
+    @AppStorage("ouispr.keyboardLayout", store: AppGroup.defaults)
     private var keyboardLayout = "azerty"
 
-    @AppStorage("dictus.hapticsEnabled", store: AppGroup.defaults)
+    @AppStorage("ouispr.hapticsEnabled", store: AppGroup.defaults)
     private var hapticsEnabled = true
 
     var body: some View {
@@ -568,15 +568,15 @@ struct MainTabView: View {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (via Swift Package Manager) |
-| Config file | `DictusCore/Package.swift` |
-| Quick run command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
-| Full suite command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| Config file | `OuisprCore/Package.swift` |
+| Quick run command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
+| Full suite command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| APP-01 | Onboarding flow completion sets hasCompletedOnboarding | unit (SharedKeys) | `cd DictusCore && swift test --filter SharedKeys` | Partial (SharedKeys exists) |
-| APP-03 | Settings preferences persist via App Group | unit (SharedKeys) | `cd DictusCore && swift test` | Partial (SharedKeys exists) |
+| APP-01 | Onboarding flow completion sets hasCompletedOnboarding | unit (SharedKeys) | `cd OuisprCore && swift test --filter SharedKeys` | Partial (SharedKeys exists) |
+| APP-03 | Settings preferences persist via App Group | unit (SharedKeys) | `cd OuisprCore && swift test` | Partial (SharedKeys exists) |
 | KBD-06 | Keyboard glass styling | manual-only | N/A (requires iOS 26 device/sim) | N/A |
 | DSN-01 | Glass effect on all surfaces | manual-only | N/A (visual verification) | N/A |
 | DSN-02 | Mic button animation states | manual-only | N/A (visual verification) | N/A |
@@ -584,13 +584,13 @@ struct MainTabView: View {
 | DSN-04 | Dynamic Type support | manual-only | N/A (Accessibility Inspector) | N/A |
 
 ### Sampling Rate
-- **Per task commit:** `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test`
+- **Per task commit:** `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test`
 - **Per wave merge:** Full test suite + Xcode build verification for both targets
 - **Phase gate:** Full suite green + manual visual verification on device
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/SharedKeysExtensionTests.swift` -- covers new keys (language, hapticsEnabled, hasCompletedOnboarding)
-- [ ] Xcode build verification for DictusApp + DictusKeyboard targets after glass modifier changes
+- [ ] `OuisprCore/Tests/OuisprCoreTests/SharedKeysExtensionTests.swift` -- covers new keys (language, hapticsEnabled, hasCompletedOnboarding)
+- [ ] Xcode build verification for OuisprApp + OuisprKeyboard targets after glass modifier changes
 
 *(Most Phase 4 requirements are UI/visual and require manual verification on device. Automated testing is limited to data layer changes in SharedKeys.)*
 

@@ -9,11 +9,11 @@
 
 ## TL;DR pour la prochaine IA
 
-Le bug #92 : à chaque apparition du clavier Dictus, un rectangle gris de 228pt apparaît visuellement pendant ~500ms. La cause racine est **structurelle** : `self.inputView = kbInputView` déclenche `UIView-Encapsulated-Layout-Height = ~504pt @ priorité 1000` par iOS pendant l'animation d'entrée. Aucune contrainte priorité ≤ 999 ne peut gagner contre 1000.
+Le bug #92 : à chaque apparition du clavier Ouispr, un rectangle gris de 228pt apparaît visuellement pendant ~500ms. La cause racine est **structurelle** : `self.inputView = kbInputView` déclenche `UIView-Encapsulated-Layout-Height = ~504pt @ priorité 1000` par iOS pendant l'animation d'entrée. Aucune contrainte priorité ≤ 999 ne peut gagner contre 1000.
 
 **Toutes les approches non-invasives ont été épuisées** sur la branche `fix/92-keyboard-load-flash` (déjà commit). L'approche B est le seul vrai fix structurel : retirer `self.inputView = kbInputView` et migrer le layout sur `self.view`, pattern upstream giellakbd-ios. Régression audio à gérer : créer un `KeyboardInputView` 1×1pt invisible juste pour conformer à `UIInputViewAudioFeedback`.
 
-**Effort estimé** : ~80-150 LOC, refactor focalisé dans `DictusKeyboard/KeyboardViewController.swift`. 1-2h de travail + tests device.
+**Effort estimé** : ~80-150 LOC, refactor focalisé dans `OuisprKeyboard/KeyboardViewController.swift`. 1-2h de travail + tests device.
 
 ---
 
@@ -21,7 +21,7 @@ Le bug #92 : à chaque apparition du clavier Dictus, un rectangle gris de 228pt 
 
 ### Le bug
 
-À chaque apparition du clavier Dictus (tap dans Notes, Spotlight pull-down, retour d'app, etc.), pendant ~500ms :
+À chaque apparition du clavier Ouispr (tap dans Notes, Spotlight pull-down, retour d'app, etc.), pendant ~500ms :
 - iOS impose `UIView-Encapsulated-Layout-Height = 504pt @ priorité 1000` sur `self.inputView`
 - Pendant ce transient, kbInputView est 504pt mais le contenu utile (toolbar 52pt + clavier 224pt = 276pt) ne fait que 276pt
 - Les 228pt restants exposent le chrome gris de UIInputView, créant un flash visuel jarrant
@@ -93,7 +93,7 @@ open override func viewDidLayoutSubviews() {
 
 **Solution proposée** : créer un mini `KeyboardInputView` de 1×1pt, alpha=0 ou hidden=true, assigné à `self.inputView` UNIQUEMENT pour conformer au protocole audio. Tout le layout réel se fait sur `self.view` via `keyboardContainer`. Ce pattern est documenté dans le doc d'analyse comme alternative valide.
 
-`KeyboardInputView` (DictusKeyboard/InputView.swift) est déjà conforme :
+`KeyboardInputView` (OuisprKeyboard/InputView.swift) est déjà conforme :
 ```swift
 class KeyboardInputView: UIInputView, UIInputViewAudioFeedback {
     var enableInputClicksWhenVisible: Bool { true }
@@ -243,9 +243,9 @@ Build et tester chaque état :
 ### Étape 6 — bumper le build
 
 Build 14 → 15 dans 3 plists :
-- `DictusApp/Info.plist`
-- `DictusKeyboard/Info.plist`
-- `DictusWidgets/Info.plist`
+- `OuisprApp/Info.plist`
+- `OuisprKeyboard/Info.plist`
+- `OuisprWidgets/Info.plist`
 
 ---
 
@@ -288,15 +288,15 @@ La fonction existe déjà dans le code (dans `KeyboardViewController.swift` ou u
 ## Fichiers à modifier
 
 ### Modifs principales
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardViewController.swift` — refactor layout
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardViewController.swift` — refactor layout
 
 ### Modifs build version
-- `/Users/pierreviviere/dev/dictus/DictusApp/Info.plist` — build 14 → 15
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/Info.plist` — build 14 → 15
-- `/Users/pierreviviere/dev/dictus/DictusWidgets/Info.plist` — build 14 → 15
+- `/Users/pierreviviere/dev/ouispr/OuisprApp/Info.plist` — build 14 → 15
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/Info.plist` — build 14 → 15
+- `/Users/pierreviviere/dev/ouispr/OuisprWidgets/Info.plist` — build 14 → 15
 
 ### Fichiers de référence (lecture seule)
-- `/Users/pierreviviere/dev/dictus/.planning/debug/issue-92-keyboard-flash-analysis.md` — analyse 10-agents, régressions
+- `/Users/pierreviviere/dev/ouispr/.planning/debug/issue-92-keyboard-flash-analysis.md` — analyse 10-agents, régressions
 - `/Users/pierreviviere/dev/giellakbd-ios/Keyboard/Controllers/KeyboardViewController.swift` — pattern upstream
   - Lignes 98-110 : `initHeightConstraint`
   - Lignes 262-274 : `setupKeyboardContainer`
@@ -344,7 +344,7 @@ Si régression audio : voir Risque 1, fallback `AudioServicesPlaySystemSound(110
 
 1. **Démarrer en mode plan** (`shift+tab` au début) pour proposer le plan détaillé avant d'écrire du code
 2. **Lire les fichiers de référence** avant de planifier (analysis doc + upstream)
-3. **Build après chaque étape majeure** (`xcodebuild -project Dictus.xcodeproj -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`)
+3. **Build après chaque étape majeure** (`xcodebuild -project Ouispr.xcodeproj -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`)
 4. **Demander à Pierre de tester sur device** avant de commit. Pierre teste sur iPhone 17 Pro / iOS 26.3.1 via TestFlight ou run direct
 5. **Ne PAS push avant retour positif de Pierre**
 6. **Commit message** : `fix(#92): refactor self.inputView to eliminate 504pt transient flash` + body détaillé
@@ -358,7 +358,7 @@ Si régression audio : voir Risque 1, fallback `AudioServicesPlaySystemSound(110
 - **keyboardContainer** : nouveau UIView, subview directe de `self.view`, qui hébergera hosting + giellaKeyboard
 - **giellaKeyboard** : la `GiellaKeyboardView` qui contient les touches AZERTY (UICollectionView)
 - **hosting** : le `UIHostingController<KeyboardRootView>` qui contient toolbar SwiftUI + recording overlay + emoji picker
-- **bridge** : `DictusKeyboardBridge`, adaptateur giellakbd-ios delegate → Dictus actions
+- **bridge** : `OuisprKeyboardBridge`, adaptateur giellakbd-ios delegate → Ouispr actions
 
 ---
 

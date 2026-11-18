@@ -11,7 +11,7 @@
 **Key accomplishments:**
 1. AOSP trie spell correction — compressed patricia trie (C++ with ObjC++ bridge), mmap-based, edit distance 2, keyboard proximity scoring, accent-aware costs (~0.4 MiB/language)
 2. N-gram next-word prediction — trigram engine (C++ with mmap), Stupid Backoff scoring, context-boosted spell corrections, prediction tap chaining
-3. App localization — iOS String Catalogs (EN source + FR translations) for both DictusApp and DictusKeyboard targets, developmentRegion=en
+3. App localization — iOS String Catalogs (EN source + FR translations) for both OuisprApp and OuisprKeyboard targets, developmentRegion=en
 4. Cold start investigation — 5 approaches tested for auto-return, all rejected (no public iOS API), ADR documented, Wispr Flow-style overlay redesign
 5. Bug fixes — autocorrect undo race condition, license URL + NVIDIA attribution, numeric token autocorrect guard
 6. SymSpell → AOSP trie migration — complete replacement with better quality, lower memory, and proximity scoring
@@ -79,7 +79,7 @@
 **Delivered:** Apple-level keyboard parity with spacebar trackpad, haptics, text prediction, keyboard modes, and multi-engine model catalog (WhisperKit + Parakeet).
 
 **Key accomplishments:**
-1. Design system consolidated into DictusCore — shared colors, glass modifiers, waveform, mic button across all targets
+1. Design system consolidated into OuisprCore — shared colors, glass modifiers, waveform, mic button across all targets
 2. Apple-parity keyboard — spacebar trackpad with haptic ticks, adaptive accent key, emoji button, 3-category key sounds
 3. Text prediction engine — 3-slot suggestion bar with French autocorrect, accent suggestions, undo-on-backspace
 4. Keyboard mode system — user-selectable default layer with live preview in settings and onboarding
@@ -119,7 +119,7 @@
 - **APP-03** (Settings): 3/4 toggles wired in Phase 5. Language toggle functional but limited by Whisper model language support.
 - SmartModelRouter code exists but bypassed at runtime (intentional)
 - FullAccessBanner cannot open URLs from keyboard extension (iOS limitation)
-- 6 design files duplicated between DictusApp and DictusKeyboard (manual sync required)
+- 6 design files duplicated between OuisprApp and OuisprKeyboard (manual sync required)
 
 ---
 

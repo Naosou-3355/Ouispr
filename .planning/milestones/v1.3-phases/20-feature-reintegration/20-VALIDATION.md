@@ -17,10 +17,10 @@ created: 2026-03-30
 
 | Property | Value |
 |----------|-------|
-| **Framework** | XCTest (DictusCore SPM package) |
-| **Config file** | DictusCore/Package.swift |
-| **Quick run command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter DictusCoreTests` |
-| **Full suite command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| **Framework** | XCTest (OuisprCore SPM package) |
+| **Config file** | OuisprCore/Package.swift |
+| **Quick run command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter OuisprCoreTests` |
+| **Full suite command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 | **Estimated runtime** | ~15 seconds |
 
 ---

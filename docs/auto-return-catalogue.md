@@ -1,6 +1,6 @@
 # Adding an app to the auto-return catalogue
 
-After a dictation, Dictus sends the user back to the app they were typing in by opening a URL for that app. The URL comes from `KnownAppSchemes.schemesByBundleId` in `DictusCore/Sources/DictusCore/KnownAppSchemes.swift`. An app with no entry gets the swipe-back overlay.
+After a dictation, Ouispr sends the user back to the app they were typing in by opening a URL for that app. The URL comes from `KnownAppSchemes.schemesByBundleId` in `OuisprCore/Sources/OuisprCore/KnownAppSchemes.swift`. An app with no entry gets the swipe-back overlay.
 
 This page lists the steps for adding an app. The doc comments in `KnownAppSchemes.swift` explain why each step exists. Read them before you change the file.
 
@@ -8,7 +8,7 @@ The only test an entry has to pass: **the URL must bring the app back where the 
 
 ## 1. Find the bundle ID
 
-Dictate once from the Dictus keyboard inside the app, then export the log (Settings → Export logs). Search it for:
+Dictate once from the Ouispr keyboard inside the app, then export the log (Settings → Export logs). Search it for:
 
 ```
 hostReturn hostId=<bundle id> outcome=no-scheme
@@ -53,13 +53,13 @@ Add only the bundle ID you tested. Do not add sibling IDs (`.dev`, `.preview`, o
 Then run the tests and the linter:
 
 ```bash
-cd DictusCore && swift test
+cd OuisprCore && swift test
 cd .. && swiftlint lint --strict
 ```
 
 ## 5. Open a PR
 
-State the device, the iOS version, the app version, the URL tried and the result. Before merge, the device check is a dictation from the Dictus keyboard inside the app: the user must land back on the same screen, and the log must read `hostReturn hostId=<bundle id> outcome=returned`. `returned` only means iOS opened the URL. Where the app landed has to be checked on screen.
+State the device, the iOS version, the app version, the URL tried and the result. Before merge, the device check is a dictation from the Ouispr keyboard inside the app: the user must land back on the same screen, and the log must read `hostReturn hostId=<bundle id> outcome=returned`. `returned` only means iOS opened the URL. Where the app landed has to be checked on screen.
 
 ## Syncing with VivaDicta
 

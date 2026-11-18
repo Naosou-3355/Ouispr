@@ -76,7 +76,7 @@ bullet counts for `Message` (it has no bullet bar either way).
 ## 5. What is run
 
 ```sh
-cd DictusCore
+cd OuisprCore
 H=.build/debug/polish-harness; O=../docs/research/587-pr2-message-liste; F=Sources/polish-harness/fixtures
 $H fidelity $F/message-fr.json  --mode message --runs 3 --arm $O/arms/message-develop.txt --json $O/capture-message-fr.json
 $H fidelity $F/notes-fr.json    --mode notes   --runs 3 --arm $O/arms/notes-develop.txt   --json $O/capture-notes-fr.json

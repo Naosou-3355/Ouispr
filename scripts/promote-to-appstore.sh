@@ -8,7 +8,7 @@
 # What it does:
 #   1. Resolve the `build/N` tag -> commit C and marketing version X.Y.Z.
 #   2. Create an ephemeral `release/X.Y.Z` branch at C and open a PR to main.
-#   3. Wait for required checks (Build + SwiftLint + DictusCore Tests), then merge with --admin.
+#   3. Wait for required checks (Build + SwiftLint + OuisprCore Tests), then merge with --admin.
 #   4. Tag `vX.Y.Z` (annotated) on main + push, create a GitHub Release.
 #   5. Back-merge main -> develop (the step that must never be forgotten).
 #   6. Print the App Store Connect checklist (the only manual part).
@@ -41,7 +41,7 @@ fi
 
 COMMIT=$(git rev-parse "$TAG^{commit}")
 TMP=$(mktemp); trap 'rm -f "$TMP"' EXIT
-git show "$TAG:DictusApp/Info.plist" > "$TMP"
+git show "$TAG:OuisprApp/Info.plist" > "$TMP"
 VERSION=$($PB -c "Print :CFBundleShortVersionString" "$TMP")
 VTAG="v$VERSION"
 RELEASE_BRANCH="release/$VERSION"
@@ -69,7 +69,7 @@ PR_URL=$(gh pr create --base main --head "$RELEASE_BRANCH" \
 echo "PR: $PR_URL"
 
 # --- 3. Wait for required checks, then admin-merge --------------------------
-echo "Waiting for required checks (Build + SwiftLint + DictusCore Tests)…"
+echo "Waiting for required checks (Build + SwiftLint + OuisprCore Tests)…"
 gh pr checks "$PR_URL" --watch
 gh pr merge "$PR_URL" --merge --admin --delete-branch
 
@@ -91,7 +91,7 @@ cat <<EOF
 ✅ Source promoted: $VTAG tagged on main, GitHub Release created, main merged back into develop.
 
 📱 Now finish in App Store Connect (the manual part):
-   1. My Apps → Dictus → (create / open) the $VERSION App Store version.
+   1. My Apps → Ouispr → (create / open) the $VERSION App Store version.
    2. Build section → select build $N (already uploaded from TestFlight).
    3. Fill release notes / screenshots / metadata if not done.
    4. Export compliance: ITSAppUsesNonExemptEncryption → already set in Info.plist.

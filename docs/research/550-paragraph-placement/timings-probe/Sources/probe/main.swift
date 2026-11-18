@@ -1,5 +1,5 @@
 // Headless probe for #550: is ASRResult.tokenTimings populated at runtime for
-// Parakeet v3, on the same batch `transcribe([Float])` call DictusApp makes — and
+// Parakeet v3, on the same batch `transcribe([Float])` call OuisprApp makes — and
 // is a pause visible in it?
 import AVFoundation
 import Foundation

@@ -1,8 +1,8 @@
 # Technology Stack -- v1.4 Prediction & Stability
 
-**Project:** Dictus v1.4
+**Project:** Ouispr v1.4
 **Researched:** 2026-04-01
-**Scope:** Stack additions for probability-based text prediction (SymSpell + n-gram), cold start auto-return, autocorrect bug fix, and license updates. Existing stack (Swift 5.9+, SwiftUI, WhisperKit, FluidAudio, giellakbd-ios, DeviceKit, DictusCore) is validated and unchanged.
+**Scope:** Stack additions for probability-based text prediction (SymSpell + n-gram), cold start auto-return, autocorrect bug fix, and license updates. Existing stack (Swift 5.9+, SwiftUI, WhisperKit, FluidAudio, giellakbd-ios, DeviceKit, OuisprCore) is validated and unchanged.
 
 ---
 
@@ -129,7 +129,7 @@ Based on the thorough analysis in `assets/reference/issue-23-report.md` and Appl
 
 | Component | Implementation | New Code? |
 |-----------|---------------|-----------|
-| Detect source app | Test `sourceApplication` in `application(_:open:options:)` on device | Modify `DictusApp.swift` |
+| Detect source app | Test `sourceApplication` in `application(_:open:options:)` on device | Modify `OuisprApp.swift` |
 | Store source app | Write bundle ID to App Group `UserDefaults` | Trivial |
 | Return to source | `UIApplication.shared.open(URL(string: scheme)!)` using `KnownAppSchemes` whitelist | Already exists |
 | Fallback UX | "Tap Back arrow to return" guidance overlay | New SwiftUI view |
@@ -140,7 +140,7 @@ Based on the thorough analysis in `assets/reference/issue-23-report.md` and Appl
 ### sourceApplication Testing Priority
 
 Before building any auto-return feature, test on a physical device:
-1. From Notes, tap mic in Dictus keyboard -> opens DictusApp via URL scheme
+1. From Notes, tap mic in Ouispr keyboard -> opens OuisprApp via URL scheme
 2. In `application(_:open:options:)`, print `options[.sourceApplication]`
 3. If it returns the keyboard extension's bundle ID (not Notes), this approach fails
 4. If it returns nothing, this approach fails
@@ -154,7 +154,7 @@ This test takes 5 minutes and determines the entire strategy. Do it in Wave 0.
 The bug (autocorrect undo triggers after typing new characters) is a state management issue in `SuggestionState.lastAutocorrect`. The fix:
 
 ```swift
-// In DictusKeyboardBridge.handleInputKey(), after inserting any character:
+// In OuisprKeyboardBridge.handleInputKey(), after inserting any character:
 suggestionState?.lastAutocorrect = nil  // Clear undo state after any new input
 ```
 
@@ -178,14 +178,14 @@ Pure text changes, no libraries needed.
 | Technology | Version | Target | Notes |
 |------------|---------|--------|-------|
 | Swift | 5.9+ | All | No change |
-| SwiftUI | iOS 17+ | DictusApp, overlays | No change |
-| UIKit (giellakbd-ios) | Vendored | DictusKeyboard | No change |
-| WhisperKit | 0.16.0+ | DictusApp | No change |
-| FluidAudio (Parakeet) | via SPM | DictusApp | No change |
-| DeviceKit | 5.8.x | DictusKeyboard | No change |
-| DictusCore | Local SPM | Shared | No change |
-| UITextChecker | System | DictusKeyboard | Kept as fallback, no longer primary |
-| FrequencyDictionary | Custom JSON | DictusKeyboard | Replaced by SymSpell frequency dict for ranking, may keep for accent mode fallback |
+| SwiftUI | iOS 17+ | OuisprApp, overlays | No change |
+| UIKit (giellakbd-ios) | Vendored | OuisprKeyboard | No change |
+| WhisperKit | 0.16.0+ | OuisprApp | No change |
+| FluidAudio (Parakeet) | via SPM | OuisprApp | No change |
+| DeviceKit | 5.8.x | OuisprKeyboard | No change |
+| OuisprCore | Local SPM | Shared | No change |
+| UITextChecker | System | OuisprKeyboard | Kept as fallback, no longer primary |
+| FrequencyDictionary | Custom JSON | OuisprKeyboard | Replaced by SymSpell frequency dict for ranking, may keep for accent mode fallback |
 | iOS minimum | 17.0 | All | No change |
 
 ---
@@ -212,7 +212,7 @@ Pure text changes, no libraries needed.
 # File > Add Package Dependencies
 # URL: https://github.com/gdetari/SymSpellSwift.git
 # Version: Up to Next Minor (0.1.4)
-# Target: DictusKeyboard (keyboard extension only)
+# Target: OuisprKeyboard (keyboard extension only)
 ```
 
 ### Data file preparation (offline, pre-build)
@@ -233,7 +233,7 @@ Pure text changes, no libraries needed.
 
 ### Bundle in Xcode
 
-Add `fr_symspell_50k.txt` and `fr_ngram.bin` to DictusKeyboard target (Copy Bundle Resources).
+Add `fr_symspell_50k.txt` and `fr_ngram.bin` to OuisprKeyboard target (Copy Bundle Resources).
 
 ---
 

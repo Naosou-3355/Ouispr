@@ -27,7 +27,7 @@ key-files:
     - README.md
 
 key-decisions:
-  - "No logo SVG found -- used existing dictus-icon-512.png for README header"
+  - "No logo SVG found -- used existing ouispr-icon-512.png for README header"
   - "No separate Code of Conduct file -- brief conduct section inline in CONTRIBUTING.md"
 
 patterns-established:
@@ -74,7 +74,7 @@ Each task was committed atomically:
 
 ## Decisions Made
 
-- No logo SVG exists in assets/brand/ -- used `dictus-icon-512.png` for README header image
+- No logo SVG exists in assets/brand/ -- used `ouispr-icon-512.png` for README header image
 - Kept Code of Conduct as brief inline section in CONTRIBUTING.md rather than separate file (per plan)
 
 ## Deviations from Plan

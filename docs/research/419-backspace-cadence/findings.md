@@ -91,9 +91,9 @@ The fix deliberately does **not** copy this, and removes one word-unit per wave
 waves about half a second apart, and one word per wave at 350 ms is the conservative
 reading of that. Matching Apple exactly is a one-line change if he prefers it.
 
-## Dictus before the fix, same harness, same hold
+## Ouispr before the fix, same harness, same hold
 
-`raw/dictus-before-12s.log`, our keyboard at `e41f4c3`:
+`raw/ouispr-before-12s.log`, our keyboard at `e41f4c3`:
 
 ```
        0 ms   1 character      <- touch-down
@@ -123,13 +123,13 @@ Two numbers say the whole issue:
 - **Haptics.** Unobservable off-device, in every run. Every claim about a vibration in
   this document and in the PR is a claim about which code path runs, and is labelled
   as one.
-- **A secure field served by our extension.** iOS **did not offer Dictus at all** to a
+- **A secure field served by our extension.** iOS **did not offer Ouispr at all** to a
   host app that merely had a secure `UITextField` in its hierarchy -- measured: with
   the field mounted, the globe menu listed only Français, English and Emoji; with the
-  same build and the field not mounted, Dictus appeared. So no case could be
+  same build and the field not mounted, Ouispr appeared. So no case could be
   constructed here in which our keyboard serves a secure field, and the acceptance
   criterion about secure fields was **not exercised**. The code is written so that it
-  holds regardless -- see the predicate's comment in `DictusKeyboardBridge`.
+  holds regardless -- see the predicate's comment in `OuisprKeyboardBridge`.
 - **Device timing.** Simulator cadences on a Mac, not an iPhone 15 Pro Max.
 
 ## Harness notes for whoever runs this next
@@ -141,14 +141,14 @@ Two numbers say the whole issue:
 - A held press needs a single `axe batch` (`touch --down` / `sleep` / `touch --up`).
   The release does land on a UIKit keyboard: a 4 s hold produced its last deletion at
   4 257 ms and nothing afterwards (`raw/apple-release-4s.log`).
-- The Dictus keyboard's keys are **not in the accessibility tree** -- only the system
+- The Ouispr keyboard's keys are **not in the accessibility tree** -- only the system
   globe and dictation buttons are. Its delete key has to be tapped by coordinate, read
   off a screenshot.
 
-## Dictus after the fix, same harness, same hold
+## Ouispr after the fix, same harness, same hold
 
 Verified on the same simulator, same seed text, same 12 s hold at the same
-coordinate. `raw/dictus-after-12s.log`:
+coordinate. `raw/ouispr-after-12s.log`:
 
 ```
        0 ms   1 character      <- touch-down
@@ -163,7 +163,7 @@ coordinate. `raw/dictus-after-12s.log`:
 
 The same 12 s hold that used to leave the field empty after 5.2 s and then tick
 73 more times now leaves 65 of the 254 characters standing. Our keyboard's own log
-counts it in one line each way (`raw/dictus-keyrepeat-events.txt`):
+counts it in one line each way (`raw/ouispr-keyrepeat-events.txt`):
 
 ```
 keyRepeatStopped ticks=122 reason=touch            <- before
@@ -174,10 +174,10 @@ keyRepeatStopped ticks=49  reason=touch            <- after
 
 | Case | Before | After | Apple |
 | --- | --- | --- | --- |
-| Field empties mid-hold (`dictus-after-empties-midhold.log`) | 73 further ticks over 7.4 s | stops on the tick that finds it empty, `ticks=23 reason=documentEmpty`, nothing for the remaining 9 s | stops |
-| Hold on an already empty field (`dictus-after-empty-from-start.log`) | ticked for the whole hold | one delete on touch-down, then nothing for 8 s, `ticks=1 reason=documentEmpty` | one delete on touch-down, then nothing for 6 s |
-| **Select all, then tap backspace** (`dictus-after-selectall-tap.log`) | deletes | **deletes** -- one edit, `loc=0 len=19`, the whole selection | n/a |
-| **Select all, then hold backspace** (`dictus-after-selectall-hold.log`) | deletes | **deletes** the selection on touch-down, then the now-empty field stops the repeat | n/a |
+| Field empties mid-hold (`ouispr-after-empties-midhold.log`) | 73 further ticks over 7.4 s | stops on the tick that finds it empty, `ticks=23 reason=documentEmpty`, nothing for the remaining 9 s | stops |
+| Hold on an already empty field (`ouispr-after-empty-from-start.log`) | ticked for the whole hold | one delete on touch-down, then nothing for 8 s, `ticks=1 reason=documentEmpty` | one delete on touch-down, then nothing for 6 s |
+| **Select all, then tap backspace** (`ouispr-after-selectall-tap.log`) | deletes | **deletes** -- one edit, `loc=0 len=19`, the whole selection | n/a |
+| **Select all, then hold backspace** (`ouispr-after-selectall-hold.log`) | deletes | **deletes** the selection on touch-down, then the now-empty field stops the repeat | n/a |
 
 The select-all rows are the ones that matter: the selection is anchored at offset 0,
 so the before-context is empty throughout, and the guard let the deletion through
@@ -185,7 +185,7 @@ anyway. That is `selectedText` doing the job the context alone could not.
 
 ### #390 still holds
 
-Held backspace, host app terminated mid-hold, from `raw/dictus-keyrepeat-events.txt`:
+Held backspace, host app terminated mid-hold, from `raw/ouispr-keyrepeat-events.txt`:
 
 ```
 keyRepeatStarted

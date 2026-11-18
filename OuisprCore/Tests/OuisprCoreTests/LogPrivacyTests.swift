@@ -1,0 +1,209 @@
+// OuisprCore/Tests/OuisprCoreTests/LogPrivacyTests.swift
+// Tests that no LogEvent formatted output leaks sensitive data.
+import XCTest
+@testable import OuisprCore
+
+final class LogPrivacyTests: XCTestCase {
+
+    /// All possible LogEvent instances for exhaustive testing.
+    private var allEvents: [LogEvent] {
+        [
+            .dictationStarted(fromURL: true, appState: "active", engineRunning: true),
+            .dictationCompleted(durationMs: 3000),
+            .dictationFailed(error: "timeout"),
+            .dictationDeferred(reason: "engineNotReady"),
+            .audioEngineStarted,
+            .audioEngineStopped,
+            .audioSessionConfigured(category: "playAndRecord"),
+            .audioSessionFailed(error: "configError"),
+            .audioSessionActivationFailed(step: "setActive", domain: "NSOSStatusErrorDomain", code: 560557684,
+                                          status: "560557684 '!int'", errorDescription: "Session activation failed",
+                                          context: "mediaServicesLost=false route=none"),
+            .transcriptionStarted(modelName: "base"),
+            .transcriptionCompleted(durationMs: 2500, wordCount: 42, confidence: 0.916),
+            .transcriptionCompleted(durationMs: 3400, wordCount: 214, confidence: 0.916,
+                                    retry: DriftRetryStats(spans: 3, wins: 2, durationMs: 2210)),
+            // The one deliberate exception (#861): the text of a span the drift retry
+            // replaced, and nothing of the dictation around it, in a test build only. The
+            // App Store line carries the two lengths; `testTheAppStoreDriftRetryLineCarriesNoText`.
+            .driftRetrySpanReplaced(startMs: 11_520, endMs: 18_960, before: "english9 english10",
+                                    after: "français français", channel: .testBuild),
+            .driftRetrySpanReplaced(startMs: 11_520, endMs: 18_960, before: "english9 english10",
+                                    after: "français français", channel: .appStore),
+            .transcriptionFailed(error: "modelNotLoaded"),
+            // #80's pass reports counters only. A term the user typed is their own
+            // vocabulary, and a character count of the transcript is not the transcript.
+            .vocabularyApplied(enabled: true, entries: 3, replacements: 1, chars: 58),
+            .modelDownloadStarted(name: "large-v3", sizeMB: 1500),
+            .modelDownloadCompleted(name: "large-v3"),
+            .modelDownloadFailed(name: "large-v3", error: "networkTimeout"),
+            // Background transfer (#449). The chunk line is the one to watch: it carries
+            // a CDN host, and the signed query string that host serves must never travel
+            // with it.
+            .modelDownloadResumed(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                offsetMB: 96,
+                totalMB: 445,
+                source: "relaunch"
+            ),
+            .modelDownloadRangeRejected(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                statusCode: 200,
+                reason: "http200-range-ignored"
+            ),
+            .modelDownloadChunk(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                index: 3,
+                count: 14,
+                statusCode: 206,
+                host: "us.aws.cdn.hf.co",
+                validated: true
+            ),
+            .modelDownloadIntegrityFailed(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                reason: "sha256 mismatch"
+            ),
+            .modelDownloadSessionRestored(tasks: 0, models: 1),
+            .modelDownloadOffline(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                secondsWithoutProgress: 15
+            ),
+            // Task diagnosis (#690, #707): task state, the session that holds it, byte
+            // counts and an error domain and code. Nothing the user said or typed.
+            .modelDownloadTaskState(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                chunk: 0,
+                phase: "restore",
+                origin: "adopted",
+                session: "bg",
+                state: "suspended",
+                receivedBytes: 11_534_336,
+                error: "none"
+            ),
+            .modelDownloadTaskState(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                chunk: 6,
+                phase: "start+10s",
+                origin: "new",
+                session: "fg",
+                state: "running",
+                receivedBytes: 0,
+                error: "none"
+            ),
+            .modelDownloadBackgroundTaskSilent(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                chunk: 0,
+                origin: "new",
+                secondsWithoutByte: 30
+            ),
+            .modelDownloadTaskCancelled(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                chunk: 0,
+                caller: "silentTaskWatchdog"
+            ),
+            // Orphaned chunks (#732): indices and a length reason. No bytes, no URL.
+            .modelDownloadOrphanedChunks(
+                name: "parakeet-tdt-0.6b-v3",
+                path: "Encoder.mlmodelc/weights/weight.bin",
+                file: 7,
+                absorbed: [0, 1],
+                discarded: ["2:chunk-length-100-expected-33554432"]
+            ),
+            .modelSelected(name: "base"),
+            .modelCompilationStarted(name: "base"),
+            .modelCompilationCompleted(name: "base", durationMs: 5000),
+            .keyboardDidAppear,
+            .keyboardDidDisappear,
+            .keyboardMicTapped,
+            .keyboardTextInserted,
+            .keyRepeatStarted,
+            .keyRepeatStopped(ticks: 12, reason: "touch"),
+            .appLaunched(version: "1.2"),
+            .appLaunchState(state: "background"),
+            // The background session's identifier, a constant of the app (#707).
+            .appBackgroundSessionEvents(identifier: "com.pivi.ouispr.model-download"),
+            .appDidBecomeActive,
+            .appWillResignActive,
+            .appDidEnterBackground,
+            .appWhisperKitLoaded(modelName: "base"),
+        ]
+    }
+
+    func testNoFormattedOutputContainsSensitivePatterns() {
+        // Sensitive patterns that should NEVER appear in log output
+        // These represent the kinds of data the privacy requirement (LOG-02) forbids
+        let sensitivePatterns = [
+            "transcription=",   // No raw transcription text
+            "keystroke=",       // No keystroke data
+            "audioContent=",    // No audio content
+            "userText=",        // No user text
+            "inputText=",       // No input text
+        ]
+
+        for event in allEvents {
+            let formatted = event.formatted()
+            for pattern in sensitivePatterns {
+                XCTAssertFalse(
+                    formatted.contains(pattern),
+                    "Event \(formatted) contains sensitive pattern '\(pattern)'"
+                )
+            }
+        }
+    }
+
+    /// #861: the App Store build logs where the replaced span sits and how long it was on
+    /// each side, never its words. So does an event built without a channel.
+    func testTheAppStoreDriftRetryLineCarriesNoText() {
+        for event in [
+            LogEvent.driftRetrySpanReplaced(startMs: 11_520, endMs: 18_960, before: "english9 english10",
+                                            after: "français français", channel: .appStore),
+            LogEvent.driftRetrySpanReplaced(startMs: 11_520, endMs: 18_960, before: "english9 english10",
+                                            after: "français français")
+        ] {
+            let formatted = event.formatted()
+            XCTAssertFalse(formatted.contains("english"), formatted)
+            XCTAssertFalse(formatted.contains("français"), formatted)
+            XCTAssertTrue(formatted.hasSuffix("startMs=11520 endMs=18960 beforeLen=18 afterLen=17"), formatted)
+        }
+    }
+
+    func testKeyboardTextInsertedHasNoAssociatedValues() {
+        // keyboardTextInserted must have NO content parameter
+        // We verify by checking its formatted output has no key=value pairs after the event name
+        let event = LogEvent.keyboardTextInserted
+        let formatted = event.formatted()
+        // Extract everything after "keyboardTextInserted"
+        if let range = formatted.range(of: "keyboardTextInserted") {
+            let afterEventName = String(formatted[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            XCTAssertTrue(afterEventName.isEmpty, "keyboardTextInserted should have no parameters, got: '\(afterEventName)'")
+        } else {
+            XCTFail("Expected 'keyboardTextInserted' in formatted output")
+        }
+    }
+
+    func testErrorParametersOnlyAcceptFrameworkErrorDescriptions() {
+        // Verify that error events use the "error" parameter key
+        // (framework errors like WhisperKit/Parakeet are OK per user decision)
+        let errorEvents: [LogEvent] = [
+            .dictationFailed(error: "WhisperKit.TranscriptionError"),
+            .audioSessionFailed(error: "AVAudioSession.ErrorCode"),
+            .transcriptionFailed(error: "Parakeet.ModelError"),
+            .modelDownloadFailed(name: "base", error: "URLSession.networkTimeout"),
+        ]
+
+        for event in errorEvents {
+            let formatted = event.formatted()
+            // Error parameter should be present as error=something
+            XCTAssertTrue(formatted.contains("error="), "Error event should contain error= parameter: \(formatted)")
+        }
+    }
+}

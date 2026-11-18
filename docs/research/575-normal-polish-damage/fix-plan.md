@@ -26,7 +26,7 @@ never gains a refusal nobody measured.
 
 ## Ordered changes
 
-1. **`PolishLostWords`** (new, DictusCore/Polish): `lostWords(polished:raw:languageCode:)`
+1. **`PolishLostWords`** (new, OuisprCore/Polish): `lostWords(polished:raw:languageCode:)`
    returns the dictated words missing from the output, after the licences below; empty
    means accept. Model-free, deterministic, no `NaturalLanguage` call except the
    off-language reading in step (g).

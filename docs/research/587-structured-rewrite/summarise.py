@@ -24,7 +24,7 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FIXTURES = HERE.parent.parent.parent / "DictusCore/Sources/polish-harness/fixtures"
+FIXTURES = HERE.parent.parent.parent / "OuisprCore/Sources/polish-harness/fixtures"
 
 CAPTURES = {
     "r1-device": ("capture-r1-device.json", "device-structured-fr.json"),

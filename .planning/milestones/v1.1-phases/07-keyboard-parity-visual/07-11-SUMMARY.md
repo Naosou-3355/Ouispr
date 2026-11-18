@@ -19,8 +19,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
 
 key-decisions:
   - "AudioServicesPlaySystemSound over UIDevice.playInputClick for 3-category sounds"
@@ -64,8 +64,8 @@ Each task was committed atomically:
 **Bug fix:** `6447b90` (fix: remove duplicate delete sound from callbacks)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - Line-based vertical trackpad movement, AudioToolbox import, delete/shift sounds
-- `DictusKeyboard/Views/KeyboardView.swift` - KeySound enum, AudioServicesPlaySystemSound for all key categories
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - Line-based vertical trackpad movement, AudioToolbox import, delete/shift sounds
+- `OuisprKeyboard/Views/KeyboardView.swift` - KeySound enum, AudioServicesPlaySystemSound for all key categories
 
 ## Decisions Made
 - AudioServicesPlaySystemSound chosen over UIDevice.playInputClick because playInputClick produces only one sound for all keys, while system sound IDs 1104/1155/1156 match Apple's 3-category differentiation
@@ -80,7 +80,7 @@ Each task was committed atomically:
 - **Found during:** Task 2 (key sounds implementation)
 - **Issue:** Delete sound was being played both in KeyboardView's onDelete callback AND in DeleteKey's DragGesture handler, causing duplicate clicks
 - **Fix:** Removed AudioServicesPlaySystemSound from KeyboardView's onDelete/onWordDelete callbacks, keeping it only in DeleteKey
-- **Files modified:** DictusKeyboard/Views/KeyboardView.swift
+- **Files modified:** OuisprKeyboard/Views/KeyboardView.swift
 - **Verification:** Build succeeded
 - **Committed in:** 6447b90
 

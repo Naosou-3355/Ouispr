@@ -9,7 +9,7 @@ import { BPM, FPS, FRAME, LOOP_C, loop, place, THEMES, type Theme } from "./them
 
 // ONBOARDING INTRO, SCENE C · "the keyboard in a note" (issue #667, headline "Dans votre
 // clavier."). The giant drawn iPhone of the App Store hero V10-A (branch chore/643-hero-a), its
-// screen now a note above the Dictus keyboard, and one whole dictation on it, in 6.5 seconds.
+// screen now a note above the Ouispr keyboard, and one whole dictation on it, in 6.5 seconds.
 // No hand: every tap is a touch indicator (an accent disc spreading into a fading ring where the
 // finger lands), with the key's own flash.
 //
@@ -22,7 +22,7 @@ import { BPM, FPS, FRAME, LOOP_C, loop, place, THEMES, type Theme } from "./them
 //   6. the dictated paragraph lands in the note and the keyboard returns to its keys; the note
 //      clears, and the loop starts again on an empty note.
 //
-// The states follow the real keyboard (DictusKeyboard/Views/KeyboardWaveformView.swift,
+// The states follow the real keyboard (OuisprKeyboard/Views/KeyboardWaveformView.swift,
 // resolvedAnimation(for:): recording draws `.micLevels`, transcribing `.sweep`, whose bars are
 // processingEnergy = 0.2 + 0.25 (sin(2 pi (i / (n - 1) + phase)) + 1); RecordingOverlay.swift: the
 // pills and the timer while recording, an empty bar of the same height while transcribing, so the
@@ -327,7 +327,7 @@ const drawFor = (theme: Theme, L: Layout) => (ctx: Ctx, frame: number, env: Env)
 export const introKeyboard = (appearance: Theme["name"], locale: string, id: string): Film => {
   const theme = THEMES[appearance];
   return {
-    meta: { title: `Dictus onboarding intro C · the keyboard in a note · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_C },
+    meta: { title: `Ouispr onboarding intro C · the keyboard in a note · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_C },
     assets: { images: {} },
     shots: [{ id, start: 0, end: LOOP_C, draw: drawFor(theme, layoutFor(locale)) }],
   };

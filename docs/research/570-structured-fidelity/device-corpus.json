@@ -85,7 +85,7 @@
       "refusedByGuardrail"
     ],
     "note": "Refused by segmentOverlap. Not labelled defect-by-defect in the tracker; carried here because a refusal is part of the rate and because the output rewrites the opening into something the speaker did not say (`Il faut que tu sois présent pour effectuer une vérification préliminaire`).",
-    "raw": "J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours. alors avant de checker les Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.",
+    "raw": "J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS. J'ai eu un retour d'utilisateur. Enfin tu regarderas dans le slide, on a pas mal discuté. Je pense qu'on a quasiment tout noté ses retours. alors avant de checker les Avant de checker les issues, check notre conversation avec lui. Alors tu verras, il y a plusieurs postes. Dis-moi les retours qu'il a fait, liste-les-moi simplement et on fait un point.",
     "output": "Il faut que tu sois présent pour effectuer une vérification préliminaire concernant les problèmes liés à iOS.\n\nJ’ai reçu un retour d’utilisateur. Nous avons discuté, et il semble qu’on ait presque tout enregistré.\n\nAvant de vérifier les problèmes, vérifie notre conversation avec lui. Il y a plusieurs points.\n\nDis-moi les retours qu’il a formulés, liste-les simplement, et nous effectuerons une synthèse."
   },
   {

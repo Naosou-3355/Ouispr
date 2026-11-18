@@ -20,9 +20,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/AccentedCharacters.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
+    - OuisprCore/Sources/OuisprCore/AccentedCharacters.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
 
 key-decisions:
   - "Replacement logic lives in KeyboardView onAccentAdaptive handler, not in AdaptiveAccentKey -- keeps callback signature simple"
@@ -65,9 +65,9 @@ Each task was committed atomically:
 **Plan metadata:** [pending] (docs: complete plan)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/AccentedCharacters.swift` - Added shouldReplace() helper method
-- `DictusKeyboard/Views/KeyboardView.swift` - onAccentAdaptive now calls deleteBackward() before insert when replacing vowel
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - DeleteKey, ReturnKey, EmojiKey updated to SF Symbols
+- `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` - Added shouldReplace() helper method
+- `OuisprKeyboard/Views/KeyboardView.swift` - onAccentAdaptive now calls deleteBackward() before insert when replacing vowel
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - DeleteKey, ReturnKey, EmojiKey updated to SF Symbols
 
 ## Decisions Made
 - Replacement logic kept in KeyboardView's onAccentAdaptive handler rather than changing AdaptiveAccentKey's onTap signature -- both normal tap and long-press selection flow through the same handler, which already knows lastTypedChar

@@ -10,7 +10,7 @@ requires:
     provides: Cold start URL handling and overlay infrastructure
 provides:
   - ADR documenting auto-return infeasibility with 5 investigated approaches
-  - sourceApplication diagnostic logging in DictusApp.swift for empirical verification
+  - sourceApplication diagnostic logging in OuisprApp.swift for empirical verification
   - GitHub issue #23 updated with investigation summary
 affects: [26-02 swipe-back overlay redesign]
 
@@ -25,7 +25,7 @@ key-files:
   created:
     - .planning/adr-cold-start-autoreturn.md
   modified:
-    - DictusApp/DictusApp.swift
+    - OuisprApp/OuisprApp.swift
 
 key-decisions:
   - "Auto-return REJECTED: all 5 approaches fail because iOS provides no public API for keyboard host app detection"
@@ -59,7 +59,7 @@ completed: 2026-04-05
 
 - Investigated all 5 viable approaches for cold start auto-return (sourceApplication, host via URL, UIPasteboard, Shortcuts, canOpenURL enumeration)
 - Created comprehensive ADR at `.planning/adr-cold-start-autoreturn.md` with REJECTED status and evidence table
-- Added diagnostic logging (UIApplicationDelegateAdaptor + URL component probe) to DictusApp.swift for empirical verification on physical device
+- Added diagnostic logging (UIApplicationDelegateAdaptor + URL component probe) to OuisprApp.swift for empirical verification on physical device
 - Updated GitHub issue #23 with investigation summary, 5-approach status table, and link to ADR
 
 ## Task Commits
@@ -72,7 +72,7 @@ Each task was committed atomically:
 ## Files Created/Modified
 
 - `.planning/adr-cold-start-autoreturn.md` - Architecture Decision Record documenting 5 rejected approaches with evidence
-- `DictusApp/DictusApp.swift` - Added AppDelegate with sourceApplication diagnostic, URL component logging probe
+- `OuisprApp/OuisprApp.swift` - Added AppDelegate with sourceApplication diagnostic, URL component logging probe
 
 ## Decisions Made
 

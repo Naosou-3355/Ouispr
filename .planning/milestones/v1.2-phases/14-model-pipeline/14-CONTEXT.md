@@ -63,16 +63,16 @@ Model download, CoreML compilation, and engine selection work reliably with clea
 ## Existing Code Insights
 
 ### Files to modify
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` — Remove Large Turbo entry, update `isRecommended` logic (or move it)
-- `DictusApp/Models/ModelManager.swift` — Dynamic `isRecommended()` using `ProcessInfo.physicalMemory`, fix progress bar for prewarm phase
-- `DictusApp/Views/ModelCardView.swift` — Handle indeterminate progress for prewarm state
-- `DictusApp/Onboarding/OnboardingView.swift` — Pre-select recommended model (if not already)
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` — Remove Large Turbo entry, update `isRecommended` logic (or move it)
+- `OuisprApp/Models/ModelManager.swift` — Dynamic `isRecommended()` using `ProcessInfo.physicalMemory`, fix progress bar for prewarm phase
+- `OuisprApp/Views/ModelCardView.swift` — Handle indeterminate progress for prewarm state
+- `OuisprApp/Onboarding/OnboardingView.swift` — Pre-select recommended model (if not already)
 
 ### Files to verify (no changes expected)
-- `DictusApp/DictationCoordinator.swift` — Parakeet routing (ensureParakeetReady)
-- `DictusApp/Audio/TranscriptionService.swift` — activeEngine routing
-- `DictusApp/Audio/ParakeetEngine.swift` — Parakeet transcription
-- `DictusCore/Sources/DictusCore/SpeechEngine.swift` — Engine enum
+- `OuisprApp/DictationCoordinator.swift` — Parakeet routing (ensureParakeetReady)
+- `OuisprApp/Audio/TranscriptionService.swift` — activeEngine routing
+- `OuisprApp/Audio/ParakeetEngine.swift` — Parakeet transcription
+- `OuisprCore/Sources/OuisprCore/SpeechEngine.swift` — Engine enum
 
 ### Patterns to follow
 - `CatalogVisibility` enum for model visibility control

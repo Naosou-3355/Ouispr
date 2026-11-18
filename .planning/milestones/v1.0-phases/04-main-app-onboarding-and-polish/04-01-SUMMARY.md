@@ -9,10 +9,10 @@ requires:
   - phase: 03-dictation-ux
     provides: "RecordingView, DictationCoordinator, ModelManager, TestDictationView"
 provides:
-  - "Design system: GlassModifier, DictusColors, BrandWaveform, AnimatedMicButton, DictusTypography"
+  - "Design system: GlassModifier, OuisprColors, BrandWaveform, AnimatedMicButton, OuisprTypography"
   - "TabView navigation: MainTabView with Home/Models/Settings tabs"
   - "HomeView dashboard with model status and test dictation link"
-  - "Onboarding gate placeholder in DictusApp.swift"
+  - "Onboarding gate placeholder in OuisprApp.swift"
   - "SharedKeys: language, hapticsEnabled, fillerWordsEnabled, hasCompletedOnboarding"
 affects: [04-02-onboarding-settings, 04-03-glass-pass]
 
@@ -23,20 +23,20 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Design/GlassModifier.swift
-    - DictusApp/Design/DictusColors.swift
-    - DictusApp/Design/BrandWaveform.swift
-    - DictusApp/Design/AnimatedMicButton.swift
-    - DictusApp/Design/DictusTypography.swift
-    - DictusApp/Views/MainTabView.swift
-    - DictusApp/Views/HomeView.swift
-    - DictusApp/Views/DiagnosticDetailView.swift
-    - DictusCore/Tests/DictusCoreTests/SharedKeysExtensionTests.swift
+    - OuisprApp/Design/GlassModifier.swift
+    - OuisprApp/Design/OuisprColors.swift
+    - OuisprApp/Design/BrandWaveform.swift
+    - OuisprApp/Design/AnimatedMicButton.swift
+    - OuisprApp/Design/OuisprTypography.swift
+    - OuisprApp/Views/MainTabView.swift
+    - OuisprApp/Views/HomeView.swift
+    - OuisprApp/Views/DiagnosticDetailView.swift
+    - OuisprCore/Tests/OuisprCoreTests/SharedKeysExtensionTests.swift
   modified:
-    - DictusCore/Sources/DictusCore/SharedKeys.swift
-    - DictusApp/DictusApp.swift
-    - DictusApp/ContentView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprCore/Sources/OuisprCore/SharedKeys.swift
+    - OuisprApp/OuisprApp.swift
+    - OuisprApp/ContentView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Color(hex:) initializer instead of Asset Catalog ColorSets — no xcassets directory exists, hex init is simpler and provides compile-time validation"
@@ -45,9 +45,9 @@ key-decisions:
   - "ContentView kept as thin redirect instead of deleted — avoids pbxproj cleanup risk"
 
 patterns-established:
-  - "dictusGlass(): apply glass effect to any view surface, auto-upgrades to Liquid Glass on iOS 26"
-  - "Color.dictus*: brand color palette accessible as static Color properties"
-  - "Font.dictus*: typography scale with SF Pro Rounded headings and Dynamic Type"
+  - "ouisprGlass(): apply glass effect to any view surface, auto-upgrades to Liquid Glass on iOS 26"
+  - "Color.ouispr*: brand color palette accessible as static Color properties"
+  - "Font.ouispr*: typography scale with SF Pro Rounded headings and Dynamic Type"
   - "BrandWaveform(energy:): reusable 3-bar logo component with animation support"
 
 requirements-completed: [DSN-01, DSN-02, DSN-03, DSN-04]
@@ -70,12 +70,12 @@ completed: 2026-03-06
 - **Files modified:** 15
 
 ## Accomplishments
-- Design system with GlassModifier (iOS 26 Liquid Glass + fallback), DictusColors (adaptive light/dark), BrandWaveform (3-bar logo), AnimatedMicButton (4 states), DictusTypography (SF Pro Rounded)
+- Design system with GlassModifier (iOS 26 Liquid Glass + fallback), OuisprColors (adaptive light/dark), BrandWaveform (3-bar logo), AnimatedMicButton (4 states), OuisprTypography (SF Pro Rounded)
 - App restructured from single NavigationStack to 3-tab TabView (Home, Models, Settings placeholder)
 - HomeView dashboard with brand waveform, model status card, transcription preview, test dictation link
 - RecordingView overlay covers entire screen including tab bar
 - 4 new SharedKeys (language, hapticsEnabled, fillerWordsEnabled, hasCompletedOnboarding) with 6 unit tests via TDD
-- Onboarding gate in DictusApp.swift with fullScreenCover placeholder
+- Onboarding gate in OuisprApp.swift with fullScreenCover placeholder
 - DiagnosticView extracted to reusable DiagnosticDetailView
 
 ## Task Commits
@@ -87,22 +87,22 @@ Each task was committed atomically:
 3. **Task 2: TabView restructure + HomeView** - `ef93896` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Design/GlassModifier.swift` - iOS 26 glass effect with regularMaterial fallback
-- `DictusApp/Design/DictusColors.swift` - Brand color palette with hex init and adaptive light/dark
-- `DictusApp/Design/BrandWaveform.swift` - 3-bar logo-inspired waveform with energy animation
-- `DictusApp/Design/AnimatedMicButton.swift` - 4-state animated mic button (idle/recording/transcribing/success)
-- `DictusApp/Design/DictusTypography.swift` - SF Pro Rounded headings + Dynamic Type support
-- `DictusApp/Views/MainTabView.swift` - 3-tab TabView with recording overlay
-- `DictusApp/Views/HomeView.swift` - Home dashboard with model status and actions
-- `DictusApp/Views/DiagnosticDetailView.swift` - Extracted diagnostic view for Settings reuse
-- `DictusCore/Tests/DictusCoreTests/SharedKeysExtensionTests.swift` - 6 tests for new SharedKeys
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` - 4 new keys added
-- `DictusApp/DictusApp.swift` - Switched to MainTabView, added onboarding gate
-- `DictusApp/ContentView.swift` - Simplified to thin redirect wrapper
-- `Dictus.xcodeproj/project.pbxproj` - Registered all new files with Design group
+- `OuisprApp/Design/GlassModifier.swift` - iOS 26 glass effect with regularMaterial fallback
+- `OuisprApp/Design/OuisprColors.swift` - Brand color palette with hex init and adaptive light/dark
+- `OuisprApp/Design/BrandWaveform.swift` - 3-bar logo-inspired waveform with energy animation
+- `OuisprApp/Design/AnimatedMicButton.swift` - 4-state animated mic button (idle/recording/transcribing/success)
+- `OuisprApp/Design/OuisprTypography.swift` - SF Pro Rounded headings + Dynamic Type support
+- `OuisprApp/Views/MainTabView.swift` - 3-tab TabView with recording overlay
+- `OuisprApp/Views/HomeView.swift` - Home dashboard with model status and actions
+- `OuisprApp/Views/DiagnosticDetailView.swift` - Extracted diagnostic view for Settings reuse
+- `OuisprCore/Tests/OuisprCoreTests/SharedKeysExtensionTests.swift` - 6 tests for new SharedKeys
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` - 4 new keys added
+- `OuisprApp/OuisprApp.swift` - Switched to MainTabView, added onboarding gate
+- `OuisprApp/ContentView.swift` - Simplified to thin redirect wrapper
+- `Ouispr.xcodeproj/project.pbxproj` - Registered all new files with Design group
 
 ## Decisions Made
-- Used Color(hex:) initializer instead of Asset Catalog ColorSets since no xcassets directory exists for DictusApp and hex init provides compile-time validation of color values
+- Used Color(hex:) initializer instead of Asset Catalog ColorSets since no xcassets directory exists for OuisprApp and hex init provides compile-time validation of color values
 - Adaptive light/dark colors use UIColor dynamicProvider bridge since SwiftUI Color lacks a built-in light/dark initializer on iOS 16
 - hasCompletedOnboarding defaults to true during development so the app is immediately usable; Plan 04-02 will flip this to false when OnboardingView is built
 - ContentView kept as thin redirect wrapper rather than deleted to avoid pbxproj cleanup risk
@@ -115,7 +115,7 @@ Each task was committed atomically:
 - **Found during:** Task 2 (HomeView)
 - **Issue:** Used optional chaining `AppGroup.defaults?.string(...)` but `AppGroup.defaults` is non-optional
 - **Fix:** Removed `?` from the call
-- **Files modified:** DictusApp/Views/HomeView.swift
+- **Files modified:** OuisprApp/Views/HomeView.swift
 - **Verification:** Build succeeded
 - **Committed in:** ef93896 (Task 2 commit)
 

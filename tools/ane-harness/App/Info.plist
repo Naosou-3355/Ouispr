@@ -27,7 +27,7 @@
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>The benchmark configures the same audio session DictusApp uses so it keeps running in the background. It never records.</string>
+	<string>The benchmark configures the same audio session OuisprApp uses so it keeps running in the background. It never records.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

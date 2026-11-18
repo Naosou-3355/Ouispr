@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-ngram_builder.py -- Build NGRM binary dictionaries for Dictus next-word prediction.
+ngram_builder.py -- Build NGRM binary dictionaries for Ouispr next-word prediction.
 
 Downloads bigram/trigram frequency data from Google Books Ngram corpus,
 processes it, and generates compact binary files for mmap-based lookup on iOS.
 
 Usage:
-    python3 tools/ngram_builder.py --lang fr --output DictusKeyboard/Resources/fr_ngrams.dict
-    python3 tools/ngram_builder.py --lang en --output DictusKeyboard/Resources/en_ngrams.dict
-    python3 tools/ngram_builder.py --lang de --output DictusKeyboard/Resources/de_ngrams.dict
+    python3 tools/ngram_builder.py --lang fr --output OuisprKeyboard/Resources/fr_ngrams.dict
+    python3 tools/ngram_builder.py --lang en --output OuisprKeyboard/Resources/en_ngrams.dict
+    python3 tools/ngram_builder.py --lang de --output OuisprKeyboard/Resources/de_ngrams.dict
 
 Options:
     --min-freq N        Minimum n-gram frequency to include (default: 2)
@@ -34,7 +34,7 @@ from typing import Optional
 NGRM_MAGIC = b"NGRM"
 NGRM_VERSION = 1
 NGRM_HEADER_SIZE = 32
-NGRM_MAX_RESULTS = 16  # Must match C++ dictus_ngram_format.h exactly
+NGRM_MAX_RESULTS = 16  # Must match C++ ouispr_ngram_format.h exactly
 
 # Google Books Ngram frequency data (CSV: ngram,frequency)
 NGRAM_BASE_URL = "https://raw.githubusercontent.com/orgtre/google-books-ngram-frequency/main/ngrams"
@@ -326,7 +326,7 @@ def download_ngram_csv(lang: str, n: int) -> Optional[str]:
     url = f"{NGRAM_BASE_URL}/{n}grams_{lang_name}.csv"
     print(f"  Downloading {url}...")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Dictus/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Ouispr/1.0"})
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = resp.read().decode("utf-8", errors="replace")
             print(f"  Downloaded {len(data)} bytes")
@@ -407,7 +407,7 @@ def extract_bigrams_from_sentences(lang: str) -> dict[str, list[tuple[str, int]]
     url = f"{OPENSUBS_BASE_URL}/{lang}_top_sentences.csv"
     print(f"  Downloading {url}...")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Dictus/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Ouispr/1.0"})
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = resp.read().decode("utf-8", errors="replace")
             print(f"  Downloaded {len(data)} bytes")
@@ -507,7 +507,7 @@ def extract_bigrams_from_wikipedia(
         print(f"  Fetching {proj_name}...")
 
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Dictus/1.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "Ouispr/1.0"})
             with urllib.request.urlopen(req, timeout=300) as resp:
                 with gzip.GzipFile(fileobj=resp) as gz:
                     for raw_line in gz:
@@ -886,7 +886,7 @@ def build_ngrams(
             bigram_data = inject_seed_bigrams(bigram_data, lang)
         else:
             # Last resort: synthetic bigrams from frequency JSON
-            fallback_path = f"DictusKeyboard/Resources/{lang}_frequency.json"
+            fallback_path = f"OuisprKeyboard/Resources/{lang}_frequency.json"
             if os.path.exists(fallback_path):
                 print(f"  Falling back to {fallback_path}")
                 bigram_data = generate_fallback_bigrams(fallback_path, lang)
@@ -979,7 +979,7 @@ def build_ngrams(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build NGRM binary dictionaries for Dictus next-word prediction."
+        description="Build NGRM binary dictionaries for Ouispr next-word prediction."
     )
     parser.add_argument(
         "--lang", required=True, choices=["fr", "en", "es", "de"],

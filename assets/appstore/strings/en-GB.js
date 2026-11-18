@@ -26,15 +26,15 @@
  *   translate.es was rejected: it rendered "ten minutes" as "quince minutos".
  * - voiceNotes: the transcript comes from the capture, not from here.
  */
-window.DICTUS_STRINGS = {
+window.OUISPR_STRINGS = {
   locale: "en-GB",
   proBadge: "Pro",
   // The wordmark of the hero (brand kit: DM Sans 200, lowercase).
-  wordmark: "dictus",
+  wordmark: "ouispr",
   slides: {
     hero: {
       // Options proposed to Pierre (V4): "Speak instead of typing" (kept),
-      // "Your voice, typed in any app", "Talk. Dictus types."
+      // "Your voice, typed in any app", "Talk. Ouispr types."
       headline: "Speak instead of typing",
     },
     dictate: {

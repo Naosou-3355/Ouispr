@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dict_builder.py -- Build compressed patricia trie binary dictionaries for Dictus.
+dict_builder.py -- Build compressed patricia trie binary dictionaries for Ouispr.
 
 Reads a frequency JSON file ({"word": count, ...}) and generates a binary .dict
 file with the DTRI format: 32-byte header + depth-first pre-order patricia trie nodes.

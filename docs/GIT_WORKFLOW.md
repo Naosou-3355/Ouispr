@@ -1,4 +1,4 @@
-# Git & Release Workflow — Dictus
+# Git & Release Workflow — Ouispr
 
 Guide for managing branches, releases, and TestFlight/App Store distribution.
 Version-numbering policy lives in **[VERSIONING.md](VERSIONING.md)**.
@@ -54,7 +54,7 @@ scripts/cut-testflight.sh          # build-number bump only (same marketing vers
 scripts/cut-testflight.sh 1.8.0    # ALSO set the marketing version to 1.8.0
 
 # then, in Xcode:
-#   Product ▸ Archive  (scheme DictusApp, on develop)  →  Distribute  →  App Store Connect
+#   Product ▸ Archive  (scheme OuisprApp, on develop)  →  Distribute  →  App Store Connect
 ```
 
 The script refuses to run on a dirty / out-of-sync develop and refuses a
@@ -94,12 +94,12 @@ The script:
 ### App Store Connect (the only manual part)
 
 ```
-1. My Apps → Dictus → the X.Y.Z App Store version (create it on first launch).
+1. My Apps → Ouispr → the X.Y.Z App Store version (create it on first launch).
 2. Build section → select build N (already uploaded from TestFlight). No rebuild.
 3. First submission only: complete the listing — screenshots (6.9" + 6.5"),
    description, keywords, support URL, privacy policy URL, category, age rating,
    price/availability, and the App Privacy questionnaire ("Data Not Collected",
-   Dictus is offline).
+   Ouispr is offline).
 4. App Review Information → Notes: explain the keyboard needs Full Access for the
    MICROPHONE (on-device dictation, no keystroke logging/transmission) and how to
    enable the keyboard. This is the #1 review risk for keyboard extensions.

@@ -26,7 +26,7 @@ Requirements: PRED-01, PRED-02, PRED-03
 ### Prediction engine
 - UITextChecker for completions and spell-checking (0 MB, Apple built-in)
 - Frequency dictionary for ranking suggestions by usage frequency (common words first)
-- Two dictionary files bundled in DictusKeyboard: French (~1.5MB) + English (~1.5MB)
+- Two dictionary files bundled in OuisprKeyboard: French (~1.5MB) + English (~1.5MB)
 - Active dictionary selected via SharedKeys.language from App Group preferences
 - Completion of current word only — no next-word prediction (deferred to PRED-04, v1.2)
 
@@ -36,7 +36,7 @@ Requirements: PRED-01, PRED-02, PRED-03
 - Undo only available on immediate backspace — if user types more, correction is committed
 - Tapping a lateral suggestion replaces current word + inserts space
 - Autocorrect also fixes missing accents (e.g., "cafe" → "caf\u00e9")
-- Toggle "Correction automatique" ON/OFF in Dictus settings (enabled by default, stored in App Group)
+- Toggle "Correction automatique" ON/OFF in Ouispr settings (enabled by default, stored in App Group)
 
 ### Accent suggestions (PRED-03)
 - When the user types a single accentable vowel (a, e, u, i, o) as the first character after a space, the 3 slots show accent variants instead of word completions
@@ -69,10 +69,10 @@ Requirements: PRED-01, PRED-02, PRED-03
 ## Existing Code Insights
 
 ### Reusable Assets
-- `DictusKeyboard/Views/ToolbarView.swift`: Current toolbar with ZStack layout (gear left, mic right, Spacer in between). Suggestion slots would replace the Spacer area.
-- `DictusCore/AccentedCharacters.swift`: Accent lookup table already exists — reuse for PRED-03 accent variant generation
-- `DictusCore/HapticFeedback.swift`: Pre-allocated haptic generators — use for suggestion tap feedback
-- `DictusKeyboard/KeyboardState.swift`: Already manages dictation state — extend with current-word tracking and suggestion state
+- `OuisprKeyboard/Views/ToolbarView.swift`: Current toolbar with ZStack layout (gear left, mic right, Spacer in between). Suggestion slots would replace the Spacer area.
+- `OuisprCore/AccentedCharacters.swift`: Accent lookup table already exists — reuse for PRED-03 accent variant generation
+- `OuisprCore/HapticFeedback.swift`: Pre-allocated haptic generators — use for suggestion tap feedback
+- `OuisprKeyboard/KeyboardState.swift`: Already manages dictation state — extend with current-word tracking and suggestion state
 
 ### Established Patterns
 - App Group SharedKeys for cross-process preferences (language setting already exists)
@@ -83,8 +83,8 @@ Requirements: PRED-01, PRED-02, PRED-03
 - `ToolbarView.swift` — Add suggestion slots between gear and mic pill in the ZStack
 - `KeyboardView.swift` — Feed keystroke events to suggestion engine, handle suggestion taps
 - `KeyboardRootView.swift` — Wire suggestion state between toolbar and keyboard
-- `DictusApp Settings` — Add autocorrect toggle (SharedKeys + SettingsView)
-- `DictusKeyboard bundle` — Include frequency dictionary JSON files
+- `OuisprApp Settings` — Add autocorrect toggle (SharedKeys + SettingsView)
+- `OuisprKeyboard bundle` — Include frequency dictionary JSON files
 
 </code_context>
 

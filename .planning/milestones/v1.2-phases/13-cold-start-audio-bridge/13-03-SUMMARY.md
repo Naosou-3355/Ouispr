@@ -8,7 +8,7 @@ tags: [url-scheme, cold-start, auto-return, waveform, audio-thread, canOpenURL]
 requires:
   - phase: 13-cold-start-audio-bridge
     plan: 01
-    provides: "SharedKeys, KnownAppSchemes, cold start detection in DictusApp"
+    provides: "SharedKeys, KnownAppSchemes, cold start detection in OuisprApp"
   - phase: 13-cold-start-audio-bridge
     plan: 02
     provides: "SwipeBackOverlayView for fallback navigation"
@@ -27,13 +27,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - "DictusApp/DictusApp.swift"
-    - "DictusApp/Audio/RawAudioCapture.swift"
-    - "DictusApp/Audio/AudioRecorder.swift"
-    - "DictusApp/DictationCoordinator.swift"
-    - "DictusApp/Info.plist"
-    - "DictusKeyboard/Info.plist"
-    - "DictusKeyboard/KeyboardState.swift"
+    - "OuisprApp/OuisprApp.swift"
+    - "OuisprApp/Audio/RawAudioCapture.swift"
+    - "OuisprApp/Audio/AudioRecorder.swift"
+    - "OuisprApp/DictationCoordinator.swift"
+    - "OuisprApp/Info.plist"
+    - "OuisprKeyboard/Info.plist"
+    - "OuisprKeyboard/KeyboardState.swift"
 
 key-decisions:
   - "Auto-return removed entirely -- attemptAutoReturn() always opened first installed app (e.g. WhatsApp) regardless of actual source app. Swipe-back overlay is the correct UX."
@@ -80,13 +80,13 @@ Each task was committed atomically (with subsequent deviation fixes):
 3. **Task 3: Human-verify checkpoint** - Approved by user
 
 ## Files Created/Modified
-- `DictusApp/DictusApp.swift` - URL handling with source=keyboard detection, cold start flag, auto-return removed
-- `DictusApp/Audio/RawAudioCapture.swift` - Audio-thread waveform energy writes to App Group from installTap callback
-- `DictusApp/Audio/AudioRecorder.swift` - Audio-thread waveform energy writes to App Group from installTap callback
-- `DictusApp/DictationCoordinator.swift` - Removed main-thread App Group waveform forwarding (replaced by audio-thread writes)
-- `DictusApp/Info.plist` - LSApplicationQueriesSchemes with 10 known app schemes
-- `DictusKeyboard/Info.plist` - LSApplicationQueriesSchemes with 10 known app schemes
-- `DictusKeyboard/KeyboardState.swift` - URL updated to dictus://dictate?source=keyboard
+- `OuisprApp/OuisprApp.swift` - URL handling with source=keyboard detection, cold start flag, auto-return removed
+- `OuisprApp/Audio/RawAudioCapture.swift` - Audio-thread waveform energy writes to App Group from installTap callback
+- `OuisprApp/Audio/AudioRecorder.swift` - Audio-thread waveform energy writes to App Group from installTap callback
+- `OuisprApp/DictationCoordinator.swift` - Removed main-thread App Group waveform forwarding (replaced by audio-thread writes)
+- `OuisprApp/Info.plist` - LSApplicationQueriesSchemes with 10 known app schemes
+- `OuisprKeyboard/Info.plist` - LSApplicationQueriesSchemes with 10 known app schemes
+- `OuisprKeyboard/KeyboardState.swift` - URL updated to ouispr://dictate?source=keyboard
 
 ## Decisions Made
 - Auto-return (`attemptAutoReturn()`) removed entirely. The approach of iterating KnownAppSchemes.all via canOpenURL always opened the first installed app (typically WhatsApp), not the actual source app the user was typing in. The swipe-back overlay (Plan 02) is the correct and reliable UX for returning to the source app.
@@ -101,21 +101,21 @@ Each task was committed atomically (with subsequent deviation fixes):
 - **Found during:** Task 2 (auto-return implementation)
 - **Issue:** `attemptAutoReturn()` iterates known apps in order and opens the first installed one via canOpenURL. Since most users have WhatsApp installed, it always navigates to WhatsApp regardless of which app the user was typing in.
 - **Fix:** Removed `attemptAutoReturn()` entirely. Swipe-back overlay is the correct UX.
-- **Files modified:** DictusApp/DictusApp.swift
+- **Files modified:** OuisprApp/OuisprApp.swift
 - **Committed in:** `b3799b2`
 
 **2. [Rule 1 - Bug] Waveform animation frozen in background**
 - **Found during:** Device testing after Task 2
-- **Issue:** When DictusApp runs in background (user returned to keyboard), iOS throttles the main thread. The main-thread timer in DictationCoordinator that forwarded waveform energy to App Group stopped firing, causing the keyboard waveform bars to freeze.
+- **Issue:** When OuisprApp runs in background (user returned to keyboard), iOS throttles the main thread. The main-thread timer in DictationCoordinator that forwarded waveform energy to App Group stopped firing, causing the keyboard waveform bars to freeze.
 - **Fix:** Added audio-thread waveform writes directly from the installTap callback in both RawAudioCapture and AudioRecorder. Removed redundant main-thread forwarding from DictationCoordinator.
-- **Files modified:** DictusApp/Audio/RawAudioCapture.swift, DictusApp/Audio/AudioRecorder.swift, DictusApp/DictationCoordinator.swift
+- **Files modified:** OuisprApp/Audio/RawAudioCapture.swift, OuisprApp/Audio/AudioRecorder.swift, OuisprApp/DictationCoordinator.swift
 - **Committed in:** `b3799b2`, `816442c`
 
 **3. [Rule 1 - Bug] Waveform bars invisible with Parakeet**
 - **Found during:** Device testing after waveform fix
 - **Issue:** RawAudioCapture (Parakeet) produces lower RMS values than AudioRecorder (WhisperKit). With `rms * 5.0` scaling, the waveform bars were barely visible.
 - **Fix:** Increased energy scaling from `rms * 5.0` to `rms * 15.0` in RawAudioCapture.
-- **Files modified:** DictusApp/Audio/RawAudioCapture.swift
+- **Files modified:** OuisprApp/Audio/RawAudioCapture.swift
 - **Committed in:** `cb339b2`
 
 ---
@@ -138,7 +138,7 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-All 4 commits verified (bd31598, b3799b2, cb339b2, 816442c). All 7 modified files confirmed on disk (DictusApp/Info.plist, not Dictus/Info.plist -- corrected in summary).
+All 4 commits verified (bd31598, b3799b2, cb339b2, 816442c). All 7 modified files confirmed on disk (OuisprApp/Info.plist, not Ouispr/Info.plist -- corrected in summary).
 
 ---
 *Phase: 13-cold-start-audio-bridge*

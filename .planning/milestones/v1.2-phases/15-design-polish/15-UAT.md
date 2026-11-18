@@ -62,7 +62,7 @@ result: pass
 note: "OK mais le success screen pourrait arriver un peu plus vite (réduire le délai)."
 
 ### 11. Keyboard Detection After Settings Return
-expected: During onboarding on the keyboard setup step, go to iOS Settings to enable the Dictus keyboard. Return to the app. The app should detect the keyboard without crashing or freezing. No race condition issues.
+expected: During onboarding on the keyboard setup step, go to iOS Settings to enable the Ouispr keyboard. Return to the app. The app should detect the keyboard without crashing or freezing. No race condition issues.
 result: pass
 note: "Crash encore intermittent mais pas bloquant. Logging ajouté — à surveiller en bêta. GitHub issue #32 créée."
 
@@ -105,10 +105,10 @@ skipped: 0
   test: 5
   root_cause: "ModelCardView.swift:153-161 only has border stroke overlay, no background fill. isSwitching state (L35-36) triggers ProgressView spinner (L220-227) with artificial 300ms delay (L179) that causes card layout reflow/enlargement."
   artifacts:
-    - path: "DictusApp/Views/ModelCardView.swift"
+    - path: "OuisprApp/Views/ModelCardView.swift"
       issue: "No background tint on active (L153-161), isSwitching spinner causes enlargement (L35-36, L174-181, L220-227)"
   missing:
-    - "Add .background(Color.dictusAccent.opacity(0.10)) RoundedRectangle before the overlay stroke when isActive"
+    - "Add .background(Color.ouisprAccent.opacity(0.10)) RoundedRectangle before the overlay stroke when isActive"
     - "Remove isSwitching state variable, spinner display, and 300ms delay entirely"
 
 - truth: "Active model card has both blue background tint AND dark blue border"
@@ -118,7 +118,7 @@ skipped: 0
   test: 6
   root_cause: "Same as test 5 — ModelCardView.swift active state only has border, no background tint. Spinner causes layout bug."
   artifacts:
-    - path: "DictusApp/Views/ModelCardView.swift"
+    - path: "OuisprApp/Views/ModelCardView.swift"
       issue: "Same as test 5"
   missing:
     - "Same fix as test 5"
@@ -130,7 +130,7 @@ skipped: 0
   test: 7
   root_cause: "ModelManagerView.swift:100-108 swipeActions Button sizes to text content by default. SwiftUI swipe action buttons don't auto-scale to fill row height."
   artifacts:
-    - path: "DictusApp/Views/ModelManagerView.swift"
+    - path: "OuisprApp/Views/ModelManagerView.swift"
       issue: "swipeActions Button not stretched to card height (L100-108)"
   missing:
     - "Add .frame(maxHeight: .infinity) to the swipe delete Button"
@@ -142,7 +142,7 @@ skipped: 0
   test: 9
   root_cause: "RecordingOverlay.swift uses different layout strategies: recording state (L118-166) has GeometryReader + footer with timer + 'Listening...' text (~40pt below waveform), transcription state (L170-187) uses symmetric Spacers with no footer. Footer disappears on transition, waveform jumps up. Also 'Listening...' hardcoded in English at L161."
   artifacts:
-    - path: "DictusKeyboard/Views/RecordingOverlay.swift"
+    - path: "OuisprKeyboard/Views/RecordingOverlay.swift"
       issue: "Recording footer (timer + Listening text, L156-164) has no equivalent in transcription state (L170-187). Waveform Y position differs. 'Listening...' hardcoded English (L161)."
   missing:
     - "Synchronize vertical layout: reserve same footer space in both states (placeholder or matching text)"
@@ -156,7 +156,7 @@ skipped: 0
   test: 13
   root_cause: "SettingsRowStyle (ButtonStyle, L14-24) only applies to Button controls. NavigationLink (Licences L102, Diagnostic L106, Debug Logs L110) and Link (GitHub L92) are different control types that don't respond to ButtonStyle. The background in SettingsRowStyle wraps configuration.label (text content) not the full row."
   artifacts:
-    - path: "DictusApp/Views/SettingsView.swift"
+    - path: "OuisprApp/Views/SettingsView.swift"
       issue: "SettingsRowStyle is ButtonStyle — doesn't affect NavigationLink/Link (L14-24, L133). Background wraps label not full row."
   missing:
     - "Replace ButtonStyle approach with row-level pressable wrapper that works for all control types"

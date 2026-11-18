@@ -1,7 +1,7 @@
 # `Structuré` — the round that ships with the mode (#523)
 
 **Where:** Mac, macOS 26, Apple Intelligence on, `polish-harness`, 2026-09-12.
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
 French dictations of 2026-08-27, `raw` verbatim from the device export.
 **Captures:** `raw/`. **Prompt arms:** `prompts/`. **Labelled outputs:** `corpus.json`.
 **Side by side with `List` and Typeless:** `comparison.md`.
@@ -31,7 +31,7 @@ declines to use it.
 
 ## The one legitimate output the guardrail refuses, and why
 
-Re-runnable, model-free, from the `DictusCore` directory:
+Re-runnable, model-free, from the `OuisprCore` directory:
 
 ```sh
 swift run polish-harness guardrail ../docs/research/523-structured/corpus.json --anchors
@@ -245,14 +245,14 @@ accepted:
 
 | Run | Raw | Output | What it is |
 |---|---|---|---|
-| 3 | `mon application dictus` | `mon application dictée` | **the product's name, replaced by a common noun** |
+| 3 | `mon application ouispr` | `mon application dictée` | **the product's name, replaced by a common noun** |
 | 5 | `les autres c'est pas vraiment ma voix, c'est pas naturel` | `les autres tests ne reflètent pas vraiment ma voix, ce qui est naturel` | **a negation dropped — the sentence now says the opposite** |
 
 Run 5 carries the name substitution too.
 
 **Why nothing caught them.** The round-6 criterion was *"no number or capitalised token
 absent from the input"*: it looks for content the model **added**, so a token the model
-**replaced** is invisible to it — and `dictus` is lowercase in the transcript, so no
+**replaced** is invisible to it — and `ouispr` is lowercase in the transcript, so no
 capitalisation rule applies either. `PolishGrounding` with `requiresGroundedNames` asks
 whether a name in the output appears in the input; `dictée` is an ordinary French word,
 not a name, so it is never asked about. And no check in the pipeline measures a

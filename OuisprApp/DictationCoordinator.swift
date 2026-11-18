@@ -1,0 +1,2037 @@
+// OuisprApp/DictationCoordinator.swift
+// Manages the dictation lifecycle: recording via UnifiedAudioEngine + transcription via TranscriptionService.
+import Foundation
+import Combine
+import AVFoundation
+import UIKit
+import OuisprCore
+import WhisperKit
+
+/// Manages the dictation lifecycle in the main app.
+/// Phase 3.1: Observes keyboard stop/cancel signals via Darwin notifications,
+/// forwards waveform energy to App Group for keyboard visualization.
+///
+/// WHY this class is @MainActor and uses static let shared:
+/// - @MainActor ensures all @Published property updates happen on the main thread (required by SwiftUI)
+/// - Singleton pattern because there's only ever one dictation session active at a time,
+///   and multiple views need to observe the same coordinator (ContentView, RecordingView)
+@MainActor
+class DictationCoordinator: ObservableObject {
+    static let shared = DictationCoordinator()
+
+    // MARK: - Published State
+
+    @Published var status: DictationStatus = .idle
+
+    /// The last transcription, and only that. Nil on every failure by construction —
+    /// `startDictation` resets it and nothing but a successful transcription assigns it —
+    /// so it is not, and must not be read as, a failure channel (#320). What went wrong
+    /// lives in `DictationErrorChannel`.
+    @Published var lastResult: String?
+
+    /// Forwarded from UnifiedAudioEngine for waveform visualization in RecordingView.
+    @Published var bufferEnergy: [Float] = []
+
+    /// Forwarded from UnifiedAudioEngine for elapsed time display in RecordingView.
+    @Published var bufferSeconds: Double = 0
+
+    // MARK: - Private
+
+    /// Not `private` only because `DictationHandoff.swift` writes the hand-off keys
+    /// through it and Swift scopes `private` to the file. Read-only reference, one
+    /// owner.
+    let defaults = AppGroup.defaults
+    private let audioEngine = UnifiedAudioEngine()
+    private let transcriptionService = TranscriptionService()
+
+    /// Whether the audio engine is currently running.
+    /// Used by OuisprApp to detect "warm but engine-dead" state after Power button stop.
+    var isEngineRunning: Bool { audioEngine.isEngineRunning }
+
+    /// Timeout watchdog for whichever post-recording stage is running.
+    ///
+    /// WHY one timer for two stages (#267): they are mutually exclusive and the
+    /// failure it catches is the same one -- a stage that never hands over, leaving
+    /// the keyboard's overlay up with nothing behind it. What differs is only how
+    /// long is too long, which `stageWatchdogTimeout(for:)` answers.
+    ///
+    /// The status it was armed for is captured by the timer's own closure, which
+    /// re-checks it before firing -- a stage that has handed over to the next one
+    /// must not be torn down by the previous one's timer.
+    var stageWatchdog: Timer?
+    /// When the stage `stageWatchdog` covers began, kept across its re-arms (#851).
+    var stageWatchdogStageStart = Date()
+
+    private var whisperKit: WhisperKit?
+    private var currentModelName: String?
+    private var dictationTask: Task<Void, Never>?
+
+    /// Fires ~1.5s into a recording to prewarm the Apple FM polish model (#141).
+    /// Held so it can be cancelled if the user stops before it fires. See
+    /// `schedulePolishPrewarm()`.
+    private var polishPrewarmTask: Task<Void, Never>?
+
+    /// Who asked for the dictation currently in flight (#361).
+    ///
+    /// Set by `startDictation` and read by `stopDictation`, which is the whole
+    /// reason it exists: the two are seconds apart, `stopDictation` is reached
+    /// identically from both origins, and the answer decides which process polishes.
+    private var dictationOrigin: DictationOrigin = .app
+
+    /// The session whose polish OuisprApp is waiting for the keyboard to finish
+    /// (#361 decision 6), or nil when it is waiting for none.
+    ///
+    /// The Live Activity is app-owned and the stage that paces it now happens in the
+    /// other process, so `endWithResult` is deferred until `polishDidFinish` arrives.
+    /// Holding the session generation rather than a bare flag is what stops a late
+    /// notification from driving the Island of a dictation that has been superseded.
+    /// Not `private` for the same reason as `defaults` above: the three properties
+    /// below are the hand-off's whole state and they are driven from
+    /// `DictationHandoff.swift`. Single writer, one concern.
+    var polishHandoffSession: Int?
+
+    /// The raw text handed to the keyboard, kept only as the Live Activity preview
+    /// the watchdog below falls back to. Cleared with `polishHandoffSession`.
+    var polishHandoffPreview: String?
+
+    /// Names the hand-off this process is waiting on, so a `polishDidFinish` from an
+    /// earlier one cannot end a later one. Written to the App Group with the raw and
+    /// echoed back by the keyboard.
+    var polishHandoffToken: String?
+
+    /// Fires when the keyboard never says it finished (#361 decision 14).
+    var polishHandoffWatchdog: Timer?
+
+    /// The history record this hand-off saved with the raw text (#70), so the text
+    /// the keyboard reports typing can replace it in place rather than arrive as a
+    /// second card for the same dictation. Nil when nothing was saved — an empty
+    /// dictation, or a full history the record fell straight out of.
+    var polishHandoffHistoryID: UUID?
+
+    /// Which dictation the app is currently in. Moves when one starts and when one
+    /// is abandoned -- see `DictationSessionGeneration` for why both matter.
+    private var sessionGeneration = DictationSessionGeneration()
+
+    /// The generation delayed UI closures capture (issue #60). RecordingView's
+    /// dismiss and onboarding auto-advance bail out when it has moved on, so a
+    /// stale reset can never tear down a fresh recording.
+    var dictationGeneration: Int { sessionGeneration.current }
+
+    /// Set when cold start dictation is deferred because the app is .inactive.
+    ///
+    /// Cleared by whichever of its two consumers gets there first: the
+    /// `didBecomeActive` retry, or `resolvePendingColdStartOnBackground()` when the
+    /// app leaves the foreground without ever having become active (#311). The
+    /// second one is not an optimisation -- it is the only exit that always exists.
+    /// `didBecomeActive` is an event the user can withhold simply by swiping back
+    /// fast enough, and four of twelve deliberately fast dictations did exactly that.
+    ///
+    /// Not `private` only because the second consumer lives in `ColdStartResolution.swift`
+    /// and `private` is file-scoped. Still single-writer.
+    var pendingColdStartDictation = false
+
+    /// Background execution assertion held across the resolution of a parked cold
+    /// start (#311). `.invalid` when none is held. Managed entirely from
+    /// `ColdStartResolution.swift`, which is why it is not `private`.
+    ///
+    /// WHY this is the only such assertion in the app: every other path either runs in
+    /// the foreground, or runs while the audio engine is already capturing and
+    /// `UIBackgroundModes: audio` grants the runtime. This one runs from the
+    /// `.background` scene transition, so the process is on its way to suspension, and
+    /// the runtime it needs is the runtime it is trying to earn -- the audio mode
+    /// grants nothing until `startRecording()` has succeeded, which is the far side of
+    /// the window. Without an assertion that window is covered only by iOS's default
+    /// post-background grace, which is a behaviour and not a contract. A suspension
+    /// inside it would leave the flag cleared, no engine started and nothing reported:
+    /// the exact silence this whole change exists to make impossible, with a log line
+    /// to prove we had thought about it.
+    var coldStartAssertion: UIBackgroundTaskIdentifier = .invalid
+
+    /// Task that resolves when WhisperKit is fully loaded.
+    /// WHY: Both init() pre-load and startDictation() call ensureEngineReady().
+    /// If startDictation() arrives while pre-load is still running, it must AWAIT
+    /// the ongoing init instead of starting a duplicate one. This Task acts as
+    /// a concurrency lock — the first caller creates it, subsequent callers await it.
+    ///
+    /// Not `private` only because the waiting rule that governs it lives in
+    /// `DictationCoordinator+ModelLoad.swift` and Swift scopes `private` to the file.
+    /// One owner: nothing outside `ensureEngineReady` and that file may touch it.
+    var initTask: Task<Void, Error>?
+
+    /// Generation counter for model loads (issue #428).
+    ///
+    /// Bumped whenever an in-flight load stops being the one the app is waiting for:
+    /// its deadline expired, or the user took the escape off the preparation screen.
+    /// The load itself keeps running — a Core ML compile checks no cancellation flag
+    /// and offers no suspension point, so nothing here can stop it — but a load whose
+    /// epoch has moved on must publish nothing. Without that rule, an abandoned Turbo
+    /// compile finishing ten minutes later would swap `whisperKit` out from under a
+    /// user who has since chosen Medium, and dictate with a model they did not pick.
+    /// Not `private` only because `DictationCoordinator+ModelLoad.swift` arbitrates the
+    /// launch race through it and Swift scopes `private` to the file. One owner.
+    var modelLoadEpoch = 0
+
+    /// The generation `initTask` was created in, so a caller arriving later can tell an
+    /// abandoned load from the one everybody is still waiting for (issue #428).
+    /// Internal for the same reason as `initTask`, and written only beside it.
+    var initTaskEpoch = 0
+
+    /// Set while a dictation is somewhere inside `ensureEngineReady`. On its own it says
+    /// nothing about whose work is blocking; `isWaitingForNeuralEngine` is the one the
+    /// watchdog reads. Raised only by `waitingForNeuralEngine`, at the one call site.
+    ///
+    /// TASK-LOCAL, NOT A STORED FLAG, AND THAT IS THE WHOLE POINT (CodeRabbit on #542).
+    /// It used to be an instance property, which meant it answered "is *a* dictation
+    /// inside an engine load" to whoever asked — including callers that are not that
+    /// dictation. `ModelManager`'s two prewarm paths call `acquireNeuralEngine` from
+    /// their own tasks, by design and with a comment saying so, precisely to wait out
+    /// the dictation path's compile. Each of them read this flag as if the wait were
+    /// theirs, raised the shared deferral, and lowered it again on the way out — under a
+    /// dictation still parked in a wait of its own.
+    ///
+    /// A task-local answers the question that was actually meant: is **this** wait on a
+    /// dictation's call path. Every other caller reads false and raises nothing, which
+    /// also closes a hole that predates #542 — a prewarm queued behind the dictation's
+    /// OWN compile used to defer the watchdog around that compile's hang, which is the
+    /// unbounded failure `waitingForNeuralEngine` exists to prevent.
+    @TaskLocal static var isInsideEngineLoadForDictation = false
+
+    /// Set while a dictation is parked waiting for the Neural Engine rather than doing
+    /// any work of its own (fourth review, finding 2).
+    ///
+    /// `stopDictation` enters `.transcribing`, which arms a 30s stage watchdog, and then
+    /// calls `ensureEngineReady()` — which since the lock can queue behind a compile for
+    /// as long as that compile runs. The watchdog fired at 30s and cancelled a dictation
+    /// whose audio was already captured and perfectly good: the user lost their words to
+    /// a wait, not to a failure. `develop` never had this, because `ensureEngineReady`
+    /// did not consult the prewarm lock at all; the lock created it.
+    ///
+    /// The watchdog exists to catch a stage that will never hand over. A stage waiting
+    /// for hardware WILL hand over, so this tells the two apart rather than shortening
+    /// the wait or removing the guard.
+    ///
+    /// TWO WAITS RAISE IT, and the second one is the common one (issue #542):
+    /// `acquireNeuralEngine`'s queue wait, and `awaitInFlightEngineInit`'s wait on the
+    /// init lock. A dictation started while the app process was dead parks on the second
+    /// and never reaches the first, so for a year the deferral covered the rarer of the
+    /// two paths. Both raise it only while the work being waited on belongs to somebody
+    /// else, and both lower it the moment this caller becomes responsible for its own
+    /// progress.
+    ///
+    /// A DEPTH AND NOT A BOOL (CodeRabbit on #542). An earlier version of this was a
+    /// Bool, justified by "there is at most one dictation, so the two waits can never be
+    /// raised at the same time". That argument was wrong, and the counter-example is in
+    /// this repository: a scope that raises a shared Bool also lowers it, so any second
+    /// scope that overlaps the first clears the deferral out from under a wait that is
+    /// still parked, and the watchdog then cancels a dictation whose audio is captured
+    /// and perfectly good. A depth cannot be cleared by somebody else's `defer`.
+    private var neuralEngineWaitDepth = 0
+
+    /// Whether any dictation-owned wait is currently parked. Read by the watchdog.
+    var isWaitingForNeuralEngine: Bool { neuralEngineWaitDepth > 0 }
+
+    /// Enter and leave a dictation-owned wait. Balanced by construction: both call sites
+    /// pair the entry with a `defer`, and the floor at zero means a stray exit cannot
+    /// push the depth negative and silently disarm every later deferral.
+    func enterNeuralEngineWait() {
+        neuralEngineWaitDepth += 1
+    }
+
+    func leaveNeuralEngineWait() {
+        neuralEngineWaitDepth = max(0, neuralEngineWaitDepth - 1)
+    }
+
+    /// Who holds the Neural Engine for a Core ML compile right now, or nil if it is free.
+    ///
+    /// THE ANE IS ONE PIECE OF HARDWARE AND IT NEEDS ONE LOCK. It had two, neither aware
+    /// of the other: `ModelManager.isPrewarming` covered the download path, `initTask`
+    /// covered `ensureEngineReady`, and nothing covered the pair. That gap is how the
+    /// same "two simultaneous compiles" hazard was found twice by two reviews, through
+    /// two different doors — the second one being a model card tapped on a list the
+    /// escape had just uncovered. Fixing the door each time would have left a third.
+    ///
+    /// Written and read only through `acquireNeuralEngine`/`releaseNeuralEngine` in
+    /// `DictationCoordinator+ModelLoad.swift`. It lives on the singleton deliberately:
+    /// `ModelManager` is instantiated more than once (onboarding builds its own), so a
+    /// lock owned by an instance never covered the other instance either.
+    var neuralEngineHolder: String?
+
+    /// Which model this process has already run a discarded inference on (issue #426).
+    ///
+    /// The gate is consulted by `runWarmInference(on:modelName:)` in
+    /// `DictationCoordinator+ModelLoad.swift`, which is why this is not `private`.
+    /// Process-scoped, like `abandonedModel` and for the same reason: it describes a
+    /// live engine in this process, and an engine does not survive one.
+    var warmInferenceLedger = WarmInferenceLedger()
+
+    /// The model the user walked away from preparing, or that blew its launch deadline.
+    ///
+    /// Process-scoped on purpose, and the reason is the shape of issue #428 itself: what
+    /// made that bug unrecoverable was state that outlived the process that wrote it. A
+    /// per-process memory of "the user walked away from this model" is the deliberate
+    /// opposite. Persisting it would buy a little polish and re-introduce the exact
+    /// failure mode — a flag no live process owns, quietly deciding what the app may do.
+    ///
+    /// A fresh launch is therefore entitled to try again, which is safe now that a stale
+    /// "loading" is cleared at startup and the launch preload carries a deadline.
+    /// What this stops is the app quietly re-attempting the same doomed compile WITHIN
+    /// the session, behind the user's back — `didBecomeActive` fires every time they
+    /// return from the home screen, and backgrounding is the natural thing to do while
+    /// waiting (issue #428 review, finding 3).
+    ///
+    /// It never blocks something the user asked for: picking a model, or tapping the
+    /// mic, still loads it.
+    var abandonedModel: String?
+
+    /// Re-entry flag for stopDictation. Prevents the 3+ concurrent transcribe()
+    /// calls observed in #144 when a user taps stop multiple times during a model
+    /// swap (turbo load). Set synchronously on entry, cleared in the Task's defer.
+    private var isTranscribingInFlight = false
+
+    /// Timestamp of last waveform write to App Group.
+    /// Used to throttle writes to ~5Hz (every 200ms) to avoid overwhelming UserDefaults
+    /// with high-frequency updates from the audio engine's energy callback.
+    private var lastWaveformWriteDate = Date.distantPast
+
+    /// Combine subscriptions forwarding UnifiedAudioEngine's published values to coordinator.
+    private var energyCancellable: AnyCancellable?
+    private var secondsCancellable: AnyCancellable?
+
+    /// Configure the audio session, from the orchestration file. A tiny seam rather
+    /// than exposing `audioEngine`, which nothing outside this file has any business
+    /// holding (issue #428).
+    func configureAudioSessionForWarmUp() throws { try audioEngine.configureAudioSession() }
+
+    /// Whether the audio engine is already running, for the foreground warm-up policy.
+    var isAudioEngineRunning: Bool { audioEngine.isEngineRunning }
+
+    /// Compile if needed, load into RAM, warm the audio path. Returns the model that
+    /// ended up loaded, for the log.
+    ///
+    /// The audio warm-up leaves the engine cold, without throwing, while the record
+    /// permission is not granted (#715). Returning normally therefore means the MODEL is
+    /// loaded; whether the engine runs is `isAudioEngineRunning`'s to say.
+    ///
+    /// WHY it exists as a seam rather than being inlined where it is used: the callers
+    /// live in `DictationCoordinator+ModelLoad.swift`, because this file is at the
+    /// length budget issue #146 calibrated against it. One named entry point is a
+    /// cheaper thing to expose than the private members it touches.
+    ///
+    /// `context` is passed rather than fixed: both the launch preload and the foreground
+    /// warm-up run this, and a log line naming the wrong one is the kind of small lie the
+    /// debug log cannot afford — its reader is an agent.
+    ///
+    /// `attemptLog` exists because the two paths have always logged the attempt at
+    /// different points and must keep doing so. The launch path logs it immediately
+    /// before the audio warm-up, where it has always been. The foreground path logs it
+    /// before the model load, because that line is the ONLY marker a hang on that path
+    /// leaves behind — and a hang there is the thing this whole branch is about (second
+    /// review, finding 6).
+    func loadActiveModelIntoMemory(context: String, attemptLog: WarmUpAttemptPosition) async throws -> String {
+        if attemptLog == .beforeModelLoad { PersistentLog.log(.engineWarmUpAttempt(context: context)) }
+        try await ensureEngineReady()
+        if attemptLog == .beforeAudioWarmUp { PersistentLog.log(.engineWarmUpAttempt(context: context)) }
+        try audioEngine.warmUp()
+        return currentModelName ?? "unknown"
+    }
+
+    /// Transcribe one chunk of a shared voice note (#620), on the same engine and with
+    /// the same custom vocabulary pass as a dictation.
+    ///
+    /// The caller holds `EngineAccessGate` for the duration; this seam exists because
+    /// `ensureEngineReady` and `transcriptionService` are private to this file, and
+    /// one named entry point is cheaper to expose than either (the reasoning
+    /// `loadActiveModelIntoMemory` gives). Nothing here touches the dictation's
+    /// status, its session or the App Group keys the keyboard reads: a voice note is
+    /// invisible to the keyboard by construction.
+    func transcribeVoiceNoteChunk(_ samples: [Float], languagePolicy: TranscriptionLanguagePolicy) async throws -> String {
+        try await ensureEngineReady()
+        let text = try await transcriptionService.transcribe(audioSamples: samples, languagePolicy: languagePolicy)
+        return DictationTranscript.corrected(text).text
+    }
+
+    /// Keep the warm audio engine, and with it the process, alive while a voice note
+    /// transcribes in the background (#620). See `UnifiedAudioEngine.extendWarmWindow`.
+    func extendWarmWindowForVoiceNote() {
+        audioEngine.extendWarmWindow()
+    }
+
+    private init() {
+        // Forward UnifiedAudioEngine's energy levels and seconds to coordinator.
+        // NOTE: App Group forwarding for the keyboard is handled directly from
+        // the audio thread in UnifiedAudioEngine's processBuffer.
+        energyCancellable = audioEngine.$bufferEnergy
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] energy in
+                guard let self else { return }
+                self.bufferEnergy = energy
+                // Only forward to Dynamic Island when user is actively recording
+                guard self.audioEngine.isRecording else { return }
+                LiveActivityManager.shared.updateWaveform(levels: energy)
+            }
+        secondsCancellable = audioEngine.$bufferSeconds
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] seconds in
+                self?.bufferSeconds = seconds
+            }
+
+        // Observe keyboard-initiated stop/cancel signals via Darwin notifications.
+        observeKeyboardSignals()
+
+        // Clear stale transcription left over from a previous crash or missed pickup.
+        // 5-minute threshold: if the keyboard didn't read it by now, it never will.
+        //
+        // Since #361 the sweep covers the whole hand-off, not just the text: the
+        // policy snapshot and the duration are meaningless without it, and a
+        // `PendingDictation` still sitting here means a keyboard process died between
+        // claiming a raw and either typing it or refusing to. The keyboard's own
+        // expiry window is thirty seconds, so anything this sweep still finds is long
+        // past every path that could have acted on it.
+        if let ts = defaults.object(forKey: SharedKeys.lastTranscriptionTimestamp) as? Double,
+           Date().timeIntervalSince1970 - ts > 300 {
+            defaults.removeObject(forKey: SharedKeys.lastTranscription)
+            defaults.removeObject(forKey: SharedKeys.lastTranscriptionTimestamp)
+            defaults.removeObject(forKey: SharedKeys.lastTranscriptionPolicy)
+            defaults.removeObject(forKey: SharedKeys.lastTranscriptionEngineRaw)
+            defaults.removeObject(forKey: SharedKeys.lastTranscriptionDuration)
+            // Through the channel since #495: the polished text and the flag saying
+            // whether it was typed are one answer, and a sweep that took only half of
+            // it would leave the flag to describe the next dictation.
+            PolishedTextChannel.clear(in: defaults)
+            defaults.synchronize()
+        }
+        if let pending = PendingDictationChannel.current, pending.isExpired() {
+            PendingDictationChannel.clear()
+            PersistentLog.log(.polishHandoff(step: "swept", outcome: "expired", chars: pending.raw.count))
+        }
+
+        // Audit the shared dictation state before anything reads it (issue #261).
+        reconcileOrphanedDictationState()
+
+        // Phase 37 instrumentation: snapshot device capabilities once per app launch
+        // so the log stream has a stable anchor for per-device gating analysis.
+        let snapshot = DeviceCapabilities.current()
+        PersistentLog.log(.deviceCapabilitySnapshot(
+            model: snapshot.deviceModelIdentifier,
+            ramGB: snapshot.physicalMemoryGB,
+            availableMemoryMB: snapshot.availableMemoryMB,
+            thermalState: snapshot.thermalState.logLabel
+        ))
+
+        // Pre-load WhisperKit + audio session eagerly on app launch.
+        // WHY: The first recording via URL scheme takes 4-5s if we load lazily.
+        // By loading in init(), the model is ready when the keyboard triggers dictation.
+        //
+        // WHY configure audio session BEFORE the Task:
+        // iOS forbids AVAudioSession.setActive(true) from background. The async Task
+        // may not run until after the app is backgrounded. By configuring synchronously
+        // in init(), we guarantee the session is active while still in the foreground.
+        //
+        // A failure here is logged by `configureAudioSession` itself (#775) and needs nothing
+        // more: this is a head start, and every dictation start activates again and retries.
+        try? audioEngine.configureAudioSession()
+
+        Task {
+            let modelReady = defaults.bool(forKey: SharedKeys.modelReady)
+            guard modelReady else {
+                self.setModelLoadState(.idle, reason: "init-preload-no-model")
+                return
+            }
+            await self.runLaunchPreload()
+        }
+
+        // Stop audio engine when user taps Power button in Dynamic Island.
+        // WHY here (not in LiveActivityManager):
+        // The audio engine is owned by DictationCoordinator.
+        // StopStandbyIntent posts this notification because it can't reference coordinator
+        // directly (the intent file is compiled into OuisprWidgets too).
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("OuisprStopStandbyRequested"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                // Sync LiveActivityManager state — the intent already ended the activity
+                // but the manager doesn't know. Without this, currentActivity stays non-nil
+                // and ensureActivityAlive() is a no-op on next dictation (#50).
+                LiveActivityManager.shared.stopStandbyActivity()
+
+                // Stop any active recording first
+                if self.status == .recording {
+                    self.cancelDictation()
+                }
+                // Kill the audio engine — removes the orange mic indicator
+                if self.audioEngine.isEngineRunning {
+                    self.audioEngine.deactivateSession()
+                }
+                PersistentLog.log(.engineWarmUpFailed(context: "standby-power-off", error: "user stopped standby"))
+            }
+        }
+
+        // End any in-flight dictation when the audio session is interrupted
+        // (phone call, Siri, etc.) or media services are reset. UnifiedAudioEngine
+        // already tore down the engine; what happens to the dictation is
+        // `InterruptedDictationPolicy`'s call (issues #106, #851).
+        NotificationCenter.default.addObserver(
+            forName: .ouisprAudioSessionInterrupted,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let rawCause = notification.userInfo?[UnifiedAudioEngine.interruptionCauseKey] as? String
+            let cause = rawCause.flatMap(DictationInterruptionCause.init(rawValue:)) ?? .interruption
+            Task { @MainActor in
+                self?.handleAudioInterruptionDuringDictation(cause: cause)
+            }
+        }
+
+        // WHY observe didBecomeActive (not willEnterForeground):
+        // willEnterForeground fires while the audio session is still interrupted.
+        // didBecomeActive fires AFTER the app is fully active and the audio session
+        // interruption has ended — the audio engine can safely start at this point.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                // `sessionConfigured` used to be a hardcoded `true` here, so
+                // every `sessionConfigured=true` in a device log was a literal
+                // rather than a measurement — including the one quoted as
+                // evidence in #293. Both fields are now read from the engine.
+                PersistentLog.log(.engineStateSnapshot(
+                    engineRunning: self.audioEngine.isEngineRunning,
+                    isRecording: self.audioEngine.isRecording,
+                    hasWhisperKit: self.whisperKit != nil,
+                    sessionConfigured: self.audioEngine.sessionConfigured,
+                    allowsHaptics: self.audioEngine.allowsHapticsDuringRecording,
+                    context: "didBecomeActive"
+                ))
+
+                // Wall-clock backstop for Phase B's idle-release timer (issue #106).
+                // If iOS suspended the main queue while we were backgrounded, the
+                // asyncAfter scheduled in scheduleIdleRelease may fire late. On
+                // foreground transition we have a reliable runloop again — this
+                // call releases the warm state if the idle interval already
+                // expired during the suspension. Must happen BEFORE warmUp below,
+                // otherwise we'd warm an engine that should be released.
+                self.audioEngine.enforceIdleReleaseIfDue()
+
+                // A stage the app was suspended in restarts its watchdog's delay (#851).
+                self.restartStageWatchdogAfterSuspension()
+
+                // Recover DI if it was lost (Activity.request fails from background on cold start).
+                // Must happen BEFORE pendingColdStartDictation so transitionToRecording finds an activity.
+                LiveActivityManager.shared.ensureActivityAlive()
+
+                // Retry deferred cold start dictation now that app is fully active.
+                // WHY here: URL scheme launches fire handleIncomingURL at .inactive state,
+                // where engine.start() fails. startDictation sets pendingColdStartDictation
+                // and returns. Now that we're .active, retry the full startDictation flow.
+                //
+                // This stays the primary path — it is the one that runs from a fully
+                // active app with a recovered audio session. The background path added
+                // in #311 is the fallback for when this event never arrives.
+                if self.pendingColdStartDictation {
+                    self.pendingColdStartDictation = false
+                    // Only retry if keyboard is still waiting (watchdog hasn't reset to idle)
+                    let keyboardStatus = self.defaults.string(forKey: SharedKeys.dictationStatus) ?? "nil"
+                    PersistentLog.log(.coldStartRetry(keyboardStatus: keyboardStatus))
+                    if keyboardStatus == DictationStatus.requested.rawValue {
+                        self.startDictation(fromURL: true, origin: .keyboard)
+                    }
+                    return
+                }
+
+                await self.warmUpEngineOnForeground()
+            }
+        }
+    }
+
+    /// Schedule a prewarm of the Apple FM polish model partway into a recording (#141).
+    ///
+    /// Apple recommends calling `prewarm()` at least one second before
+    /// `respond()`, "when interaction is imminent". The start of a recording is
+    /// exactly that signal: we know polish will run in a few seconds, and the
+    /// recording itself provides the lead time. Firing at ~1.5s also aligns with
+    /// the polish engine's <2s skip gate — if we're still recording at 1.5s the
+    /// clip will almost certainly cross 2s and actually be polished, so warming
+    /// is not wasted on flash dictations.
+    ///
+    /// The `status == .recording` guard drops the prewarm if the user already
+    /// stopped. `PolishCoordinator.prewarm()` is itself a no-op when the toggle
+    /// is off, so we don't load the model into memory for nothing.
+    ///
+    /// WHY only for in-app dictations since #361: a keyboard dictation is polished
+    /// in the extension, which holds its own `LanguageModelSession` cache. Warming a
+    /// session here could not be used over there — the two are separate processes —
+    /// so the call would cost model residency in a backgrounded app for nothing.
+    /// Keyboard-side prewarm was deliberately not added in its place: measured at
+    /// 1.4% on PR #373, inside the spread of both arms, against holding a session in
+    /// a process under a ~50 MB ceiling while the user is still speaking.
+    private func schedulePolishPrewarm() {
+        guard dictationOrigin == .app else { return }
+        polishPrewarmTask?.cancel()
+        polishPrewarmTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard let self, !Task.isCancelled else { return }
+            guard self.status == .recording else { return }
+            PolishCoordinator.shared.prewarm()
+        }
+    }
+
+    // MARK: - Public API
+
+    /// Start the recording pipeline.
+    /// Called from URL scheme (first time) or Darwin notification (subsequent times).
+    ///
+    /// Two paths:
+    /// - WARM START: engine already running → purge idle samples + startRecording()
+    /// - COLD START: engine not running → startRecording() starts it (<100ms) + load model in parallel
+    ///
+    /// - Parameters:
+    ///   - fromURL: If true, the app was opened via URL scheme from the keyboard.
+    ///   - allowInactiveStart: Skip the cold-start defer below and attempt the start
+    ///     from whatever state the app is in. Set only by
+    ///     `resolvePendingColdStartOnBackground()`, which is the last chance a parked
+    ///     start gets (#311) — deferring a second time there would park it forever.
+    ///   - origin: who asked (#361). Deliberately without a default: it decides which
+    ///     process polishes the result, and a call site that did not think about it
+    ///     would silently pick one. `fromURL` does not answer the question on its own
+    ///     — the keyboard also starts dictations over Darwin, with no URL involved.
+    func startDictation(fromURL: Bool = false,
+                        allowInactiveStart: Bool = false,
+                        origin: DictationOrigin) {
+        // Clear previous recording state before starting new recording.
+        // WHY here (not in stopDictation): DI tap and lockscreen paths call
+        // startDictation directly without going through stopDictation first.
+        // The old result must be cleared regardless of entry path so
+        // RecordingView never shows a stale transcription card.
+        lastResult = nil
+        // Same argument, one process further out (#320): the previous attempt's failure
+        // reason is stale the moment a new attempt begins, and this is the only event
+        // that makes it so. Clearing here — rather than when a surface reads it — is
+        // what lets both the keyboard and the app read it, in either order.
+        DictationErrorChannel.clear()
+        // And the previous dictation's "text is in the Ouispr app" banner (#860): a new
+        // dictation is the user moving on. The keyboard clears it at its own mic tap too.
+        RecoveredTranscriptionChannel.clear()
+        bufferEnergy = []
+        bufferSeconds = 0
+        // Cancel any polish still running from the previous dictation (#141).
+        PolishCoordinator.shared.cancelInflight()
+        polishPrewarmTask?.cancel()
+        PersistentLog.log(.statusChanged(from: status.rawValue, to: "clearing-for-new", source: "startDictation-reset"))
+
+        // Guard against duplicate calls while actively recording or transcribing.
+        // The predicate moved to OuisprCore in #311 so the stranded-cold-start path
+        // can ask the same question before it calls in, instead of restating this
+        // list and drifting from it.
+        guard ColdStartResolutionPolicy.canStartNewDictation(from: status) else {
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.info("Ignoring duplicate startDictation — already \(self.status.rawValue, privacy: .public)")
+            }
+            return
+        }
+
+        // New session supersedes any pending delayed reset (issue #60) and any
+        // outstanding work from the previous one (#267).
+        sessionGeneration.beginSession()
+        // Assigned after the duplicate guard above, so a rejected tap cannot
+        // repoint a dictation that is already running at the other origin.
+        dictationOrigin = origin
+        // Whatever the previous dictation was waiting for, it is over (#361).
+        endPolishHandoff(abandonedAs: "new-dictation")
+
+        // WHY this early return (only for Darwin notification path, NOT URL scheme):
+        // iOS forbids starting an audio engine from background. If the engine isn't
+        // running and we're in background (Darwin notification from keyboard), attempting
+        // to start will fail. The keyboard's fallback opens the URL scheme after 500ms.
+        let appState = UIApplication.shared.applicationState
+        if !fromURL && appState != .active && !audioEngine.isEngineRunning {
+            PersistentLog.log(.dictationDeferred(reason: "no engine running, appState=\(appState.rawValue)"))
+            return
+        }
+
+        PersistentLog.log(.dictationStarted(fromURL: fromURL, appState: "\(appState.rawValue)", engineRunning: audioEngine.isEngineRunning))
+
+        // Check if a model is downloaded and ready.
+        // Force a cross-process sync before reading — right after a URL-scheme wake
+        // the App Group defaults can return a stale `false`, producing a bogus
+        // "no model downloaded" error on the first attempt (observed in #102).
+        defaults.synchronize()
+        let modelReady = defaults.bool(forKey: SharedKeys.modelReady)
+        guard modelReady else {
+            PersistentLog.log(.dictationFailed(error: "No model downloaded"))
+            // Localised since #249 — this sibling of the model-availability failure
+            // reached the keyboard banner in English regardless of device language.
+            handleError(String(localized: "No model downloaded. Open Ouispr to download a model."))
+            return
+        }
+
+        // Refuse new dictation if an explicit model swap is in flight.
+        // Issue #144: tapping the mic during a turbo load caused the keyboard to
+        // queue dispatches that all collapsed into 3+ concurrent transcribe()
+        // calls when the load resolved. Reading the App Group state lets us short-
+        // circuit cleanly — the keyboard's overlay UI surfaces the wait to the user.
+        //
+        // Issue #167: URL-scheme cold-start launches arrive while the init-preload
+        // is still loading the model. Failing here would route first-use dictation
+        // into `failed` state. Skip the guard for fromURL=true and let the existing
+        // cold-start defer at line ~368 park the request as `pendingColdStartDictation`
+        // — the retry's `ensureEngineReady` awaits the in-flight initTask via its lock.
+        let currentLoadState = defaults.string(forKey: SharedKeys.modelLoadState) ?? ModelLoadState.idle.rawValue
+        if currentLoadState == ModelLoadState.loading.rawValue && !fromURL {
+            PersistentLog.log(.dictationDeferred(reason: "model load in flight (state=loading)"))
+            // Keep the keyboard request pending. KeyboardState re-reads the
+            // shared state before its fallback URL and opens the prepare-only
+            // flow instead of showing a refusal message.
+            return
+        }
+
+        // Cancel any in-flight dictation before starting a new one
+        dictationTask?.cancel()
+
+        // Play start sound BEFORE configuring the audio session.
+        // WHY before: Once the audio session is configured with .playAndRecord,
+        // AudioServicesPlaySystemSound may be suppressed.
+        SoundFeedbackService.playRecordStart()
+
+        // Configure audio session NOW while we're in the foreground.
+        //
+        // WHY the error is kept rather than dropped by `try?` (#775): a cold start that went
+        // on with a session that refused to activate waited for a route and rebuilt the
+        // engine for nothing, then said the microphone was missing. The cold start below
+        // hands it to `activateSessionForColdStart`, which retries or fails with "tap again".
+        // The warm path needs no retry: its running engine means the session is up.
+        //
+        // The helper also raises `isRecoveringAudioSession` for a cold start whose activation
+        // was refused (#853). It has to be here, before the cold start's defer below: the
+        // host return reads it at its 250 ms ceiling, which in the capture lands before
+        // `didBecomeActive` retries, so this call's own `'msrv'` is the only signal by then.
+        let firstActivation = activateSessionAtStart(engine: audioEngine)
+
+        // The session these start paths belong to. `ensureMicrophonePermission` is
+        // an await even when permission is already granted, so a cancel queued on
+        // the main actor can land between here and the first write below (#267).
+        let session = sessionGeneration.current
+
+        if audioEngine.isEngineRunning {
+            // WARM START: engine already running → purge + record (instant)
+            dictationTask = Task {
+                do {
+                    let hasPermission = try await audioEngine.ensureMicrophonePermission()
+                    guard hasPermission else {
+                        guard mayReport(session, "permission denial") else { return }
+                        handleError(DictationFailureMessage.microphonePermissionDenied)
+                        return
+                    }
+                    // Before `startRecording`, not merely before the status write:
+                    // a cancelled start that reached the engine would leave the mic
+                    // capturing for a dictation the user called off -- the orphaned
+                    // engine of #60, arrived at from the other end.
+                    guard mayReport(session, "warm start") else { return }
+                    updateStatus(.recording)
+                    LiveActivityManager.shared.transitionToRecording()
+                    try audioEngine.startRecording()
+                    PersistentLog.log(.audioEngineStarted)
+                    schedulePolishPrewarm()
+                    await verifyAudioFlow()
+                } catch {
+                    PersistentLog.log(.dictationFailed(
+                        error: "Warm start: \(DictationFailureMessage.diagnostic(for: error))"))
+                    guard mayReport(session, "warm start failure") else { return }
+                    handleError(DictationFailureMessage.userFacing(for: error))
+                }
+            }
+        } else {
+            // COLD START: engine not running → start engine + record + load model in parallel
+            //
+            // WHY defer when not .active:
+            // URL scheme launches fire handleIncomingURL while app is still .inactive.
+            // AVAudioEngine.start() fails with AUIOClient_StartIO error from non-active state.
+            // Deferring to didBecomeActive guarantees the app is fully active.
+            //
+            // WHY the flag can override it (#311): `allowInactiveStart` is set only by
+            // the background-transition path, where `.active` is no longer coming. A
+            // second defer there would re-park the request with nothing left to unpark
+            // it, which is the bug this whole change is about.
+            if appState != .active && !allowInactiveStart {
+                pendingColdStartDictation = true
+                PersistentLog.log(.dictationDeferred(
+                    reason: "cold start deferred to didBecomeActive, appState=\(appState.rawValue)"))
+                return
+            }
+
+            dictationTask = Task {
+                // Backstop for the background assertion a last-chance start holds
+                // (#311). The two outcomes release it themselves, each at the earliest
+                // moment it is safe to; this catches the exits that are neither -- a
+                // permission denial, and the `mayReport` guards that drop an abandoned
+                // session. A no-op when no assertion is held, which is every other call.
+                defer { self.endColdStartAssertion(reason: "task-exit") }
+                do {
+                    let hasPermission = try await audioEngine.ensureMicrophonePermission()
+                    guard hasPermission else {
+                        guard mayReport(session, "permission denial") else { return }
+                        handleError(DictationFailureMessage.microphonePermissionDenied)
+                        return
+                    }
+                    // Checks `mayReport(session, "cold start")` first, then makes sure the
+                    // session is up before the engine waits on its route (#775).
+                    guard try await activateSessionForColdStart(after: firstActivation, engine: audioEngine, session: session, origin: origin) else { return }
+                    try audioEngine.startRecording()
+                    updateStatus(.recording)
+                    LiveActivityManager.shared.transitionToRecording()
+                    PersistentLog.log(.audioEngineStarted)
+                    // The engine is capturing, so `UIBackgroundModes: audio` keeps the
+                    // process alive on its own now. Released here rather than at the end
+                    // of the task so the model load below, which can run for tens of
+                    // seconds, does not sit on an assertion it no longer needs.
+                    endColdStartAssertion(reason: "engine-started")
+                    schedulePolishPrewarm()
+                    await verifyAudioFlow()
+
+                    // Load the transcription model in parallel while recording
+                    self.setModelLoadState(.loading, reason: "cold-start-load")
+                    try await ensureEngineReady()
+                    let loadedName = self.currentModelName ?? "unknown"
+                    PersistentLog.log(.appWhisperKitLoaded(modelName: loadedName))
+                    self.setModelLoadState(.ready, reason: "cold-start-success")
+                } catch {
+                    PersistentLog.log(.dictationFailed(
+                        error: "Cold start engine load: \(DictationFailureMessage.diagnostic(for: error))"))
+                    // A last-chance start (#311) fails for a reason the user can do
+                    // nothing about and cannot read. It keeps its own sentence; every
+                    // other cold-start failure now goes through the funnel, which is
+                    // what #311 had to special-case here before one existed (#313).
+                    // The raw text stays in the log line above, where it belongs.
+                    let message = allowInactiveStart
+                        ? self.strandedColdStartMessage
+                        : DictationFailureMessage.userFacing(for: error)
+                    // The model load runs inside this task and takes seconds on a
+                    // cold start, so this is the widest window in the app for a
+                    // cancel to arrive mid-flight. `setModelLoadState` stays ungated
+                    // on purpose: it describes the model, which outlives any one
+                    // dictation, and the next session needs it to be accurate.
+                    //
+                    // Which is exactly why the value cannot be a constant `.idle`
+                    // (issue #427). Since the prewarm deadline became detachable, a
+                    // load the app gave up on can LAND: it publishes its engine and
+                    // writes `.ready`, while the cancellation that abandoning it
+                    // produced arrives here as this dictation's failure. Measured on
+                    // device 2026-08-30, both in the same second —
+                    // `init-preload-late-success` then `cold-start-failed` over the top
+                    // of it, with the engine loaded and running. The flag said the
+                    // engine was not there. `ModelLoadState.afterFailedDictation` asks
+                    // the only question the flag is entitled to answer, and the resolver
+                    // lives next to the rest of the load policy in
+                    // `DictationCoordinator+ModelLoad.swift` — this file is at its
+                    // #146 length budget, which is what that file exists for.
+                    let state = self.modelLoadStateAfterFailedDictation(published: self.currentModelName)
+                    self.setModelLoadState(state, reason: "cold-start-failed")
+                    guard self.mayReport(session, "cold start failure") else { return }
+                    self.handleError(message)
+                    // The keyboard has been told. Released here so the assertion ends on
+                    // a reported failure exactly as it does on a started engine.
+                    self.endColdStartAssertion(reason: "failure-reported")
+                }
+            }
+        }
+    }
+
+    /// Tell the keyboard that a parked cold start will not run.
+    ///
+    /// WHY `handleError` and not a bespoke channel: the keyboard's status message is an
+    /// in-process property of `KeyboardState`; nothing the app writes reaches it directly.
+    /// `DictationErrorChannel` plus a `.failed` status is the app's actual channel —
+    /// `KeyboardState.refreshFromDefaults` picks the error up and shows it for three
+    /// seconds, and `.failed` does not own the keyboard area, so the "Démarrage…"
+    /// overlay drops on the same write. The keyboard clears its own toolbar line when
+    /// the three seconds are up; the stored reason stays until the next dictation (#320).
+    ///
+    /// The wording asks for a second tap rather than explaining the race: by the time
+    /// this is read the user is in their host app looking at a stuck keyboard, and what
+    /// they need is the one action that works.
+    func reportStrandedColdStart() {
+        PersistentLog.log(.dictationFailed(error: "cold start stranded: app left the foreground before it could run"))
+        handleError(strandedColdStartMessage)
+    }
+
+    /// What the keyboard says when a cold start could not run. Shared by the two ways
+    /// that happens — no attempt was possible, or the attempt threw — because from the
+    /// user's side they are the same event and deserve the same sentence.
+    private var strandedColdStartMessage: String {
+        String(localized: "Dictation could not start. Tap the microphone again.")
+    }
+
+    /// Called when user taps the stop button.
+    /// Stops recording and starts transcription using the already-loaded model.
+    ///
+    /// Single path: collectSamples() (keeps engine alive) → transcribe → done.
+    /// No more branching between AudioRecorder and RawAudioCapture.
+
+    /// Minimum audio duration required for transcription (in seconds).
+    /// WHY 0.5s: WhisperKit handles clips ≥0.5s reliably for short words (oui, non, ok).
+    /// Below 0.5s, it tends to hallucinate (invent words not spoken).
+    /// Previous value was 1.0s (Parakeet requirement), but Parakeet is no longer used
+    /// in the dictation pipeline — only WhisperKit via keyboard.
+    private let minimumRecordingDuration: TimeInterval = 0.5
+
+    /// - Parameters:
+    ///   - playsStopSound: false when an audio interruption ended the recording
+    ///     (#851): the stop sound would play over the call that cut it.
+    ///   - stopTrace: the keyboard's stop tap, when a tap is what stopped it. Each step
+    ///     up to the start of transcription logs its delay from that tap (#862).
+    func stopDictation(playsStopSound: Bool = true, stopTrace: StopTimingTrace? = nil) {
+        // Issue #144 re-entry guard: refuse if a transcription is already in flight.
+        // Without this, tapping stop multiple times during a long model swap (e.g.
+        // turbo load) spawned 3+ concurrent transcribe() calls that cancelled each
+        // other with Swift.CancellationError. The flag is set synchronously here
+        // (before the async Task) so a second stopDictation() can never slip past.
+        guard !isTranscribingInFlight else {
+            PersistentLog.log(.dictationDeferred(reason: "stop ignored — transcription already in flight"))
+            return
+        }
+        isTranscribingInFlight = true
+
+        dictationTask?.cancel()
+        // The recording is ending; the prewarm (if it hasn't fired) is moot.
+        polishPrewarmTask?.cancel()
+
+        // The session this run belongs to. Every write it makes below is gated on
+        // still being that session (#267) -- see `mayReport`.
+        let session = sessionGeneration.current
+
+        dictationTask = Task {
+            defer { self.isTranscribingInFlight = false }
+            do {
+                // Also where the engine goes quiet: it stays warm, and `collectSamples`
+                // mutes its input (#430), so there is no separate engine-stop step.
+                let samples = audioEngine.collectSamples()
+                stopTrace?.log("samplesCollected")
+
+                guard !samples.isEmpty else {
+                    // Logged before the session gate, like `recordingTooShort` below:
+                    // a run abandoned between stop and this check still failed, and a
+                    // failure with no line in the log cannot be diagnosed afterwards.
+                    PersistentLog.log(.dictationFailed(error: "no samples collected"))
+                    guard mayReport(session, "empty recording") else { return }
+                    // A notice, not a fault (#313): nothing was captured, and the user
+                    // reads the same sentence here as for every other way that happens.
+                    handleError(DictationFailureMessage.noWordsDetected)
+                    return
+                }
+
+                let audioDuration = Double(samples.count) / 16000.0
+
+                guard audioDuration >= minimumRecordingDuration else {
+                    PersistentLog.log(.recordingTooShort(durationMs: Int(audioDuration * 1000)))
+                    guard mayReport(session, "short recording") else { return }
+                    // The maintainer hit this regularly and read it as an app bug every
+                    // time (#313). It is not one: the mic was stopped a beat early. Same
+                    // event as an empty recording, same sentence.
+                    handleError(DictationFailureMessage.noWordsDetected)
+                    return
+                }
+
+                if #available(iOS 14.0, *) {
+                    OuisprLogger.app.info("Recording stopped. Samples: \(samples.count, privacy: .public), Duration: \(String(format: "%.1f", audioDuration), privacy: .public)s")
+                }
+
+                updateStatus(.transcribing)
+                stopTrace?.log("statusTranscribing")
+                LiveActivityManager.shared.transitionToTranscribing()
+                // Arm watchdog: if DI fails to leave .recording, force recovery after 10s.
+                // If transitionToTranscribing succeeded, the watchdog's guard exits harmlessly.
+                LiveActivityManager.shared.startRecordingWatchdog()
+                if playsStopSound { SoundFeedbackService.playRecordStop() }
+                stopTrace?.log("stopFeedbackDone")
+
+                // The engine is shared with the voice note queue since #620. Taken
+                // before the model load and handed back once the transcript exists, so
+                // a voice note can neither swap the model out from under this
+                // dictation nor run a second `transcribe` beside it (#144). A
+                // dictation is served first; the wait is at most the one chunk a
+                // voice note may be in the middle of. See `EngineAccessGate`.
+                //
+                // Waiting on the gate is waiting on someone else's work, so it defers the
+                // stage watchdog like the other two engine waits (#542): a voice note can
+                // hold the engine through a cold model load, and the 30 s watchdog would
+                // otherwise cancel a dictation whose audio is already captured.
+                enterNeuralEngineWait()
+                await EngineAccessGate.shared.acquire(.dictation)
+                leaveNeuralEngineWait()
+                stopTrace?.log("engineAcquired")
+                var holdsEngine = true
+                let releaseEngine = {
+                    guard holdsEngine else { return }
+                    holdsEngine = false
+                    EngineAccessGate.shared.release()
+                }
+                defer { releaseEngine() }
+                // The gate does not observe cancellation: a dictation cancelled while it
+                // was parked must not go on to load and transcribe.
+                try Task.checkCancellation()
+
+                // Wrapped, not just called: this is the one place in a dictation that
+                // can queue on hardware someone else holds (finding 2).
+                try await waitingForNeuralEngine { try await self.ensureEngineReady() }
+                stopTrace?.log("modelReady")
+
+                // One language-policy snapshot per dictation (#226): mode,
+                // keyboard language, engine, and model are captured HERE and
+                // propagated through STT, polish, and finalization. Without
+                // the snapshot, each stage would re-read App Group state and a
+                // keyboard-toolbar language change while transcription runs
+                // could make Whisper transcribe in one language and polish in
+                // another. The policy is also engine-aware: with Parakeet
+                // active the setting is Whisper-only-effective, so every mode
+                // resolves to the historical follow behavior.
+                let languagePolicy = TranscriptionLanguagePolicy.snapshot()
+
+                // The armed Smart Mode is part of the same per-dictation snapshot
+                // (#79), taken here for the reason #226 introduced the language one:
+                // the user must not be able to change the mode mid-transcription and
+                // have the transformation disagree with what was transcribed. It is
+                // sharper for the mode than for the language, because the mode is
+                // armed from the keyboard — the process that would otherwise re-read
+                // it is the process whose UI changes it.
+                //
+                // `resolveArmedMode` is also where a mode this device can no longer
+                // run gets cleared; see `SmartModeStore`. It hands back what the
+                // dictation will actually run **and** the notice owed to the user
+                // when that is not what they armed (#423) — the fallback used to be
+                // silent, which for a translation means their own language comes
+                // back with nothing saying why.
+                let smartMode = SmartModeStore.resolveArmedMode()
+                // The last step: `transcriptionStarted` is the service's first line.
+                stopTrace?.log("transcriptionStarted")
+
+                // Custom vocabulary (#80 decision 5), and this is the only place it
+                // can go. `transcribe` returns from more than one branch depending
+                // on the active engine, so a pass added inside it would be silently
+                // skipped by the other; here it is upstream of BOTH tails below, so
+                // one call serves the in-app dictation and the keyboard hand-off.
+                //
+                // It runs on the raw transcript, before `VerbalPunctuationPrepass`
+                // and before the polish — never after `PolishGuardrail`, which is
+                // the back door #414 and #466 closed. With an empty vocabulary the
+                // transcript is handed straight back, which is why this wraps the
+                // call instead of adding a step of its own.
+                let transcript = DictationTranscript.corrected(
+                    try await transcriptionService.transcribe(audioSamples: samples, languagePolicy: languagePolicy)
+                )
+                // Counted here, for every user and both origins (#726): the keyboard's
+                // dictations transcribe in this process too, and this is the one line
+                // both tails below share. Counted once the transcript exists, so a
+                // dictation cancelled during polish still counts what was said.
+                //
+                // Not counted when the user cancelled during the transcription: the
+                // engine does not stop promptly and can still hand back a transcript,
+                // whose words never reach the document. Both checks, because a cancel
+                // abandons the session and does not always cancel this task in time.
+                if !Task.isCancelled, sessionGeneration.mayReport(from: session) {
+                    DictationTally.record(transcript.text, audioDuration: audioDuration)
+                }
+                // Polish and the hand-off below do not touch the speech engine.
+                releaseEngine()
+
+                // Where the tail of the dictation happens, since #361.
+                //
+                // A keyboard dictation is polished by the keyboard extension, which
+                // is in the foreground at exactly the moment the model runs — the
+                // one state Apple does not deprioritise, and the whole reason for
+                // that issue. This process writes the RAW text, hands over the
+                // policy snapshot with it, and stops there. An in-app dictation is
+                // already foreground and has never had the problem, so it keeps
+                // polishing in place (decision 4).
+                switch dictationOrigin {
+                case .app:
+                    // The skipped notice is deliberately not passed here: this
+                    // target has no non-fatal notice surface, which is the gap
+                    // `finishInApp` already documents against a Smart Mode refusal.
+                    // Showing it in the keyboard, which runs the overwhelming
+                    // majority of dictations, is #423's scope.
+                    await finishInApp(
+                        transcript: transcript,
+                        languagePolicy: languagePolicy,
+                        smartMode: smartMode.mode,
+                        audioDuration: audioDuration,
+                        session: session
+                    )
+                case .keyboard:
+                    // The gate that matters most. Everything below is irreversible
+                    // from the user's point of view: it writes the transcription to
+                    // the App Group and posts `transcriptionReady`, which is what
+                    // makes the keyboard type it into their document. A dictation
+                    // the user cancelled must not insert text a few seconds later
+                    // (#267).
+                    guard mayReport(session, "transcription result") else { return }
+                    handOffToKeyboard(
+                        transcript: transcript,
+                        languagePolicy: languagePolicy,
+                        smartMode: smartMode,
+                        audioDuration: audioDuration,
+                        session: session
+                    )
+                }
+
+                cleanupRecordingKeys()
+            } catch {
+                if #available(iOS 14.0, *) {
+                    OuisprLogger.app.error(
+                        "Transcription failed: \(DictationFailureMessage.diagnostic(for: error), privacy: .public)")
+                }
+                // A cancelled task lands here, and so does one that failed for its
+                // own reasons after the session ended. Either way the failure
+                // belongs to a dictation that is over: writing `.failed` re-presents
+                // the recording screen the user just dismissed (#267).
+                guard mayReport(session, "transcription failure") else { return }
+                handleError(DictationFailureMessage.userFacing(for: error))
+            }
+        }
+    }
+
+    /// Cancel the current dictation without transcribing.
+    /// Called when the keyboard sends a cancel signal via Darwin notification.
+    func cancelDictation() {
+        // FIRST, before anything is cancelled: from here on, the transcription task
+        // is working for a session that no longer exists and may not report (#267).
+        // `Task.cancel()` below is only a request -- neither WhisperKit nor Apple FM
+        // promises to return promptly -- so the task can still finish seconds from
+        // now, and this is what makes its outcome land nowhere.
+        sessionGeneration.abandonSession()
+        dictationTask?.cancel()
+        dictationTask = nil
+        // Reset the transcribe re-entry flag so the next stop/cancel cycle can proceed.
+        isTranscribingInFlight = false
+        stopStageWatchdog()
+
+        // Discard samples but keep engine alive for next recording
+        _ = audioEngine.collectSamples()
+
+        // Reset all state
+        bufferEnergy = []
+        bufferSeconds = 0
+        cleanupRecordingKeys()
+        // Nothing is coming back from the keyboard for a dictation that is over (#361).
+        endPolishHandoff(abandonedAs: "cancelled")
+        SoundFeedbackService.playRecordCancel()
+        // Return Dynamic Island to standby (cancel = no transcription, go back to "On")
+        Task { await LiveActivityManager.shared.returnToStandby() }
+        // `returnToStandby` only comes back from .recording/.ready/.failed, and the
+        // recording watchdog below only unsticks .recording -- so a dictation
+        // abandoned inside a post-recording stage had no path home at all, and the
+        // pill stayed on that stage and rejected the next dictation (#267 review).
+        // The two calls are mutually exclusive by their own guards, so the order
+        // between them does not matter.
+        LiveActivityManager.shared.recoverFromAbandonedStage()
+        // Arm watchdog: safety net if returnToStandby's guard rejects.
+        LiveActivityManager.shared.startRecordingWatchdog()
+        updateStatus(.idle)
+
+        if #available(iOS 14.0, *) {
+            OuisprLogger.app.info("Dictation cancelled by keyboard")
+        }
+    }
+
+    /// Reset status to idle (e.g., after user returns to keyboard).
+    ///
+    /// Issue #60: a UI-only reset while the pipeline is active orphans the audio
+    /// engine (keeps capturing) and the Live Activity (stuck on REC), so an active
+    /// session must go through the real teardown instead.
+    ///
+    /// WHY the shared predicate and not a list of cases spelled out here (#267):
+    /// this asks "is a dictation in flight", which is the exact question
+    /// `isActive` answers over an exhaustive switch. A hand-written list is a list
+    /// the next status case can be left out of, silently, and this one guards a
+    /// teardown -- the same shape of omission #260 and #261 were made of.
+    func resetStatus() {
+        if DictationSessionLivenessPolicy.isActive(status) {
+            cancelDictation()
+            return
+        }
+        updateStatus(.idle)
+        // Keep lastResult so HomeView can display the last transcription card.
+    }
+
+    // MARK: - Private Helpers
+
+    /// Register Darwin notification observers for keyboard stop/cancel signals.
+    private func observeKeyboardSignals() {
+        DarwinNotificationCenter.addObserver(for: DarwinNotificationName.stopRecording) { [weak self] in
+            // Taken before the hop to the main queue (#862): the gap between this line
+            // and `appMainHop` is the time the main thread kept the stop waiting.
+            let stopTrace = AppGroup.defaults.bool(forKey: SharedKeys.stopRequested)
+                ? StopTimingTrace.take(from: AppGroup.defaults) : nil
+            stopTrace?.log("appReceived")
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // The notification decides while recording, the flag only deduplicates
+                // (#868): a process started before first unlock can read it false forever.
+                guard self.mayActOnKeyboardSignal(.stop, flagKey: SharedKeys.stopRequested) else { return }
+                stopTrace?.log("appMainHop")
+                self.stopDictation(stopTrace: stopTrace)
+            }
+        }
+
+        DarwinNotificationCenter.addObserver(for: DarwinNotificationName.cancelRecording) { [weak self] in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard self.mayActOnKeyboardSignal(.cancel, flagKey: SharedKeys.cancelRequested) else { return }
+                self.cancelDictation()
+            }
+        }
+
+        DarwinNotificationCenter.addObserver(for: DarwinNotificationName.startRecording) { [weak self] in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                let appState = UIApplication.shared.applicationState
+                PersistentLog.log(.engineDarwinStartReceived(
+                    appState: "\(appState.rawValue)",
+                    engineRunning: self.audioEngine.isEngineRunning
+                ))
+                self.startKeyboardDictationUnlessBeforeOnboarding(appState: appState)
+                // A warm start from the keyboard never brings the app forward, so none
+                // of the lifecycle reconciliations run: catch up on the voice note
+                // receipts here too (#639). After the start, so it costs the recording
+                // nothing.
+                VoiceNoteProcessor.shared.reconcileKeyboardDeliveries(reason: "darwinStart")
+            }
+        }
+
+        // The reverse pair (#361 decision 6). The keyboard runs the polish engine
+        // now, and sets its own `.processing` stage locally — it draws the overlay.
+        // What it cannot reach from its process is the Live Activity, so these two
+        // notifications carry that and nothing else.
+        DarwinNotificationCenter.addObserver(for: DarwinNotificationName.polishWillRun) { [weak self] in
+            DispatchQueue.main.async {
+                guard let self, let session = self.polishHandoffSession,
+                      self.mayReport(session, "keyboard processing stage") else { return }
+                LiveActivityManager.shared.transitionToProcessing()
+            }
+        }
+
+        DarwinNotificationCenter.addObserver(for: DarwinNotificationName.polishDidFinish) { [weak self] in
+            DispatchQueue.main.async {
+                self?.polishHandoffFinished()
+            }
+        }
+    }
+
+    /// Forward waveform energy data to App Group for the keyboard extension to display.
+    /// Throttled to ~5Hz (every 200ms) to avoid overwhelming UserDefaults.
+    private func forwardWaveformToAppGroup(energy: [Float]) {
+        guard status == .recording else { return }
+
+        let now = Date()
+        guard now.timeIntervalSince(lastWaveformWriteDate) >= 0.2 else { return }
+        lastWaveformWriteDate = now
+
+        let cappedEnergy = Array(energy.suffix(30))
+        if let data = try? JSONEncoder().encode(cappedEnergy) {
+            defaults.set(data, forKey: SharedKeys.waveformEnergy)
+        }
+        defaults.set(bufferSeconds, forKey: SharedKeys.recordingElapsedSeconds)
+        defaults.synchronize()
+
+        DarwinNotificationCenter.post(DarwinNotificationName.waveformUpdate)
+    }
+
+    /// Clear a dictation the previous process never finished (issue #261).
+    ///
+    /// The invariant this restores: `dictationStatus` describes an active dictation,
+    /// but no live coordinator owns a session for it. That is trivially decidable
+    /// here — this method runs from `init`, so the process has just started and owns
+    /// no session by construction. Nothing else audited the key, which is why an app
+    /// terminated mid-recording left `recording` behind for the keyboard to restore
+    /// an overlay from.
+    ///
+    /// WHY `.requested` is excluded: the keyboard writes it moments before opening
+    /// `ouispr://dictate`, i.e. moments before launching this very process. Clearing
+    /// it here would break every cold-start dictation — including the retry in
+    /// `didBecomeActive`, which proceeds only while the stored status is still
+    /// `requested`.
+    ///
+    /// WHY it writes `.idle` and no `lastError`: this audit is hygiene, not speech.
+    /// The first version wrote `.failed` plus a localised error so the keyboard's
+    /// failure path would show it, which had two problems. By the time the app
+    /// relaunches the moment has passed — the keyboard reconciles in-process, within
+    /// seconds, and that is the surface that tells the user. And `failed` has no
+    /// expiry in the App Group: `KeyboardState.refreshFromDefaults` adopts a stored
+    /// `failed` and shows the stored reason whenever the extension is next loaded,
+    /// however old it is, until a new dictation clears it (#320). That is pre-existing
+    /// behaviour, but writing `failed` here on every reconciliation would have made a
+    /// stale error message a routine sight.
+    ///
+    /// WHY it does NOT go through `updateStatus`: this process is not failing
+    /// anything. It is auditing state a dead one left behind, and `status` is
+    /// correctly `.idle` here.
+    private func reconcileOrphanedDictationState() {
+        // WHY the cases are spelled out here and not asked of `isActive` (#267):
+        // this list is deliberately narrower. `.requested` is active but is written
+        // by the keyboard moments before it launches this app, so reconciling it at
+        // launch would kill every cold-start dictation. `.processing` belongs with
+        // `.recording` and `.transcribing`: the app that wrote it is the app that
+        // just died, so a launch finding it is finding a corpse.
+        guard let raw = defaults.string(forKey: SharedKeys.dictationStatus),
+              let stored = DictationStatus(rawValue: raw),
+              stored == .recording || stored == .transcribing || stored == .processing else { return }
+
+        PersistentLog.log(.dictationStateReconciled(
+            source: "app-launch",
+            staleStatus: raw,
+            heartbeatAgeMs: -1
+        ))
+        defaults.set(DictationStatus.idle.rawValue, forKey: SharedKeys.dictationStatus)
+        // Clears the heartbeat, the waveform keys and the pending stop/cancel flags
+        // the dead process never got to clean up, and synchronizes. Dropping the
+        // heartbeat matters most: one that outlives its session is what the keyboard
+        // would otherwise judge the *next* session by (#261).
+        cleanupRecordingKeys()
+        DarwinNotificationCenter.post(DarwinNotificationName.statusChanged)
+    }
+
+    /// Clean up recording-related App Group keys after recording completes or is cancelled.
+    private func cleanupRecordingKeys() {
+        // NOTE: Do NOT clear lastTranscription here — the keyboard extension reads it
+        // asynchronously via Darwin notification. Clearing it here would race with the
+        // keyboard and delete the transcription before it can be inserted.
+        // Stale transcriptions are cleaned up on app launch (5-min threshold in init).
+        defaults.removeObject(forKey: SharedKeys.waveformEnergy)
+        defaults.removeObject(forKey: SharedKeys.recordingElapsedSeconds)
+        defaults.removeObject(forKey: SharedKeys.recordingHeartbeat)
+        defaults.set(false, forKey: SharedKeys.stopRequested)
+        defaults.set(false, forKey: SharedKeys.cancelRequested)
+        defaults.set(false, forKey: SharedKeys.coldStartActive)
+        defaults.synchronize()
+    }
+
+    /// Reads the list of downloaded model identifiers from App Group UserDefaults.
+    private func readDownloadedModels() -> [String] {
+        guard let data = defaults.data(forKey: SharedKeys.downloadedModels),
+              let models = try? JSONDecoder().decode([String].self, from: data) else {
+            if let active = defaults.string(forKey: SharedKeys.activeModel) {
+                return [active]
+            }
+            return []
+        }
+        return models
+    }
+
+    /// Whether the transcription task started under `session` may still report.
+    ///
+    /// A dictation that was abandoned -- cancelled, watchdog-reset, interrupted --
+    /// moves the generation, so work started before it silently stops here instead
+    /// of writing status, inserting text or driving the Live Activity into a session
+    /// that no longer exists (#267).
+    ///
+    /// WHY it logs rather than returning quietly: a dropped outcome is invisible
+    /// otherwise, and the device log is how this class of bug gets diagnosed here.
+    /// The signature to look for afterwards is the absence of rejected Live Activity
+    /// transitions following a clean abandon.
+    ///
+    /// ### What is deliberately NOT gated, and why
+    ///
+    /// Every `await` in a session-owned task is a place a cancel can land, but not
+    /// every continuation past one publishes session state. These were each checked
+    /// rather than gated by reflex:
+    ///
+    /// - `verifyAudioFlow()` already opens with `guard status == .recording`, and an
+    ///   abandoned session is `.idle` by then. Its engine restart is unreachable
+    ///   after a cancel.
+    /// - `setModelLoadState(...)` describes the *model*, which outlives any one
+    ///   dictation. Suppressing it would leave the next session reading a load state
+    ///   that never happened. Note what does the work in the cold-start catch since
+    ///   issue #427: not gating, but writing the true value. Ungated and constant
+    ///   `.idle` was how a failed dictation came to contradict a published engine.
+    /// - `schedulePolishPrewarm()` warms a model and publishes nothing.
+    /// - The stage watchdog re-checks `self.status` against the status it was armed
+    ///   for before it fires.
+    /// - `pendingColdStartDictation` is retried from `didBecomeActive` only when the
+    ///   App Group still reads `.requested`; a cancel writes `.idle` first, so the
+    ///   deferred start does not resurrect.
+    func mayReport(_ session: Int, _ what: String) -> Bool {
+        guard sessionGeneration.mayReport(from: session) else {
+            PersistentLog.log(.dictationDeferred(
+                reason: "abandoned session dropped \(what) (gen \(session) != \(sessionGeneration.current))"
+            ))
+            return false
+        }
+        return true
+    }
+
+    /// Write dictation status to App Group so the keyboard can observe it.
+    ///
+    /// **Still the single funnel every status write goes through**, and the reason it
+    /// is no longer `private` is narrow: `DictationHandoff.swift` needs it, and Swift
+    /// scopes `private` to the file. Nothing outside this type may call it.
+    func updateStatus(_ newStatus: DictationStatus) {
+        // Invariant (issue #60): entering .idle while the engine is still capturing
+        // means some path skipped the teardown. Stop capture (engine stays warm per
+        // #106), force the Live Activity out of .recording, and log the violation so
+        // any future recurrence of this class is one log line, not a silent
+        // background recording.
+        if newStatus == .idle && audioEngine.isRecording {
+            PersistentLog.log(.idleInvariantViolation(
+                from: status.rawValue,
+                engineRunning: audioEngine.isEngineRunning
+            ))
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.fault("Invariant violation: entering .idle while engine is recording — forcing teardown")
+            }
+            _ = audioEngine.collectSamples()
+            Task { await LiveActivityManager.shared.returnToStandby() }
+            LiveActivityManager.shared.startRecordingWatchdog()
+        }
+
+        let oldStatus = status
+        PersistentLog.log(.statusChanged(from: oldStatus.rawValue, to: newStatus.rawValue, source: "coordinator"))
+        status = newStatus
+        defaults.set(newStatus.rawValue, forKey: SharedKeys.dictationStatus)
+        defaults.synchronize()
+
+        // Re-arm on every stage the watchdog covers, disarm on everything else.
+        // The `.transcribing -> .processing` hand-over is the case that makes the
+        // second branch matter: leaving the transcription timer armed would let it
+        // fire 30s into a stage it knows nothing about (#267).
+        if stageWatchdogTimeout(for: newStatus) != nil {
+            startStageWatchdog(for: newStatus)
+        } else if stageWatchdogTimeout(for: oldStatus) != nil {
+            stopStageWatchdog()
+        }
+
+        // Posts `statusChanged`, then lets an ended dictation release the engine (#380).
+        announceStatusChange(newStatus)
+    }
+
+    /// Verify audio samples are actually being captured after startRecording.
+    /// Detects "zombie engine" state where engine.isRunning but tap receives no buffers.
+    /// If 0 samples after 2s, force-restarts the engine and retries once.
+    private func verifyAudioFlow() async {
+        do {
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+        } catch { return } // Task cancelled (user stopped recording)
+
+        guard status == .recording else { return }
+
+        let sampleCount = audioEngine.currentSampleCount
+        if sampleCount > 0 { return } // Healthy — samples flowing
+
+        PersistentLog.log(.dictationFailed(error: "Zombie engine: 0 samples after 2s, force-restarting"))
+
+        // Force restart: stop engine, reconfigure, restart
+        audioEngine.forceRestart()
+        do {
+            try audioEngine.startRecording()
+        } catch {
+            handleError(DictationFailureMessage.microphoneStoppedResponding)
+            return
+        }
+
+        // Check again after restart
+        do {
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+        } catch { return }
+
+        guard status == .recording else { return }
+
+        if audioEngine.currentSampleCount == 0 {
+            handleError(DictationFailureMessage.microphoneStoppedResponding)
+        } else {
+            PersistentLog.log(.engineWarmUpSuccess(context: "zombie-recovery"))
+        }
+    }
+
+    /// Handle errors by updating status and writing error to App Group.
+    ///
+    /// The message goes to `DictationErrorChannel`, which both the keyboard's toolbar
+    /// and the app's own failure screen read (#320). Neither consumes it: it stays put
+    /// until the next dictation starts, so a user who reads it on one surface and then
+    /// opens the other is told the same thing twice rather than something else.
+    ///
+    /// Not `private` only because `DictationHandoff.swift` needs it: an in-app
+    /// dictation whose armed Smart Mode produced nothing insertable has failed, and
+    /// this is the one funnel that tells the user so (#79).
+    func handleError(_ message: String) {
+        DictationErrorChannel.record(message)
+        defaults.set(false, forKey: SharedKeys.coldStartActive)
+        defaults.synchronize()
+        updateStatus(.failed)
+        LiveActivityManager.shared.endWithFailure()
+        // Arm watchdog: safety net if endWithFailure's transition guard rejects.
+        LiveActivityManager.shared.startRecordingWatchdog()
+    }
+
+    // MARK: - Model load orchestration (issue #144)
+
+    /// Read the current persisted model load state from the App Group.
+    /// SwiftUI views read this through NotificationCenter posts emitted by
+    /// `setModelLoadState` (see `Notification.Name.ouisprModelLoadStateChanged`).
+    var modelLoadState: ModelLoadState {
+        let raw = defaults.string(forKey: SharedKeys.modelLoadState) ?? ModelLoadState.idle.rawValue
+        return ModelLoadState(rawValue: raw) ?? .idle
+    }
+
+    /// Update the tri-state load flag, persist it to the App Group so the keyboard
+    /// can gate mic taps, and broadcast a notification so any in-app overlay can react.
+    /// Must be called on the main actor (the class is @MainActor).
+    func setModelLoadState(_ newState: ModelLoadState, reason: String) {
+        let oldRaw = defaults.string(forKey: SharedKeys.modelLoadState) ?? ModelLoadState.idle.rawValue
+        guard oldRaw != newState.rawValue else { return }
+        defaults.set(newState.rawValue, forKey: SharedKeys.modelLoadState)
+        defaults.synchronize()
+        PersistentLog.log(.modelLoadStateChanged(from: oldRaw, to: newState.rawValue, reason: reason))
+        NotificationCenter.default.post(
+            name: .ouisprModelLoadStateChanged,
+            object: nil,
+            userInfo: ["state": newState.rawValue, "reason": reason]
+        )
+    }
+
+    /// Eagerly load the active model into RAM. Called from `ModelManager.selectModel`
+    /// after a model swap so the user does not have to wait for the first mic tap to
+    /// trigger the lazy load (issue #144 — turbo swap took 1-3 minutes which collapsed
+    /// into a cancellation storm without this proactive path).
+    ///
+    /// Safe to call repeatedly: the underlying `initTask` lock dedupes concurrent loads.
+    ///
+    /// Deliberately still without the deadline `runLaunchPreload` carries (issue #428
+    /// scoped the deadline to launch): a load started from this path always has the
+    /// preparation screen in front of it, and that screen now offers its own escape.
+    func preloadActiveModel() {
+        // An explicit choice clears the memory of what was walked away from: the user
+        // is asking for this load, so nothing here should be suppressed on their behalf.
+        abandonedModel = nil
+        Task {
+            let epoch = self.modelLoadEpoch
+            self.setModelLoadState(.loading, reason: "selectModel-proactive")
+            do {
+                try await ensureEngineReady()
+                PersistentLog.log(.appWhisperKitLoaded(modelName: self.currentModelName ?? "unknown"))
+                // Check before publishing (first review, finding 5). This load can be
+                // abandoned mid-flight like any other, and writing `.ready` afterwards
+                // would announce an engine that was discarded before it was installed.
+                guard !self.loadWasAbandoned(since: epoch) else { return }
+                self.setModelLoadState(.ready, reason: "selectModel-proactive-success")
+            } catch {
+                PersistentLog.log(.engineWarmUpFailed(
+                    context: "selectModel-proactive",
+                    error: DictationFailureMessage.diagnostic(for: error)
+                ))
+                guard !self.loadWasAbandoned(since: epoch) else { return }
+                self.setModelLoadState(.idle, reason: "selectModel-proactive-failed")
+            }
+        }
+    }
+}
+
+// MARK: - Speech engine initialization
+
+/// Engine initialization lives in its own extension so the coordinator class body
+/// stays within the SwiftLint `type_body_length` budget. These methods are still
+/// file-private members of the coordinator and touch the same stored properties.
+@MainActor
+private extension DictationCoordinator {
+    /// Initialize the appropriate STT engine based on the active model.
+    ///
+    /// WHY engine-aware:
+    /// The user can select a WhisperKit, Parakeet or Nemotron model. This method
+    /// checks the active model's engine type and initializes the correct engine.
+    ///
+    /// Falls back to the active model from App Group, then to "openai_whisper-small".
+    func ensureEngineReady(preferredModel: String? = nil) async throws {
+        let modelName = preferredModel
+            ?? defaults.string(forKey: SharedKeys.activeModel)
+            ?? "openai_whisper-small"
+
+        let modelInfo = ModelInfo.forIdentifier(modelName)
+        let engine = modelInfo?.engine ?? .whisperKit
+
+        switch engine {
+        case .parakeet:
+            try await ensureParakeetReady(modelName: modelName)
+        case .nemotron:
+            // No iOS 16 fallback to write: the app's floor is iOS 17, which is also
+            // FluidAudio 0.15.7's, and the catalogue hides Nemotron below it (#558).
+            try await ensureNemotronReady(modelName: modelName)
+        case .whisperKit:
+            try await ensureWhisperKitEngineReady(modelName: modelName)
+        }
+    }
+
+    /// Initialize WhisperKit with the preferred model if not already loaded.
+    ///
+    /// Loads strictly from the local model repository (issue #249). This path used to
+    /// build its config from the model name with `download: true` and no
+    /// `modelFolder`, so WhisperKit resolved the identifier against the Hugging Face
+    /// hub — every Whisper model was unusable without connectivity, and a hub outage
+    /// or airplane mode failed dictation with WhisperKit's untranslated
+    /// "Model not found…" message. Downloading stays the model manager's job.
+    func ensureWhisperKitEngineReady(modelName: String) async throws {
+        if whisperKit != nil, currentModelName == modelName {
+            return
+        }
+
+        // One Core ML compile at a time, whoever asked for it (finding 2).
+        if try await awaitInFlightEngineInit(
+            modelName: modelName,
+            component: "WhisperKitLoad",
+            isAlreadyLoaded: { self.whisperKit != nil && self.currentModelName == modelName }
+        ) {
+            return
+        }
+
+        // Fail fast, before any task is created, when the model is not on disk.
+        // `SharedKeys.modelReady` only reflects App Group bookkeeping; this checks
+        // the files WhisperKit will actually read.
+        guard let modelFolder = WhisperModelRepository.installedModelFolderURL(for: modelName) else {
+            let error = SpeechModelError.modelNotInstalled(identifier: modelName)
+            PersistentLog.log(.diagnosticProbe(
+                component: "WhisperKitLoad",
+                instanceID: modelName,
+                action: "localModelMissing",
+                details: error.diagnosticDescription
+            ))
+            throw error
+        }
+
+        // Nothing else may be compiling while this one runs, whichever path started it.
+        let engineHolder = "WhisperKitLoad:\(modelName)"
+        try await acquireNeuralEngine(for: engineHolder)
+        defer { releaseNeuralEngine(from: engineHolder) }
+
+        // Re-check after the wait: whatever we queued behind may have loaded exactly
+        // what this caller wanted, and a redundant compile is still a compile.
+        if whisperKit != nil, currentModelName == modelName { return }
+
+        PersistentLog.log(.diagnosticProbe(
+            component: "WhisperKitLoad",
+            instanceID: modelName,
+            action: "localModelResolved",
+            details: "folder=\(modelFolder.lastPathComponent) download=false tokenizerCache=\(WhisperModelRepository.cachedTokenizerRepositoryNames().joined(separator: "|"))"
+        ))
+
+        // Captured before the task starts, checked after the compile returns: a load
+        // the app has since abandoned must not publish an engine (issue #428).
+        let epoch = modelLoadEpoch
+
+        // An unstructured `Task` does NOT inherit cancellation from whoever created it,
+        // so a compile started here outlives the dictation that asked for it and holds
+        // the Neural Engine while the next real load queues behind it (audit finding 1,
+        // second order). Checked here rather than trusted from `acquireNeuralEngine`,
+        // because the re-check above it is a suspension point away.
+        try Task.checkCancellation()
+
+        let task = Task<Void, Error> {
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.info("Initializing WhisperKit with model: \(modelName, privacy: .public)")
+            }
+
+            let config = WhisperKitConfig(
+                model: modelName,
+                modelFolder: modelFolder.path,
+                // Issues #370/#612: pre-A14 chips need the audio encoder off the Neural Engine.
+                computeOptions: WhisperComputeOptions.current(),
+                verbose: false,
+                prewarm: true,
+                load: true,
+                download: false
+            )
+
+            let kit = try await WhisperKit(config)
+
+            // The weights are resident and the model is still not ready to run at
+            // speed: the Neural Engine specializes per shape at the first inference,
+            // never at load (issue #426). Run one here, on silence, and throw it away.
+            //
+            // BEFORE PUBLISHING, not after. The engine only becomes reachable at
+            // `self.whisperKit = kit` below, and every other caller is parked on this
+            // very task through `awaitInFlightEngineInit` — so nothing can start a real
+            // transcription on a half-warm engine. Publishing first and warming after
+            // would put two `transcribe` calls on one instance, which is the #144
+            // cancellation storm.
+            let whisperKitEngine = await self.warmedWhisperKitEngine(for: kit, modelName: modelName)
+
+            guard self.shouldPublishLoad(
+                epoch: epoch, component: "WhisperKitLoad", modelName: modelName
+            ) else {
+                // Throw, never return. This task is the shared init lock, and every
+                // caller parked on `try await existingTask.value` reads a plain return
+                // as a loaded engine. A cold-start dictation is one of those callers:
+                // it would write `.ready` with `whisperKit == nil` behind it and then
+                // call `transcribe` on nothing (issue #428 review, finding 1).
+                throw self.abandonedLoadError(for: modelName)
+            }
+
+            self.whisperKit = kit
+            self.currentModelName = modelName
+            // This model is loaded and working, whatever was decided about it earlier.
+            self.clearAbandonedModel(ifMatches: modelName)
+
+            // Share with TranscriptionService only — UnifiedAudioEngine doesn't need WhisperKit
+            transcriptionService.prepare(whisperKit: kit)
+            transcriptionService.prepare(engine: whisperKitEngine)
+
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.info("WhisperKit ready with model: \(modelName, privacy: .public)")
+            }
+        }
+        initTask = task
+        initTaskEpoch = epoch
+
+        do {
+            try await task.value
+            clearInitTask(ifStillCurrent: task)
+        } catch {
+            clearInitTask(ifStillCurrent: task)
+            // Wrap anything WhisperKit or Core ML raises (issue #249). Their messages
+            // are English and developer-facing; `handleError` writes whatever reaches
+            // it straight into the keyboard's error banner. The raw text stays in the
+            // log, the user gets a localised one.
+            let wrapped = Self.loadFailure(for: modelName, from: error)
+            PersistentLog.log(.diagnosticProbe(
+                component: "WhisperKitLoad",
+                instanceID: modelName,
+                action: "loadFailed",
+                details: wrapped.diagnosticDescription
+            ))
+            throw wrapped
+        }
+    }
+
+    /// Initialize Parakeet engine (iOS 17+ only).
+    ///
+    /// Loads strictly from the local FluidAudio cache (issue #252). This path used to call
+    /// `AsrModels.downloadAndLoad`, which starts a HuggingFace download when the cache is
+    /// absent — during dictation, with no progress and no way to cancel. That is the
+    /// asymmetry issue #249 removed for Whisper; downloading stays the model manager's job.
+    ///
+    /// The load itself is `ensureFluidAudioEngineReady`, shared with Nemotron since #558.
+    /// What is Parakeet's own is the bundle restore in front of it.
+    func ensureParakeetReady(modelName: String) async throws {
+        if currentModelName == modelName, whisperKit == nil {
+            return
+        }
+
+        if #available(iOS 17.0, *) {
+            try await ensureFluidAudioEngineReady(
+                modelName: modelName,
+                component: "ParakeetLoad",
+                installedDirectory: {
+                    // Repair the cache before judging it (#558): layer 0, and the bundle
+                    // restore, which carries nothing since 2.0.0 (#769). Launch already did
+                    // this once; a file can go missing between then and now, and the rule is
+                    // "before any Parakeet load".
+                    ParakeetCacheRepair.restoreFromBundleIfNeeded(context: "ParakeetLoad")
+                    return ParakeetEngine.installedModelCacheDirectory()
+                },
+                loadWarmedEngine: { try await self.warmedParakeetEngine(modelName: modelName) }
+            )
+        } else {
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.warning("Parakeet not available on iOS 16 — falling back to WhisperKit small")
+            }
+            try await ensureWhisperKitEngineReady(modelName: "openai_whisper-small")
+        }
+    }
+
+    /// Initialize the Nemotron 3.5 engine (#558). Same local-only load as Parakeet (#252),
+    /// through the same serialized path, so its compile never meets another on the Neural
+    /// Engine.
+    @available(iOS 17.0, *)
+    func ensureNemotronReady(modelName: String) async throws {
+        if currentModelName == modelName, whisperKit == nil {
+            return
+        }
+        try await ensureFluidAudioEngineReady(
+            modelName: modelName,
+            component: "NemotronLoad",
+            installedDirectory: { NemotronEngine.installedModelDirectory() },
+            loadWarmedEngine: { try await self.warmedNemotronEngine(modelName: modelName) }
+        )
+    }
+
+    /// Load a FluidAudio engine (Parakeet or Nemotron) under the coordinator's rules.
+    ///
+    /// ONE PATH FOR BOTH (#558). It was Parakeet's alone, and every line of it answers an
+    /// issue: the init lock (finding 2), the fail-fast on a missing cache (#249, #252), the
+    /// Neural Engine gate, the abandonment epoch (#428), the warm inference before publishing
+    /// (#426). Nemotron needs every one of them, for the same hardware reasons, so it takes
+    /// this path rather than a copy of it.
+    ///
+    /// "Loaded" for a FluidAudio engine is spelled `currentModelName == modelName, whisperKit
+    /// == nil`, as it always was for Parakeet. It stays correct with two FluidAudio engines
+    /// because the model name tells them apart: publishing either sets `currentModelName`.
+    ///
+    /// - Parameters:
+    ///   - component: the log component, `ParakeetLoad` or `NemotronLoad`.
+    ///   - installedDirectory: the complete local model directory, or `nil` to fail fast.
+    ///   - loadWarmedEngine: builds, loads and warms the engine, ready to publish.
+    @available(iOS 17.0, *)
+    func ensureFluidAudioEngineReady(
+        modelName: String,
+        component: String,
+        installedDirectory: () -> URL?,
+        loadWarmedEngine: @escaping () async throws -> SpeechModelProtocol
+    ) async throws {
+        // Same rule, same hardware reason (finding 2).
+        if try await awaitInFlightEngineInit(
+            modelName: modelName,
+            component: component,
+            isAlreadyLoaded: { self.currentModelName == modelName && self.whisperKit == nil }
+        ) {
+            return
+        }
+
+        // Fail fast, before any task is created, when the cache is absent or partial —
+        // mirrors the WhisperKit guard above. `SharedKeys.modelReady` only reflects App
+        // Group bookkeeping; this checks the bundles FluidAudio will actually read.
+        guard let modelDirectory = installedDirectory() else {
+            // An incomplete model is not warm, whatever this install recorded about it
+            // (#558). Clearing the record sends the next keyboard mic tap to the preparation
+            // screen, the way #542 routes a cold model, instead of into a recording that
+            // fails here again. `ModelManager` completes the files.
+            ModelWarmth.clear(modelName, defaults: defaults)
+            let error = SpeechModelError.modelNotInstalled(identifier: modelName)
+            PersistentLog.log(.diagnosticProbe(
+                component: component,
+                instanceID: modelName,
+                action: "localModelMissing",
+                details: error.diagnosticDescription
+            ))
+            throw error
+        }
+
+        // Same gate as the WhisperKit path: one compile on the ANE at a time.
+        let engineHolder = "\(component):\(modelName)"
+        try await acquireNeuralEngine(for: engineHolder)
+        defer { releaseNeuralEngine(from: engineHolder) }
+
+        if currentModelName == modelName, whisperKit == nil { return }
+
+        PersistentLog.log(.diagnosticProbe(
+            component: component,
+            instanceID: modelName,
+            action: "localModelResolved",
+            details: "folder=\(modelDirectory.lastPathComponent) download=false"
+        ))
+
+        // Same abandonment rule as the WhisperKit path (issue #428).
+        let epoch = modelLoadEpoch
+
+        // Same reason as the WhisperKit path: an unstructured task would carry on
+        // compiling for a caller that no longer exists (audit finding 1).
+        try Task.checkCancellation()
+
+        let task = Task<Void, Error> {
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.info("Initializing \(component, privacy: .public) for model: \(modelName, privacy: .public)")
+            }
+
+            // Loaded and warmed before anything can reach it, same rule and same
+            // ordering as the WhisperKit path (issue #426).
+            let engine = try await loadWarmedEngine()
+
+            guard self.shouldPublishLoad(
+                epoch: epoch, component: component, modelName: modelName
+            ) else {
+                // Throws for the same reason as the WhisperKit path above: this is
+                // the shared lock, and a silent success would hand every awaiting
+                // caller an engine that was discarded.
+                throw self.abandonedLoadError(for: modelName)
+            }
+
+            self.whisperKit = nil
+            self.currentModelName = modelName
+            self.clearAbandonedModel(ifMatches: modelName)
+
+            transcriptionService.prepare(engine: engine)
+
+            if #available(iOS 14.0, *) {
+                OuisprLogger.app.info("\(engine.engineName, privacy: .public) ready for model: \(modelName, privacy: .public)")
+            }
+        }
+        initTask = task
+        initTaskEpoch = epoch
+
+        do {
+            try await task.value
+            clearInitTask(ifStillCurrent: task)
+        } catch {
+            clearInitTask(ifStillCurrent: task)
+            // Wrap anything FluidAudio or Core ML raises (issue #249) — those
+            // messages are English and developer-facing, and `handleError` writes
+            // whatever reaches it into the keyboard's error banner.
+            let wrapped = Self.loadFailure(for: modelName, from: error)
+            PersistentLog.log(.diagnosticProbe(
+                component: component,
+                instanceID: modelName,
+                action: "loadFailed",
+                details: wrapped.diagnosticDescription
+            ))
+            throw wrapped
+        }
+    }
+}
+
+// MARK: - Inactivity timeout seams (#380)
+
+// WHY an extension in this file rather than members of the class: the class body sits
+// exactly at the `type_body_length` budget of #146, and an extension in the same file
+// still reaches the private `audioEngine`, which `DictationCoordinator+WarmEngineTimeout.swift`
+// cannot. Seams rather than exposing the engine, for the reason
+// `configureAudioSessionForWarmUp` gives.
+extension DictationCoordinator {
+    func applyIdleTimeoutChangeToEngine() { audioEngine.applyIdleTimeoutChange() }
+
+    func releaseWarmEngine(reason: String) { audioEngine.releaseWarmState(reason: reason) }
+
+    /// The tail of `updateStatus`: tell the keyboard, then, when the dictation is over
+    /// (failed, cancelled, dismissed), release the engine if the timeout is Immediately.
+    /// `.ready` is not over for a keyboard dictation, and the hand-off check inside
+    /// `releaseWarmStateIfImmediate` is what keeps it warm for the keyboard's polish.
+    func announceStatusChange(_ newStatus: DictationStatus) {
+        DarwinNotificationCenter.post(DarwinNotificationName.statusChanged)
+        if !DictationSessionLivenessPolicy.isActive(newStatus) {
+            releaseWarmStateIfImmediate(after: "status-\(newStatus.rawValue)")
+        }
+    }
+}
+
+// MARK: - Keyboard stop and cancel (#868)
+
+extension DictationCoordinator {
+
+    /// Decide a keyboard stop or cancel, clear its flag when it is acted on, and log it when
+    /// it is not acted on, or acted on with the flag reading false.
+    ///
+    /// WHY BOTH LOG LINES: before #868 an ignored stop left nothing in the log, and twelve
+    /// taps in a row read as the app never receiving them. `stopIgnored` / `cancelIgnored`
+    /// say a signal arrived and why nothing happened; `…HonoredWithoutFlag` says the App
+    /// Group read was stale, which is the evidence a launch before first unlock leaves.
+    func mayActOnKeyboardSignal(_ signal: KeyboardSignal, flagKey: String) -> Bool {
+        let requested = defaults.bool(forKey: flagKey)
+        let decision = KeyboardSignalPolicy.decide(signal, flagRequested: requested, status: status)
+        switch decision {
+        case .honor:
+            // Always, even when it read false: in a stale view the keyboard's `true` is on
+            // disk, and only this write can clear it for the next session.
+            defaults.set(false, forKey: flagKey)
+            defaults.synchronize()
+            if !requested {
+                PersistentLog.log(.diagnosticProbe(
+                    component: "KeyboardSignal",
+                    instanceID: signal.rawValue,
+                    action: "\(signal.rawValue)HonoredWithoutFlag",
+                    details: "status=\(status.rawValue)"
+                ))
+            }
+            return true
+        case .ignore(let reason):
+            PersistentLog.log(.diagnosticProbe(
+                component: "KeyboardSignal",
+                instanceID: signal.rawValue,
+                action: "\(signal.rawValue)Ignored",
+                details: "reason=\(reason)"
+            ))
+            return false
+        }
+    }
+}
+
+// MARK: - Onboarding gate (#827)
+
+extension DictationCoordinator {
+
+    /// Start the dictation the keyboard asked for over the Darwin notification, unless
+    /// onboarding is not done and the app is not in the foreground.
+    ///
+    /// Safety net for a keyboard built before #827, or one that read a stale app phase:
+    /// before onboarding there is no model, so a dictation started here would fail and
+    /// leave its error behind. The onboarding test dictation is unaffected — it runs with
+    /// the app active, which `KeyboardOnboardingGate.appMayStartKeyboardDictation` lets
+    /// through.
+    func startKeyboardDictationUnlessBeforeOnboarding(appState: UIApplication.State) {
+        guard KeyboardOnboardingGate.appMayStartKeyboardDictation(
+            onboardingCompleted: KeyboardOnboardingGate.isOnboardingCompleted(in: defaults),
+            appIsActive: appState == .active
+        ) else {
+            PersistentLog.log(.dictationDeferred(reason: "keyboard start before onboarding with app not active"))
+            return
+        }
+        startDictation(origin: .keyboard)
+    }
+}
+
+// MARK: - Audio interruption (#106, #851)
+
+/// WHY an extension in this file: the handler reads the coordinator's private state,
+/// and the class body is at its length budget (#146).
+extension DictationCoordinator {
+
+    /// Handle an audio session interruption that fired while dictation was active.
+    ///
+    /// UnifiedAudioEngine has already stopped the engine and posted the in-process
+    /// notification. The captured audio is still in the engine (#851): a recording
+    /// is stopped as if the user had tapped stop, and transcribed; a transcription
+    /// already running goes on, it no longer needs the microphone. Only a dictation
+    /// with nothing to keep fails: cancel the in-flight task, write a "failed"
+    /// status to App Group so the keyboard's overlay closes, and end the Live
+    /// Activity. Issue #106.
+    private func handleAudioInterruptionDuringDictation(cause: DictationInterruptionCause) {
+        // Same predicate as `resetStatus` and for the same reason (#267).
+        let wasActive = DictationSessionLivenessPolicy.isActive(status)
+        guard wasActive else {
+            // Engine died while idle — nothing to roll back. The standby DI is
+            // LiveActivityManager's; only a dictation pill with no dictation left
+            // behind it (a desync) is ended here.
+            LiveActivityManager.shared.endDictationActivityForAudioInterruption()
+            return
+        }
+
+        let samples = audioEngine.currentSampleCount
+        let decision = InterruptedDictationPolicy.decide(
+            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration
+        )
+        PersistentLog.log(.recordingInterrupted(status: status.rawValue, samples: samples, decision: decision))
+
+        guard decision == .fail else {
+            // The stop path collects the samples and gives a clip under the minimum
+            // the "no words" notice, exactly as for a stop tapped a beat early. A
+            // transcription already running is simply left alone.
+            //
+            // Timed like a tap (#862), from this handler and under `sessionID=interruption`:
+            // the main-thread stalls logged after an interruption fall in this window.
+            if decision != .letTranscriptionFinish {
+                stopDictation(playsStopSound: false, stopTrace: .tapped(sessionID: "interruption"))
+            }
+            return
+        }
+
+        // Same reasoning as `cancelDictation`: this teardown ends the session, so
+        // the task must not report into it afterwards (#267). The `.failed` written
+        // below is this handler speaking, not the task, and is not gated.
+        sessionGeneration.abandonSession()
+        dictationTask?.cancel()
+        dictationTask = nil
+        isTranscribingInFlight = false
+        stopStageWatchdog()
+
+        bufferEnergy = []
+        bufferSeconds = 0
+        cleanupRecordingKeys()
+        endPolishHandoff(abandonedAs: "interrupted")
+
+        // updateStatus(.failed) handles both the App Group write and the Darwin
+        // statusChanged post — no manual duplication needed (issue #106 review).
+        updateStatus(.failed)
+        LiveActivityManager.shared.endDictationActivityForAudioInterruption()
+
+        if #available(iOS 14.0, *) {
+            OuisprLogger.app.warning("Dictation cancelled by audio session interruption")
+        }
+    }
+}

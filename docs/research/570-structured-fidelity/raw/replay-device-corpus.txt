@@ -59,7 +59,7 @@ floor   caught                    otherFlags    flagged outputs
 
 ━━ [D6-issues-check] 2026-09-17T14:45:48Z labels=[refusedByGuardrail]
   433→405 rejectedGuardrail recall=5/9 UNRECALLED=4 PERSON-LOST=1 negationDropped=1 inversions=0/10
-     UNRECALLED (whole 0.22, best 0.11): J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS.
+     UNRECALLED (whole 0.22, best 0.11): J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS.
      UNRECALLED (whole 0.00, best 0.00): Enfin tu regarderas dans le slide,
      UNRECALLED (whole 0.29, best 0.29): Je pense qu'on a quasiment tout noté ses retours. alors avant de checker les Avant de checker les issues,
      UNRECALLED (whole 0.33, best 0.33): Alors tu verras, il y a plusieurs postes.

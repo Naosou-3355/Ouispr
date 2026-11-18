@@ -6,10 +6,10 @@ import type { Loop, Theme } from "./theme";
 import { clamp, sm } from "./woman";
 
 // THE TEXT COMING OUT (issue #667, scenes A and B). Her phone is seen from the back, so the
-// writing the headline promises ("Parlez. Dictus écrit.") cannot be on its screen: it comes out
+// writing the headline promises ("Parlez. Ouispr écrit.") cannot be on its screen: it comes out
 // of the phone instead, onto a card that springs from the phone's edge and settles in the empty
 // part of the frame. The card evokes the apps people write in every day, as generic shapes only
-// (no second phone, no logo, no one's colours but Dictus's):
+// (no second phone, no logo, no one's colours but Ouispr's):
 // - "bubble" (scene A): a sent chat message, the accent blue with its tail, white lines of text,
 //   growing a line at a time as she talks, under a small grey message already received;
 // - "mail" (scene B): a mail draft, a small sheet with an envelope mark, a subject line, a rule,

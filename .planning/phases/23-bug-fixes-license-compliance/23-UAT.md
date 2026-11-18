@@ -17,11 +17,11 @@ expected: Type a word that gets autocorrected, then type more characters, then p
 result: pass
 
 ### 2. Licenses Screen — All Dependencies Listed
-expected: Open the app > Settings > Licenses. You should see 5 entries listed alphabetically: DeviceKit, Dictus, FluidAudio, giellakbd-ios, WhisperKit. Each shows author name and license type.
+expected: Open the app > Settings > Licenses. You should see 5 entries listed alphabetically: DeviceKit, Ouispr, FluidAudio, giellakbd-ios, WhisperKit. Each shows author name and license type.
 result: pass
 
-### 3. Dictus License URL
-expected: On the Licenses screen, tap the Dictus entry. The URL should point to github.com/getdictus/dictus-ios (not the old Pivii/dictus URL).
+### 3. Ouispr License URL
+expected: On the Licenses screen, tap the Ouispr entry. The URL should point to github.com/getdictus/dictus-ios (not the old Pivii/dictus URL).
 result: pass
 
 ### 4. FluidAudio Apache 2.0 License

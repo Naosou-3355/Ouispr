@@ -12,7 +12,7 @@ import urllib.request
 
 NORVIG_URL = "https://norvig.com/ngrams/count_1w.txt"
 TXT_FILE = "count_1w.txt"
-OUTPUT = os.path.join(os.path.dirname(__file__), "..", "DictusKeyboard", "Resources", "en_frequency.json")
+OUTPUT = os.path.join(os.path.dirname(__file__), "..", "OuisprKeyboard", "Resources", "en_frequency.json")
 
 
 def download_norvig():

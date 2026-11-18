@@ -45,12 +45,12 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/LogEvent.swift` | 5 new animation/watchdog log event cases | VERIFIED | Lines 74-78: overlayShown, overlayHidden, statusChanged, watchdogReset, rapidTapRejected with all computed properties |
-| `DictusKeyboard/KeyboardRootView.swift` | Overlay visibility includes .requested | VERIFIED | Line 72: `.requested \|\| .recording \|\| .transcribing` |
-| `DictusKeyboard/Views/RecordingOverlay.swift` | .requested visual state with flat bars and Demarrage text | VERIFIED | Lines 47-54: 3-way switch. Lines 66-98: requestedContent with BrandWaveform(energyLevels: []), "Demarrage..." |
-| `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` | Race-safe animation, .requested disable | VERIFIED | Line 100: `.disabled(!isTappable)`. Lines 196-201: animation state reset before transitions. Line 220-223: .requested = static, no animation |
-| `DictusApp/DictationCoordinator.swift` | .requested guard in startDictation, transcription watchdog | VERIFIED | Line 189: guard includes `.requested`. Lines 698-720: transcriptionWatchdog with 30s timeout |
-| `DictusKeyboard/KeyboardState.swift` | Watchdog timer + forceResetToIdle | VERIFIED | Lines 103-113: forceResetToIdle resets all state + writes App Group. Lines 119-134: watchdog timer with [weak self] |
+| `OuisprCore/Sources/OuisprCore/LogEvent.swift` | 5 new animation/watchdog log event cases | VERIFIED | Lines 74-78: overlayShown, overlayHidden, statusChanged, watchdogReset, rapidTapRejected with all computed properties |
+| `OuisprKeyboard/KeyboardRootView.swift` | Overlay visibility includes .requested | VERIFIED | Line 72: `.requested \|\| .recording \|\| .transcribing` |
+| `OuisprKeyboard/Views/RecordingOverlay.swift` | .requested visual state with flat bars and Demarrage text | VERIFIED | Lines 47-54: 3-way switch. Lines 66-98: requestedContent with BrandWaveform(energyLevels: []), "Demarrage..." |
+| `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` | Race-safe animation, .requested disable | VERIFIED | Line 100: `.disabled(!isTappable)`. Lines 196-201: animation state reset before transitions. Line 220-223: .requested = static, no animation |
+| `OuisprApp/DictationCoordinator.swift` | .requested guard in startDictation, transcription watchdog | VERIFIED | Line 189: guard includes `.requested`. Lines 698-720: transcriptionWatchdog with 30s timeout |
+| `OuisprKeyboard/KeyboardState.swift` | Watchdog timer + forceResetToIdle | VERIFIED | Lines 103-113: forceResetToIdle resets all state + writes App Group. Lines 119-134: watchdog timer with [weak self] |
 
 ### Key Link Verification
 

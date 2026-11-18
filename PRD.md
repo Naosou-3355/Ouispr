@@ -1,4 +1,4 @@
-# Dictus — Product Requirements Document
+# Ouispr — Product Requirements Document
 
 > **Version** 1.1 · Draft  
 > **Date** March 2026  
@@ -29,7 +29,7 @@
 
 ## 1. Executive Summary
 
-**Dictus** (*latin: "ce qui a été dit"*, past participle of *dicere*) is a free, open-source iOS app that enables voice dictation in any application through a custom iOS keyboard. It uses Whisper via WhisperKit for fully on-device speech recognition — no server, no account, no subscription required for the core feature.
+**Ouispr** (*latin: "ce qui a été dit"*, past participle of *dicere*) is a free, open-source iOS app that enables voice dictation in any application through a custom iOS keyboard. It uses Whisper via WhisperKit for fully on-device speech recognition — no server, no account, no subscription required for the core feature.
 
 ### The gap in the market
 
@@ -39,9 +39,9 @@
 | Super Whisper | ❌ Paid | ⚠️ Partial | ✅ | ❌ QWERTY only | ❌ |
 | WhisperBoard | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Whisper Notes | ❌ ($4.99) | ✅ | ❌ | ❌ | ❌ |
-| **Dictus** | **✅** | **✅** | **✅** | **✅** | **✅** |
+| **Ouispr** | **✅** | **✅** | **✅** | **✅** | **✅** |
 
-> **Dictus is the only iOS app that checks all five boxes.**
+> **Ouispr is the only iOS app that checks all five boxes.**
 
 ### Core philosophy
 
@@ -56,13 +56,13 @@ Two modes, clearly separated:
 
 ### 2.1 Name & origin
 
-**Dictus** — latin past participle of *dicere* = "to say". Literally: *"that which has been said"*. No existing iOS app uses this name. Available as a GitHub repo name and likely as `dictus.app`.
+**Ouispr** — latin past participle of *dicere* = "to say". Literally: *"that which has been said"*. No existing iOS app uses this name. Available as a GitHub repo name and likely as `ouispr.app`.
 
 ### 2.2 Inspiration
 
-The [Handy](https://github.com/cjpais/Handy) project is a desktop (macOS/Windows/Linux) open-source, offline speech-to-text app. Dictus draws philosophical inspiration from it but is an independent creation for iOS. Handy's MIT licence fully permits this approach.
+The [Handy](https://github.com/cjpais/Handy) project is a desktop (macOS/Windows/Linux) open-source, offline speech-to-text app. Ouispr draws philosophical inspiration from it but is an independent creation for iOS. Handy's MIT licence fully permits this approach.
 
-### 2.3 Key UX problems Dictus solves
+### 2.3 Key UX problems Ouispr solves
 
 **Problem 1 — No keyboard access after transcription (Wispr Flow)**  
 Wispr Flow's keyboard has no standard keyboard layout. After transcription, if the result is imperfect, the user must switch keyboards via the globe button to correct the text — a jarring, friction-heavy experience.
@@ -71,7 +71,7 @@ Wispr Flow's keyboard has no standard keyboard layout. After transcription, if t
 Super Whisper's keyboard is hardcoded in QWERTY. French users on AZERTY have to mentally remap every key, making quick corrections painful.
 
 **Problem 3 — No text prediction**  
-Neither Super Whisper nor Wispr Flow offer text prediction/autocorrect in their keyboard, unlike the native Apple keyboard. Dictus will include this.
+Neither Super Whisper nor Wispr Flow offer text prediction/autocorrect in their keyboard, unlike the native Apple keyboard. Ouispr will include this.
 
 **Problem 4 — No intelligent modes**  
 Existing free tools do raw transcription only. There is no open-source app that lets users define custom LLM-powered dictation modes (email, Slack, notes) with their own API key.
@@ -89,7 +89,7 @@ Existing free tools do raw transcription only. There is no open-source app that 
 
 ### 3.1 Vision
 
-Let any iOS user, French or English speaking, dictate text into any app and correct it instantly without switching keyboards, for free. Dictus Pro optionally adds AI reformatting.
+Let any iOS user, French or English speaking, dictate text into any app and correct it instantly without switching keyboards, for free. Ouispr Pro optionally adds AI reformatting.
 
 ### 3.2 V1 Success metrics
 
@@ -118,15 +118,15 @@ Let any iOS user, French or English speaking, dictate text into any app and corr
 ### 5.1 Xcode project structure
 
 ```
-Dictus/
-├── DictusApp/                    # Main app target
+Ouispr/
+├── OuisprApp/                    # Main app target
 │   ├── Onboarding/               # First-launch flow
 │   ├── Settings/                 # Model, keyboard layout, language, API keys
 │   ├── ModelManager/             # Download, select, delete Whisper models
 │   ├── ModeEditor/               # Create and edit dictation modes
 │   └── TestDictation/            # In-app dictation test screen
 │
-├── DictusKeyboard/               # Keyboard Extension target
+├── OuisprKeyboard/               # Keyboard Extension target
 │   ├── KeyboardView.swift        # SwiftUI keyboard layout (AZERTY/QWERTY)
 │   ├── MicButton.swift           # Mic button + state machine
 │   ├── TranscriptionPreview.swift# Preview area + edit zone
@@ -136,7 +136,7 @@ Dictus/
 │   ├── ModeSelector.swift        # Mode switcher UI in keyboard
 │   └── TextInserter.swift        # textDocumentProxy insertion
 │
-└── DictusCore/                   # Shared framework (App Group)
+└── OuisprCore/                   # Shared framework (App Group)
     ├── ModelStore.swift           # Model path resolution
     ├── ModeStore.swift            # Dictation modes persistence
     ├── UserPreferences.swift      # Shared UserDefaults suite
@@ -162,7 +162,7 @@ Dictus/
 ### 5.3 Key iOS constraints
 
 > ⚠️ **Extension memory limit (~50MB)**  
-> Keyboard extensions have a strict RAM limit. Medium and large Whisper models cannot be loaded directly in the extension. Dictus restricts the keyboard to tiny/base/small models. Larger models can be used via the main app's test screen only.
+> Keyboard extensions have a strict RAM limit. Medium and large Whisper models cannot be loaded directly in the extension. Ouispr restricts the keyboard to tiny/base/small models. Larger models can be used via the main app's test screen only.
 
 > ⚠️ **Full Access required**  
 > Microphone access in a keyboard extension requires `RequestsOpenAccess = true` in Info.plist. The user must enable "Allow Full Access" in iOS Settings. Onboarding guides this step explicitly.
@@ -195,7 +195,7 @@ let cleaned = FillerWordRemover.clean(result?.text ?? "")
 ### 6.1 Main App
 
 #### Onboarding (first launch)
-1. Welcome screen — concept in 3 slides (what Dictus does, why it's free, why it's private)
+1. Welcome screen — concept in 3 slides (what Ouispr does, why it's free, why it's private)
 2. Microphone permission request
 3. Keyboard layout selection: **AZERTY** (default) / QWERTY / QWERTZ
 4. Step-by-step instructions to add keyboard in iOS Settings (deep-link shortcut button)
@@ -230,7 +230,7 @@ let cleaned = FillerWordRemover.clean(result?.text ?? "")
 ### 6.2 Keyboard Extension — MVP
 
 #### Layout
-The Dictus keyboard is a full standard keyboard (AZERTY/QWERTY/QWERTZ based on settings) with an additional top row:
+The Ouispr keyboard is a full standard keyboard (AZERTY/QWERTY/QWERTZ based on settings) with an additional top row:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -250,7 +250,7 @@ The Dictus keyboard is a full standard keyboard (AZERTY/QWERTY/QWERTZ based on s
 > **Note on suggestions bar**: text prediction requires UILexicon + custom predictor. Scoped as V1+, not MVP. The keyboard layout itself ships in MVP without suggestions.
 
 #### Dictation flow (MVP)
-1. User opens any app with a text field → switches to Dictus via globe key
+1. User opens any app with a text field → switches to Ouispr via globe key
 2. Taps mic button → recording starts (visual + haptic feedback, waveform animation)
 3. User speaks in French or English (auto-detected)
 4. Taps mic again to stop → WhisperKit transcribes on-device
@@ -294,7 +294,7 @@ Exemple typique : *"j'ai un bug dans mon `useEffect`, en fait le `setState` il s
 
 Inspiré de la feature de conditionnement de modèle ajoutée par Melvynx dans son fork de Handy/Parler. Adaptée aux contraintes iOS.
 
-**Principe** : Dictus mesure la durée de l'enregistrement *avant* de lancer la transcription (l'audio est déjà bufferisé), et choisit le modèle approprié :
+**Principe** : Ouispr mesure la durée de l'enregistrement *avant* de lancer la transcription (l'audio est déjà bufferisé), et choisit le modèle approprié :
 
 ```
 durée < seuil → modèle rapide (tiny/base) = résultat quasi-instantané
@@ -318,7 +318,7 @@ durée ≥ seuil → modèle précis (small)     = meilleure résistance au code
 └──────────────────────────────────────────────────────────┘
 ```
 
-La **détection de langue explicite** est la contribution Dictus par rapport à la version Parler : si l'utilisateur a sélectionné "Français" dans les settings (pas "Auto-detect"), on force `language: "fr"` sur WhisperKit même sur les vocaux longs. Ce paramètre seul résout 90% du bug de code-switching, sans avoir besoin du modèle plus gros.
+La **détection de langue explicite** est la contribution Ouispr par rapport à la version Parler : si l'utilisateur a sélectionné "Français" dans les settings (pas "Auto-detect"), on force `language: "fr"` sur WhisperKit même sur les vocaux longs. Ce paramètre seul résout 90% du bug de code-switching, sans avoir besoin du modèle plus gros.
 
 #### Settings
 
@@ -340,7 +340,7 @@ Quand le modèle long est sélectionné automatiquement, un indicateur subtil da
 #### Implémentation Swift
 
 ```swift
-// DictusCore/ModelRoutingConfig.swift
+// OuisprCore/ModelRoutingConfig.swift
 
 struct ModelRoutingConfig: Codable {
     var isEnabled: Bool = true
@@ -349,7 +349,7 @@ struct ModelRoutingConfig: Codable {
     var accurateModel: WhisperModelSize = .small
 }
 
-// DictusKeyboard/TranscriptionEngine.swift
+// OuisprKeyboard/TranscriptionEngine.swift
 
 func resolveModel(
     audioDuration: TimeInterval,
@@ -379,7 +379,7 @@ See [Section 8 — Dictation Modes](#8-dictation-modes) for full spec.
 
 ## 8. Dictation Modes
 
-Dictus introduces a **mode system** that separates raw transcription from AI-enhanced dictation.
+Ouispr introduces a **mode system** that separates raw transcription from AI-enhanced dictation.
 
 ### 8.1 Architecture
 
@@ -454,7 +454,7 @@ Future versions will add:
 
 ## 9. Design — Liquid Glass
 
-Dictus fully embraces **iOS 26 Liquid Glass** — Apple's new design language — to deliver a native, premium feel without a price tag.
+Ouispr fully embraces **iOS 26 Liquid Glass** — Apple's new design language — to deliver a native, premium feel without a price tag.
 
 ### 9.1 Design principles
 
@@ -574,7 +574,7 @@ Dictus fully embraces **iOS 26 Liquid Glass** — Apple's new design language �
 > ⚠️ **App Store Review**: keyboard extensions requesting microphone + network access need clear review notes. Emphasize that STT is 100% on-device, and network calls only happen when the user explicitly configures an API key and selects a smart mode.
 
 ### GitHub
-- Public repo under MIT licence (`github.com/[username]/dictus`)
+- Public repo under MIT licence (`github.com/[username]/ouispr`)
 - README with setup instructions, architecture overview, contribution guide
 - `CONTRIBUTING.md` with development guide
 - GitHub Actions: automated TestFlight builds on merge to `main`
@@ -592,7 +592,7 @@ Dictus fully embraces **iOS 26 Liquid Glass** — Apple's new design language �
 | Text prediction complexity exceeds estimates | High | Scoped as V1+ not MVP — ship without suggestions first |
 | OpenAI API latency in keyboard extension | Low | Show loading state in mode pill, set 10s timeout with fallback to raw STT |
 | WhisperKit breaking API changes | Low | Pin version in Package.swift, test updates on separate branch |
-| Name conflict or trademark issue | Very low | "Dictus" is a latin word, verify trademark search before App Store submission |
+| Name conflict or trademark issue | Very low | "Ouispr" is a latin word, verify trademark search before App Store submission |
 
 ---
 
@@ -609,4 +609,4 @@ Dictus fully embraces **iOS 26 Liquid Glass** — Apple's new design language �
 
 ---
 
-*Dictus PRD v1.1 — PIVI Solutions — 2026*
+*Ouispr PRD v1.1 — PIVI Solutions — 2026*

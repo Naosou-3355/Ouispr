@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-À chaque apparition du clavier Dictus, `inputView.bounds` est forcé à **504pt** par iOS pendant ~500ms avant de retomber à 276pt. Cause : iOS impose `UIView-Encapsulated-Layout-Height` à priorité **1000** sur tout view assigné à `self.inputView` pendant l'animation d'entrée. Aucune contrainte 999 ne peut gagner contre 1000.
+À chaque apparition du clavier Ouispr, `inputView.bounds` est forcé à **504pt** par iOS pendant ~500ms avant de retomber à 276pt. Cause : iOS impose `UIView-Encapsulated-Layout-Height` à priorité **1000** sur tout view assigné à `self.inputView` pendant l'animation d'entrée. Aucune contrainte 999 ne peut gagner contre 1000.
 
 L'upstream giellakbd-ios n'a PAS ce bug parce qu'il :
 1. N'assigne **jamais** `self.inputView` (utilise `self.view` directement, qui n'est pas décoré par cette contrainte 1000)
@@ -12,7 +12,7 @@ L'upstream giellakbd-ios n'a PAS ce bug parce qu'il :
 
 - iPhone 17 Pro / iOS 26.3.1
 - TestFlight build 13 (commit `49e23d7@develop`)
-- Captures et logs : `/Users/pierreviviere/Downloads/dictus-logs 12.txt`, `dictus-logs 13.txt`, screenshots du 2026-04-29 09:03 et 09:53
+- Captures et logs : `/Users/pierreviviere/Downloads/ouispr-logs 12.txt`, `ouispr-logs 13.txt`, screenshots du 2026-04-29 09:03 et 09:53
 - Reproduction la plus dramatique : pull-down Spotlight depuis l'écran d'accueil
 
 ## Logs caractéristiques (build 14, après tentative self-sizing)
@@ -139,9 +139,9 @@ Sur device, après modif :
 
 ## Fichiers de référence
 
-### Côté Dictus (à modifier)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardViewController.swift`
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/InputView.swift`
+### Côté Ouispr (à modifier)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardViewController.swift`
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/InputView.swift`
 
 ### Côté upstream (référence)
 - `/Users/pierreviviere/dev/giellakbd-ios/Keyboard/Controllers/KeyboardViewController.swift` (lignes 98-110, 262-274, 361-368)

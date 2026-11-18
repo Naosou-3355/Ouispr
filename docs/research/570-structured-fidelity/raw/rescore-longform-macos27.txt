@@ -25,21 +25,21 @@ rescored: 54 stored runs from ../docs/research/570-structured-fidelity/capture-l
   1159→1170 6349ms success recall=10/10 dispersed=1 PERSON-LOST=1 negationDropped=1 inversions=3/36
      NEGATIONDROPPED: Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
        → Je vais quand même faire un sixième test parce que les autres,
-     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
+     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
        → ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
 
 ━━ [shipping] 6-unscripted#2
   1159→1180 6335ms success recall=10/10 dispersed=1 PERSON-LOST=1 negationDropped=1 inversions=3/36
      NEGATIONDROPPED: Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
        → Je vais quand même faire un sixième test parce que les autres,
-     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
+     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
        → ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
 
 ━━ [shipping] 6-unscripted#3
   1159→1167 6368ms success recall=10/10 dispersed=1 PERSON-LOST=1 negationDropped=1 inversions=3/36
      NEGATIONDROPPED: Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
        → Je vais quand même faire un sixième test parce que les autres,
-     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
+     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
        → ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
 
 ━━ [V1-rule7-property] 5-rambling#1
@@ -93,7 +93,7 @@ rescored: 54 stored runs from ../docs/research/570-structured-fidelity/capture-l
 
 ━━ [V2-fidelity] 6-unscripted#2
   1159→1275 6997ms success recall=10/10 PERSON-LOST=1 inversions=3/45 SPEAKER-STATE-FABRICATED(closing)
-     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
+     PERSONLOST: L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
        → l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
 
 

@@ -6,9 +6,9 @@
 
 ## Summary
 
-Phase 27 addresses three bugs filed by beta testers: a SIGABRT crash when starting dictation during a phone call (#71), AirPods/media playback interference from Dictus holding the audio session active (#72), and N-gram autocorrection incorrectly replacing numeric tokens (#74).
+Phase 27 addresses three bugs filed by beta testers: a SIGABRT crash when starting dictation during a phone call (#71), AirPods/media playback interference from Ouispr holding the audio session active (#72), and N-gram autocorrection incorrectly replacing numeric tokens (#74).
 
-Issue #71 is a crash caused by an uncatchable Objective-C NSException thrown by `AVAudioNode.installTapOnBus` when the system owns the audio hardware during a phone call. The fix is prevention via `CXCallObserver` (CallKit), which requires no user permission and detects all call types. Issue #72 stems from Dictus keeping `AVAudioEngine` running continuously with `.playAndRecord` category, making iOS treat it as the "now playing" app and routing AirPods controls to it. The fix involves switching to `.ambient` or deactivating the session when idle, while preserving low-latency recording readiness. Issue #74 is a simple guard: tokens containing digits should never be autocorrected.
+Issue #71 is a crash caused by an uncatchable Objective-C NSException thrown by `AVAudioNode.installTapOnBus` when the system owns the audio hardware during a phone call. The fix is prevention via `CXCallObserver` (CallKit), which requires no user permission and detects all call types. Issue #72 stems from Ouispr keeping `AVAudioEngine` running continuously with `.playAndRecord` category, making iOS treat it as the "now playing" app and routing AirPods controls to it. The fix involves switching to `.ambient` or deactivating the session when idle, while preserving low-latency recording readiness. Issue #74 is a simple guard: tokens containing digits should never be autocorrected.
 
 **Primary recommendation:** Implement a `CallStateMonitor` using `CXCallObserver`, add an idle/recording audio session lifecycle (deactivate or switch to `.ambient` when not recording), and add a numeric token guard in `handleSpace()` and `SuggestionState.update()`.
 
@@ -17,7 +17,7 @@ Issue #71 is a crash caused by an uncatchable Objective-C NSException thrown by 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
 | BUG-71 | Prevent SIGABRT crash when starting dictation during phone call | CXCallObserver call detection + user-facing message in overlay |
-| BUG-72 | Stop AirPods/media interference when Dictus is idle | Audio session lifecycle: deactivate or switch category when not recording |
+| BUG-72 | Stop AirPods/media interference when Ouispr is idle | Audio session lifecycle: deactivate or switch category when not recording |
 | BUG-74 | Do not autocorrect tokens containing digits | Numeric guard in handleSpace() and SuggestionState update paths |
 
 ## Standard Stack
@@ -56,17 +56,17 @@ DictationCoordinator.startDictation()
 **Key implementation detail:** `CXCallObserver.calls` gives the current list of `CXCall` objects. A call is active when `hasConnected == true` or when `!hasEnded` (covers connecting state too). The delegate method `callObserver(_:callChanged:)` fires on state changes, allowing automatic recovery.
 
 **Files to modify:**
-- NEW: `DictusApp/Audio/CallStateMonitor.swift`
-- EDIT: `DictusApp/DictationCoordinator.swift` (add guard in `startDictation()`)
+- NEW: `OuisprApp/Audio/CallStateMonitor.swift`
+- EDIT: `OuisprApp/DictationCoordinator.swift` (add guard in `startDictation()`)
 - EDIT: Keyboard overlay to display the call-active message
 
 ### Bug #72: Audio Session Idle Lifecycle
 
 **Pattern: Dynamic Session Activation**
 
-Current behavior: engine runs continuously with `.playAndRecord` + `setActive(true)`. This makes iOS treat Dictus as the "now playing" app, routing AirPods play/pause to Dictus.
+Current behavior: engine runs continuously with `.playAndRecord` + `setActive(true)`. This makes iOS treat Ouispr as the "now playing" app, routing AirPods play/pause to Ouispr.
 
-**The trade-off:** Dictus keeps the engine alive for two reasons:
+**The trade-off:** Ouispr keeps the engine alive for two reasons:
 1. Instant recording (no cold start latency)
 2. Background survival via `UIBackgroundModes:audio`
 
@@ -78,7 +78,7 @@ Current behavior: engine runs continuously with `.playAndRecord` + `setActive(tr
 
 **Why this works:**
 - `.notifyOthersOnDeactivation` tells other apps (Spotify, YouTube) to resume playback
-- Switching to `.ambient` or deactivating entirely removes Dictus from "now playing"
+- Switching to `.ambient` or deactivating entirely removes Ouispr from "now playing"
 - AirPods remote controls return to the last media app
 
 **Important: Background survival impact.** Stopping the engine means iOS may suspend the app. Two mitigations:
@@ -86,8 +86,8 @@ Current behavior: engine runs continuously with `.playAndRecord` + `setActive(tr
 - Accept 100-200ms re-activation cost on next recording (users expect a brief tap-to-record delay)
 
 **Files to modify:**
-- EDIT: `DictusApp/Audio/UnifiedAudioEngine.swift` (add `deactivateAndIdle()` method)
-- EDIT: `DictusApp/DictationCoordinator.swift` (call deactivate after recording completes/cancels)
+- EDIT: `OuisprApp/Audio/UnifiedAudioEngine.swift` (add `deactivateAndIdle()` method)
+- EDIT: `OuisprApp/DictationCoordinator.swift` (call deactivate after recording completes/cancels)
 
 **Alternative considered:** Keep engine running but switch to `.ambient` category only. This is simpler but `.ambient` doesn't support input, so `installTap` might fail. Stopping the engine entirely is safer.
 
@@ -97,7 +97,7 @@ Current behavior: engine runs continuously with `.playAndRecord` + `setActive(tr
 
 The fix is a simple guard at two locations where autocorrect fires:
 
-1. `DictusKeyboardBridge.handleSpace()` line ~359: before `performSpellCheck`, skip if `freshWord` contains any digit
+1. `OuisprKeyboardBridge.handleSpace()` line ~359: before `performSpellCheck`, skip if `freshWord` contains any digit
 2. `SuggestionState.update()` / `updateAsync()`: before spell check, skip if partial word contains digits
 
 ```swift
@@ -109,18 +109,18 @@ if containsDigit { /* skip spell check, proceed to normal space */ }
 **Why `CharacterSet.decimalDigits`:** Covers all Unicode digits (0-9 plus other scripts), not just ASCII 0-9. Safer for international input.
 
 **Files to modify:**
-- EDIT: `DictusKeyboard/DictusKeyboardBridge.swift` (handleSpace)
-- EDIT: `DictusKeyboard/TextPrediction/SuggestionState.swift` (update, updateAsync)
+- EDIT: `OuisprKeyboard/OuisprKeyboardBridge.swift` (handleSpace)
+- EDIT: `OuisprKeyboard/TextPrediction/SuggestionState.swift` (update, updateAsync)
 
 ### Recommended File Change Summary
 
 | File | Bug | Change |
 |------|-----|--------|
-| NEW `DictusApp/Audio/CallStateMonitor.swift` | #71 | CXCallObserver wrapper |
-| `DictusApp/DictationCoordinator.swift` | #71, #72 | Call guard + session deactivation after recording |
-| `DictusApp/Audio/UnifiedAudioEngine.swift` | #72 | Add idle deactivation method |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | #74 | Numeric guard in handleSpace |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | #74 | Numeric guard in update/updateAsync |
+| NEW `OuisprApp/Audio/CallStateMonitor.swift` | #71 | CXCallObserver wrapper |
+| `OuisprApp/DictationCoordinator.swift` | #71, #72 | Call guard + session deactivation after recording |
+| `OuisprApp/Audio/UnifiedAudioEngine.swift` | #72 | Add idle deactivation method |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | #74 | Numeric guard in handleSpace |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | #74 | Numeric guard in update/updateAsync |
 
 ## Don't Hand-Roll
 
@@ -143,7 +143,7 @@ if containsDigit { /* skip spell check, proceed to normal space */ }
 **How to avoid:** Always stop the engine before changing category. Sequence: engine.stop() -> removeTap -> setCategory -> setActive -> installTap -> engine.start().
 
 ### Pitfall 3: notifyOthersOnDeactivation timing
-**What goes wrong:** Other apps don't resume playback after Dictus deactivates its session.
+**What goes wrong:** Other apps don't resume playback after Ouispr deactivates its session.
 **Why it happens:** `.notifyOthersOnDeactivation` only works when passed to `setActive(false, ...)`. Some apps don't observe the notification properly.
 **How to avoid:** Always pass the option when deactivating. This is already done in `deactivateSession()`.
 
@@ -254,26 +254,26 @@ guard !containsDigit else {
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | XCTest (Swift Package Manager tests for DictusCore) |
-| Config file | DictusCore/Package.swift |
-| Quick run command | `cd DictusCore && swift test` |
-| Full suite command | `cd DictusCore && swift test` |
+| Framework | XCTest (Swift Package Manager tests for OuisprCore) |
+| Config file | OuisprCore/Package.swift |
+| Quick run command | `cd OuisprCore && swift test` |
+| Full suite command | `cd OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | BUG-71 | Block recording during call | manual-only | N/A -- requires phone call on device | N/A |
 | BUG-72 | No media interference when idle | manual-only | N/A -- requires AirPods + media app on device | N/A |
-| BUG-74 | Numeric tokens skip autocorrect | unit | `cd DictusCore && swift test` | No -- Wave 0 |
+| BUG-74 | Numeric tokens skip autocorrect | unit | `cd OuisprCore && swift test` | No -- Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** `cd DictusCore && swift test`
-- **Per wave merge:** `cd DictusCore && swift test` + manual device test for audio bugs
+- **Per task commit:** `cd OuisprCore && swift test`
+- **Per wave merge:** `cd OuisprCore && swift test` + manual device test for audio bugs
 - **Phase gate:** Manual verification on physical device (AirPods + phone call)
 
 ### Wave 0 Gaps
 - [ ] BUG-71 and BUG-72 are manual-only (AVAudioSession + CallKit require real device)
-- [ ] BUG-74 could have a unit test if the numeric guard logic is extracted to a testable function, but the current code is in the keyboard extension (not testable via SPM). Consider extracting the guard to DictusCore for testability.
+- [ ] BUG-74 could have a unit test if the numeric guard logic is extracted to a testable function, but the current code is in the keyboard extension (not testable via SPM). Consider extracting the guard to OuisprCore for testability.
 
 ## Sources
 
@@ -281,7 +281,7 @@ guard !containsDigit else {
 - GitHub Issue #71 -- SIGABRT crash stack trace, CXCallObserver proposed fix
 - GitHub Issue #72 -- AirPods hijack symptoms, session lifecycle analysis
 - GitHub Issue #74 -- Numeric token autocorrection bug, reproduction steps
-- Codebase: `UnifiedAudioEngine.swift`, `DictationCoordinator.swift`, `DictusKeyboardBridge.swift`, `SuggestionState.swift`, `TextPredictionEngine.swift`
+- Codebase: `UnifiedAudioEngine.swift`, `DictationCoordinator.swift`, `OuisprKeyboardBridge.swift`, `SuggestionState.swift`, `TextPredictionEngine.swift`
 - [Apple CXCallObserver documentation](https://developer.apple.com/documentation/callkit/cxcallobserver)
 - [Apple AVAudioSession interruption handling](https://developer.apple.com/documentation/avfaudio/avaudiosession/responding_to_audio_session_interruptions)
 

@@ -25,11 +25,11 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/LogEvent.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/Views/RecordingOverlay.swift
-    - DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift
-    - DictusApp/DictationCoordinator.swift
+    - OuisprCore/Sources/OuisprCore/LogEvent.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
+    - OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift
+    - OuisprApp/DictationCoordinator.swift
 
 key-decisions:
   - "Replace asyncAfter with withAnimation for success flash to eliminate timer race condition"
@@ -73,11 +73,11 @@ Each task was committed atomically:
 2. **Task 2: Fix AnimatedMicButton race conditions and DictationCoordinator .requested guard** - `d990bc5` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/LogEvent.swift` - 5 new animation/watchdog log event cases with all computed properties
-- `DictusKeyboard/KeyboardRootView.swift` - Overlay visibility includes .requested, onChange logger for transitions
-- `DictusKeyboard/Views/RecordingOverlay.swift` - Refactored to accept dictationStatus with 3-way switch for visual states
-- `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` - Race-safe animation transitions, .requested disable, rapid tap rejection
-- `DictusApp/DictationCoordinator.swift` - startDictation guard accepts .requested, status transition logging
+- `OuisprCore/Sources/OuisprCore/LogEvent.swift` - 5 new animation/watchdog log event cases with all computed properties
+- `OuisprKeyboard/KeyboardRootView.swift` - Overlay visibility includes .requested, onChange logger for transitions
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - Refactored to accept dictationStatus with 3-way switch for visual states
+- `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` - Race-safe animation transitions, .requested disable, rapid tap rejection
+- `OuisprApp/DictationCoordinator.swift` - startDictation guard accepts .requested, status transition logging
 
 ## Decisions Made
 - Replaced asyncAfter with withAnimation for the success flash transition (SwiftUI animates the boolean change over 0.3s, no timer needed)

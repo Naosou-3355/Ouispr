@@ -4,13 +4,13 @@
 //
 // The measurement is only worth taking on the real prompt. #268 asks for
 // "the real `PolishNaturalPromptFR` system message plus the `3-long` fixture —
-// 1,704 tokens of prefill", and every byte of that is reachable from DictusCore
+// 1,704 tokens of prefill", and every byte of that is reachable from OuisprCore
 // rather than transcribed here: the instructions through the one entry point
 // both shipping engines use, the fixture from a copy of the harness fixture
 // file, and the pre-pass because that is what runs before the engine sees the
 // text.
 import Foundation
-import DictusCore
+import OuisprCore
 
 public struct PolishPrompt: Sendable {
     /// Resolved per-(mode, language) instructions — the system message.

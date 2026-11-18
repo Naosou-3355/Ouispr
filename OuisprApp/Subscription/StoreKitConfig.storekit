@@ -1,0 +1,106 @@
+{
+  "identifier" : "D1C7052A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "149.99",
+      "familyShareable" : false,
+      "internalID" : "D1C7B003",
+      "localizations" : [
+        {
+          "description" : "The lifetime purchase covers every current and future Pro feature that runs on your device or on a server you provide. Any feature relying on Ouispr infrastructure is a separate offering.",
+          "displayName" : "Ouispr Pro Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "solutions.pivi.ouispr.pro.lifetime2",
+      "referenceName" : "Ouispr Pro Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "fr_FR",
+    "_storefront" : "FRA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "D1C70A01",
+      "localizations" : [
+        {
+          "description" : "Unlock Smart Mode, History, and Vocabulary",
+          "displayName" : "Ouispr Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Ouispr Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "D1C7B001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock Smart Mode, History, and Vocabulary",
+              "displayName" : "Ouispr Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "solutions.pivi.ouispr.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Ouispr Pro Monthly",
+          "subscriptionGroupID" : "D1C70A01",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "D1C7B002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock Smart Mode, History, and Vocabulary",
+              "displayName" : "Ouispr Pro Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "solutions.pivi.ouispr.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Ouispr Pro Yearly",
+          "subscriptionGroupID" : "D1C70A01",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

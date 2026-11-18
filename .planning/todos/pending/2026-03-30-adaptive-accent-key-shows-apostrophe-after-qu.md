@@ -3,8 +3,8 @@ created: 2026-03-30T08:10:44.154Z
 title: Adaptive accent key shows apostrophe after "qu"
 area: ui
 files:
-  - DictusKeyboard/DictusKeyboardBridge.swift
-  - DictusKeyboard/FrenchKeyboardLayouts.swift
+  - OuisprKeyboard/OuisprKeyboardBridge.swift
+  - OuisprKeyboard/FrenchKeyboardLayouts.swift
 ---
 
 ## Problem
@@ -15,4 +15,4 @@ User feedback during Phase 19 UAT: after typing "qu", the accent key should prop
 
 ## Solution
 
-In the adaptive accent key logic (handleAdaptiveAccentKey / updateAccentKeyDisplay in DictusKeyboardBridge), add a special case: if the last two characters are "qu" (case-insensitive), show apostrophe instead of the vowel accent. This requires checking `lastInsertedCharacter` plus the character before it (or tracking a 2-char buffer).
+In the adaptive accent key logic (handleAdaptiveAccentKey / updateAccentKeyDisplay in OuisprKeyboardBridge), add a special case: if the last two characters are "qu" (case-insensitive), show apostrophe instead of the vowel accent. This requires checking `lastInsertedCharacter` plus the character before it (or tracking a 2-char buffer).

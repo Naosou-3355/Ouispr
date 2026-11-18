@@ -18,7 +18,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Onboarding/MicPermissionPage.swift
+    - OuisprApp/Onboarding/MicPermissionPage.swift
 
 key-decisions:
   - "Also fixed 'autorise' -> 'autorise' on line 48 (Rule 2 - missing accent on same file)"
@@ -55,7 +55,7 @@ Each task was committed atomically:
 1. **Task 1: Fix unaccented French strings in MicPermissionPage.swift** - `7aecf8a` (fix)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/MicPermissionPage.swift` - Corrected French accents on "Reglages" and "autorise"
+- `OuisprApp/Onboarding/MicPermissionPage.swift` - Corrected French accents on "Reglages" and "autorise"
 
 ## Decisions Made
 None - followed plan as specified for the primary fix.
@@ -68,7 +68,7 @@ None - followed plan as specified for the primary fix.
 - **Found during:** Task 1 (Fix unaccented strings)
 - **Issue:** "Microphone autorise" was missing accent on past participle -- should be "autorise" with acute accent
 - **Fix:** Changed "autorise" to "autorise" in the Label text
-- **Files modified:** DictusApp/Onboarding/MicPermissionPage.swift
+- **Files modified:** OuisprApp/Onboarding/MicPermissionPage.swift
 - **Verification:** grep confirmed correct accent present
 - **Committed in:** 7aecf8a (Task 1 commit)
 

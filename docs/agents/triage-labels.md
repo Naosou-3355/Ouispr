@@ -10,7 +10,7 @@ Every open issue must carry exactly one state label after the governance rollout
 | --- | --- | --- |
 | `needs-triage` | `needs-triage` | Maintainer needs to evaluate this issue |
 | `needs-info` | `needs-info` | Waiting on factual evidence from the reporter or another external source |
-| Dictus extension | `needs-decision` | Waiting on a product, UX, scope, release or risk decision from Pierre |
+| Ouispr extension | `needs-decision` | Waiting on a product, UX, scope, release or risk decision from Pierre |
 | `ready-for-agent` | `ready-for-agent` | Fully specified and executable by an agent, but not necessarily scheduled |
 | `ready-for-human` | `ready-for-human` | Fully specified, but the work itself requires human access or action |
 | `wontfix` | `wontfix` | Will not be actioned |

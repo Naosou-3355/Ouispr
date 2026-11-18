@@ -19,16 +19,16 @@ created: 2026-03-07
 |----------|-------|
 | **Framework** | Manual validation + build verification (no automated test framework configured) |
 | **Config file** | none |
-| **Quick run command** | `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet` |
-| **Full suite command** | `xcodebuild build -scheme DictusApp -quiet && xcodebuild build -scheme DictusKeyboard -quiet` |
+| **Quick run command** | `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet` |
+| **Full suite command** | `xcodebuild build -scheme OuisprApp -quiet && xcodebuild build -scheme OuisprKeyboard -quiet` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
-- **After every plan wave:** Run `xcodebuild build -scheme DictusApp -quiet && xcodebuild build -scheme DictusKeyboard -quiet`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
+- **After every plan wave:** Run `xcodebuild build -scheme OuisprApp -quiet && xcodebuild build -scheme OuisprKeyboard -quiet`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
@@ -38,9 +38,9 @@ created: 2026-03-07
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 06-01-xx | 01 | 1 | INFRA-01 | build | `xcodebuild build -scheme DictusApp -quiet && xcodebuild build -scheme DictusKeyboard -quiet` | N/A | pending |
+| 06-01-xx | 01 | 1 | INFRA-01 | build | `xcodebuild build -scheme OuisprApp -quiet && xcodebuild build -scheme OuisprKeyboard -quiet` | N/A | pending |
 | 06-02-xx | 02 | 1 | INFRA-02 | manual | Launch in simulator, check home screen icon | N/A | pending |
-| 06-03-xx | 03 | 2 | VIS-06 | build | `xcodebuild build -scheme DictusApp -quiet` | N/A | pending |
+| 06-03-xx | 03 | 2 | VIS-06 | build | `xcodebuild build -scheme OuisprApp -quiet` | N/A | pending |
 | 06-03-xx | 03 | 2 | VIS-07 | manual | Complete onboarding, verify HomeView model card | N/A | pending |
 | 06-04-xx | 04 | 2 | VIS-08 | manual | Try swiping past incomplete onboarding step | N/A | pending |
 | 06-05-xx | 05 | 2 | VIS-04, VIS-05 | manual | Navigate to test recording, verify layout + stop transition | N/A | pending |

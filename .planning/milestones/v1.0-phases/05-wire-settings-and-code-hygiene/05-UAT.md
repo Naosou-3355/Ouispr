@@ -13,9 +13,9 @@ updated: 2026-03-07T12:00:00Z
 ## Tests
 
 ### 1. Key Tap Haptics
-expected: Open Dictus keyboard in any app. Tap several letter keys. You should feel a light haptic tap on each key press.
+expected: Open Ouispr keyboard in any app. Tap several letter keys. You should feel a light haptic tap on each key press.
 result: issue → FIXED
-reported: "Haptics broke system-wide when DictusApp launched. AVAudioSession blocked Taptic Engine."
+reported: "Haptics broke system-wide when OuisprApp launched. AVAudioSession blocked Taptic Engine."
 severity: blocker
 fix: "Added setAllowHapticsAndSystemSoundsDuringRecording(true) after each startRecordingLive() call + aligned session options with WhisperKit"
 
@@ -27,25 +27,25 @@ severity: blocker
 fix: "Same fix as Test 1"
 
 ### 3. Haptics Toggle Off
-expected: Open Dictus app > Settings. Toggle "Haptics" OFF. Go back to keyboard and tap keys. You should feel NO haptic feedback on key presses.
+expected: Open Ouispr app > Settings. Toggle "Haptics" OFF. Go back to keyboard and tap keys. You should feel NO haptic feedback on key presses.
 result: issue → FIXED
 reported: "Toggle disabled haptics system-wide, required reboot"
 severity: blocker
 fix: "Same fix as Test 1 — setAllowHapticsAndSystemSoundsDuringRecording prevents Taptic Engine jam"
 
 ### 4. Language Setting Wired
-expected: Open Dictus app > Settings. Change the language setting (e.g. from French to English). Start a new dictation. The transcription should use the newly selected language for recognition.
+expected: Open Ouispr app > Settings. Change the language setting (e.g. from French to English). Start a new dictation. The transcription should use the newly selected language for recognition.
 result: pass
 
 ### 5. Filler Words Toggle Off
-expected: Open Dictus app > Settings. Toggle "Filler Words" OFF. Dictate something with natural filler words (e.g. "euh", "hum"). The transcription should keep filler words as-is (no filtering). Toggle back ON and dictate again - filler words should be removed from output.
+expected: Open Ouispr app > Settings. Toggle "Filler Words" OFF. Dictate something with natural filler words (e.g. "euh", "hum"). The transcription should keep filler words as-is (no filtering). Toggle back ON and dictate again - filler words should be removed from output.
 result: issue (deferred)
 reported: "Filler words always filtered regardless of toggle. Whisper model likely removes them natively."
 severity: minor
 fix: "Deferred to next milestone — investigate if model removes fillers natively, if so remove toggle"
 
 ### 6. Accent Popup Brand Color
-expected: Long-press a letter with accents on Dictus keyboard. The accent popup highlight/selection color should be the brand blue (#3D7EFF), not a plain default blue.
+expected: Long-press a letter with accents on Ouispr keyboard. The accent popup highlight/selection color should be the brand blue (#3D7EFF), not a plain default blue.
 result: pass
 
 ### 7. BrandWaveform Consistency
@@ -70,7 +70,7 @@ skipped: 0
   test: 5
   root_cause: "Model-level filtering makes FillerWordFilter redundant"
   artifacts:
-    - path: "DictusApp/Audio/TranscriptionService.swift"
+    - path: "OuisprApp/Audio/TranscriptionService.swift"
       issue: "FillerWordFilter redundant if model removes fillers natively"
   missing:
     - "Investigate if Whisper model removes fillers natively"

@@ -23,8 +23,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/RecordingOverlay.swift
-    - DictusKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
+    - OuisprKeyboard/KeyboardRootView.swift
 
 key-decisions:
   - "Used HapticFeedback.recordingStopped() (light impact) for both cancel and stop buttons -- consistent with dismiss semantics"
@@ -67,8 +67,8 @@ Each task was committed atomically:
 2. **Task 2: Overlay transition animation** - `e05a413` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/RecordingOverlay.swift` - 44pt PillButton, haptic feedback, waveform logging, accent fix
-- `DictusKeyboard/KeyboardRootView.swift` - showsOverlay property, .transition(), .animation(.easeOut)
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - 44pt PillButton, haptic feedback, waveform logging, accent fix
+- `OuisprKeyboard/KeyboardRootView.swift` - showsOverlay property, .transition(), .animation(.easeOut)
 
 ## Decisions Made
 - Used HapticFeedback.recordingStopped() (light impact) for both cancel and stop -- consistent dismiss semantics
@@ -80,7 +80,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- Pre-existing build errors in DictusApp (ModelManagerView.swift, TestRecordingPage.swift) -- unrelated to DictusKeyboard changes. Logged to deferred-items.md.
+- Pre-existing build errors in OuisprApp (ModelManagerView.swift, TestRecordingPage.swift) -- unrelated to OuisprKeyboard changes. Logged to deferred-items.md.
 
 ## User Setup Required
 

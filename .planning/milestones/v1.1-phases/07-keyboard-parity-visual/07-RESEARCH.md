@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 7 brings the Dictus keyboard to parity with Apple's native French AZERTY keyboard across six interaction dimensions (trackpad cursor, adaptive accents, universal haptics, emoji/globe cleanup, dictation mic removal, performance) and three visual polish items (mic pill, recording pills, waveform rework). The codebase is well-structured for these changes -- KeyDefinition/KeyType enum, KeyboardLayout static arrays, and SpecialKeyButton views provide clean extension points.
+Phase 7 brings the Ouispr keyboard to parity with Apple's native French AZERTY keyboard across six interaction dimensions (trackpad cursor, adaptive accents, universal haptics, emoji/globe cleanup, dictation mic removal, performance) and three visual polish items (mic pill, recording pills, waveform rework). The codebase is well-structured for these changes -- KeyDefinition/KeyType enum, KeyboardLayout static arrays, and SpecialKeyButton views provide clean extension points.
 
 The primary technical risks are: (1) performance optimization requiring real-device profiling (not simulatable), (2) the key popup clipping issue which is a known iOS keyboard extension limitation with no guaranteed clean solution, and (3) the Apple dictation mic removal which has no documented public API for suppression from within a keyboard extension.
 
@@ -27,7 +27,7 @@ The primary technical risks are: (1) performance optimization requiring real-dev
 - Waveform (VIS-03): perfectly still at zero energy, reuse BrandWaveform sinusoidal processing, target 60fps via TimelineView + Canvas
 - Key popup clipping fix: top row popups clipped by container bounds -- fix via clipsToBounds or higher z-level
 - Keyboard height: dynamic per device (Apple varies: ~216pt SE, ~226pt standard, ~271pt Plus/Max)
-- Full Access banner fix: "Activer" button opens dictus:// URL scheme instead of app-settings:
+- Full Access banner fix: "Activer" button opens ouispr:// URL scheme instead of app-settings:
 
 ### Claude's Discretion
 - Recording pill button colors (may differ from mic pill to indicate different functions)
@@ -65,7 +65,7 @@ The primary technical risks are: (1) performance optimization requiring real-dev
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 16+ | All keyboard UI, Canvas, TimelineView | Framework requirement |
 | UIKit | iOS 16+ | UIImpactFeedbackGenerator, UIInputViewController, textDocumentProxy | Keyboard extension APIs |
-| DictusCore | local | HapticFeedback, AccentedCharacters, design tokens, GlassModifier | Shared framework |
+| OuisprCore | local | HapticFeedback, AccentedCharacters, design tokens, GlassModifier | Shared framework |
 
 ### No Additional Libraries Needed
 This phase is purely SwiftUI/UIKit API work. No new SPM dependencies required.
@@ -75,7 +75,7 @@ This phase is purely SwiftUI/UIKit API work. No new SPM dependencies required.
 ### Recommended Modifications
 
 ```
-DictusKeyboard/
+OuisprKeyboard/
   Models/
     KeyDefinition.swift      # Add .emoji, .accentAdaptive KeyType cases
     KeyboardLayout.swift     # Row 3: insert accent key (AZERTY only), Row 4: emoji replaces globe
@@ -89,8 +89,8 @@ DictusKeyboard/
   KeyboardRootView.swift     # Fix FullAccessBanner URL
   KeyboardViewController.swift  # Dynamic height, clipsToBounds fix attempt
 
-DictusCore/
-  Sources/DictusCore/
+OuisprCore/
+  Sources/OuisprCore/
     HapticFeedback.swift     # Pre-allocated generators for performance
     AccentedCharacters.swift # Add adaptive context logic (vowel -> accent mapping)
     Design/
@@ -279,7 +279,7 @@ extension AccentedCharacters {
 | Keyboard switching | Custom emoji picker view | advanceToNextInputMode() | Memory unsafe (emoji glyph cache), system handles it |
 | Cursor movement | Custom text position tracking | textDocumentProxy.adjustTextPosition(byCharacterOffset:) | Only API that works across all host apps |
 | Haptic feedback engine | Custom Core Haptics pattern | UIImpactFeedbackGenerator (pre-allocated) | Simpler API, lower overhead for keyboard use case |
-| Glass effect | Custom blur/material | .dictusGlass() / GlassModifier | Already built, iOS 26 ready |
+| Glass effect | Custom blur/material | .ouisprGlass() / GlassModifier | Already built, iOS 26 ready |
 
 **Key insight:** Keyboard extensions have a very constrained environment (~50MB memory, no UIApplication.shared, limited RunLoop). Every custom solution adds memory and CPU overhead. Use system APIs wherever possible.
 
@@ -318,7 +318,7 @@ extension AccentedCharacters {
 ### Pitfall 6: Apple Dictation Mic Cannot Be Removed
 **What goes wrong:** The system-provided dictation microphone icon below the keyboard cannot be removed by a third-party keyboard extension.
 **Why it happens:** This is a system-level UI element controlled by iOS, not by the keyboard extension. There is no documented Info.plist key or API to suppress it.
-**How to avoid:** Accept this limitation. The user can disable dictation system-wide in Settings > General > Keyboard > Enable Dictation. Document this as a known iOS limitation. Our own mic button in the toolbar serves as the Dictus dictation trigger.
+**How to avoid:** Accept this limitation. The user can disable dictation system-wide in Settings > General > Keyboard > Enable Dictation. Document this as a known iOS limitation. Our own mic button in the toolbar serves as the Ouispr dictation trigger.
 **Warning signs:** Searching for undocumented APIs or private keys that could break in future iOS updates.
 
 ## Code Examples
@@ -379,7 +379,7 @@ struct PillButton: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(color)
                 .frame(width: 56, height: 36)
-                .dictusGlass(in: Capsule())
+                .ouisprGlass(in: Capsule())
         }
         .buttonStyle(GlassPressStyle())
     }
@@ -470,7 +470,7 @@ None -- keyboard extension testing is inherently manual (no XCTest for keyboard 
 2. **Apple Dictation Mic Removal (KBD-05)**
    - What we know: No documented public API exists to remove the system dictation mic button from below the keyboard.
    - What's unclear: Whether future iOS versions will provide a key or whether there's an undocumented approach.
-   - Recommendation: Mark KBD-05 as a known iOS limitation. Do not pursue undocumented APIs. The user can disable dictation in system Settings. Our mic button in toolbar is the Dictus-specific trigger.
+   - Recommendation: Mark KBD-05 as a known iOS limitation. Do not pursue undocumented APIs. The user can disable dictation in system Settings. Our mic button in toolbar is the Ouispr-specific trigger.
 
 3. **advanceToNextInputMode() vs Emoji Keyboard**
    - What we know: advanceToNextInputMode() cycles to the NEXT keyboard, not specifically to emoji.

@@ -1,6 +1,6 @@
 ---
 name: Question / Help
-about: Ask a question or get help with Dictus
+about: Ask a question or get help with Ouispr
 title: "[Question] "
 labels: question
 ---

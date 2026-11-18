@@ -13,7 +13,7 @@ updated: 2026-03-07T09:30:00Z
 ## Tests
 
 ### 1. App Launch — 3-Tab Navigation
-expected: Open DictusApp. You should see a tab bar at the bottom with 3 tabs: Home, Models, Settings. Home tab is selected by default. Tab bar tint is blue (brand accent).
+expected: Open OuisprApp. You should see a tab bar at the bottom with 3 tabs: Home, Models, Settings. Home tab is selected by default. Tab bar tint is blue (brand accent).
 result: pass
 
 ### 2. Home Dashboard
@@ -31,7 +31,7 @@ expected: Settings tab shows a grouped list with 3 sections: Transcription (lang
 result: pass
 
 ### 5. Licenses View
-expected: In Settings > A propos, tapping Licenses shows MIT attributions for WhisperKit and Dictus.
+expected: In Settings > A propos, tapping Licenses shows MIT attributions for WhisperKit and Ouispr.
 result: pass
 
 ### 6. Glass Effect on App Surfaces
@@ -45,9 +45,9 @@ expected: Start a test dictation from Home. The recording screen shows a multi-b
 result: pass
 
 ### 8. Keyboard — Glass Keys and Animated Mic
-expected: Open the Dictus keyboard in any app. Keys have glass background styling. The toolbar shows an AnimatedMicButton (replaces plain mic icon). Tapping the mic button shows recording state with pulse animation. The FullAccessBanner (if shown) uses glass background and blue accent link.
+expected: Open the Ouispr keyboard in any app. Keys have glass background styling. The toolbar shows an AnimatedMicButton (replaces plain mic icon). Tapping the mic button shows recording state with pulse animation. The FullAccessBanner (if shown) uses glass background and blue accent link.
 result: issue
-reported: "Tapping mic shifts everything up — cancel/validate buttons at top left/right get clipped. Keyboard overall too short compared to standard iOS keyboard, keys too small. FullAccessBanner barely visible (too small/compressed). Banner 'Activer' link opens iOS Settings app instead of opening Dictus app directly (ideally deep-link to keyboard settings for full access toggle)."
+reported: "Tapping mic shifts everything up — cancel/validate buttons at top left/right get clipped. Keyboard overall too short compared to standard iOS keyboard, keys too small. FullAccessBanner barely visible (too small/compressed). Banner 'Activer' link opens iOS Settings app instead of opening Ouispr app directly (ideally deep-link to keyboard settings for full access toggle)."
 severity: major
 
 ### 9. Keyboard — Recording Overlay with Brand Waveform
@@ -57,7 +57,7 @@ reported: "Works but same layout shift bug as test 8 (buttons clipped at top). W
 severity: minor
 
 ### 10. Dynamic Type in Keyboard
-expected: Go to iOS Settings > Accessibility > Display & Text Size > Larger Text and increase text size. Open the Dictus keyboard. Key labels, timer text, and icon sizes should scale up proportionally (not clip or overflow).
+expected: Go to iOS Settings > Accessibility > Display & Text Size > Larger Text and increase text size. Open the Ouispr keyboard. Key labels, timer text, and icon sizes should scale up proportionally (not clip or overflow).
 result: issue
 reported: "Key labels scale way too much with Dynamic Type — at max size letters are huge and overflow. Standard iOS keyboard does NOT scale key labels with Dynamic Type. Our keyboard should match that behavior — key letter sizes should be fixed like the native keyboard."
 severity: major
@@ -81,20 +81,20 @@ skipped: 0
   reason: "User reported: Welcome page waveform is static (not animated). Text/button contrast is poor — text on buttons barely visible in both light and dark mode. Returning from Settings after keyboard setup (step 3) resets onboarding to step 1. In light mode, white waveform bars are invisible on light background — need gray bars. Test recording waveform also invisible on white background (same white/blue color issue)."
   severity: major
   test: 3
-  root_cause: "5 sub-issues: (1) WelcomePage.swift:20 uses static DictusLogo instead of BrandWaveform — no animation. (2) KeyboardSetupPage.swift:70, TestRecordingPage.swift:118,135 use .foregroundStyle(.primary) on colored buttons — black text on blue in light mode. (3) OnboardingView.swift:20 uses @State for currentPage — resets to 0 when returning from Settings. (4-5) BrandWaveform.swift:93 hardcodes Color.white.opacity() for outer bars — invisible on light backgrounds."
+  root_cause: "5 sub-issues: (1) WelcomePage.swift:20 uses static OuisprLogo instead of BrandWaveform — no animation. (2) KeyboardSetupPage.swift:70, TestRecordingPage.swift:118,135 use .foregroundStyle(.primary) on colored buttons — black text on blue in light mode. (3) OnboardingView.swift:20 uses @State for currentPage — resets to 0 when returning from Settings. (4-5) BrandWaveform.swift:93 hardcodes Color.white.opacity() for outer bars — invisible on light backgrounds."
   artifacts:
-    - path: "DictusApp/Onboarding/WelcomePage.swift"
-      issue: "Uses DictusLogo (static) instead of BrandWaveform (animated)"
-    - path: "DictusApp/Onboarding/KeyboardSetupPage.swift"
+    - path: "OuisprApp/Onboarding/WelcomePage.swift"
+      issue: "Uses OuisprLogo (static) instead of BrandWaveform (animated)"
+    - path: "OuisprApp/Onboarding/KeyboardSetupPage.swift"
       issue: ".foregroundStyle(.primary) on blue button — poor contrast"
-    - path: "DictusApp/Onboarding/TestRecordingPage.swift"
+    - path: "OuisprApp/Onboarding/TestRecordingPage.swift"
       issue: ".foregroundStyle(.primary) on blue/green buttons"
-    - path: "DictusApp/Onboarding/OnboardingView.swift"
+    - path: "OuisprApp/Onboarding/OnboardingView.swift"
       issue: "@State currentPage resets on scene recreation"
-    - path: "DictusApp/Design/BrandWaveform.swift"
+    - path: "OuisprApp/Design/BrandWaveform.swift"
       issue: "Hardcoded Color.white outer bars invisible in light mode"
   missing:
-    - "Replace DictusLogo with animated BrandWaveform on WelcomePage"
+    - "Replace OuisprLogo with animated BrandWaveform on WelcomePage"
     - "Use .foregroundColor(.white) on all colored buttons"
     - "Use @SceneStorage for currentPage persistence"
     - "Adaptive bar colors in BrandWaveform (gray in light, white in dark)"
@@ -104,34 +104,34 @@ skipped: 0
   reason: "User reported: Home card has Liquid Glass and looks great. Models tab has regular cards without glass effect. Settings also regular cards. Would be better if Models cards matched the Home card glass style. Buttons and animations are ok."
   severity: cosmetic
   test: 6
-  root_cause: "ModelManagerView and SettingsView use native List with default row styling — no .dictusGlass() applied. HomeView uses ScrollView + VStack with .dictusGlass() on each card."
+  root_cause: "ModelManagerView and SettingsView use native List with default row styling — no .ouisprGlass() applied. HomeView uses ScrollView + VStack with .ouisprGlass() on each card."
   artifacts:
-    - path: "DictusApp/Views/ModelManagerView.swift"
-      issue: "Plain List rows, zero .dictusGlass() usage"
-    - path: "DictusApp/Views/SettingsView.swift"
-      issue: "Plain List sections, zero .dictusGlass() usage"
+    - path: "OuisprApp/Views/ModelManagerView.swift"
+      issue: "Plain List rows, zero .ouisprGlass() usage"
+    - path: "OuisprApp/Views/SettingsView.swift"
+      issue: "Plain List sections, zero .ouisprGlass() usage"
   missing:
-    - "Apply .dictusGlass() to ModelManagerView rows with .listRowBackground(Color.clear)"
-    - "Apply .dictusGlass() to SettingsView sections or keep native List style if preferred"
+    - "Apply .ouisprGlass() to ModelManagerView rows with .listRowBackground(Color.clear)"
+    - "Apply .ouisprGlass() to SettingsView sections or keep native List style if preferred"
   debug_session: ".planning/debug/missing-glass-effect-cards.md"
-- truth: "Keyboard glass keys, animated mic button without layout shift, visible FullAccessBanner, deep link to Dictus keyboard settings"
+- truth: "Keyboard glass keys, animated mic button without layout shift, visible FullAccessBanner, deep link to Ouispr keyboard settings"
   status: resolved
-  reason: "User reported: Tapping mic shifts everything up — cancel/validate buttons at top left/right get clipped. Keyboard overall too short compared to standard iOS keyboard, keys too small. FullAccessBanner barely visible (too small/compressed). Banner 'Activer' link opens iOS Settings app instead of opening Dictus app directly (ideally deep-link to keyboard settings for full access toggle)."
+  reason: "User reported: Tapping mic shifts everything up — cancel/validate buttons at top left/right get clipped. Keyboard overall too short compared to standard iOS keyboard, keys too small. FullAccessBanner barely visible (too small/compressed). Banner 'Activer' link opens iOS Settings app instead of opening Ouispr app directly (ideally deep-link to keyboard settings for full access toggle)."
   severity: major
   test: 8
-  root_cause: "4 sub-issues: (1) KeyboardRootView.swift:41-62 — RecordingOverlay uses keyboardHeight (194pt) but should use toolbar+keyboard (238pt), causing 44pt shift. (2) KeyButton.swift:217 keyHeight=42pt vs native ~46pt, total height 238pt vs native ~260pt. (3) FullAccessBanner uses .dictusCaption (~12pt) with 6pt padding — too compressed. (4) FullAccessBanner:25 uses 'app-settings:' URL which opens generic iOS Settings instead of dictus:// URL scheme."
+  root_cause: "4 sub-issues: (1) KeyboardRootView.swift:41-62 — RecordingOverlay uses keyboardHeight (194pt) but should use toolbar+keyboard (238pt), causing 44pt shift. (2) KeyButton.swift:217 keyHeight=42pt vs native ~46pt, total height 238pt vs native ~260pt. (3) FullAccessBanner uses .ouisprCaption (~12pt) with 6pt padding — too compressed. (4) FullAccessBanner:25 uses 'app-settings:' URL which opens generic iOS Settings instead of ouispr:// URL scheme."
   artifacts:
-    - path: "DictusKeyboard/KeyboardRootView.swift"
+    - path: "OuisprKeyboard/KeyboardRootView.swift"
       issue: "RecordingOverlay height excludes toolbar (44pt missing)"
-    - path: "DictusKeyboard/Views/KeyButton.swift"
+    - path: "OuisprKeyboard/Views/KeyButton.swift"
       issue: "keyHeight 42pt too small (native is ~46pt)"
-    - path: "DictusKeyboard/Views/FullAccessBanner.swift"
+    - path: "OuisprKeyboard/Views/FullAccessBanner.swift"
       issue: "Caption font + 6pt padding too compressed; wrong URL scheme"
   missing:
     - "RecordingOverlay frame = keyboardHeight + toolbarHeight"
     - "Increase keyHeight to ~46pt, update computeKeyboardHeight"
     - "Larger font + padding on FullAccessBanner"
-    - "Change 'app-settings:' to 'dictus://settings' URL"
+    - "Change 'app-settings:' to 'ouispr://settings' URL"
   debug_session: ".planning/debug/keyboard-uat-8-9-10.md"
 - truth: "Keyboard recording overlay waveform is large, reactive, and visually impressive"
   status: resolved
@@ -140,9 +140,9 @@ skipped: 0
   test: 9
   root_cause: "RecordingOverlay.swift:84 BrandWaveform maxHeight=100 with .padding(.horizontal, 8). 30 bars at 4pt+3pt spacing = ~207pt total width (screen is 375pt+). Animation duration 0.15s feels sluggish."
   artifacts:
-    - path: "DictusKeyboard/Views/RecordingOverlay.swift"
+    - path: "OuisprKeyboard/Views/RecordingOverlay.swift"
       issue: "maxHeight too low, horizontal padding limits width"
-    - path: "DictusKeyboard/Design/BrandWaveform.swift"
+    - path: "OuisprKeyboard/Design/BrandWaveform.swift"
       issue: "barWidth uses @ScaledMetric, animation too slow"
   missing:
     - "Increase maxHeight to ~130-140pt"
@@ -157,7 +157,7 @@ skipped: 0
   test: 10
   root_cause: "KeyButton.swift:50 uses @ScaledMetric for keyFontSize=22 and line 200 for popupFontSize=32. Native iOS keyboard uses fixed key label sizes."
   artifacts:
-    - path: "DictusKeyboard/Views/KeyButton.swift"
+    - path: "OuisprKeyboard/Views/KeyButton.swift"
       issue: "@ScaledMetric on keyFontSize and popupFontSize"
   missing:
     - "Replace @ScaledMetric with plain let for keyFontSize and popupFontSize"

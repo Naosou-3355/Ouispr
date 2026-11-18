@@ -12,7 +12,7 @@ context: Issues noted during UAT of RecordingView redesign
 
 ## 1. X close button — too small + no haptic feedback
 
-**File:** `DictusApp/Views/RecordingView.swift` (close button section, ~line 56)
+**File:** `OuisprApp/Views/RecordingView.swift` (close button section, ~line 56)
 
 **Problem:** The X button is small (36pt) and under the user's finger when tapped. No haptic confirmation that the tap registered.
 
@@ -23,7 +23,7 @@ context: Issues noted during UAT of RecordingView redesign
 
 ## 2. Overlay dismissal animation too abrupt
 
-**File:** `DictusApp/Views/MainTabView.swift` (overlay condition, ~line 65)
+**File:** `OuisprApp/Views/MainTabView.swift` (overlay condition, ~line 65)
 
 **Problem:** When X is tapped, the RecordingView overlay disappears instantly — no transition, feels jarring.
 
@@ -40,7 +40,7 @@ Alternative: Add `.animation(.easeOut(duration: 0.25), value: coordinator.status
 
 ## 3. Mic button appears active during transcription processing
 
-**File:** `DictusApp/Views/RecordingView.swift` (micOrStopButton, ~line 248-256)
+**File:** `OuisprApp/Views/RecordingView.swift` (micOrStopButton, ~line 248-256)
 
 **Problem:** When transcription is processing (status = `.transcribing`), the `AnimatedMicButton` shows with shimmer effect. But when status transitions to `.ready` (result received), the mic button reappears in full blue — identical to the idle/tappable state. The user sees the result + a blue mic button and thinks they can start a new recording, but tapping does nothing meaningful during the brief `.ready` display.
 

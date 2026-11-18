@@ -1,9 +1,9 @@
 #!/usr/bin/env swift
 // scripts/generate-app-icon.swift
-// Generates Dictus app icon PNGs (1024x1024) from brand kit specifications.
+// Generates Ouispr app icon PNGs (1024x1024) from brand kit specifications.
 // Usage: swift scripts/generate-app-icon.swift
 //
-// Source of truth: assets/brand/dictus-brand-kit.html
+// Source of truth: assets/brand/ouispr-brand-kit.html
 // SVG viewBox: 80x80, scale factor: 1024/80 = 12.8
 // All coordinates are direct SVG values * 12.8, NO additional multiplier.
 
@@ -274,12 +274,12 @@ if let range = scriptDir.range(of: "/scripts/") {
     projectDir = FileManager.default.currentDirectoryPath
 }
 
-let assetDir = projectDir + "/DictusApp/Assets.xcassets/AppIcon.appiconset"
+let assetDir = projectDir + "/OuisprApp/Assets.xcassets/AppIcon.appiconset"
 
 // Create directory if needed
 try? FileManager.default.createDirectory(atPath: assetDir, withIntermediateDirectories: true)
 
-print("Generating Dictus app icons (1024x1024)...")
+print("Generating Ouispr app icons (1024x1024)...")
 print("Output directory: \(assetDir)")
 print("Scale factor: \(scaleFactor) (1024/80, no additional multiplier)")
 

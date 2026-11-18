@@ -56,7 +56,7 @@ started: Phase 15.2 state machine refactor
   implication: The existing fallback (onChange of energyLevels) should theoretically work, but combined with renderTick already being used, the issue may be that Canvas reads `renderTick` but SwiftUI doesn't know it's a dependency because Canvas doesn't participate in normal SwiftUI diffing. Need to force view identity reset or use .id() modifier.
 
 - timestamp: 2026-03-17T00:00:30Z
-  checked: Device logs (dictus-logs 35.txt lines 20, 29, 54, 97)
+  checked: Device logs (ouispr-logs 35.txt lines 20, 29, 54, 97)
   found: Every single DI transition is REJECTED from .failed state. Pattern repeats across all recordings in the session. The .failed state was entered before logging started.
   implication: Confirms Issue 1 root cause — .failed is a terminal state with no recovery.
 
@@ -66,7 +66,7 @@ started: Phase 15.2 state machine refactor
   implication: Issue 3 (stale card) is likely NOT a data issue but a SwiftUI rendering timing issue — the keyboard extension may show cached view state briefly after reload. Lower priority, may resolve itself once DI issue is fixed (fewer error states = less UI chaos).
 
 - timestamp: 2026-03-17T00:03:00Z
-  checked: Device logs dictus-logs 36.txt — cold start overlay freeze sequence
+  checked: Device logs ouispr-logs 36.txt — cold start overlay freeze sequence
   found: |
     DI fix CONFIRMED WORKING (zero REJECTED transitions in new logs).
     Cold start overlay freeze sequence:
@@ -115,6 +115,6 @@ fix: |
 
   Issue 3 — No code change needed. Timer was showing correct value.
 
-verification: Build passes (xcodebuild -scheme DictusApp -destination iPhone 17 Pro simulator). Awaiting on-device verification.
+verification: Build passes (xcodebuild -scheme OuisprApp -destination iPhone 17 Pro simulator). Awaiting on-device verification.
 files_changed:
-  - DictusCore/Sources/DictusCore/Design/BrandWaveform.swift
+  - OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift

@@ -129,24 +129,24 @@ The codebase audit reveals **2 additional required-reason APIs** beyond the alre
 |-----|-----------|----------|-------------|---------------|
 | `UserDefaults` | Everywhere (App Group) | `NSPrivacyAccessedAPICategoryUserDefaults` | `CA92.1` | Already declared in both manifests |
 | `FileManager.attributesOfItem(atPath:)` | `PersistentLog.swift` (3 call sites) | `NSPrivacyAccessedAPICategoryFileTimestamp` | `C617.1` | Accessing file size within app group container for log trimming |
-| `UITextInputMode.activeInputModes` | `KeyboardSetupPage.swift` (DictusApp only) | `NSPrivacyAccessedAPICategoryActiveKeyboards` | `3EC4.1` | Custom keyboard app checking if its keyboard is installed |
+| `UITextInputMode.activeInputModes` | `KeyboardSetupPage.swift` (OuisprApp only) | `NSPrivacyAccessedAPICategoryActiveKeyboards` | `3EC4.1` | Custom keyboard app checking if its keyboard is installed |
 
-**Action:** Add `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1` to BOTH privacy manifests (PersistentLog runs in both targets via DictusCore). Add `NSPrivacyAccessedAPICategoryActiveKeyboards` with reason `3EC4.1` to DictusApp's privacy manifest only.
+**Action:** Add `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1` to BOTH privacy manifests (PersistentLog runs in both targets via OuisprCore). Add `NSPrivacyAccessedAPICategoryActiveKeyboards` with reason `3EC4.1` to OuisprApp's privacy manifest only.
 
 ### Version Bump
 
-Current version: `1.2` (build `4`) across all 3 Info.plist files + DictusWidgets.
+Current version: `1.2` (build `4`) across all 3 Info.plist files + OuisprWidgets.
 Target version: `1.3` (build `5`).
 Files to update:
-- `DictusApp/Info.plist`
-- `DictusKeyboard/Info.plist`
-- `DictusWidgets/Info.plist`
+- `OuisprApp/Info.plist`
+- `OuisprKeyboard/Info.plist`
+- `OuisprWidgets/Info.plist`
 
 ### Xcode Archive + Upload Flow
 
 Step-by-step instructions for Pierre (who does this in the App Store Connect portal and Xcode, not from Claude):
 
-1. Select **DictusApp** scheme, set destination to **Any iOS Device (arm64)**
+1. Select **OuisprApp** scheme, set destination to **Any iOS Device (arm64)**
 2. **Product > Archive** (builds release configuration)
 3. When archive completes, **Organizer** window opens
 4. Select the archive, click **Distribute App**
@@ -174,19 +174,19 @@ Replace the placeholder at line 69 (`_link coming soon_`) with the actual URL. S
 ```markdown
 ## Beta Testing
 
-Join the beta via TestFlight: [Install Dictus Beta](https://testflight.apple.com/join/XXXXX)
+Join the beta via TestFlight: [Install Ouispr Beta](https://testflight.apple.com/join/XXXXX)
 
 **Requirements:** iPhone 12 or later, iOS 17.0+
 
 **How to install:**
 1. Tap the link above on your iPhone
 2. Install TestFlight if you don't have it
-3. Open Dictus and follow the onboarding
-4. Enable the keyboard: Settings > General > Keyboard > Keyboards > Add > Dictus
+3. Open Ouispr and follow the onboarding
+4. Enable the keyboard: Settings > General > Keyboard > Keyboards > Add > Ouispr
 5. Allow Full Access when prompted (required for microphone)
 
 **Give feedback:**
-- Shake your device in Dictus to send feedback via TestFlight
+- Shake your device in Ouispr to send feedback via TestFlight
 - Or open an issue on [GitHub](https://github.com/getdictus/dictus-ios/issues)
 ```
 
@@ -226,7 +226,7 @@ Content: Release notes summarizing features since v1.2, known limitations, insta
 ### Pitfall 4: Build Number Not Incremented
 **What goes wrong:** App Store Connect rejects the upload because build number already exists.
 **Why it happens:** Forgetting to increment CFBundleVersion across all 3 Info.plist files.
-**How to avoid:** Always bump all 3 plists together: DictusApp, DictusKeyboard, DictusWidgets.
+**How to avoid:** Always bump all 3 plists together: OuisprApp, OuisprKeyboard, OuisprWidgets.
 **Warning signs:** Upload error mentioning duplicate build number.
 
 ### Pitfall 5: NSCache Swizzling in Keyboard Extension
@@ -235,17 +235,17 @@ Content: Release notes summarizing features since v1.2, known limitations, insta
 **How to avoid:** Try pagination alone first. Only add swizzling if pagination doesn't reduce memory enough. SwiftKey uses this technique in production, so it passes review.
 **Warning signs:** Memory still high after pagination (>30 MiB with single category visible).
 
-### Pitfall 6: Forgetting DictusWidgets Plist
+### Pitfall 6: Forgetting OuisprWidgets Plist
 **What goes wrong:** Version mismatch between targets.
-**Why it happens:** DictusWidgets has its own Info.plist that's easy to forget.
-**How to avoid:** Always update all 3 plists: DictusApp, DictusKeyboard, DictusWidgets.
+**Why it happens:** OuisprWidgets has its own Info.plist that's easy to forget.
+**How to avoid:** Always update all 3 plists: OuisprApp, OuisprKeyboard, OuisprWidgets.
 
 ## Code Examples
 
 ### Privacy Manifest Entry for File Timestamp API
 
 ```xml
-<!-- Add to both DictusApp/PrivacyInfo.xcprivacy and DictusKeyboard/PrivacyInfo.xcprivacy -->
+<!-- Add to both OuisprApp/PrivacyInfo.xcprivacy and OuisprKeyboard/PrivacyInfo.xcprivacy -->
 <dict>
     <key>NSPrivacyAccessedAPIType</key>
     <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
@@ -259,7 +259,7 @@ Content: Release notes summarizing features since v1.2, known limitations, insta
 ### Privacy Manifest Entry for Active Keyboards API
 
 ```xml
-<!-- Add to DictusApp/PrivacyInfo.xcprivacy ONLY -->
+<!-- Add to OuisprApp/PrivacyInfo.xcprivacy ONLY -->
 <dict>
     <key>NSPrivacyAccessedAPIType</key>
     <string>NSPrivacyAccessedAPICategoryActiveKeyboards</string>
@@ -295,7 +295,7 @@ private var currentCategoryEmojis: [EmojiGridItem] {
 ### Full Access Justification Text (Draft)
 
 ```
-Dictus is an on-device speech-to-text keyboard. Full Access is required
+Ouispr is an on-device speech-to-text keyboard. Full Access is required
 to access the device microphone for voice dictation. All speech recognition
 runs locally on-device via Apple CoreML (WhisperKit). No keystroke data,
 audio, or transcription is transmitted off-device. The keyboard provides
@@ -335,7 +335,7 @@ requires it.
 |----------|-------|
 | Framework | Xcode Instruments (Allocations) + manual verification |
 | Config file | N/A -- Instruments profiling is manual |
-| Quick run command | `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'` |
+| Quick run command | `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'` |
 | Full suite command | Manual: Instruments profiling on device + App Store Connect upload verification |
 
 ### Phase Requirements -> Test Map
@@ -347,7 +347,7 @@ requires it.
 | TF-04 | README has TestFlight link | smoke | `grep -q "testflight.apple.com" README.md` | N/A |
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'` (build succeeds)
+- **Per task commit:** `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'` (build succeeds)
 - **Per wave merge:** Instruments memory profiling on device (emoji picker < 50 MiB)
 - **Phase gate:** Successful upload to App Store Connect + Beta App Review approval + public link active
 

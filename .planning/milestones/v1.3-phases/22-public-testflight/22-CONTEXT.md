@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Make Dictus available as a public TestFlight beta that anyone can install. This includes: fixing the emoji picker memory blocker (139 MiB), passing Beta App Review, creating an external testing group with a public link, updating the README, and creating a GitHub Release with release notes for social media announcement.
+Make Ouispr available as a public TestFlight beta that anyone can install. This includes: fixing the emoji picker memory blocker (139 MiB), passing Beta App Review, creating an external testing group with a public link, updating the README, and creating a GitHub Release with release notes for social media announcement.
 
 Requirements: TF-01, TF-02, TF-03, TF-04
 
@@ -59,13 +59,13 @@ Requirements: TF-01, TF-02, TF-03, TF-04
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Privacy manifests
-- `DictusApp/PrivacyInfo.xcprivacy` -- Current privacy manifest for main app (UserDefaults CA92.1)
-- `DictusKeyboard/PrivacyInfo.xcprivacy` -- Current privacy manifest for keyboard extension (UserDefaults CA92.1)
+- `OuisprApp/PrivacyInfo.xcprivacy` -- Current privacy manifest for main app (UserDefaults CA92.1)
+- `OuisprKeyboard/PrivacyInfo.xcprivacy` -- Current privacy manifest for keyboard extension (UserDefaults CA92.1)
 
 ### Emoji picker (memory blocker)
-- `DictusKeyboard/Views/EmojiPickerView.swift` -- Main emoji picker view with LazyHGrid (source of 139 MiB usage)
-- `DictusKeyboard/Views/EmojiCategoryBar.swift` -- Category bar component
-- `DictusKeyboard/Models/EmojiData.swift` -- Emoji data source
+- `OuisprKeyboard/Views/EmojiPickerView.swift` -- Main emoji picker view with LazyHGrid (source of 139 MiB usage)
+- `OuisprKeyboard/Views/EmojiCategoryBar.swift` -- Category bar component
+- `OuisprKeyboard/Models/EmojiData.swift` -- Emoji data source
 - `.planning/phases/21-cleanup-memory-profiling/21-02-SUMMARY.md` -- Memory profiling report identifying the 139 MiB blocker
 
 ### README

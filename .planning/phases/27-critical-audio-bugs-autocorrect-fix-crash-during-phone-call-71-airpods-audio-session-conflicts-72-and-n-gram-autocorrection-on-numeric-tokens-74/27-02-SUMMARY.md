@@ -20,8 +20,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/TextPrediction/SuggestionState.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/TextPrediction/SuggestionState.swift
 
 key-decisions:
   - "Used CharacterSet.decimalDigits for Unicode-safe digit detection (covers all scripts, not just ASCII 0-9)"
@@ -61,8 +61,8 @@ Each task was committed atomically:
 1. **Task 1: Add numeric token guard to handleSpace, update, and updateAsync** - `da208b0` (fix)
 
 ## Files Created/Modified
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added containsDigit guard in handleSpace() before autocorrect block
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` - Added containsDigit guard in both update() and updateAsync() before spell check
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added containsDigit guard in handleSpace() before autocorrect block
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` - Added containsDigit guard in both update() and updateAsync() before spell check
 
 ## Decisions Made
 - Used CharacterSet.decimalDigits for Unicode-safe digit detection (covers Arabic-Indic, Devanagari digits etc., not just ASCII 0-9)
@@ -72,7 +72,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- Build fails for DictusKeyboard scheme due to pre-existing error in DictusApp (CallStateMonitor not found -- from Plan 27-01 not yet implemented). Modified files compile without errors.
+- Build fails for OuisprKeyboard scheme due to pre-existing error in OuisprApp (CallStateMonitor not found -- from Plan 27-01 not yet implemented). Modified files compile without errors.
 
 ## User Setup Required
 

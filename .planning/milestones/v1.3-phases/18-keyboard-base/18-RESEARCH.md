@@ -1,18 +1,18 @@
 # Phase 18: Keyboard Base - Research
 
 **Researched:** 2026-03-27
-**Domain:** UICollectionView-based keyboard (giellakbd-ios vendoring) + Dictus integration
+**Domain:** UICollectionView-based keyboard (giellakbd-ios vendoring) + Ouispr integration
 **Confidence:** HIGH
 
 ## Summary
 
-Phase 18 replaces the current SwiftUI keyboard grid with vendored UIKit files from giellakbd-ios (divvun/giellakbd-ios). The open-source project implements a UICollectionView-based keyboard with custom touch handling that bypasses the collection view's user interaction entirely -- touches are processed directly by the parent KeyboardView via touchesBegan/Moved/Ended, which is what eliminates dead zones. The giellakbd-ios architecture maps cleanly to Dictus's needs: it has a KeyboardView (UIView with UICollectionView), KeyView (individual key cell rendering), KeyOverlayView (popup preview), and a KeyboardViewController with delegate callbacks for key actions.
+Phase 18 replaces the current SwiftUI keyboard grid with vendored UIKit files from giellakbd-ios (divvun/giellakbd-ios). The open-source project implements a UICollectionView-based keyboard with custom touch handling that bypasses the collection view's user interaction entirely -- touches are processed directly by the parent KeyboardView via touchesBegan/Moved/Ended, which is what eliminates dead zones. The giellakbd-ios architecture maps cleanly to Ouispr's needs: it has a KeyboardView (UIView with UICollectionView), KeyView (individual key cell rendering), KeyOverlayView (popup preview), and a KeyboardViewController with delegate callbacks for key actions.
 
-Critical finding: giellakbd-ios's KeyboardDefinitions.json only contains a Sami ("se") layout, not French. The French AZERTY/QWERTY layouts must be created either by writing a JSON definition or by programmatically constructing KeyboardDefinition objects using the existing Dictus KeyboardLayout data. The giellakbd-ios codebase depends on DeviceKit (for screen diagonal-based height calculation), DivvunSpell, Sentry, RxSwift, and SQLite -- of these, only DeviceKit is needed for Dictus. All other dependencies (DivvunSpell, Sentry, RxSwift, SQLite) must be stripped from vendored files.
+Critical finding: giellakbd-ios's KeyboardDefinitions.json only contains a Sami ("se") layout, not French. The French AZERTY/QWERTY layouts must be created either by writing a JSON definition or by programmatically constructing KeyboardDefinition objects using the existing Ouispr KeyboardLayout data. The giellakbd-ios codebase depends on DeviceKit (for screen diagonal-based height calculation), DivvunSpell, Sentry, RxSwift, and SQLite -- of these, only DeviceKit is needed for Ouispr. All other dependencies (DivvunSpell, Sentry, RxSwift, SQLite) must be stripped from vendored files.
 
-The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard/ directory, strip external dependencies (Sentry, DivvunSpell, RxSwift), create French keyboard layout definitions, adapt KeyboardViewController to delegate key actions to Dictus's existing infrastructure (textDocumentProxy, HapticFeedback, KeySound), and bridge the UIKit KeyboardView into the existing SwiftUI KeyboardRootView hierarchy (toolbar stays SwiftUI, keyboard below becomes UIKit).
+The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard/ directory, strip external dependencies (Sentry, DivvunSpell, RxSwift), create French keyboard layout definitions, adapt KeyboardViewController to delegate key actions to Ouispr's existing infrastructure (textDocumentProxy, HapticFeedback, KeySound), and bridge the UIKit KeyboardView into the existing SwiftUI KeyboardRootView hierarchy (toolbar stays SwiftUI, keyboard below becomes UIKit).
 
-**Primary recommendation:** Vendor giellakbd-ios Views (KeyboardView, KeyView, KeyOverlayView) + Models (KeyDefinition, KeyboardDefinition, Theme, DeviceContext, KeyboardHeightProvider, InputContext, SystemKeys) + Controllers (LongPressController, Audio, DeadKeyHandler). Strip all Sentry/DivvunSpell/RxSwift/SQLite references. Create French AZERTY/QWERTY layout definitions. Wire Dictus HapticFeedback + KeySound into the delegate callbacks.
+**Primary recommendation:** Vendor giellakbd-ios Views (KeyboardView, KeyView, KeyOverlayView) + Models (KeyDefinition, KeyboardDefinition, Theme, DeviceContext, KeyboardHeightProvider, InputContext, SystemKeys) + Controllers (LongPressController, Audio, DeadKeyHandler). Strip all Sentry/DivvunSpell/RxSwift/SQLite references. Create French AZERTY/QWERTY layout definitions. Wire Ouispr HapticFeedback + KeySound into the delegate callbacks.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -23,12 +23,12 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 - Do NOT customize key visual style, shadows, colors, or shapes beyond what giellakbd-ios provides
 - Every style customization is a potential dead zone risk -- avoid them
 - Priority is ZERO DEAD ZONES over visual customization
-- Brand identity comes from toolbar mic button with Dictus blue, not from keys
+- Brand identity comes from toolbar mic button with Ouispr blue, not from keys
 - iOS native adaptive: keys follow system light/dark mode automatically (giellakbd-ios default)
 - Special keys use giellakbd-ios default styling
-- Dictus accent (#3D7EFF blue) only on toolbar mic button
+- Ouispr accent (#3D7EFF blue) only on toolbar mic button
 - Key popup preview: use giellakbd-ios KeyOverlayView as-is
-- Haptic & sound: keep Dictus HapticFeedback.keyTapped() + 3-category AudioServicesPlaySystemSound, wire into giellakbd-ios touch handling
+- Haptic & sound: keep Ouispr HapticFeedback.keyTapped() + 3-category AudioServicesPlaySystemSound, wire into giellakbd-ios touch handling
 - Globe key is NOT part of layout -- iOS provides it below third-party keyboards
 - Bottom row Phase 18: [123] [SPACE] [RETURN] only (no emoji, no mic in layout)
 - Use giellakbd-ios French layout if available and 90%+ similar to iOS stock
@@ -37,7 +37,7 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 - Exact giellakbd-ios files to vendor and any minimal adaptations needed
 - How to bridge UICollectionView keyboard into existing KeyboardViewController
 - DeviceKit integration approach for keyboard height calculation
-- How to wire Dictus haptic/sound calls into giellakbd-ios touch handlers
+- How to wire Ouispr haptic/sound calls into giellakbd-ios touch handlers
 - Autocapitalization and double-space period implementation details
 - Shift/caps lock state machine implementation
 
@@ -58,14 +58,14 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 | ID | Description | Research Support |
 |----|-------------|-----------------|
 | KBD-01 | UICollectionView-based AZERTY keyboard with zero dead zones | giellakbd-ios KeyboardView uses UICollectionView with touch handling that bypasses collection view interaction -- touches go through KeyboardView.touchesBegan/Moved/Ended directly, eliminating dead zones |
-| KBD-02 | QWERTY layout switch in settings | KeyboardDefinition supports multiple layouts via JSON or programmatic construction; Dictus already has QWERTY data in KeyboardLayout.swift |
+| KBD-02 | QWERTY layout switch in settings | KeyboardDefinition supports multiple layouts via JSON or programmatic construction; Ouispr already has QWERTY data in KeyboardLayout.swift |
 | KBD-03 | Shift toggle (single tap) and caps lock (double tap) with visual feedback | giellakbd-ios KeyboardPage enum has .normal/.shifted/.capslock; KeyboardViewController handles shift via page switching; double-tap detected via KeyTriggerTiming |
 | KBD-04 | Switch between letters, numbers, symbols layers | KeyboardPage has .symbols1/.symbols2; alternatePage() toggles between character and symbol pages |
 | KBD-06 | Space, return, globe key for switching keyboards | SystemKeys generates bottom row with spacebar + return; globe key handled by iOS automatically below third-party keyboards |
-| KBD-07 | Autocapitalization after sentence-ending punctuation | giellakbd-ios updateCapitalization() reads textDocumentProxy.autocapitalizationType and InputContext; Dictus already has checkAutocapitalize() logic |
+| KBD-07 | Autocapitalization after sentence-ending punctuation | giellakbd-ios updateCapitalization() reads textDocumentProxy.autocapitalizationType and InputContext; Ouispr already has checkAutocapitalize() logic |
 | KBD-08 | Double-space period insertion | giellakbd-ios handleAutoFullStop() detects double-space and replaces with ". " -- proven implementation |
-| FEEL-01 | Haptic feedback on touchDown matching Apple feel | Dictus HapticFeedback.keyTapped() uses pre-allocated UIImpactFeedbackGenerator(.light); wire into giellakbd-ios delegate callback |
-| FEEL-02 | 3-category key sounds respecting silent switch | Dictus KeySound enum (1104/1155/1156) via AudioServicesPlaySystemSound; giellakbd-ios Audio class uses same sound IDs |
+| FEEL-01 | Haptic feedback on touchDown matching Apple feel | Ouispr HapticFeedback.keyTapped() uses pre-allocated UIImpactFeedbackGenerator(.light); wire into giellakbd-ios delegate callback |
+| FEEL-02 | 3-category key sounds respecting silent switch | Ouispr KeySound enum (1104/1155/1156) via AudioServicesPlaySystemSound; giellakbd-ios Audio class uses same sound IDs |
 | FEEL-03 | Key popup preview on press | giellakbd-ios KeyOverlayView + LongPressController provide popup preview using bezier path rendering + GhostKeyView positioning |
 </phase_requirements>
 
@@ -74,7 +74,7 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 ### Core (Vendored from giellakbd-ios)
 | File | Source | Purpose | Modifications Needed |
 |------|--------|---------|---------------------|
-| KeyboardView.swift | Keyboard/Views/ | UICollectionView-based keyboard with touch handling | Remove Sentry imports, adapt delegate to Dictus controller |
+| KeyboardView.swift | Keyboard/Views/ | UICollectionView-based keyboard with touch handling | Remove Sentry imports, adapt delegate to Ouispr controller |
 | KeyView.swift | Keyboard/Views/ | Individual key cell rendering (UIView) | No changes expected -- styling via Theme |
 | KeyOverlayView.swift | Keyboard/Views/ | Key popup preview (bezier path, GhostKeyView) | No changes expected |
 | KeyDefinition.swift | Keyboard/Models/ | Key type enum + sizing model | No changes expected |
@@ -86,7 +86,7 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 | SystemKeys.swift | Keyboard/Models/ | Bottom row generation (symbols, space, return) | Adapt for Phase 18 simplified bottom row |
 | LongPressController.swift | Keyboard/Controllers/ | Long-press overlay positioning + selection | No changes expected |
 | DeadKeyHandler.swift | Keyboard/Controllers/ | Multi-step dead key transformations | Keep for future accent support (Phase 19) |
-| Audio.swift | Keyboard/Controllers/ | Sound playback (3 categories) | Replace with Dictus KeySound calls or adapt |
+| Audio.swift | Keyboard/Controllers/ | Sound playback (3 categories) | Replace with Ouispr KeySound calls or adapt |
 
 ### New SPM Dependency
 | Library | Version | Purpose | Why Needed |
@@ -111,10 +111,10 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 | init.m | Objective-C init (not needed) |
 | Keyboard-Bridging-Header.h | Not needed without ObjC |
 
-### Existing Dictus Files to KEEP
+### Existing Ouispr Files to KEEP
 | File | Purpose |
 |------|---------|
-| HapticFeedback.swift (DictusCore) | Pre-allocated haptic generators, cached enabled state |
+| HapticFeedback.swift (OuisprCore) | Pre-allocated haptic generators, cached enabled state |
 | InputView.swift | KeyboardInputView (UIInputViewAudioFeedback) |
 | KeyboardState.swift | Cross-process state, Darwin notifications |
 | KeyboardRootView.swift | SwiftUI root (toolbar + recording overlay) -- ADAPT |
@@ -123,7 +123,7 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 | RecordingOverlay.swift | Recording UI (stays as-is) |
 | KeyboardLayout.swift | AZERTY/QWERTY layout DATA -- map to giellakbd-ios format |
 
-### Existing Dictus Files to REMOVE (replaced by giellakbd-ios)
+### Existing Ouispr Files to REMOVE (replaced by giellakbd-ios)
 | File | Replaced By |
 |------|-------------|
 | Views/KeyboardView.swift (SwiftUI) | giellakbd-ios KeyboardView (UIKit) |
@@ -140,14 +140,14 @@ The integration approach is: vendor ~10 source files from giellakbd-ios Keyboard
 # Add DeviceKit to Xcode project via SPM:
 # https://github.com/devicekit/DeviceKit.git
 # Version: Up to Next Major from 5.8.0
-# Add to DictusKeyboard target
+# Add to OuisprKeyboard target
 ```
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```
-DictusKeyboard/
+OuisprKeyboard/
 ├── KeyboardViewController.swift     # ADAPT: host UIKit keyboard instead of SwiftUI
 ├── KeyboardRootView.swift           # ADAPT: embed UIKit keyboard in SwiftUI hierarchy
 ├── KeyboardState.swift              # KEEP: cross-process state (unchanged)
@@ -169,7 +169,7 @@ DictusKeyboard/
 │       ├── LongPressController.swift # Long-press overlay
 │       ├── DeadKeyHandler.swift      # Dead key transforms
 │       └── Audio.swift               # Sound playback
-├── DictusKeyboardBridge.swift       # NEW: adapter between giellakbd-ios delegates and Dictus
+├── OuisprKeyboardBridge.swift       # NEW: adapter between giellakbd-ios delegates and Ouispr
 ├── FrenchKeyboardLayouts.swift      # NEW: AZERTY/QWERTY definitions for giellakbd-ios format
 ├── Models/
 │   ├── KeyboardLayout.swift         # KEEP temporarily for data reference during migration
@@ -206,12 +206,12 @@ struct GiellaKeyboardWrapper: UIViewRepresentable {
 }
 ```
 
-### Pattern 2: Delegate Bridge (giellakbd-ios -> Dictus Actions)
-**What:** A bridge object implements giellakbd-ios's KeyboardViewDelegate and translates callbacks into Dictus actions (textDocumentProxy operations, haptics, sounds).
-**When to use:** Always -- this is how vendored keyboard communicates with Dictus.
+### Pattern 2: Delegate Bridge (giellakbd-ios -> Ouispr Actions)
+**What:** A bridge object implements giellakbd-ios's KeyboardViewDelegate and translates callbacks into Ouispr actions (textDocumentProxy operations, haptics, sounds).
+**When to use:** Always -- this is how vendored keyboard communicates with Ouispr.
 **Example:**
 ```swift
-class DictusKeyboardBridge: NSObject, KeyboardViewDelegate, KeyboardViewKeyboardKeyDelegate {
+class OuisprKeyboardBridge: NSObject, KeyboardViewDelegate, KeyboardViewKeyboardKeyDelegate {
     weak var controller: UIInputViewController?
     private var lastInput: String = ""
 
@@ -252,7 +252,7 @@ class DictusKeyboardBridge: NSObject, KeyboardViewDelegate, KeyboardViewKeyboard
 **When to use:** At keyboard initialization.
 **Example:**
 ```swift
-// Map existing Dictus layout data to giellakbd-ios KeyDefinition format
+// Map existing Ouispr layout data to giellakbd-ios KeyDefinition format
 static func frenchAZERTY() -> KeyboardDefinition {
     let normal: [[KeyDefinition]] = [
         // Row 1
@@ -308,25 +308,25 @@ static func frenchAZERTY() -> KeyboardDefinition {
 ### Pitfall 2: French Layout Not Matching iOS Stock
 **What goes wrong:** Numbers/symbols layers don't match what French users expect.
 **Why it happens:** giellakbd-ios has no French layout. Creating one from scratch may miss iOS-specific key placements (e.g., Euro sign position, French punctuation).
-**How to avoid:** Use existing Dictus KeyboardLayout.swift data (numbersRows, symbolsRows) which was already designed to match iOS stock French. Map this data to giellakbd-ios KeyDefinition format.
+**How to avoid:** Use existing Ouispr KeyboardLayout.swift data (numbersRows, symbolsRows) which was already designed to match iOS stock French. Map this data to giellakbd-ios KeyDefinition format.
 **Warning signs:** User complaints about key positions feeling "wrong" compared to Apple keyboard.
 
 ### Pitfall 3: Height Mismatch Between UIKit Keyboard and SwiftUI Chrome
 **What goes wrong:** Toolbar overlaps keyboard or gap appears between them.
-**Why it happens:** giellakbd-ios KeyboardHeightProvider calculates total keyboard height including all rows. Dictus needs to split this into toolbar height (SwiftUI) + key grid height (UIKit). The heights must add up to the constraint on inputView.
+**Why it happens:** giellakbd-ios KeyboardHeightProvider calculates total keyboard height including all rows. Ouispr needs to split this into toolbar height (SwiftUI) + key grid height (UIKit). The heights must add up to the constraint on inputView.
 **How to avoid:** Use KeyboardHeightProvider for key grid height only. Add toolbar height separately in KeyboardViewController.computeKeyboardHeight(). Test on multiple device sizes.
 **Warning signs:** Visual gap or overlap at toolbar/keyboard boundary.
 
 ### Pitfall 4: KeyboardInputView (Audio Feedback) Not Connected
 **What goes wrong:** Key click sounds don't play via playInputClick().
-**Why it happens:** giellakbd-ios's Audio class uses AudioServicesPlaySystemSound (same as Dictus KeySound), which works independently. But if someone tries to use UIDevice.playInputClick(), it requires the inputView to conform to UIInputViewAudioFeedback and return true from enableInputClicksWhenVisible.
+**Why it happens:** giellakbd-ios's Audio class uses AudioServicesPlaySystemSound (same as Ouispr KeySound), which works independently. But if someone tries to use UIDevice.playInputClick(), it requires the inputView to conform to UIInputViewAudioFeedback and return true from enableInputClicksWhenVisible.
 **How to avoid:** Keep using AudioServicesPlaySystemSound (KeySound enum) for key sounds. The existing KeyboardInputView stays as the controller's inputView. Do NOT switch to playInputClick().
 **Warning signs:** Silent key presses.
 
 ### Pitfall 5: Shift State Machine Out of Sync
 **What goes wrong:** Visual shift indicator shows "shifted" but keys output lowercase, or vice versa.
-**Why it happens:** giellakbd-ios manages shift via KeyboardPage (.normal/.shifted/.capslock), while Dictus had a separate ShiftState enum. If both systems exist, they can desync.
-**How to avoid:** Use ONLY giellakbd-ios's page-based shift management. Remove Dictus ShiftState enum. The KeyboardView.page property is the single source of truth for shift state.
+**Why it happens:** giellakbd-ios manages shift via KeyboardPage (.normal/.shifted/.capslock), while Ouispr had a separate ShiftState enum. If both systems exist, they can desync.
+**How to avoid:** Use ONLY giellakbd-ios's page-based shift management. Remove Ouispr ShiftState enum. The KeyboardView.page property is the single source of truth for shift state.
 **Warning signs:** Shift key appears pressed but typed characters are lowercase.
 
 ### Pitfall 6: UIViewRepresentable Lifecycle Issues
@@ -450,7 +450,7 @@ var page: KeyboardPage {
 
 ## State of the Art
 
-| Old Approach (Dictus v1.2) | Current Approach (Phase 18) | Why Changed |
+| Old Approach (Ouispr v1.2) | Current Approach (Phase 18) | Why Changed |
 |----|----|----|
 | SwiftUI VStack + HStack keyboard grid | UICollectionView with direct touch handling | 16 SwiftUI approaches failed to eliminate dead zones between keys |
 | DeviceClass enum (screen height heuristic) | DeviceKit + KeyboardHeightProvider | Tested per-device height tables are more reliable than screen bounds heuristics |
@@ -480,9 +480,9 @@ var page: KeyboardPage {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (Xcode built-in) |
-| Config file | DictusKeyboard target in Xcode project |
-| Quick run command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:DictusCoreTests 2>&1 \| tail -20` |
-| Full suite command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 \| tail -30` |
+| Config file | OuisprKeyboard target in Xcode project |
+| Quick run command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:OuisprCoreTests 2>&1 \| tail -20` |
+| Full suite command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 \| tail -30` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -512,7 +512,7 @@ var page: KeyboardPage {
 
 ### Primary (HIGH confidence)
 - giellakbd-ios source code (GitHub divvun/giellakbd-ios) -- KeyboardView.swift, KeyView.swift, KeyOverlayView.swift, KeyboardViewController.swift, KeyDefinition.swift, KeyboardDefinition.swift, Theme.swift, DeviceContext.swift, KeyboardHeightProvider.swift, InputContext.swift, SystemKeys.swift, LongPressController.swift, DeadKeyHandler.swift, Audio.swift
-- Existing Dictus codebase -- KeyboardViewController.swift, KeyboardRootView.swift, KeyboardView.swift, KeyboardLayout.swift, HapticFeedback.swift, InputView.swift, KeyboardState.swift
+- Existing Ouispr codebase -- KeyboardViewController.swift, KeyboardRootView.swift, KeyboardView.swift, KeyboardLayout.swift, HapticFeedback.swift, InputView.swift, KeyboardState.swift
 
 ### Secondary (MEDIUM confidence)
 - giellakbd-ios Podfile -- dependency list (DeviceKit ~> 5.7, Sentry ~> 8, DivvunSpell, RxSwift, SQLite.swift)

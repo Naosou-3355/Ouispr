@@ -57,22 +57,22 @@ Requirements: PRED-04, PRED-05, PRED-06
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Current prediction code (to extend)
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` — Orchestrator with `suggestions()` and `spellCheck()`. Needs new `predict(afterWord:)` or similar method.
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` — Observable state with modes (idle/completions/corrections). Needs new `.predictions` mode and prediction trigger after space.
-- `DictusKeyboard/TextPrediction/AOSPTrieEngine.swift` — C++ trie wrapper via ObjC++ bridge. Extend with n-gram lookup methods.
-- `DictusKeyboard/Views/SuggestionBarView.swift` — 3-slot UI. May need minor styling for prediction mode (no bold center).
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` — Orchestrator with `suggestions()` and `spellCheck()`. Needs new `predict(afterWord:)` or similar method.
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` — Observable state with modes (idle/completions/corrections). Needs new `.predictions` mode and prediction trigger after space.
+- `OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift` — C++ trie wrapper via ObjC++ bridge. Extend with n-gram lookup methods.
+- `OuisprKeyboard/Views/SuggestionBarView.swift` — 3-slot UI. May need minor styling for prediction mode (no bold center).
 
 ### AOSP C++ engine (to extend)
-- `DictusKeyboard/Vendored/AOSPTrie/` — C++ trie reader, scorer, proximity maps. Extend with n-gram trie data structures and lookup.
+- `OuisprKeyboard/Vendored/AOSPTrie/` — C++ trie reader, scorer, proximity maps. Extend with n-gram trie data structures and lookup.
 - ObjC++ bridge files in same directory — add n-gram query methods to bridge.
 
 ### Keyboard bridge (integration point)
-- `DictusKeyboard/DictusKeyboardBridge.swift` — handleSpace() triggers autocorrect. Needs to also trigger n-gram prediction after space. handleSuggestionTap() needs chaining logic.
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` — handleSpace() triggers autocorrect. Needs to also trigger n-gram prediction after space. handleSuggestionTap() needs chaining logic.
 
 ### Frequency data (fallback source)
-- `DictusCore/Sources/DictusCore/FrequencyDictionary.swift` — JSON frequency ranks. Used as fallback when no n-gram match.
-- `DictusKeyboard/Resources/fr_frequency.json` — French frequency data (10K words).
-- `DictusKeyboard/Resources/en_frequency.json` — English frequency data (10K words).
+- `OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift` — JSON frequency ranks. Used as fallback when no n-gram match.
+- `OuisprKeyboard/Resources/fr_frequency.json` — French frequency data (10K words).
+- `OuisprKeyboard/Resources/en_frequency.json` — English frequency data (10K words).
 
 ### Prior phase decisions
 - `.planning/phases/24.1-replace-symspell-with-aosp-style-compressed-trie-c-with-swift-interop-for-spell-correction-100k-words-edit-distance-2-3-5-mib-memory-via-mmap-based-on-heliboard-aosp-latinime-engine/24.1-CONTEXT.md` — AOSP trie C++ architecture, ObjC++ bridge pattern, binary dict format, mmap strategy. Foundation to extend.
@@ -102,10 +102,10 @@ Requirements: PRED-04, PRED-05, PRED-06
 - Background queue computation with main-thread publishing (SuggestionState pattern)
 - One language in memory at a time, reload on `setLanguage()`
 - Python offline build tools for binary data generation (Phase 24.1 dict-builder)
-- Vendored C++ code in `DictusKeyboard/Vendored/AOSPTrie/`
+- Vendored C++ code in `OuisprKeyboard/Vendored/AOSPTrie/`
 
 ### Integration Points
-- `handleSpace()` in DictusKeyboardBridge: after autocorrect, trigger n-gram prediction
+- `handleSpace()` in OuisprKeyboardBridge: after autocorrect, trigger n-gram prediction
 - `SuggestionState.update()` / `updateAsync()`: when cursor is after a space, query n-gram engine instead of UITextChecker
 - Suggestion tap handler: for `.predictions` mode, insert word + space + trigger chained prediction
 - `AOSPTrieEngine.spellCheck()`: pass previous word context for n-gram-boosted correction ranking

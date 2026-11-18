@@ -7,7 +7,7 @@ tags: [text-prediction, autocorrect, suggestion-bar, emoji, keyboard-layout, swi
 # Dependency graph
 requires:
   - phase: 18-uikit-keyboard-rebuild
-    provides: GiellaKeyboardView, DictusKeyboardBridge, KeyboardViewController UIKit architecture
+    provides: GiellaKeyboardView, OuisprKeyboardBridge, KeyboardViewController UIKit architecture
   - phase: 08-text-prediction
     provides: SuggestionState, TextPredictionEngine, AutocorrectState
 provides:
@@ -27,10 +27,10 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
 
 key-decisions:
   - "SuggestionState owned by controller, not SwiftUI view -- ensures bridge and view share same instance"
@@ -51,7 +51,7 @@ completed: 2026-03-30
 
 # Phase 20 Plan 01: Prediction Pipeline Reintegration Summary
 
-**Text prediction wired through DictusKeyboardBridge with autocorrect-on-space, undo-on-backspace, emoji key in layout, and settings-driven default layer**
+**Text prediction wired through OuisprKeyboardBridge with autocorrect-on-space, undo-on-backspace, emoji key in layout, and settings-driven default layer**
 
 ## Performance
 
@@ -75,10 +75,10 @@ Each task was committed atomically:
 2. **Task 2: Add autocorrect-on-space, undo-on-backspace, emoji key in layout, and default layer setting** - `37677c7` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardViewController.swift` - Owns SuggestionState, injects into bridge + root view, default layer, emoji toggle
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Suggestion updates on all key handlers, autocorrect logic, emoji routing
-- `DictusKeyboard/KeyboardRootView.swift` - Changed to @ObservedObject for externally-owned SuggestionState
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - Emoji key added to lettersBottomRow (4 keys: symbols, emoji, space, return)
+- `OuisprKeyboard/KeyboardViewController.swift` - Owns SuggestionState, injects into bridge + root view, default layer, emoji toggle
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Suggestion updates on all key handlers, autocorrect logic, emoji routing
+- `OuisprKeyboard/KeyboardRootView.swift` - Changed to @ObservedObject for externally-owned SuggestionState
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - Emoji key added to lettersBottomRow (4 keys: symbols, emoji, space, return)
 
 ## Decisions Made
 - SuggestionState owned by KeyboardViewController (not SwiftUI) for single source of truth across bridge and view

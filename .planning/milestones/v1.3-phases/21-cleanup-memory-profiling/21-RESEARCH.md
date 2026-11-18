@@ -8,7 +8,7 @@
 
 Phase 21 is a quality gate with three discrete workstreams: (1) delete old SwiftUI keyboard files and clean LegacyCompat, (2) profile the keyboard extension memory on a real device across all operation modes, and (3) verify the existing OSSignposter instrumentation produces data in Instruments. No new features are introduced.
 
-The codebase analysis confirms all 5 old SwiftUI files (KeyButton, KeyRow, KeyboardView, SpecialKeyButton, AccentPopup) are self-contained -- they reference each other but are NOT referenced by any active code paths. The only dependency chain risk is LegacyCompat.swift, whose types (KeyMetrics, KeySound, DeviceClass, KeyPopup) are actively used by EmojiPickerView, EmojiCategoryBar, and DictusKeyboardBridge. These types MUST be extracted before LegacyCompat is deleted.
+The codebase analysis confirms all 5 old SwiftUI files (KeyButton, KeyRow, KeyboardView, SpecialKeyButton, AccentPopup) are self-contained -- they reference each other but are NOT referenced by any active code paths. The only dependency chain risk is LegacyCompat.swift, whose types (KeyMetrics, KeySound, DeviceClass, KeyPopup) are actively used by EmojiPickerView, EmojiCategoryBar, and OuisprKeyboardBridge. These types MUST be extracted before LegacyCompat is deleted.
 
 **Primary recommendation:** Extract LegacyCompat types first, delete old SwiftUI files, clean pbxproj, then profile memory and verify signposter in a single Instruments session.
 
@@ -68,7 +68,7 @@ No new dependencies needed for this phase.
 All 4 types (KeyMetrics, DeviceClass, KeySound, KeyPopup) share a common concern: keyboard layout/feedback constants. They are small (total ~90 lines), tightly coupled (KeyPopup uses KeyMetrics, KeyMetrics uses DeviceClass), and consumed together. A single file reduces pbxproj churn and keeps related constants discoverable.
 
 ```
-DictusKeyboard/
+OuisprKeyboard/
 ├── KeyboardMetrics.swift        # NEW: DeviceClass, KeyMetrics, KeySound, KeyPopup (extracted from LegacyCompat)
 ├── KeyboardRootView.swift       # CLEANED: no SwiftUI keyboard references
 ├── LegacyCompat.swift           # DELETED
@@ -81,7 +81,7 @@ DictusKeyboard/
 │   ├── EmojiPickerView.swift    # UNCHANGED (uses KeyMetrics, KeyPopup)
 │   ├── EmojiCategoryBar.swift   # UNCHANGED (uses KeySound)
 │   └── ...
-├── DictusKeyboardBridge.swift   # UNCHANGED (uses KeySound)
+├── OuisprKeyboardBridge.swift   # UNCHANGED (uses KeySound)
 ├── Vendored/Views/
 │   └── KeyboardView.swift       # UNCHANGED (this is GiellaKeyboardView -- UIKit, NOT deleted)
 ```
@@ -120,7 +120,7 @@ Identified from codebase analysis:
 **PBXGroup (Views children):**
 - Lines referencing AA100031, AA100032, AA100033, AA100034, AA100070
 
-**PBXGroup (DictusKeyboard children):**
+**PBXGroup (OuisprKeyboard children):**
 - Line referencing CC100000
 
 **PBXSourcesBuildPhase:**
@@ -176,9 +176,9 @@ Identified from codebase analysis:
 ### Extracted KeyboardMetrics.swift
 
 ```swift
-// DictusKeyboard/KeyboardMetrics.swift
+// OuisprKeyboard/KeyboardMetrics.swift
 // Keyboard layout constants and feedback types extracted from LegacyCompat.
-// Used by EmojiPickerView, EmojiCategoryBar, DictusKeyboardBridge.
+// Used by EmojiPickerView, EmojiCategoryBar, OuisprKeyboardBridge.
 
 import SwiftUI
 import UIKit
@@ -284,10 +284,10 @@ struct KeyPopup: View {
    - What's unclear: Exact overhead delta between Instruments-attached and real-world usage
    - Recommendation: Take a Debug Navigator baseline reading first (without Instruments), then do the detailed Instruments session. If Instruments shows 45-50MB but Debug Navigator shows 35MB, we know the overhead is ~10-15MB and real usage is safe.
 
-2. **DictusCore types only referenced by deleted files**
-   - What we know: CONTEXT.md says "quick check DictusCore for types only referenced by deleted files"
-   - What's unclear: Whether any DictusCore types are orphaned
-   - Recommendation: Grep DictusCore for types used in the 5 deleted files, check if those types are used anywhere else. Low risk -- the deleted files are self-contained SwiftUI views.
+2. **OuisprCore types only referenced by deleted files**
+   - What we know: CONTEXT.md says "quick check OuisprCore for types only referenced by deleted files"
+   - What's unclear: Whether any OuisprCore types are orphaned
+   - Recommendation: Grep OuisprCore for types used in the 5 deleted files, check if those types are used anywhere else. Low risk -- the deleted files are self-contained SwiftUI views.
 
 ## Validation Architecture
 
@@ -296,7 +296,7 @@ struct KeyPopup: View {
 |----------|-------|
 | Framework | Xcode Instruments + manual device profiling |
 | Config file | None -- Instruments is an external tool |
-| Quick run command | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS,name=iPhone 15 Pro Max'` |
+| Quick run command | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS,name=iPhone 15 Pro Max'` |
 | Full suite command | Instruments profiling session (manual -- requires physical device) |
 
 ### Phase Requirements -> Test Map
@@ -312,7 +312,7 @@ This is a quality gate with no feature requirement IDs. Validation is:
 | Signposter data | os_signpost instrument captures KeyPress intervals | Manual (Instruments) | No -- requires device + Instruments |
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild build -scheme DictusKeyboard -destination generic/platform=iOS` (compilation check)
+- **Per task commit:** `xcodebuild build -scheme OuisprKeyboard -destination generic/platform=iOS` (compilation check)
 - **Phase gate:** Full Instruments profiling session on device
 
 ### Wave 0 Gaps
@@ -344,7 +344,7 @@ Current KeyboardRootView.swift is already clean:
 ## Metadata
 
 **Confidence breakdown:**
-- Dead code identification: HIGH -- verified by grep across entire DictusKeyboard directory
+- Dead code identification: HIGH -- verified by grep across entire OuisprKeyboard directory
 - pbxproj entries: HIGH -- exact IDs extracted from file
 - Type extraction: HIGH -- consumer analysis confirms which types are needed
 - Memory profiling workflow: MEDIUM -- standard Instruments approach, but extension-specific nuances (jetsam override) noted

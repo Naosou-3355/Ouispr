@@ -27,9 +27,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardState.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusApp/DictationCoordinator.swift
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprApp/DictationCoordinator.swift
 
 key-decisions:
   - "Do NOT instant-reset on keyboardAppear -- URL scheme flow causes keyboardDidDisappear then keyboardDidAppear within ~2s, which would kill legitimate recordings"
@@ -74,9 +74,9 @@ Each task was committed atomically:
 2. **Task 2: Verify complete animation state fix on device** - APPROVED by user (checkpoint, no commit)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardState.swift` - forceResetToIdle(), watchdog timer (5s stale threshold), lastWaveformUpdate tracking, deinit cleanup
-- `DictusKeyboard/KeyboardRootView.swift` - onReceive for keyboardWillAppear does refreshFromDefaults (not instant reset), watchdog catches stale states
-- `DictusApp/DictationCoordinator.swift` - 30s transcription timeout watchdog, cancelDictation on fire, deinit cleanup
+- `OuisprKeyboard/KeyboardState.swift` - forceResetToIdle(), watchdog timer (5s stale threshold), lastWaveformUpdate tracking, deinit cleanup
+- `OuisprKeyboard/KeyboardRootView.swift` - onReceive for keyboardWillAppear does refreshFromDefaults (not instant reset), watchdog catches stale states
+- `OuisprApp/DictationCoordinator.swift` - 30s transcription timeout watchdog, cancelDictation on fire, deinit cleanup
 
 ## Decisions Made
 - Do NOT instant-reset on keyboardAppear: URL scheme flow causes keyboardDidDisappear then keyboardDidAppear within ~2s, which would kill legitimate recordings that just started. Instead, refreshFromDefaults + 5s watchdog handles stale states safely.
@@ -90,7 +90,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (device testing iteration)
 - **Issue:** Plan specified instant forceResetToIdle on keyboardWillAppear, but URL scheme dictation flow triggers keyboardDidDisappear then keyboardDidAppear within ~2s, immediately killing the recording that was just requested
 - **Fix:** Replaced instant forceResetToIdle with refreshFromDefaults on appear + rely on 5s waveform watchdog for actual stale states
-- **Files modified:** DictusKeyboard/KeyboardRootView.swift, DictusKeyboard/KeyboardState.swift
+- **Files modified:** OuisprKeyboard/KeyboardRootView.swift, OuisprKeyboard/KeyboardState.swift
 - **Verification:** 4 consecutive recordings work without false resets
 - **Committed in:** eaa5456, f2928a0
 
@@ -98,7 +98,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (device testing iteration)
 - **Issue:** Watchdog timer was not being started when dictationStatus changed to .recording
 - **Fix:** Ensured watchdog starts/stops correctly based on status transitions
-- **Files modified:** DictusKeyboard/KeyboardState.swift
+- **Files modified:** OuisprKeyboard/KeyboardState.swift
 - **Committed in:** c06f811
 
 ---

@@ -17,7 +17,7 @@ expected: The app icon shows 3 vertical bars on dark navy background. Bars are s
 result: pass
 
 ### 2. HomeView — No Duplicate Title
-expected: Opening the app shows the HomeView with the Dictus logo section at top. There is NO duplicate white "Dictus" navigation title bar above the logo area.
+expected: Opening the app shows the HomeView with the Ouispr logo section at top. There is NO duplicate white "Ouispr" navigation title bar above the logo area.
 result: pass
 
 ### 3. HomeView — Model Card Display
@@ -37,7 +37,7 @@ expected: During onboarding, swiping left/right does NOT change the step. Steps 
 result: pass
 
 ### 7. Onboarding — Keyboard Auto-Detection
-expected: On the keyboard setup page, after enabling "Dictus" in Settings > Keyboards and returning, the page auto-detects the keyboard is enabled and advances after a brief delay.
+expected: On the keyboard setup page, after enabling "Ouispr" in Settings > Keyboards and returning, the page auto-detects the keyboard is enabled and advances after a brief delay.
 result: pass
 
 ### 8. Onboarding — Model Download Page

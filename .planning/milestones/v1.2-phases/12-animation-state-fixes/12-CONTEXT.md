@@ -54,11 +54,11 @@ Eliminate intermittent recording overlay and waveform animation bugs across all 
 ## Existing Code Insights
 
 ### Reusable Assets
-- `RecordingOverlay` (DictusKeyboard/Views/RecordingOverlay.swift): Full overlay with waveform, timer, cancel/stop. Needs .requested state support
-- `AnimatedMicButton` (DictusCore/Design/AnimatedMicButton.swift): 4-state animated button. Uses onChange(of: status) + DispatchQueue.main.asyncAfter — potential race condition source
-- `BrandWaveform` (DictusCore/Design/BrandWaveform.swift): Canvas-based 30-bar waveform with lerp smoothing. Already handles isProcessing mode
-- `KeyboardState` (DictusKeyboard/KeyboardState.swift): Observes cross-process state via Darwin notifications. Has refreshFromDefaults() and waveform reading
-- `DictationCoordinator` (DictusApp/DictationCoordinator.swift): Manages dictation lifecycle. updateStatus() writes to App Group + posts Darwin notification
+- `RecordingOverlay` (OuisprKeyboard/Views/RecordingOverlay.swift): Full overlay with waveform, timer, cancel/stop. Needs .requested state support
+- `AnimatedMicButton` (OuisprCore/Design/AnimatedMicButton.swift): 4-state animated button. Uses onChange(of: status) + DispatchQueue.main.asyncAfter — potential race condition source
+- `BrandWaveform` (OuisprCore/Design/BrandWaveform.swift): Canvas-based 30-bar waveform with lerp smoothing. Already handles isProcessing mode
+- `KeyboardState` (OuisprKeyboard/KeyboardState.swift): Observes cross-process state via Darwin notifications. Has refreshFromDefaults() and waveform reading
+- `DictationCoordinator` (OuisprApp/DictationCoordinator.swift): Manages dictation lifecycle. updateStatus() writes to App Group + posts Darwin notification
 
 ### Key Bug Surface Areas
 - `KeyboardRootView.swift:72`: Overlay condition is `status == .recording || .transcribing` — missing `.requested`

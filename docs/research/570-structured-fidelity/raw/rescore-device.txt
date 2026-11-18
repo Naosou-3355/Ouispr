@@ -58,7 +58,7 @@ rescored: 81 stored runs from ../docs/research/570-structured-fidelity/capture-d
 
 ━━ [V1-rule7-property] D6-issues-check#3
   433→226 2139ms success recall=5/9 UNRECALLED=4 inversions=0/10
-     UNRECALLED (whole 0.22, best 0.11): J'ai besoin de toi là pour faire un petit check au niveau des issues dictus iOS.
+     UNRECALLED (whole 0.22, best 0.11): J'ai besoin de toi là pour faire un petit check au niveau des issues ouispr iOS.
      UNRECALLED (whole 0.00, best 0.00): J'ai eu un retour d'utilisateur.
      UNRECALLED (whole 0.00, best 0.00): Enfin tu regarderas dans le slide,
      UNRECALLED (whole 0.00, best 0.00): on a pas mal discuté.

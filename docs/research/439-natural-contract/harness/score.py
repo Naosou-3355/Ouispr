@@ -81,7 +81,7 @@ KEEP = {
     # silence. R2's predicate refuses to score the repair without it; this makes the
     # deletion itself visible in the run's violation list.
     "5-rambling": ["ça me reviendra", "Julien", "mardi", "février", "comptable"],
-    "6-unscripted": ["Dictus", "gros pavé", "c'est pas"],
+    "6-unscripted": ["Ouispr", "gros pavé", "c'est pas"],
 }
 
 # ── Bar 4 (invented content) is NOT scored here, and that is deliberate ──────

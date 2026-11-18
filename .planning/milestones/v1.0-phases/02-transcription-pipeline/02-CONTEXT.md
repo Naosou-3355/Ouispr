@@ -18,7 +18,7 @@ A user can speak French into the main app and receive clean, accurate text back 
 - No maximum recording duration — user records as long as needed
 - Recording screen shows a live audio waveform visualization + stop button + elapsed time counter
 - After transcription completes, auto-return immediately to keyboard — no result preview in the main app (brief "Done" checkmark, then user switches back)
-- Recording starts automatically when app opens via `dictus://dictate` (carried forward from Phase 1)
+- Recording starts automatically when app opens via `ouispr://dictate` (carried forward from Phase 1)
 
 ### Model routing & defaults
 - User chooses which model to download during initial setup (no pre-selected default)
@@ -66,24 +66,24 @@ A user can speak French into the main app and receive clean, accurate text back 
 ## Existing Code Insights
 
 ### Reusable Assets
-- `DictationCoordinator` (DictusApp/DictationCoordinator.swift): Integration point — `startDictation()` currently stubs recording + transcription with `Task.sleep`. Replace internals with real AVAudioEngine + WhisperKit pipeline
-- `DictationStatus` enum (DictusCore): Already has all needed states (idle, requested, recording, transcribing, ready, failed)
-- `SharedKeys` (DictusCore): Already has `lastTranscription`, `lastTranscriptionTimestamp`, `dictationStatus`, `lastError` keys
+- `DictationCoordinator` (OuisprApp/DictationCoordinator.swift): Integration point — `startDictation()` currently stubs recording + transcription with `Task.sleep`. Replace internals with real AVAudioEngine + WhisperKit pipeline
+- `DictationStatus` enum (OuisprCore): Already has all needed states (idle, requested, recording, transcribing, ready, failed)
+- `SharedKeys` (OuisprCore): Already has `lastTranscription`, `lastTranscriptionTimestamp`, `dictationStatus`, `lastError` keys
 - `AppGroup.defaults` and `AppGroup.containerURL`: Ready for model storage and cross-process data
-- `DarwinNotificationCenter` (DictusCore): Notification posting for cross-process signaling already wired
+- `DarwinNotificationCenter` (OuisprCore): Notification posting for cross-process signaling already wired
 
 ### Established Patterns
 - `@MainActor` on coordinator classes with `@Published` properties
 - Darwin notifications + UserDefaults synchronize pattern for cross-process communication (write all values before posting notification to avoid race conditions)
 - `Task`-based async operations with cancellation support
-- `#available(iOS 14.0, *)` guards for DictusLogger usage
+- `#available(iOS 14.0, *)` guards for OuisprLogger usage
 
 ### Integration Points
 - `DictationCoordinator.startDictation()` — replace stub with real recording + transcription
 - `DictationCoordinator.writeTranscription()` — already writes to App Group, will receive real text
-- `DictusApp.swift` `.onOpenURL` — already routes `dictus://dictate` to coordinator
+- `OuisprApp.swift` `.onOpenURL` — already routes `ouispr://dictate` to coordinator
 - `ContentView.swift` / `DictationView.swift` — recording UI lives here, needs waveform + stop button
-- `DictusCore/Package.swift` — WhisperKit SPM dependency added to main app target only
+- `OuisprCore/Package.swift` — WhisperKit SPM dependency added to main app target only
 
 </code_context>
 

@@ -28,17 +28,17 @@ Key property:
 
 The memory budget for keyboard extensions is officially undocumented, but is experimentally confirmed to be approximately **48–50 MB**. Developer reports show that exceeding this causes `EXC_RESOURCE (RESOURCE_TYPE_MEMORY)` termination with no user-facing error. The CLAUDE.md figure of ~50 MB is consistent with this.
 
-**Practical implication for Phase 1:** No ML models are loaded in the keyboard extension. The keyboard shell alone is safe. WhisperKit models load only in the main app (DictusApp target). Phase 1 is safe from memory pressure.
+**Practical implication for Phase 1:** No ML models are loaded in the keyboard extension. The keyboard shell alone is safe. WhisperKit models load only in the main app (OuisprApp target). Phase 1 is safe from memory pressure.
 
 ### APPLICATION_EXTENSION_API_ONLY
 
-Xcode automatically sets `APPLICATION_EXTENSION_API_ONLY = YES` on new extension targets. This causes the compiler to reject calls to APIs annotated as `@available(iOSApplicationExtension, unavailable)`. The most important forbidden APIs for Dictus:
+Xcode automatically sets `APPLICATION_EXTENSION_API_ONLY = YES` on new extension targets. This causes the compiler to reject calls to APIs annotated as `@available(iOSApplicationExtension, unavailable)`. The most important forbidden APIs for Ouispr:
 
 - `UIApplication.shared` — unavailable; use `textDocumentProxy` or responder chain workarounds
 - `AVAudioSession` microphone recording — only available with Full Access granted
 - Most inter-process communication except via shared containers and URL schemes via `Link`
 
-For the DictusCore local SPM package: code shared between both targets must annotate any app-only APIs with `@available(iOSApplicationExtension, unavailable)` or the compiler will warn on the extension target. In Xcode 13+, linking a Swift package from an extension target emits warnings for unsafe APIs but does not fail the build — you must address them explicitly.
+For the OuisprCore local SPM package: code shared between both targets must annotate any app-only APIs with `@available(iOSApplicationExtension, unavailable)` or the compiler will warn on the extension target. In Xcode 13+, linking a Swift package from an extension target emits warnings for unsafe APIs but does not fail the build — you must address them explicitly.
 
 ### textDocumentProxy API
 
@@ -65,30 +65,30 @@ textDocumentProxy.insertText("\n")
 
 ### Setup
 
-Both targets (DictusApp and DictusKeyboard) must have the App Group capability added in Xcode under Signing & Capabilities. The group identifier must be identical in both — `group.com.pivi.dictus`. Each target needs its own `.entitlements` file with the `com.apple.security.application-groups` key.
+Both targets (OuisprApp and OuisprKeyboard) must have the App Group capability added in Xcode under Signing & Capabilities. The group identifier must be identical in both — `group.com.pivi.dictus`. Each target needs its own `.entitlements` file with the `com.apple.security.application-groups` key.
 
 In Xcode 15+, managed capabilities can be enabled directly in the Signing & Capabilities tab, which updates provisioning profiles automatically.
 
 ### Shared UserDefaults
 
 ```swift
-// Create a shared UserDefaults — use this everywhere in DictusCore
+// Create a shared UserDefaults — use this everywhere in OuisprCore
 let sharedDefaults = UserDefaults(suiteName: "group.com.pivi.dictus")
 
-// Write (e.g., from DictusApp after transcription)
+// Write (e.g., from OuisprApp after transcription)
 sharedDefaults?.set("Bonjour le monde", forKey: "lastTranscription")
 sharedDefaults?.set("idle", forKey: "dictationStatus")
 
-// Read (e.g., from DictusKeyboard)
+// Read (e.g., from OuisprKeyboard)
 let result = sharedDefaults?.string(forKey: "lastTranscription")
 ```
 
 **Gotcha — synchronize():** The `.synchronize()` method is deprecated but is sometimes needed immediately before suspension to flush pending writes. Omitting it can cause the reading process to see stale data. The safe pattern: write then call `.synchronize()` explicitly when the data must be readable immediately by another process.
 
-**Gotcha — App Group ID mismatch:** If the `suiteName` strings are even slightly different between targets, reads return `nil` silently. Centralise the group ID string as a constant in DictusCore:
+**Gotcha — App Group ID mismatch:** If the `suiteName` strings are even slightly different between targets, reads return `nil` silently. Centralise the group ID string as a constant in OuisprCore:
 
 ```swift
-// DictusCore/Sources/DictusCore/AppGroup.swift
+// OuisprCore/Sources/OuisprCore/AppGroup.swift
 public enum AppGroup {
     public static let identifier = "group.com.pivi.dictus"
     public static var defaults: UserDefaults {
@@ -114,21 +114,21 @@ Use this for larger data (e.g., audio buffers, future model metadata). For Phase
 UserDefaults alone does not wake a suspended process. To signal the keyboard that new data is available, use Darwin Notifications (system-wide, cross-process):
 
 ```swift
-// Post a signal (from DictusApp when transcription is ready)
+// Post a signal (from OuisprApp when transcription is ready)
 CFNotificationCenterPostNotification(
     CFNotificationCenterGetDarwinNotifyCenter(),
-    "com.pivi.dictus.transcriptionReady" as CFNotificationName,
+    "com.pivi.ouispr.transcriptionReady" as CFNotificationName,
     nil, nil, true
 )
 
-// Observe (from DictusKeyboard)
+// Observe (from OuisprKeyboard)
 CFNotificationCenterAddObserver(
     CFNotificationCenterGetDarwinNotifyCenter(),
     nil,
     { _, _, name, _, _ in
         // New transcription available — read from UserDefaults
     },
-    "com.pivi.dictus.transcriptionReady" as CFString,
+    "com.pivi.ouispr.transcriptionReady" as CFString,
     nil,
     .deliverImmediately
 )
@@ -161,16 +161,16 @@ A SwiftUI `Link` view, when tapped, causes the system to open the URL, switching
 
 ```swift
 // In the keyboard's SwiftUI view
-Link(destination: URL(string: "dictus://dictate")!) {
+Link(destination: URL(string: "ouispr://dictate")!) {
     MicButton()
 }
 ```
 
 **Limitation of Link:** You get a `Link` view, not a fully customizable button with arbitrary gesture recognizers. You can style it with `.buttonStyle()` and wrap your custom view inside, but you cannot intercept the tap to perform pre-flight logic and then conditionally open the URL. For Phase 1 (mic button triggers dictation unconditionally), this is not a problem.
 
-### Registering the URL Scheme in DictusApp
+### Registering the URL Scheme in OuisprApp
 
-In `DictusApp/Info.plist`:
+In `OuisprApp/Info.plist`:
 
 ```xml
 <key>CFBundleURLTypes</key>
@@ -180,19 +180,19 @@ In `DictusApp/Info.plist`:
         <string>com.pivi.dictus</string>
         <key>CFBundleURLSchemes</key>
         <array>
-            <string>dictus</string>
+            <string>ouispr</string>
         </array>
     </dict>
 </array>
 ```
 
-### Handling the URL in DictusApp
+### Handling the URL in OuisprApp
 
 With SwiftUI and the `@main` App lifecycle:
 
 ```swift
 @main
-struct DictusApp: App {
+struct OuisprApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -203,7 +203,7 @@ struct DictusApp: App {
     }
 
     func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "dictus" else { return }
+        guard url.scheme == "ouispr" else { return }
         switch url.host {
         case "dictate":
             // Start recording immediately
@@ -217,7 +217,7 @@ struct DictusApp: App {
 
 ### The Return-to-Keyboard Problem
 
-**There is no App Store-approved way to automatically return the user from DictusApp to the previous app after dictation completes.**
+**There is no App Store-approved way to automatically return the user from OuisprApp to the previous app after dictation completes.**
 
 Research findings:
 - `LSApplicationWorkspace` (private API) was rejected by Apple in App Store review
@@ -227,7 +227,7 @@ Research findings:
 
 **What this means for the CONTEXT.md decision "auto-return to the previous app":** This decision cannot be implemented with a supported API. The user will need to manually switch back using the iOS app switcher or the `<` back button that iOS shows when you launch one app from another.
 
-**Recommended approach for Phase 1:** DictusApp should minimize itself as aggressively as possible after transcription. The iOS system's "back to previous app" button (the status bar button or back gesture on certain devices) will appear automatically when the user was in another app and Dictus was opened via URL scheme. Do not implement a `dictus://return` scheme — it cannot be made to reliably navigate back. Write the result to App Group storage, signal via Darwin notification, then call the equivalent of "close the app" by using `UIControl().sendAction(#selector(URLSessionTask.suspend), to: UIApplication.shared, for: nil)` (which is the `suspend` approach — takes user to home, not back). **The cleanest UX for Phase 1 is to let iOS show its natural "< Previous App" chevron in the top-left corner after the URL open.** No code required — iOS handles this automatically when App A opens App B via URL scheme.
+**Recommended approach for Phase 1:** OuisprApp should minimize itself as aggressively as possible after transcription. The iOS system's "back to previous app" button (the status bar button or back gesture on certain devices) will appear automatically when the user was in another app and Ouispr was opened via URL scheme. Do not implement a `ouispr://return` scheme — it cannot be made to reliably navigate back. Write the result to App Group storage, signal via Darwin notification, then call the equivalent of "close the app" by using `UIControl().sendAction(#selector(URLSessionTask.suspend), to: UIApplication.shared, for: nil)` (which is the `suspend` approach — takes user to home, not back). **The cleanest UX for Phase 1 is to let iOS show its natural "< Previous App" chevron in the top-left corner after the URL open.** No code required — iOS handles this automatically when App A opens App B via URL scheme.
 
 ---
 
@@ -395,14 +395,14 @@ let hasFull: Bool = inputViewController.hasFullAccess
 
 `hasFullAccess` is available since iOS 11. Returns `true` only if:
 1. The extension's Info.plist has `RequestsOpenAccess = YES`
-2. The user has enabled Full Access in Settings > General > Keyboard > Dictus
+2. The user has enabled Full Access in Settings > General > Keyboard > Ouispr
 
 ### What Full Access Enables
 
 With Full Access:
 - App Group shared container access (write from extension side)
 - Network access
-- Microphone trigger (though actual recording happens in main app in Dictus's architecture)
+- Microphone trigger (though actual recording happens in main app in Ouispr's architecture)
 - System keyboard click sounds via `playInputClick()`
 - Access to pasteboard (UIPasteboard)
 
@@ -412,11 +412,11 @@ With Full Access:
 - App Group writes from the extension side are restricted — this affects status signaling
 - No network, no microphone, no pasteboard
 
-**Architecture implication for Dictus:** Because the keyboard extension writes `DictationStatus` to the App Group (to signal "I requested dictation"), this requires Full Access. Without it, the round-trip cannot complete. The CONTEXT.md decision to show a persistent banner when Full Access is off is the correct approach.
+**Architecture implication for Ouispr:** Because the keyboard extension writes `DictationStatus` to the App Group (to signal "I requested dictation"), this requires Full Access. Without it, the round-trip cannot complete. The CONTEXT.md decision to show a persistent banner when Full Access is off is the correct approach.
 
 ### Info.plist Configuration
 
-In `DictusKeyboard/Info.plist`:
+In `OuisprKeyboard/Info.plist`:
 
 ```xml
 <key>NSExtension</key>
@@ -472,56 +472,56 @@ struct MicButton: View {
 }
 ```
 
-**Settings deep link** (open Dictus settings page):
+**Settings deep link** (open Ouispr settings page):
 ```swift
 Link("Activer l'Accès complet", destination: URL(string: UIApplication.openSettingsURLString)!)
 ```
 
-Note: `UIApplication.openSettingsURLString` is `@available(iOSApplicationExtension, unavailable)` — access it via a wrapper in DictusCore that is annotated appropriately, or use the literal string `"app-settings:"`.
+Note: `UIApplication.openSettingsURLString` is `@available(iOSApplicationExtension, unavailable)` — access it via a wrapper in OuisprCore that is annotated appropriately, or use the literal string `"app-settings:"`.
 
 ---
 
-## 7. DictusCore SPM Package Structure
+## 7. OuisprCore SPM Package Structure
 
 ### Creating a Local Package
 
 In Xcode:
 1. File > New > Package
-2. Name: `DictusCore`
-3. Save inside the project directory: `Dictus/DictusCore/`
-4. Add to both targets: DictusApp and DictusKeyboard
+2. Name: `OuisprCore`
+3. Save inside the project directory: `Ouispr/OuisprCore/`
+4. Add to both targets: OuisprApp and OuisprKeyboard
 
 Alternatively, add a `Package.swift` file manually to the workspace root:
 
 ```swift
-// DictusCore/Package.swift
+// OuisprCore/Package.swift
 // swift-tools-version: 5.9
 import PackageDescription
 
 let package = Package(
-    name: "DictusCore",
+    name: "OuisprCore",
     platforms: [.iOS(.v16)],
     products: [
         .library(
-            name: "DictusCore",
-            targets: ["DictusCore"]
+            name: "OuisprCore",
+            targets: ["OuisprCore"]
         )
     ],
     targets: [
         .target(
-            name: "DictusCore",
-            path: "Sources/DictusCore"
+            name: "OuisprCore",
+            path: "Sources/OuisprCore"
         )
     ]
 )
 ```
 
-### Extension Safety in DictusCore
+### Extension Safety in OuisprCore
 
-When DictusCore is linked from both the app and the extension, any API in DictusCore that calls extension-unavailable APIs must be annotated:
+When OuisprCore is linked from both the app and the extension, any API in OuisprCore that calls extension-unavailable APIs must be annotated:
 
 ```swift
-// DictusCore/Sources/DictusCore/AppGroup.swift
+// OuisprCore/Sources/OuisprCore/AppGroup.swift
 
 @available(iOSApplicationExtension, unavailable)
 public func openSettings() {
@@ -537,10 +537,10 @@ public var settingsURL: URL {
 ### Recommended File Structure for Phase 1
 
 ```
-DictusCore/
+OuisprCore/
 ├── Package.swift
 └── Sources/
-    └── DictusCore/
+    └── OuisprCore/
         ├── AppGroup.swift          // AppGroup.identifier, AppGroup.defaults
         ├── DictationStatus.swift   // enum DictationStatus: String
         ├── SharedKeys.swift        // UserDefaults key constants
@@ -551,10 +551,10 @@ DictusCore/
 ### DictationStatus Model
 
 ```swift
-// DictusCore/Sources/DictusCore/DictationStatus.swift
+// OuisprCore/Sources/OuisprCore/DictationStatus.swift
 public enum DictationStatus: String, Codable {
     case idle         // No dictation in progress
-    case requested    // Keyboard sent dictus://dictate, waiting for app
+    case requested    // Keyboard sent ouispr://dictate, waiting for app
     case recording    // Main app is recording audio
     case transcribing // Main app is running WhisperKit
     case ready        // Transcription result is available in shared storage
@@ -565,7 +565,7 @@ public enum DictationStatus: String, Codable {
 ### AppGroupDiagnostic
 
 ```swift
-// DictusCore/Sources/DictusCore/AppGroupDiagnostic.swift
+// OuisprCore/Sources/OuisprCore/AppGroupDiagnostic.swift
 public struct AppGroupDiagnostic {
     public static func run() -> DiagnosticResult {
         let defaults = AppGroup.defaults
@@ -601,21 +601,21 @@ public struct DiagnosticResult {
 
 Unit tests cannot run directly inside a keyboard extension target. The extension runs in its own process with a different entrypoint and lifecycle. Attempting to create a test target with the keyboard extension as the host will fail because extensions are not apps.
 
-**Working approach:** Put all logic in DictusCore (or a testable framework) and test the framework. The `UIInputViewController` subclass stays thin — it only wires up dependencies.
+**Working approach:** Put all logic in OuisprCore (or a testable framework) and test the framework. The `UIInputViewController` subclass stays thin — it only wires up dependencies.
 
 ### Validation Strategy for Phase 1
 
 Since Phase 1 is infrastructure, validation is manual + diagnostic-assisted:
 
-**Level 1: DictusCore Unit Tests**
-- Create a separate `DictusCoreTests` test target in the Xcode project (not in SPM)
+**Level 1: OuisprCore Unit Tests**
+- Create a separate `OuisprCoreTests` test target in the Xcode project (not in SPM)
 - Test `AppGroupDiagnostic.run()` → confirm it reads/writes
 - Test `DictationStatus` encoding/decoding
 - Test `SharedKeys` constants are correct strings
 - These tests run in the simulator and on device without any special setup
 
 **Level 2: AppGroupDiagnostic on Both Launch Paths**
-- Add `AppGroupDiagnostic.run()` call in `DictusApp.init()` and `KeyboardViewController.viewDidLoad()`
+- Add `AppGroupDiagnostic.run()` call in `OuisprApp.init()` and `KeyboardViewController.viewDidLoad()`
 - Log result with `print()` / `os.log` — visible in Xcode console when connected to device
 - **Criterion:** Both targets log `canWrite: true, canRead: true`
 
@@ -623,13 +623,13 @@ Since Phase 1 is infrastructure, validation is manual + diagnostic-assisted:
 The success criteria from the phase description requires a physical iPhone (keyboard extensions require real device for full testing — the simulator's keyboard behavior is limited):
 
 1. Install both targets on device via Xcode
-2. Go to Settings > General > Keyboard > Keyboards > Add New Keyboard > Dictus
-3. Enable Full Access for Dictus
+2. Go to Settings > General > Keyboard > Keyboards > Add New Keyboard > Ouispr
+3. Enable Full Access for Ouispr
 4. Open Notes (or any app with a text field)
-5. Switch to Dictus keyboard via Globe key → **Criterion: keyboard appears without crash**
+5. Switch to Ouispr keyboard via Globe key → **Criterion: keyboard appears without crash**
 6. Type letters A, Z, E, Space, Delete, Return → **Criterion: text appears correctly in Notes**
-7. Tap mic button → **Criterion: DictusApp opens**
-8. Observe DictusApp console log: writes transcription stub to App Group
+7. Tap mic button → **Criterion: OuisprApp opens**
+8. Observe OuisprApp console log: writes transcription stub to App Group
 9. System returns user to Notes (via back button or switcher)
 10. Keyboard shows status indicator, then inserted stub text → **Criterion: round trip complete**
 
@@ -648,7 +648,7 @@ The success criteria from the phase description requires a physical iPhone (keyb
 
 ## Key Risks & Mitigations
 
-### Risk 1 — Auto-Return from DictusApp is Impossible
+### Risk 1 — Auto-Return from OuisprApp is Impossible
 **Severity: High | Probability: Confirmed**
 
 There is no App Store-approved API to return the user to the previous app after dictation. Every available approach (LSApplicationWorkspace, responder chain, UIApplication.shared methods) is either a private API or broken in iOS 18.
@@ -667,21 +667,21 @@ There is no App Store-approved API to return the user to the previous app after 
 
 The keyboard reads transcription data from App Group UserDefaults. If the main app writes and signals before UserDefaults flushes to disk, the keyboard reads stale (empty) data.
 
-**Mitigation:** Always call `sharedDefaults.synchronize()` before posting the Darwin notification in DictusApp. On the keyboard side, add a small retry: re-read after 100ms if the value is nil. This is safe and simple for Phase 1.
+**Mitigation:** Always call `sharedDefaults.synchronize()` before posting the Darwin notification in OuisprApp. On the keyboard side, add a small retry: re-read after 100ms if the value is nil. This is safe and simple for Phase 1.
 
 ### Risk 4 — Memory Budget Creep
 **Severity: Low for Phase 1, High for Phase 2**
 
 Phase 1 loads no ML models in the keyboard extension. Risk is low now but becomes critical in Phase 2 if any WhisperKit initialization leaks into the extension.
 
-**Mitigation:** Establish a strict rule in CLAUDE.md/architecture: WhisperKit is only initialized in DictusApp. DictusKeyboard never imports WhisperKit. Enforce via `EXTENSION_SAFE_API_ONLY = YES` — it will not catch this directly (WhisperKit is an SPM library, not a system API), so add a code review checklist item.
+**Mitigation:** Establish a strict rule in CLAUDE.md/architecture: WhisperKit is only initialized in OuisprApp. OuisprKeyboard never imports WhisperKit. Enforce via `EXTENSION_SAFE_API_ONLY = YES` — it will not catch this directly (WhisperKit is an SPM library, not a system API), so add a code review checklist item.
 
 ### Risk 5 — Full Access Not Granted During Testing
 **Severity: Low | Probability: High (during development)**
 
 Without Full Access, many Phase 1 features will not function. Developers frequently forget to enable it after reinstalling.
 
-**Mitigation:** DictusApp's initial view should prominently display Full Access status and link to Settings. `AppGroupDiagnostic` should be visible in the debug UI during Phase 1.
+**Mitigation:** OuisprApp's initial view should prominently display Full Access status and link to Settings. `AppGroupDiagnostic` should be visible in the debug UI during Phase 1.
 
 ### Risk 6 — Keyboard Entitlement Missing on Device
 **Severity: High | Probability: Possible**
@@ -696,11 +696,11 @@ If the App Group entitlement is not correctly provisioned (not just added in Xco
 
 ### 1. Use SwiftUI Link for the Mic Button — Not a Button with openURL Logic
 
-The mic button must be implemented as a `Link(destination: URL(string: "dictus://dictate")!)` wrapping the visual mic button content. This is the only iOS 16–18 compatible, App Store-safe approach. Accept the constraint that you cannot add arbitrary pre-tap logic to the `Link` itself.
+The mic button must be implemented as a `Link(destination: URL(string: "ouispr://dictate")!)` wrapping the visual mic button content. This is the only iOS 16–18 compatible, App Store-safe approach. Accept the constraint that you cannot add arbitrary pre-tap logic to the `Link` itself.
 
-### 2. Centralise App Group Access in DictusCore — Never Access It from Targets Directly
+### 2. Centralise App Group Access in OuisprCore — Never Access It from Targets Directly
 
-Every App Group read/write must go through `AppGroup.defaults` from DictusCore. This prevents the ID-mismatch bug (the most common source of "data not appearing in the other process" bugs). Make `AppGroup.identifier` a `let` constant, not a `var`.
+Every App Group read/write must go through `AppGroup.defaults` from OuisprCore. This prevents the ID-mismatch bug (the most common source of "data not appearing in the other process" bugs). Make `AppGroup.identifier` a `let` constant, not a `var`.
 
 ### 3. Implement Darwin Notifications as the Signal Mechanism
 
@@ -708,16 +708,16 @@ Do not poll UserDefaults. Use Darwin notifications to signal the keyboard when t
 
 ### 4. Accept That "Auto-Return" Requires User Action
 
-The phase context decision says "auto-return to the previous app." Research confirms this is not possible with approved APIs on iOS 16–18. Recommend updating the user decision to: "After transcription, DictusApp shows a brief success screen, then the user taps the system `< [App Name]` button to return." This is what every major dictation keyboard app (including those built on KeyboardKit Pro) does.
+The phase context decision says "auto-return to the previous app." Research confirms this is not possible with approved APIs on iOS 16–18. Recommend updating the user decision to: "After transcription, OuisprApp shows a brief success screen, then the user taps the system `< [App Name]` button to return." This is what every major dictation keyboard app (including those built on KeyboardKit Pro) does.
 
-### 5. Keep DictusKeyboard Target Extremely Thin
+### 5. Keep OuisprKeyboard Target Extremely Thin
 
 `KeyboardViewController.swift` should do only:
 - Initialize `UIHostingController` with the SwiftUI keyboard view
 - Run `AppGroupDiagnostic` in debug builds
 - Expose `textDocumentProxy` to the coordinator
 
-All logic (key press handling, status state, App Group I/O) lives in DictusCore or the SwiftUI layer. This makes it unit-testable.
+All logic (key press handling, status state, App Group I/O) lives in OuisprCore or the SwiftUI layer. This makes it unit-testable.
 
 ### 6. Test on Physical Device from Day One
 
@@ -725,7 +725,7 @@ Do not build Phase 1 relying on simulator validation for the round-trip. The sim
 
 ### 7. Implement AppGroupDiagnostic as an Actual Debug Screen
 
-Do not rely on console logs alone. Build a simple debug view in DictusApp (hidden behind a Settings toggle or always visible in DEBUG builds) showing:
+Do not rely on console logs alone. Build a simple debug view in OuisprApp (hidden behind a Settings toggle or always visible in DEBUG builds) showing:
 - App Group ID
 - canRead / canWrite status
 - Current DictationStatus from shared defaults

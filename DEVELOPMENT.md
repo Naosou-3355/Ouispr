@@ -1,6 +1,6 @@
-# Dictus — Guide de développement iOS
+# Ouispr — Guide de développement iOS
 
-> Ce document couvre l'ensemble du cycle de développement iOS pour Dictus : setup de l'environnement, workflow quotidien, tests sur device, distribution en bêta via TestFlight, et publication sur l'App Store.
+> Ce document couvre l'ensemble du cycle de développement iOS pour Ouispr : setup de l'environnement, workflow quotidien, tests sur device, distribution en bêta via TestFlight, et publication sur l'App Store.
 
 ---
 
@@ -40,11 +40,11 @@
 brew install git swiftlint
 
 # 3. Cloner le repo
-git clone https://github.com/[username]/dictus.git
-cd dictus
+git clone https://github.com/[username]/ouispr.git
+cd ouispr
 
 # 4. Ouvrir le projet dans Xcode
-open Dictus.xcodeproj
+open Ouispr.xcodeproj
 ```
 
 ### Apple Developer Account
@@ -61,11 +61,11 @@ Pour ajouter ton compte dans Xcode :
 
 ### Créer le projet
 
-Dictus utilise **2 targets** dans le même projet Xcode :
+Ouispr utilise **2 targets** dans le même projet Xcode :
 
 ```
 File → New → Project → App
-  Name: Dictus
+  Name: Ouispr
   Bundle ID: com.pivi.dictus
   Interface: SwiftUI
   Language: Swift
@@ -74,7 +74,7 @@ File → New → Project → App
 Puis ajouter la keyboard extension :
 ```
 File → New → Target → Custom Keyboard Extension
-  Name: DictusKeyboard
+  Name: OuisprKeyboard
   Bundle ID: com.pivi.dictus.keyboard
 ```
 
@@ -83,7 +83,7 @@ File → New → Target → Custom Keyboard Extension
 L'App Group est le mécanisme iOS qui permet à l'app principale et à la keyboard extension de partager des données (modèles Whisper, préférences, historique).
 
 ```
-# Dans Xcode, pour CHAQUE target (DictusApp + DictusKeyboard) :
+# Dans Xcode, pour CHAQUE target (OuisprApp + OuisprKeyboard) :
 Signing & Capabilities → + Capability → App Groups
 → Ajouter : group.solutions.pivi.dictus
 ```
@@ -105,11 +105,11 @@ let modelsPath = containerURL.appendingPathComponent("models")
 
 | Capability | Target | Raison |
 |---|---|---|
-| App Groups | DictusApp + DictusKeyboard | Partage données/modèles |
-| Microphone | DictusApp | Test dictation dans l'app |
-| `RequestsOpenAccess` | DictusKeyboard | Micro dans le clavier |
+| App Groups | OuisprApp + OuisprKeyboard | Partage données/modèles |
+| Microphone | OuisprApp | Test dictation dans l'app |
+| `RequestsOpenAccess` | OuisprKeyboard | Micro dans le clavier |
 
-Dans `DictusKeyboard/Info.plist` :
+Dans `OuisprKeyboard/Info.plist` :
 ```xml
 <key>NSExtension</key>
 <dict>
@@ -127,14 +127,14 @@ Dans `DictusKeyboard/Info.plist` :
 File → Add Package Dependencies
 URL: https://github.com/argmaxinc/WhisperKit.git
 Version: 0.9.0 ou plus récent
-Targets: DictusApp + DictusKeyboard
+Targets: OuisprApp + OuisprKeyboard
 ```
 
 ### Bibliothèques Swift de compatibilité
 
 L'app doit conserver `@executable_path/Frameworks` dans
 `LD_RUNPATH_SEARCH_PATHS` pour Debug et Release. Xcode peut ajouter des
-bibliothèques Swift de compatibilité dans `DictusApp.app/Frameworks`, notamment
+bibliothèques Swift de compatibilité dans `OuisprApp.app/Frameworks`, notamment
 `libswiftCompatibilitySpan.dylib` lorsque les dépendances utilisent les types
 Span. Sans ce chemin, le binaire ne cherche que dans `/usr/lib/swift` et ne
 trouve pas la copie embarquée sur les systèmes qui en ont besoin.
@@ -218,12 +218,12 @@ git merge feature/smart-model-routing
 3. Dans Xcode : sélectionner ton iPhone dans la barre de target (en haut à gauche)
 4. `Cmd+R` → Xcode installe et lance l'app sur le téléphone
 
-### Ajouter le clavier Dictus sur l'iPhone
+### Ajouter le clavier Ouispr sur l'iPhone
 
 Après chaque installation :
 ```
 Réglages → Général → Clavier → Claviers → Ajouter un clavier
-→ Dictus → Activer "Accès complet"
+→ Ouispr → Activer "Accès complet"
 ```
 
 > ⚠️ **L'accès complet doit être réactivé après chaque reinstallation depuis Xcode.** C'est normal, iOS révoque les permissions à chaque nouvelle installation signée en développement.
@@ -231,7 +231,7 @@ Réglages → Général → Clavier → Claviers → Ajouter un clavier
 ### Tester la keyboard extension
 
 1. Ouvrir n'importe quelle app avec un champ texte (Notes, Messages, Safari...)
-2. Appuyer sur le bouton globe 🌐 pour changer de clavier → sélectionner Dictus
+2. Appuyer sur le bouton globe 🌐 pour changer de clavier → sélectionner Ouispr
 3. Tester la dictation
 
 ### Astuce : tester sans débrancher le câble
@@ -254,10 +254,10 @@ Les keyboard extensions tournent dans un processus séparé. Les `print()` et lo
 **Solution — attacher le debugger à l'extension :**
 
 ```
-Debug → Attach to Process → DictusKeyboard
+Debug → Attach to Process → OuisprKeyboard
 ```
 
-Faire ça *après* avoir ouvert un champ texte et activé le clavier Dictus sur l'iPhone.
+Faire ça *après* avoir ouvert un champ texte et activé le clavier Ouispr sur l'iPhone.
 
 ### Erreur de mémoire (crash silencieux)
 
@@ -265,7 +265,7 @@ Si l'extension crash sans message d'erreur clair, c'est souvent un dépassement 
 
 ```
 Product → Profile → Allocations
-→ Sélectionner le process DictusKeyboard
+→ Sélectionner le process OuisprKeyboard
 → Surveiller le pic mémoire au moment de la transcription
 ```
 
@@ -303,10 +303,10 @@ Claude Code peut opérer directement sur les fichiers de ton repo local. Le work
 claude  # Lancer Claude Code
 
 # Exemples de prompts efficaces
-"Crée le fichier DictusCore/ModelRoutingConfig.swift avec 
+"Crée le fichier OuisprCore/ModelRoutingConfig.swift avec 
  la struct ModelRoutingConfig selon les specs du PRD"
 
-"Dans DictusKeyboard/TranscriptionEngine.swift, implémente 
+"Dans OuisprKeyboard/TranscriptionEngine.swift, implémente 
  la fonction resolveModel() décrite dans le PRD section 7.2"
 
 "Fix cette erreur Xcode : [coller l'erreur complète]"
@@ -316,7 +316,7 @@ claude  # Lancer Claude Code
 
 - Générer des fichiers Swift complets à partir des specs du PRD
 - Implémenter des protocoles et extensions boilerplate
-- Écrire les tests unitaires pour DictusCore
+- Écrire les tests unitaires pour OuisprCore
 - Refactorer du code existant que tu lui fournis
 - Débugger à partir des messages d'erreur Xcode
 
@@ -346,7 +346,7 @@ Fichier à la racine du repo, lu automatiquement par Claude Code :
 # CLAUDE.md
 
 ## Projet
-Dictus — iOS keyboard extension pour dictation vocale offline (WhisperKit)
+Ouispr — iOS keyboard extension pour dictation vocale offline (WhisperKit)
 
 ## Stack
 - Swift 5.9+ / SwiftUI
@@ -361,14 +361,14 @@ Dictus — iOS keyboard extension pour dictation vocale offline (WhisperKit)
 - Commentaires en anglais, UI strings en français
 
 ## Contraintes importantes
-- DictusKeyboard : mémoire max ~50MB → tiny/base/small uniquement
+- OuisprKeyboard : mémoire max ~50MB → tiny/base/small uniquement
 - Pas d'UIApplication.shared dans l'extension
 - Toutes les données partagées passent par App Group
 
 ## Fichiers clés
-- DictusCore/ModelRoutingConfig.swift → config Smart Model Routing
-- DictusKeyboard/TranscriptionEngine.swift → intégration WhisperKit
-- DictusKeyboard/TextInserter.swift → textDocumentProxy
+- OuisprCore/ModelRoutingConfig.swift → config Smart Model Routing
+- OuisprKeyboard/TranscriptionEngine.swift → intégration WhisperKit
+- OuisprKeyboard/TextInserter.swift → textDocumentProxy
 ```
 
 ---
@@ -382,9 +382,9 @@ TestFlight est la plateforme d'Apple pour distribuer des bêtas. Nécessite un *
 1. Aller sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
 2. `Mes apps → +` → Créer une nouvelle app
    - Plateforme : iOS
-   - Nom : Dictus
+   - Nom : Ouispr
    - Bundle ID : com.pivi.dictus
-   - SKU : dictus-ios (identifiant interne)
+   - SKU : ouispr-ios (identifiant interne)
 
 ### Créer un build pour TestFlight
 
@@ -419,7 +419,7 @@ App Store Connect → TestFlight → Groupes externes → +
 
 ### Versioning
 
-Dictus uses **semantic versioning** with two numbers managed in Xcode:
+Ouispr uses **semantic versioning** with two numbers managed in Xcode:
 
 | Xcode field | Plist key | Format | Example | What it means |
 |---|---|---|---|---|
@@ -533,7 +533,7 @@ Générer depuis le simulateur Xcode (`Cmd+S` pour screenshot) ou avec [fastlane
 Les keyboard extensions avec microphone + réseau sont scrutées. Inclure une note explicite dans "Notes pour les réviseurs" :
 
 ```
-Dictus est un clavier iOS avec dictation vocale entièrement hors-ligne.
+Ouispr est un clavier iOS avec dictation vocale entièrement hors-ligne.
 
 Points importants pour la review :
 
@@ -552,7 +552,7 @@ Points importants pour la review :
    propre clé API OpenAI. Le mode STT de base est 100% offline.
 
 4. DONNÉES
-   Aucune donnée audio ou texte n'est collectée ni transmise par Dictus.
+   Aucune donnée audio ou texte n'est collectée ni transmise par Ouispr.
    Privacy Nutrition Label : "Data Not Collected".
 ```
 
@@ -585,7 +585,7 @@ Les rejets les plus fréquents pour ce type d'app :
 
 ### Sprint 1 — Setup projet
 
-- [ ] Créer le projet Xcode avec les 2 targets (DictusApp + DictusKeyboard)
+- [ ] Créer le projet Xcode avec les 2 targets (OuisprApp + OuisprKeyboard)
 - [ ] Configurer l'App Group `group.solutions.pivi.dictus`
 - [ ] Ajouter WhisperKit via SPM
 - [ ] Vérifier que le build compile sans erreur (`Cmd+B`)
@@ -646,4 +646,4 @@ Les rejets les plus fréquents pour ce type d'app :
 
 ---
 
-*Dictus DEVELOPMENT.md — PIVI Solutions — 2026*
+*Ouispr DEVELOPMENT.md — PIVI Solutions — 2026*

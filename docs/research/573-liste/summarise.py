@@ -20,7 +20,7 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FIXTURES = HERE.parent.parent.parent / "DictusCore/Sources/polish-harness/fixtures"
+FIXTURES = HERE.parent.parent.parent / "OuisprCore/Sources/polish-harness/fixtures"
 SETS = {
     "N": "notes-fr",
     "S": "liste-statements",

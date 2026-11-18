@@ -1,7 +1,7 @@
-# Dictus — Rebuild du clavier iOS natif
+# Ouispr — Rebuild du clavier iOS natif
 
 > Document de référence pour Claude Code.
-> Objectif : reconstruire les features du clavier Apple standard dans la keyboard extension Dictus.
+> Objectif : reconstruire les features du clavier Apple standard dans la keyboard extension Ouispr.
 > Tout ce qui est dans ce document doit être implémenté ou planifié.
 
 ---
@@ -284,7 +284,7 @@ KeyboardView()
 
 **Règle 3 — Objectif mémoire**
 Clavier seul (sans transcription) : < 20MB.
-Vérifier avec : `Xcode → Product → Profile → Allocations → process DictusKeyboard`
+Vérifier avec : `Xcode → Product → Profile → Allocations → process OuisprKeyboard`
 
 ---
 
@@ -303,4 +303,4 @@ Audite le code actuel et coche chaque point. Pour chaque point non coché, impl�
 
 ---
 
-*Dictus KEYBOARD_BRIEFING.md — PIVI Solutions — 2026*
+*Ouispr KEYBOARD_BRIEFING.md — PIVI Solutions — 2026*

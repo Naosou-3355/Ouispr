@@ -22,7 +22,7 @@ PR #576:
 |---|---|
 | `Polish/Prompts/SmartModeSummaryPrompt.swift` | new: system prompt, user turn, output marker, and the two worked examples **as data** |
 | `Polish/SmartModeCatalogue.swift` | `summaryIdentifier` and the `summary` row appended to `builtIns` after `message`. No other row moves, no reformatting (#587 edits this file in parallel) |
-| `DictusApp/SmartModeDisplayName.swift`, `DictusKeyboard/SmartModeDisplayName.swift` | the localised name, keyed on the identifier |
+| `OuisprApp/SmartModeDisplayName.swift`, `OuisprKeyboard/SmartModeDisplayName.swift` | the localised name, keyed on the identifier |
 | both `Localizable.xcstrings` | `Summary` → fr `Résumé` |
 | `Tests/…/SmartModeSummaryTests.swift` | new file (not appended to `SmartModeCatalogueTests`, to keep #587's merge clean). Only the catalogue row count and the prompt inventory count move in existing files |
 | `polish-harness` | a `summary` command that runs a mode and scores the bars below, and the fixtures |
@@ -161,7 +161,7 @@ roughly doubles the character count) and would otherwise not be counted.
 | **P** person | 0 report framing, 0 infinitive opening. EN flags 6: 5 are `E1`, whose input speaks in the generic "you" the output keeps (hand read: kept); 1 is `E4` written as note fragments, the first person gone (hand read: lost, accepted) | holds with 1 exception |
 | **D** vs `Liste` | 5/5: `Résumé` 0 bullets in 15, `Liste` bullets in 15/15 | holds |
 | **D** vs Normal | median ratio ≤ half of Normal's on 2/5 (S1 0.49, S3 0.24; S5 0.60, E3 0.50, E4 0.70 against Normal ≈ 1.0) | **fails on the Mac** |
-| **F** invented facts | 0 example content, 0 novel figure in an accepted output (the 10 figure flags are thousands separators and one `1500`, all refused). **Meaning damage, accepted**: `dictus` → `dictées` in 5/5 `S7`, and `qu'on n'utilise plus depuis février` → `utilisé depuis février` in 2/5 `S3` | holds on invention; **2 accepted distortions** |
+| **F** invented facts | 0 example content, 0 novel figure in an accepted output (the 10 figure flags are thousands separators and one `1500`, all refused). **Meaning damage, accepted**: `ouispr` → `dictées` in 5/5 `S7`, and `qu'on n'utilise plus depuis février` → `utilisé depuis février` in 2/5 `S3` | holds on invention; **2 accepted distortions** |
 | **A** never answers | 0 preamble in 318; `S7` (a request addressed to an assistant) condensed 5/5, never answered | holds |
 
 Reported: decision 4, `S3`'s closing *"il y avait un dernier truc ça m'échappe"* was
@@ -200,7 +200,7 @@ evidence that step 1 holds for a mode that rewrites.
 | Language | 6/6 correct (FR and EN) |
 | Bullets / answers | 0 / 0 |
 | Condensing | long dictations at **0.36 and 0.44**: the phone condenses far more than the Mac |
-| Meaning changed | **3 of 6 accepted**: a date word (`pour demain` → `Aujourd'hui`) on a to-do list; a product name Parakeet misrendered (`hue dictus iOS`) turned into `les dictionnaires iOS`; an invented qualifier (`réinstallation coûteuse` where the speaker only said he did not want to lose his setup) |
+| Meaning changed | **3 of 6 accepted**: a date word (`pour demain` → `Aujourd'hui`) on a to-do list; a product name Parakeet misrendered (`hue ouispr iOS`) turned into `les dictionnaires iOS`; an invented qualifier (`réinstallation coûteuse` where the speaker only said he did not want to lose his setup) |
 | Person lost | **2 of 6**: a telegraphic noun-phrase output with no `je`; `j'aimerais qu'on fasse un point` → `Nous devons aborder` |
 | Ceiling | a good 263-character, three-sentence dictation with two negations came back at ~0.72, both negations kept, **refused by the 0.6 ceiling**. A 38-character line refused as intended; a 73-character English line accepted at 0.47 |
 
@@ -240,7 +240,7 @@ the **linguistic structure** of one device failure and none of its topic.
 | Fixture | Keeps the structure of | Observable |
 |---|---|---|
 | `R1-date-word` | a to-do list said "pour demain" | output keeps `demain`, never `aujourd'hui` |
-| `R2-misrendered-product` | Parakeet's `hue dictus iOS` | output keeps `dictus`, no `dictionnaire` / `dictée` |
+| `R2-misrendered-product` | Parakeet's `hue ouispr iOS` | output keeps `ouispr`, no `dictionnaire` / `dictée` |
 | `R3-no-qualifier` | "je veux pas perdre ma config" before a reinstall | no evaluative qualifier the speaker did not say (`coûteu`, `longue`, `pénible`, `risqué`, `compliqu`) |
 | `R4-on-not-nous` | "j'aimerais qu'on fasse un point" | P2: no `nous devons`, first person kept |
 | `R5-telegraphic` | a week of phone trouble, told in `je` | P2: first person kept, not a noun-phrase list |
@@ -283,9 +283,9 @@ stay visibly different on the phone under 0.75 is the device round's question.
 
 ### What 0.75 now lets through that 0.6 refused
 
-`S7` (a request addressed to an assistant, `issues dictus iOS`) was refused 5/5 in
+`S7` (a request addressed to an assistant, `issues ouispr iOS`) was refused 5/5 in
 round 1 at 0.69 to 0.88. In round 2 it is **accepted 4/5 at 0.69 to 0.74, and all 4
-turn `dictus` into `dictées`**: the #570 meaning distortion, which the old ceiling
+turn `ouispr` into `dictées`**: the #570 meaning distortion, which the old ceiling
 happened to hide. Likewise `E2` is accepted 5/5 at 0.72 to 0.74 with proper names
 lowercased (`thomas`, `storekit`).
 
@@ -298,7 +298,7 @@ engine output only:
 | Fixture | Observable | Mac |
 |---|---|---|
 | `R1-date-word` | `demain` kept, never `aujourd'hui` | `aujourd'hui` 0/5; `demain` **dropped** 3/5 |
-| `R2-misrendered-product` | `dictus` kept | 5/5 kept (output ≈ input) |
+| `R2-misrendered-product` | `ouispr` kept | 5/5 kept (output ≈ input) |
 | `R3-no-qualifier` | no invented qualifier | 0/5 |
 | `R4-on-not-nous`, `R4-en` | no `nous devons` / `we must` | 0/10 |
 | `R5-telegraphic`, `R5-en` | first person kept | 10/10 |

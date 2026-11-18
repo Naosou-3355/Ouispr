@@ -3,7 +3,7 @@ import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 import * as S from "./heroShapes";
 
-// DICTUS HERO V5, style A · marker comic (after koi.ts). Bold cel fills with a hard shadow edge:
+// OUISPR HERO V5, style A · marker comic (after koi.ts). Bold cel fills with a hard shadow edge:
 // each form is laid in its shade colour, then its lit colour offset toward the light and clipped
 // to the form, so the terminator is one crisp edge. Then one heavy confident contour in navy that
 // thickens on the side away from the light. Order: fills, shade edges, contour, details. No paper,
@@ -76,7 +76,7 @@ export const drawHeroComic = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroComic: Film = {
-  meta: { title: "Dictus hero V5 · marker comic", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
+  meta: { title: "Ouispr hero V5 · marker comic", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
   assets: { images: {} },
   shots: [{ id: "heroComic", start: 0, end: 1, draw: drawHeroComic }],
 };

@@ -3,10 +3,10 @@
 // engine as it ships, and counts what the space bar would have written (#499).
 //
 // Compiled by run.sh together with the unmodified engine sources
-// (DictusKeyboard/TextPrediction/TextPredictionEngine.swift, AOSPTrieEngine.swift,
-// the vendored C++ trie) and DictusCore, then run on an iOS Simulator.
+// (OuisprKeyboard/TextPrediction/TextPredictionEngine.swift, AOSPTrieEngine.swift,
+// the vendored C++ trie) and OuisprCore, then run on an iOS Simulator.
 import Foundation
-import DictusCore
+import OuisprCore
 
 // MARK: - Corpus
 
@@ -110,7 +110,7 @@ struct Evidence {
     var rightInTrie = false
     var bigram: UInt16 = 0
     /// The n-gram file keeps at most 16 followers per word (NGRM_MAX_RESULTS in
-    /// dictus_ngram_format.h). A word with all 16 taken has no room for any other.
+    /// ouispr_ngram_format.h). A word with all 16 taken has no room for any other.
     var leftFollowersFull = false
 }
 

@@ -6,11 +6,11 @@
 
 ## Summary
 
-Phase 8 implements a 3-slot suggestion bar integrated into the existing ToolbarView, using Apple's built-in `UITextChecker` for word completions and spell-checking, plus a bundled frequency dictionary to rank suggestions by real-world usage (since UITextChecker returns completions alphabetically on iOS, not by probability). The accent suggestion feature (PRED-03) reuses the existing `AccentedCharacters` lookup table in DictusCore.
+Phase 8 implements a 3-slot suggestion bar integrated into the existing ToolbarView, using Apple's built-in `UITextChecker` for word completions and spell-checking, plus a bundled frequency dictionary to rank suggestions by real-world usage (since UITextChecker returns completions alphabetically on iOS, not by probability). The accent suggestion feature (PRED-03) reuses the existing `AccentedCharacters` lookup table in OuisprCore.
 
 The primary technical challenges are: (1) extracting the current partial word from `textDocumentProxy.documentContextBeforeInput`, (2) ranking UITextChecker completions with frequency data since iOS does NOT sort by probability despite what Apple docs claim, and (3) implementing the autocorrect undo-on-backspace pattern without adding complexity to the existing keystroke flow.
 
-**Primary recommendation:** Build a `TextPredictionEngine` class in DictusKeyboard that wraps UITextChecker + frequency dictionary lookup, triggered on each keystroke with lightweight debouncing (~50ms). Suggestion state flows through KeyboardView to ToolbarView.
+**Primary recommendation:** Build a `TextPredictionEngine` class in OuisprKeyboard that wraps UITextChecker + frequency dictionary lookup, triggered on each keystroke with lightweight debouncing (~50ms). Suggestion state flows through KeyboardView to ToolbarView.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -24,7 +24,7 @@ The primary technical challenges are: (1) extracting the current partial word fr
 - Fallback: if horizontal space too tight, hide the gear icon
 - UITextChecker for completions and spell-checking (0 MB, Apple built-in)
 - Frequency dictionary for ranking suggestions by usage frequency
-- Two dictionary files bundled in DictusKeyboard: French (~1.5MB) + English (~1.5MB)
+- Two dictionary files bundled in OuisprKeyboard: French (~1.5MB) + English (~1.5MB)
 - Active dictionary selected via SharedKeys.language from App Group preferences
 - Completion of current word only -- no next-word prediction
 - Auto-replacement on space/punctuation: misspelled word replaced by central slot correction
@@ -71,8 +71,8 @@ The primary technical challenges are: (1) extracting the current partial word fr
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| AccentedCharacters (DictusCore) | Existing | Accent variant lookup for PRED-03 | When user types single vowel after space |
-| SharedKeys (DictusCore) | Existing | App Group preferences (language, autocorrect toggle) | Reading active language + autocorrect enabled state |
+| AccentedCharacters (OuisprCore) | Existing | Accent variant lookup for PRED-03 | When user types single vowel after space |
+| SharedKeys (OuisprCore) | Existing | App Group preferences (language, autocorrect toggle) | Reading active language + autocorrect enabled state |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
@@ -87,7 +87,7 @@ The primary technical challenges are: (1) extracting the current partial word fr
 
 ### Recommended Project Structure
 ```
-DictusKeyboard/
+OuisprKeyboard/
   TextPrediction/
     TextPredictionEngine.swift    # Core engine: completions + spelling + ranking
     FrequencyDictionary.swift     # JSON frequency data loader + rank lookup
@@ -95,12 +95,12 @@ DictusKeyboard/
   Views/
     ToolbarView.swift             # Modified: suggestion slots in Spacer area
     SuggestionBarView.swift       # 3-slot suggestion display subview
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
   SharedKeys.swift                # Add: autocorrectEnabled key
   AccentedCharacters.swift        # Existing: reuse for PRED-03
-DictusApp/Views/
+OuisprApp/Views/
   SettingsView.swift              # Add: "Correction automatique" toggle
-DictusKeyboard/Resources/
+OuisprKeyboard/Resources/
   fr_frequency.json               # French word frequency dictionary
   en_frequency.json               # English word frequency dictionary
 ```
@@ -215,7 +215,7 @@ struct AutocorrectState {
 | Spell checking | Custom dictionary lookup | UITextChecker.rangeOfMisspelledWord | Apple's lexicon covers 100K+ French words, handles conjugations, zero memory cost |
 | Word completions | Trie data structure | UITextChecker.completions(forPartialWordRange:) | Built-in, handles French morphology, zero bundle size |
 | Word boundary detection | Manual character scanning | String.enumerateSubstrings(options: .byWords) | Handles Unicode properly, language-aware tokenization |
-| Accent character data | New mapping table | AccentedCharacters.mappings (existing) | Already exists in DictusCore with all French accented variants |
+| Accent character data | New mapping table | AccentedCharacters.mappings (existing) | Already exists in OuisprCore with all French accented variants |
 
 **Key insight:** UITextChecker provides the heavy lifting for free. The custom layer is thin: frequency ranking + UI integration + autocorrect undo logic.
 
@@ -379,30 +379,30 @@ func replaceCurrentWord(
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (built-in) |
-| Config file | DictusCore/Tests/ (existing test target) |
-| Quick run command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests 2>&1 \| tail -20` |
-| Full suite command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
+| Config file | OuisprCore/Tests/ (existing test target) |
+| Quick run command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests 2>&1 \| tail -20` |
+| Full suite command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
 
 ### Phase Requirements to Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| PRED-01 | Suggestion engine returns ranked completions for partial French word | unit | `xcodebuild test -scheme DictusCore -only-testing:DictusCoreTests/TextPredictionEngineTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -x` | No -- Wave 0 |
+| PRED-01 | Suggestion engine returns ranked completions for partial French word | unit | `xcodebuild test -scheme OuisprCore -only-testing:OuisprCoreTests/TextPredictionEngineTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -x` | No -- Wave 0 |
 | PRED-01 | Current word extraction from text context | unit | Same target | No -- Wave 0 |
 | PRED-02 | Spell-check detects misspelled French words and returns correction | unit | Same target | No -- Wave 0 |
 | PRED-02 | Autocorrect undo state tracks and restores original word | unit | Same target | No -- Wave 0 |
-| PRED-03 | Accent suggestions returned for single vowel input | unit | `xcodebuild test -scheme DictusCore -only-testing:DictusCoreTests/AccentedCharacterTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -x` | Partial (AccentedCharacterTests exists but not accent suggestion logic) |
+| PRED-03 | Accent suggestions returned for single vowel input | unit | `xcodebuild test -scheme OuisprCore -only-testing:OuisprCoreTests/AccentedCharacterTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -x` | Partial (AccentedCharacterTests exists but not accent suggestion logic) |
 
 ### Sampling Rate
 - **Per task commit:** Quick run on TextPredictionEngineTests
-- **Per wave merge:** Full DictusCore test suite
+- **Per wave merge:** Full OuisprCore test suite
 - **Phase gate:** Full suite green before `/gsd:verify-work`
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/TextPredictionEngineTests.swift` -- covers PRED-01, PRED-02
-- [ ] `DictusCore/Tests/DictusCoreTests/FrequencyDictionaryTests.swift` -- covers dictionary loading and ranking
-- [ ] Test frequency dictionary fixture: `DictusCore/Tests/DictusCoreTests/Fixtures/fr_frequency_test.json`
+- [ ] `OuisprCore/Tests/OuisprCoreTests/TextPredictionEngineTests.swift` -- covers PRED-01, PRED-02
+- [ ] `OuisprCore/Tests/OuisprCoreTests/FrequencyDictionaryTests.swift` -- covers dictionary loading and ranking
+- [ ] Test frequency dictionary fixture: `OuisprCore/Tests/OuisprCoreTests/Fixtures/fr_frequency_test.json`
 
-Note: UITextChecker requires a running UIKit environment (simulator), so engine tests that call UITextChecker directly need `@testable import` in the keyboard target or must mock the checker. Pure logic tests (frequency ranking, word extraction, accent detection) can run in DictusCoreTests without UIKit dependency.
+Note: UITextChecker requires a running UIKit environment (simulator), so engine tests that call UITextChecker directly need `@testable import` in the keyboard target or must mock the checker. Pure logic tests (frequency ranking, word extraction, accent detection) can run in OuisprCoreTests without UIKit dependency.
 
 ## Sources
 

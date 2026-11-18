@@ -19,11 +19,11 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Views/GaugeBarView.swift
-    - DictusApp/Views/ModelCardView.swift
+    - OuisprApp/Views/GaugeBarView.swift
+    - OuisprApp/Views/ModelCardView.swift
   modified:
-    - DictusApp/Views/ModelManagerView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprApp/Views/ModelManagerView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "5-segment gauge bar with filled/unfilled RoundedRectangles for accuracy (blue) and speed (green)"
@@ -67,10 +67,10 @@ Each task was committed atomically:
 3. **Task 3: Visual verification of redesigned model catalog UI** - approved (checkpoint, no commit)
 
 ## Files Created/Modified
-- `DictusApp/Views/GaugeBarView.swift` - Reusable 5-segment gauge bar component (value 0-1, configurable color and label)
-- `DictusApp/Views/ModelCardView.swift` - Model card with engine badge, gauge bars, description, size, download/select/delete controls
-- `DictusApp/Views/ModelManagerView.swift` - Redesigned with Downloaded/Available sections, engine descriptions, ModelCardView integration
-- `Dictus.xcodeproj/project.pbxproj` - Added GaugeBarView.swift and ModelCardView.swift to DictusApp target
+- `OuisprApp/Views/GaugeBarView.swift` - Reusable 5-segment gauge bar component (value 0-1, configurable color and label)
+- `OuisprApp/Views/ModelCardView.swift` - Model card with engine badge, gauge bars, description, size, download/select/delete controls
+- `OuisprApp/Views/ModelManagerView.swift` - Redesigned with Downloaded/Available sections, engine descriptions, ModelCardView integration
+- `Ouispr.xcodeproj/project.pbxproj` - Added GaugeBarView.swift and ModelCardView.swift to OuisprApp target
 
 ## Decisions Made
 - 5-segment gauge bar chosen for visual consistency with Handy app reference design

@@ -201,7 +201,7 @@ def run_swift(ps):
         for p in ps:
             f.write(json.dumps({k: p[k] for k in ("key", "route", "raw", "output")}, ensure_ascii=False) + "\n")
         path = f.name
-    proc = subprocess.run(["swift", "run", "-q", "--package-path", os.path.join(ROOT, "DictusCore"),
+    proc = subprocess.run(["swift", "run", "-q", "--package-path", os.path.join(ROOT, "OuisprCore"),
                            "polish-harness", "lostword", path], capture_output=True, text=True, check=True)
     os.unlink(path)
     return {v["key"]: v for v in map(json.loads, proc.stdout.splitlines())}

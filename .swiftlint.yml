@@ -13,11 +13,11 @@
 # reason. If you cannot write one, use `guard`/`if let` instead.
 
 included:
-  - DictusApp
-  - DictusKeyboard
-  - DictusCore/Sources
-  - DictusWidgets
-  - DictusShare
+  - OuisprApp
+  - OuisprKeyboard
+  - OuisprCore/Sources
+  - OuisprWidgets
+  - OuisprShare
 
 excluded:
   - build
@@ -25,8 +25,8 @@ excluded:
   - Library
   - scripts
   - designs
-  - DictusCore/.build
-  - DictusKeyboard/Vendored      # vendored giellakbd-ios — keep as-is (see CLAUDE.md)
+  - OuisprCore/.build
+  - OuisprKeyboard/Vendored      # vendored giellakbd-ios — keep as-is (see CLAUDE.md)
   - "**/*.generated.swift"
 
 disabled_rules:

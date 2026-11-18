@@ -32,7 +32,7 @@ When iOS has killed the app (cold start), users experience seamless dictation: m
 
 ### Swipe-back overlay
 - Full-screen replacement view (NOT overlay on top of normal app UI) — only shows on cold start from keyboard
-- Background: Dictus brand gradient (#0D2040 → #071020)
+- Background: Ouispr brand gradient (#0D2040 → #071020)
 - Content: iPhone outline with animated hand/thumb performing swipe gesture (SwiftUI animation, no Lottie)
 - Reference: SuperWhisper's swipe-back overlay (screenshot in /tmp/superwhisper_overlay.png)
 - Text matches user language setting (SharedKeys.language):
@@ -70,26 +70,26 @@ When iOS has killed the app (cold start), users experience seamless dictation: m
 ## Existing Code Insights
 
 ### Reusable Assets
-- `RawAudioCapture` (DictusApp/Audio/RawAudioCapture.swift): Lightweight AVAudioEngine capture, 16kHz mono Float32 output — could be model for keyboard-side capture
-- `DictationCoordinator` (DictusApp/DictationCoordinator.swift): Full dictation lifecycle manager with cold start support, RawAudioCapture integration, transcription watchdog
-- `DarwinNotificationCenter` (DictusCore/DarwinNotifications.swift): Already has startRecording, stopRecording, cancelRecording, statusChanged, transcriptionReady, waveformUpdate notifications
-- `KeyboardState` (DictusKeyboard/KeyboardState.swift): Observes cross-process state, has watchdog timer, openURLFromExtension() for URL scheme
-- `RecordingOverlay` (DictusKeyboard/Views/RecordingOverlay.swift): Keyboard-side recording UI with waveform, timer, cancel/stop — needs to work with keyboard-captured audio
-- `AudioRecorder` (DictusApp/Audio/AudioRecorder.swift): WhisperKit AudioProcessor wrapper with isEngineRunning state and collectSamples() pattern
+- `RawAudioCapture` (OuisprApp/Audio/RawAudioCapture.swift): Lightweight AVAudioEngine capture, 16kHz mono Float32 output — could be model for keyboard-side capture
+- `DictationCoordinator` (OuisprApp/DictationCoordinator.swift): Full dictation lifecycle manager with cold start support, RawAudioCapture integration, transcription watchdog
+- `DarwinNotificationCenter` (OuisprCore/DarwinNotifications.swift): Already has startRecording, stopRecording, cancelRecording, statusChanged, transcriptionReady, waveformUpdate notifications
+- `KeyboardState` (OuisprKeyboard/KeyboardState.swift): Observes cross-process state, has watchdog timer, openURLFromExtension() for URL scheme
+- `RecordingOverlay` (OuisprKeyboard/Views/RecordingOverlay.swift): Keyboard-side recording UI with waveform, timer, cancel/stop — needs to work with keyboard-captured audio
+- `AudioRecorder` (OuisprApp/Audio/AudioRecorder.swift): WhisperKit AudioProcessor wrapper with isEngineRunning state and collectSamples() pattern
 
 ### Established Patterns
 - Darwin notifications (ping-only) + App Group UserDefaults for cross-process data
-- URL scheme `dictus://dictate` for cold start app opening from keyboard
+- URL scheme `ouispr://dictate` for cold start app opening from keyboard
 - 500ms Darwin notification timeout → fallback to URL scheme (KeyboardState.swift:279)
 - @MainActor singletons for shared state (DictationCoordinator.shared)
 - Phase 12 watchdog recovery: 5s waveform watchdog in keyboard, 30s transcription watchdog in app
 
 ### Integration Points
-- `DictusApp.swift:82`: handleIncomingURL already handles `dictus://dictate` — needs to support swipe overlay mode
+- `OuisprApp.swift:82`: handleIncomingURL already handles `ouispr://dictate` — needs to support swipe overlay mode
 - `MainTabView`: needs conditional rendering (swipe overlay vs normal tabs) based on launch mode
 - `KeyboardState`: needs new "pending cold start" state + recording trigger on keyboard return
 - New Darwin notifications may be needed (e.g., "audio session ready", "keyboard recording complete")
-- Brand kit (`assets/brand/dictus-brand-kit.html`): gradient values for swipe overlay background
+- Brand kit (`assets/brand/ouispr-brand-kit.html`): gradient values for swipe overlay background
 
 </code_context>
 

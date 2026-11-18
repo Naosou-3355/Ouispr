@@ -14,11 +14,11 @@ All user-facing UI reaches beta quality with correct French localization, polish
 ## Implementation Decisions
 
 ### Model card redesign
-- **Active model highlight**: Subtle blue background tint (dictusAccent at ~0.08-0.12 opacity) on the active model card — no border, no "Actif" badge
+- **Active model highlight**: Subtle blue background tint (ouisprAccent at ~0.08-0.12 opacity) on the active model card — no border, no "Actif" badge
 - **Tap to select**: Tapping anywhere on a downloaded model card selects it as active. Remove "Choisir" button entirely
 - **Tap to download**: Tapping anywhere on a non-downloaded model card starts the download. Remove download arrow icon button. User can cancel during download
 - **Swipe to delete**: Remove visible trash button. Swipe left to reveal "Supprimer" action (like iOS Mail). Active model cannot be deleted
-- **Gauge bar colors**: Change from blue/green to blue accent (#3D7EFF for Précision) + blue highlight (#6BA3FF for Vitesse). No more dictusSuccess green
+- **Gauge bar colors**: Change from blue/green to blue accent (#3D7EFF for Précision) + blue highlight (#6BA3FF for Vitesse). No more ouisprSuccess green
 - **Badges**: WK/PK engine badge and "Recommandé" badge stay as-is
 
 ### Recording overlay dismiss
@@ -39,7 +39,7 @@ All user-facing UI reaches beta quality with correct French localization, polish
 - **Replace current**: After transcription test completes, replace the inline "Terminer" button with a full-screen success overlay
 - **Transition**: Fade out test interface → fade in success screen (~0.6s total)
 - **Checkmark animation**: Scale bounce (0 → 1.1 → 1.0) with green circle behind white checkmark — Apple Pay style
-- **Text**: Title "C'est prêt !", subtitle "Dictus est configuré et prêt à l'emploi", button "Commencer"
+- **Text**: Title "C'est prêt !", subtitle "Ouispr est configuré et prêt à l'emploi", button "Commencer"
 - **Tap "Commencer"**: Navigate to home screen
 
 ### Settings visual feedback (#28)
@@ -76,7 +76,7 @@ All user-facing UI reaches beta quality with correct French localization, polish
 ### Reusable Assets
 - `AnimatedMicButton`: Already has transcribing state with shimmer — may only need opacity tweak
 - `PillButton` (in RecordingOverlay): Reusable for X/checkmark with added hit area
-- `dictusGlass()`: Glass modifier used on all cards — active card needs overlay on top
+- `ouisprGlass()`: Glass modifier used on all cards — active card needs overlay on top
 - `GaugeBarView`: Takes color parameter — just change the color constants
 - `GlassPressStyle`: Existing button style with press scale animation
 - `BrandWaveform`: The waveform component used in recording overlay

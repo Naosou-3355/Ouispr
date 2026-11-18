@@ -22,13 +22,13 @@ tech-stack:
   patterns:
     - "Tap-to-act card pattern: entire card is a Button routing action by state"
     - "List with transparent styling for swipe-to-delete on glass cards"
-    - "Background tint layer behind dictusGlass for active state indication"
+    - "Background tint layer behind ouisprGlass for active state indication"
 
 key-files:
   created: []
   modified:
-    - DictusApp/Views/ModelCardView.swift
-    - DictusApp/Views/ModelManagerView.swift
+    - OuisprApp/Views/ModelCardView.swift
+    - OuisprApp/Views/ModelManagerView.swift
 
 key-decisions:
   - "Used List with transparent styling (not ScrollView+VStack) to enable native swipeActions"
@@ -60,7 +60,7 @@ completed: 2026-03-13
 
 ## Accomplishments
 - Entire model card is now a single tappable surface (select, download, or retry based on state)
-- Active model distinguished by subtle blue background tint (dictusAccent at 0.10 opacity)
+- Active model distinguished by subtle blue background tint (ouisprAccent at 0.10 opacity)
 - Swipe-to-delete on downloaded non-active cards with confirmation alert
 - Vitesse gauge bar uses blue highlight instead of green (blue-only palette)
 - French accent fixes applied (Recommande, Precision, Reessayer)
@@ -74,8 +74,8 @@ Each task was committed atomically:
 2. **Task 2: Swipe-to-delete + onboarding sync** - `af4c1f7` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/ModelCardView.swift` - Full card redesign: tap interaction, active highlight, gauge colors, accent fixes
-- `DictusApp/Views/ModelManagerView.swift` - Swipe-to-delete, delete guards, loadState on appear, List conversion
+- `OuisprApp/Views/ModelCardView.swift` - Full card redesign: tap interaction, active highlight, gauge colors, accent fixes
+- `OuisprApp/Views/ModelManagerView.swift` - Swipe-to-delete, delete guards, loadState on appear, List conversion
 
 ## Decisions Made
 - Used List with transparent styling instead of ScrollView+VStack to enable native .swipeActions

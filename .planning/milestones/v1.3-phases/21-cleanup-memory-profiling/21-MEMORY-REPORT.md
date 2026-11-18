@@ -13,12 +13,12 @@
 | Idle (keyboard visible) | 30s | ~15 MiB | 14.65 MiB | ~20 (system) | PASS |
 | Rapid typing | 30s | ~22 MiB | 21.87 MiB | 0 | PASS |
 | Dictation (recording) | 30s | ~15 MiB | 14.93 MiB | 0 | PASS |
-| Dictation (transcription) | - | - | - | - | N/A (runs in DictusApp) |
+| Dictation (transcription) | - | - | - | - | N/A (runs in OuisprApp) |
 | Text prediction (active) | 30s | ~21 MiB | 21.13 MiB | 0 | PASS |
 | Emoji picker browsing | 30s | ~139 MiB | 139.31 MiB | 0 | **FAIL** |
 | Combined peak scenario | 60s | ~43 MiB | 43.39 MiB | 0 | PASS |
 
-**Debug Navigator baseline (DictusApp):** 62.5 MB (DictusKeyboard extension process not visible in Debug Navigator)
+**Debug Navigator baseline (OuisprApp):** 62.5 MB (OuisprKeyboard extension process not visible in Debug Navigator)
 **Instruments overhead estimate:** Not calculable -- keyboard extension not listed in Debug Navigator
 
 **Pass criterion:** Peak Memory < 50 MiB in ALL operations
@@ -26,13 +26,13 @@
 
 ## Leak Analysis
 
-All ~20 leaks detected during the idle run are iOS system internals, not Dictus code:
+All ~20 leaks detected during the idle run are iOS system internals, not Ouispr code:
 - `UIViewServiceDeputyManager`
 - `_UIAsyncInvocation`
 - `NSLock`
 - `BSServiceConnection`
 
-These are known UIKit/Foundation system-level leaks that appear in any keyboard extension. No leaks were detected in any Dictus code path. Subsequent runs (typing, dictation, prediction, emoji, combined) showed 0 leaks.
+These are known UIKit/Foundation system-level leaks that appear in any keyboard extension. No leaks were detected in any Ouispr code path. Subsequent runs (typing, dictation, prediction, emoji, combined) showed 0 leaks.
 
 **Verdict:** No application-level memory leaks.
 

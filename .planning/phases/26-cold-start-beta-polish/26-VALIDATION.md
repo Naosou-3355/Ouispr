@@ -18,17 +18,17 @@ created: 2026-04-05
 | Property | Value |
 |----------|-------|
 | **Framework** | Xcode Build + manual device testing |
-| **Config file** | Dictus.xcodeproj |
-| **Quick run command** | `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS' -quiet` |
-| **Full suite command** | `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'` |
+| **Config file** | Ouispr.xcodeproj |
+| **Quick run command** | `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS' -quiet` |
+| **Full suite command** | `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'` |
 | **Estimated runtime** | ~60 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS' -quiet`
-- **After every plan wave:** Run `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS' -quiet`
+- **After every plan wave:** Run `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'`
 - **Before `/gsd:verify-work`:** Full build must succeed
 - **Max feedback latency:** 60 seconds
 
@@ -57,7 +57,7 @@ Existing infrastructure covers all phase requirements. No new test framework nee
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| sourceApplication returns bundle ID cross-team | COLD-01 | iOS API behavior must be tested on real device with real apps | Open Messages, tap Dictus keyboard mic, check if sourceApplication is non-nil in DictusApp |
+| sourceApplication returns bundle ID cross-team | COLD-01 | iOS API behavior must be tested on real device with real apps | Open Messages, tap Ouispr keyboard mic, check if sourceApplication is non-nil in OuisprApp |
 | Auto-return to source app after dictation | COLD-02 | Requires real app switching on device | Complete dictation flow, verify app opens source app URL scheme |
 | Swipe-back overlay teaches gesture visually | COLD-03 | Visual/UX validation requires human review | Cold start dictation, view overlay, confirm iPhone mockup + animated swipe + localized text renders correctly |
 | Beta bug fixes work as expected | BETA-01 | Bug-specific — depends on what's reported | Reproduce each reported bug, verify fix |

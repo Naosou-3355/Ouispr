@@ -20,13 +20,13 @@ tech-stack:
 
 key-files:
   created:
-    - DictusCore/Sources/DictusCore/LogEvent.swift
-    - DictusCore/Tests/DictusCoreTests/LogEventTests.swift
-    - DictusCore/Tests/DictusCoreTests/LogPrivacyTests.swift
-    - DictusCore/Tests/DictusCoreTests/LogCoverageTests.swift
-    - DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift
+    - OuisprCore/Sources/OuisprCore/LogEvent.swift
+    - OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/LogPrivacyTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/LogCoverageTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift
   modified:
-    - DictusCore/Sources/DictusCore/PersistentLog.swift
+    - OuisprCore/Sources/OuisprCore/PersistentLog.swift
 
 key-decisions:
   - "Privacy by construction: LogEvent enum with typed parameters only — no free-text public API"
@@ -72,17 +72,17 @@ completed: 2026-03-11
 2. **Task 2: Evolve PersistentLog with structured API and cross-process safety** - `8697769` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/LogEvent.swift` - LogLevel, Subsystem, LogEvent enums with formatted() output
-- `DictusCore/Sources/DictusCore/PersistentLog.swift` - Evolved: typed API, NSFileCoordinator, 500-line rotation, export
-- `DictusCore/Tests/DictusCoreTests/LogEventTests.swift` - Level and subsystem mapping tests
-- `DictusCore/Tests/DictusCoreTests/LogPrivacyTests.swift` - Privacy verification tests
-- `DictusCore/Tests/DictusCoreTests/LogCoverageTests.swift` - Subsystem coverage tests
-- `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` - Rotation, export header, clear tests
+- `OuisprCore/Sources/OuisprCore/LogEvent.swift` - LogLevel, Subsystem, LogEvent enums with formatted() output
+- `OuisprCore/Sources/OuisprCore/PersistentLog.swift` - Evolved: typed API, NSFileCoordinator, 500-line rotation, export
+- `OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift` - Level and subsystem mapping tests
+- `OuisprCore/Tests/OuisprCoreTests/LogPrivacyTests.swift` - Privacy verification tests
+- `OuisprCore/Tests/OuisprCoreTests/LogCoverageTests.swift` - Subsystem coverage tests
+- `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` - Rotation, export header, clear tests
 
 ## Decisions Made
 - Privacy by construction: LogEvent enum cases define exactly what can be logged — callers cannot pass arbitrary strings
 - Old `log(_ message: String)` kept as deprecated internal for migration (Plan 02 will update all call sites)
-- NSFileCoordinator wraps all file operations (read, write, trim) for DictusApp/DictusKeyboard concurrency
+- NSFileCoordinator wraps all file operations (read, write, trim) for OuisprApp/OuisprKeyboard concurrency
 - Static ISO8601DateFormatter reused across calls (avoids per-call allocation per research pitfall)
 - Test helpers (appendForTesting, trimForTesting, etc.) use temp files to avoid App Group dependency
 - `exportContent()` wrapped in `#if canImport(UIKit)` since UIDevice isn't available in SPM test env

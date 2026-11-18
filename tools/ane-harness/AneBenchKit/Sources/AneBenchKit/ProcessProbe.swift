@@ -2,10 +2,10 @@
 //
 // THROWAWAY — #268 D2. Same readings D1 took, from the same two calls, so the
 // two measurements can be laid side by side without a conversion: jetsam
-// headroom from `os_proc_available_memory()` (DictusCore's `DeviceCapabilities`)
-// and `phys_footprint` (DictusCore's `MemoryFootprint`).
+// headroom from `os_proc_available_memory()` (OuisprCore's `DeviceCapabilities`)
+// and `phys_footprint` (OuisprCore's `MemoryFootprint`).
 import Foundation
-import DictusCore
+import OuisprCore
 #if canImport(UIKit)
 import UIKit
 #endif

@@ -44,7 +44,7 @@ Production-ready persistent logging across all subsystems (DictationCoordinator,
 ### Claude's Discretion
 - Color-coding of log entries by level in DebugLogView (pick what looks good with Liquid Glass design)
 - Exact structured event type definitions and parameter lists per subsystem
-- Internal architecture: evolve PersistentLog or build fresh, relationship with DictusLogger
+- Internal architecture: evolve PersistentLog or build fresh, relationship with OuisprLogger
 - Thread-safety approach for cross-process file writes
 
 </decisions>
@@ -53,22 +53,22 @@ Production-ready persistent logging across all subsystems (DictationCoordinator,
 ## Existing Code Insights
 
 ### Reusable Assets
-- `PersistentLog` (DictusCore/PersistentLog.swift): File-based logger with App Group storage, trim logic. Needs upgrade: no levels, no subsystems, 200-line limit, free-text API
-- `DictusLogger` (DictusCore/Logger.swift): os.log wrapper with 3 categories (app, keyboard, appGroup). Could remain as console-side companion
-- `DebugLogView` (DictusApp/Views/DebugLogView.swift): SwiftUI log viewer with clear/copy. Needs: share sheet, auto-scroll, structured format display
+- `PersistentLog` (OuisprCore/PersistentLog.swift): File-based logger with App Group storage, trim logic. Needs upgrade: no levels, no subsystems, 200-line limit, free-text API
+- `OuisprLogger` (OuisprCore/Logger.swift): os.log wrapper with 3 categories (app, keyboard, appGroup). Could remain as console-side companion
+- `DebugLogView` (OuisprApp/Views/DebugLogView.swift): SwiftUI log viewer with clear/copy. Needs: share sheet, auto-scroll, structured format display
 - `AppGroup.containerURL`: Already used for log file storage
 
 ### Established Patterns
-- DictusCore framework shared between App and Keyboard extension — logging must live here
+- OuisprCore framework shared between App and Keyboard extension — logging must live here
 - Darwin notifications for cross-process IPC (existing pattern)
 - Serial dispatch queue for thread-safe file writes (already in PersistentLog)
 
 ### Integration Points
 - SettingsView: add export button + link to upgraded DebugLogView
 - DictationCoordinator: ~10 existing PersistentLog.log() calls to migrate to structured API
-- DictusApp.swift: ~3 existing PersistentLog.log() calls to migrate
+- OuisprApp.swift: ~3 existing PersistentLog.log() calls to migrate
 - AudioRecorder, TranscriptionService, ModelManager, KeyboardViewController: no logging yet — need instrumentation
-- App lifecycle logging hooks in DictusApp (scenePhase or UIApplicationDelegate)
+- App lifecycle logging hooks in OuisprApp (scenePhase or UIApplicationDelegate)
 
 </code_context>
 

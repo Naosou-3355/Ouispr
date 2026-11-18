@@ -19,7 +19,7 @@ created: 2026-03-30
 |----------|-------|
 | **Framework** | Xcode Instruments + xcodebuild |
 | **Config file** | None — Instruments is an external tool |
-| **Quick run command** | `xcodebuild build -scheme DictusKeyboard -destination generic/platform=iOS` |
+| **Quick run command** | `xcodebuild build -scheme OuisprKeyboard -destination generic/platform=iOS` |
 | **Full suite command** | Instruments profiling session (manual — requires physical device) |
 | **Estimated runtime** | ~30 seconds (build), ~10 minutes (Instruments session) |
 
@@ -27,7 +27,7 @@ created: 2026-03-30
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusKeyboard -destination generic/platform=iOS`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprKeyboard -destination generic/platform=iOS`
 - **After every plan wave:** Run full build for all schemes
 - **Before `/gsd:verify-work`:** Full Instruments profiling session must be complete
 - **Max feedback latency:** 30 seconds (build check)
@@ -38,8 +38,8 @@ created: 2026-03-30
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 21-01-01 | 01 | 1 | SC-1 (dead code removal) | build | `xcodebuild build -scheme DictusKeyboard -destination generic/platform=iOS` | ✅ | ⬜ pending |
-| 21-01-02 | 01 | 1 | SC-1 (pbxproj cleanup) | grep | `grep -c 'KeyButton\|KeyRow\|SpecialKeyButton\|AccentPopup' Dictus.xcodeproj/project.pbxproj` returns 0 | ✅ | ⬜ pending |
+| 21-01-01 | 01 | 1 | SC-1 (dead code removal) | build | `xcodebuild build -scheme OuisprKeyboard -destination generic/platform=iOS` | ✅ | ⬜ pending |
+| 21-01-02 | 01 | 1 | SC-1 (pbxproj cleanup) | grep | `grep -c 'KeyButton\|KeyRow\|SpecialKeyButton\|AccentPopup' Ouispr.xcodeproj/project.pbxproj` returns 0 | ✅ | ⬜ pending |
 | 21-02-01 | 02 | 2 | SC-2 (memory < 50MB) | manual | Instruments Allocations + Leaks on device | N/A | ⬜ pending |
 | 21-02-02 | 02 | 2 | SC-3 (signposter) | manual | Instruments os_signpost template on device | N/A | ⬜ pending |
 
@@ -57,9 +57,9 @@ Existing infrastructure covers all phase requirements. No new test framework nee
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Memory under 50MB in all operations | SC-2 | Requires real device + Instruments Allocations | 1. Attach Instruments to DictusKeyboard on iPhone 15 Pro Max. 2. Run typing, dictation, prediction, emoji picker separately. 3. Run combined peak scenario. 4. Verify peak < 50MB. |
+| Memory under 50MB in all operations | SC-2 | Requires real device + Instruments Allocations | 1. Attach Instruments to OuisprKeyboard on iPhone 15 Pro Max. 2. Run typing, dictation, prediction, emoji picker separately. 3. Run combined peak scenario. 4. Verify peak < 50MB. |
 | No memory leaks | SC-2 | Requires real device + Instruments Leaks | Run Leaks instrument during profiling session. Verify 0 leaks. |
-| Signposter produces data | SC-3 | Requires real device + Instruments os_signpost | 1. Open Instruments with os_signpost template. 2. Attach to DictusKeyboard. 3. Type several keys. 4. Verify KeyPress intervals appear in timeline. |
+| Signposter produces data | SC-3 | Requires real device + Instruments os_signpost | 1. Open Instruments with os_signpost template. 2. Attach to OuisprKeyboard. 3. Type several keys. 4. Verify KeyPress intervals appear in timeline. |
 
 ---
 

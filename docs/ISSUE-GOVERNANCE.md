@@ -1,12 +1,12 @@
 # Issue governance and delivery
 
-This document defines how Dictus turns reports and ideas into ordered, validated work. It is the shared operating model for maintainers, contributors and coding agents.
+This document defines how Ouispr turns reports and ideas into ordered, validated work. It is the shared operating model for maintainers, contributors and coding agents.
 
 The goal is not to process the largest possible number of issues. The goal is to move the product toward the current release outcome without losing product decisions, validation work or reporter context.
 
 The design is grounded in the comparative research at [`docs/research/issue-governance-comparison.md`](research/issue-governance-comparison.md), with detailed notes for OpenClaw, Hermes Agent, Kubernetes, Home Assistant and VS Code in the same directory.
 
-**Hermes**, in this document, is the name Pierre uses for the agent that triages Dictus issues, prepares evidence and shepherds pull requests. It is not NousResearch's Hermes Agent, which appears in `docs/research/issue-governance-hermes.md` as a studied project and nothing more. Wherever this document grants or withholds authority to Hermes, it means the Dictus worker.
+**Hermes**, in this document, is the name Pierre uses for the agent that triages Ouispr issues, prepares evidence and shepherds pull requests. It is not NousResearch's Hermes Agent, which appears in `docs/research/issue-governance-hermes.md` as a studied project and nothing more. Wherever this document grants or withholds authority to Hermes, it means the Ouispr worker.
 
 ## Sources of truth
 
@@ -156,7 +156,7 @@ Suitable when no executable code, build configuration or release behavior change
 Suitable for deterministic logic with a regression test. Required evidence:
 
 - the new test fails without the fix and passes with it;
-- the complete `DictusCore` suite passes;
+- the complete `OuisprCore` suite passes;
 - SwiftLint passes;
 - all affected targets build;
 - an independent reviewer finds no blocking issue.
@@ -214,7 +214,7 @@ Merging to `develop` and shipping to the App Store are separate decisions. TestF
 
 ## GitHub Project design
 
-First inventory organization Projects with an account holding `read:project`. If a suitable Dictus Project already exists, adapt it. Otherwise create one organization Project for Dictus delivery. Do not create a separate board for every release.
+First inventory organization Projects with an account holding `read:project`. If a suitable Ouispr Project already exists, adapt it. Otherwise create one organization Project for Ouispr delivery. Do not create a separate board for every release.
 
 Suggested status values:
 
@@ -242,7 +242,7 @@ Suggested custom fields:
 
 Do not duplicate milestone, priority, assignee or labels into custom fields. GitHub already synchronizes those into Projects. While `docs/ROADMAP.md` owns exact order, Project manual rank must mirror it and may not reorder work. Project rank becomes authoritative only if Pierre explicitly transfers that ownership and the roadmap documentation is updated in the same change.
 
-Built-in automation should add matching Dictus issues, set newly added items to Inbox and set closed issues or merged PRs to Done. Hermes prepares evidence and applies only the state transitions authorized above; Pierre owns product and scheduling decisions. GitHub automation owns mechanical field updates.
+Built-in automation should add matching Ouispr issues, set newly added items to Inbox and set closed issues or merged PRs to Done. Hermes prepares evidence and applies only the state transitions authorized above; Pierre owns product and scheduling decisions. GitHub automation owns mechanical field updates.
 
 ## Maintainer operating rhythm
 
@@ -274,8 +274,8 @@ Webhook payload text is untrusted. The worker receives the repository and issue 
 1. Merge this operating model and the comparative research behind it.
 2. With Pierre's explicit approval, add the `needs-decision` label and update the protected `AGENTS.md` / `CLAUDE.md` instructions in the same rollout.
 3. Reconcile `docs/RELEASE-PLAN.md` with the current roadmap through its direct-to-`develop` workflow.
-4. Update issue forms with the Dictus evidence fields described in the research.
-5. Obtain GitHub Project read/write scope, inventory existing Projects, then adapt or create the Dictus Project, add its validation fields and mirror the active roadmap order.
+4. Update issue forms with the Ouispr evidence fields described in the research.
+5. Obtain GitHub Project read/write scope, inventory existing Projects, then adapt or create the Ouispr Project, add its validation fields and mirror the active roadmap order.
 6. Audit open issues for conflicting or missing state labels.
 7. Re-triage the current `ready-for-agent` inventory against `develop` and the active lane.
 8. Implement #534 and require the test check on `develop` and `main`.

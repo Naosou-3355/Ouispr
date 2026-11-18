@@ -9,10 +9,10 @@ import {
   ARM_NEAR, BAG_D, bobAt, drawVoice, drawWoman, FIG, fig, LEG_FAR, LEG_NEAR, legAt, MARKER, mouthOpen, phoneMap, setTheme, stroke, type Pose,
 } from "./woman";
 
-// ONBOARDING INTRO, SCENE A · "walking" (issue #667, headline "Parlez. Dictus écrit.").
+// ONBOARDING INTRO, SCENE A · "walking" (issue #667, headline "Parlez. Ouispr écrit.").
 // The App Store hero V15-B set in motion: she walks in place on a pavement that slides back
 // under her, her phone held out in front of her mouth (seen from the back, as V15-B drew it),
-// talking. Her voice leaves her lips as small blue bars of the Dictus waveform, straight across
+// talking. Her voice leaves her lips as small blue bars of the Ouispr waveform, straight across
 // the gap and INTO the phone; the text comes OUT of it, as a sent chat message that springs from the
 // phone's edge and grows a line at a time (woman.ts draws her and the voice, noteCard.ts the
 // message).
@@ -128,7 +128,7 @@ export const introWalk = (appearance: Theme["name"], locale: string, id: string)
   const theme = THEMES[appearance], text = stringsFor(locale);
   checkCardText(CARD, text, id);
   return {
-    meta: { title: `Dictus onboarding intro A · walking · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_A },
+    meta: { title: `Ouispr onboarding intro A · walking · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_A },
     assets: { images: {} },
     shots: [{ id, start: 0, end: LOOP_A, draw: drawFor(theme, text) }],
   };

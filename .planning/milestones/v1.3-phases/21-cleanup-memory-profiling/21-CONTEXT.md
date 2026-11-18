@@ -27,7 +27,7 @@ Remove all old SwiftUI keyboard code from the extension, verify the keyboard ext
 ### Dead code audit scope
 - Named files + their dependency chain (not a full extension-wide audit)
 - Clean project.pbxproj: remove PBXBuildFile, PBXFileReference, PBXGroup entries for all deleted files
-- Quick check DictusCore for types only referenced by deleted files -- remove if found
+- Quick check OuisprCore for types only referenced by deleted files -- remove if found
 
 ### Memory profiling
 - Profile all 4 operation modes: typing (rapid input), dictation (recording + transcription), text prediction (suggestions active), emoji picker
@@ -56,30 +56,30 @@ Remove all old SwiftUI keyboard code from the extension, verify the keyboard ext
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Files to delete
-- `DictusKeyboard/Views/KeyButton.swift` -- Old SwiftUI key button with accent popup
-- `DictusKeyboard/Views/KeyRow.swift` -- Old SwiftUI key row using KeyButton
-- `DictusKeyboard/Views/KeyboardView.swift` -- Old SwiftUI keyboard view using KeyRow
-- `DictusKeyboard/Views/SpecialKeyButton.swift` -- Old SwiftUI special key with accent popup
-- `DictusKeyboard/Views/AccentPopup.swift` -- Old SwiftUI accent popup overlay
+- `OuisprKeyboard/Views/KeyButton.swift` -- Old SwiftUI key button with accent popup
+- `OuisprKeyboard/Views/KeyRow.swift` -- Old SwiftUI key row using KeyButton
+- `OuisprKeyboard/Views/KeyboardView.swift` -- Old SwiftUI keyboard view using KeyRow
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` -- Old SwiftUI special key with accent popup
+- `OuisprKeyboard/Views/AccentPopup.swift` -- Old SwiftUI accent popup overlay
 
 ### Files to refactor
-- `DictusKeyboard/LegacyCompat.swift` -- Extract useful types, delete file
-- `DictusKeyboard/KeyboardRootView.swift` -- Remove any SwiftUI keyboard references
+- `OuisprKeyboard/LegacyCompat.swift` -- Extract useful types, delete file
+- `OuisprKeyboard/KeyboardRootView.swift` -- Remove any SwiftUI keyboard references
 
 ### LegacyCompat consumers (need types after extraction)
-- `DictusKeyboard/Views/EmojiPickerView.swift` -- Uses KeyMetrics, KeyPopup
-- `DictusKeyboard/Views/EmojiCategoryBar.swift` -- Uses KeyMetrics
-- `DictusKeyboard/DictusKeyboardBridge.swift` -- Uses KeySound
+- `OuisprKeyboard/Views/EmojiPickerView.swift` -- Uses KeyMetrics, KeyPopup
+- `OuisprKeyboard/Views/EmojiCategoryBar.swift` -- Uses KeyMetrics
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` -- Uses KeySound
 
 ### Existing instrumentation
-- `DictusKeyboard/TouchHandling/KeyTapSignposter.swift` -- OSSignposter for touch pipeline latency
+- `OuisprKeyboard/TouchHandling/KeyTapSignposter.swift` -- OSSignposter for touch pipeline latency
 
 ### Architecture context
 - `.planning/phases/18-keyboard-base/18-CONTEXT.md` -- UIKit keyboard architecture decisions
 - `.planning/phases/20-feature-reintegration/20-CONTEXT.md` -- Feature wiring decisions, emoji integration
 
 ### Project file
-- `Dictus.xcodeproj/project.pbxproj` -- Must clean references to deleted files
+- `Ouispr.xcodeproj/project.pbxproj` -- Must clean references to deleted files
 
 </canonical_refs>
 
@@ -92,10 +92,10 @@ Remove all old SwiftUI keyboard code from the extension, verify the keyboard ext
 
 ### Established Patterns
 - Xcode project file editing: PBXBuildFile + PBXFileReference + PBXGroup + PBXSourcesBuildPhase (done in Phase 18 for vendored files)
-- UIKit keyboard is fully wired via DictusKeyboardBridge -- no SwiftUI keyboard code is in the active path
+- UIKit keyboard is fully wired via OuisprKeyboardBridge -- no SwiftUI keyboard code is in the active path
 
 ### Integration Points
-- EmojiPickerView, EmojiCategoryBar, DictusKeyboardBridge depend on LegacyCompat types -- must extract before deleting
+- EmojiPickerView, EmojiCategoryBar, OuisprKeyboardBridge depend on LegacyCompat types -- must extract before deleting
 - KeyboardRootView may still reference old SwiftUI KeyboardView type -- needs cleanup
 - project.pbxproj has entries for all old files -- must remove to prevent ghost references
 

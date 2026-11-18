@@ -19,11 +19,11 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Onboarding/OnboardingSuccessView.swift
+    - OuisprApp/Onboarding/OnboardingSuccessView.swift
   modified:
-    - DictusApp/Onboarding/TestRecordingPage.swift
-    - DictusApp/Onboarding/KeyboardSetupPage.swift
-    - DictusApp/Onboarding/ModelDownloadPage.swift
+    - OuisprApp/Onboarding/TestRecordingPage.swift
+    - OuisprApp/Onboarding/KeyboardSetupPage.swift
+    - OuisprApp/Onboarding/ModelDownloadPage.swift
 
 key-decisions:
   - "Success screen as ZStack overlay on TestRecordingPage, not navigation push -- keeps onboarding flow simple"
@@ -65,10 +65,10 @@ Each task was committed atomically:
 2. **Task 2: Bug fixes + French accent fixes** - `3c64c96` (fix)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/OnboardingSuccessView.swift` - NEW: Full-screen success overlay with animated checkmark, French text, Commencer button
-- `DictusApp/Onboarding/TestRecordingPage.swift` - Intercepts RecordingView completion to show success overlay
-- `DictusApp/Onboarding/KeyboardSetupPage.swift` - Debounced keyboard detection + French accent fixes (Reglages -> Reglages, detecte -> detecte)
-- `DictusApp/Onboarding/ModelDownloadPage.swift` - French accent fixes (6 strings: modele, telechargement, Precis, equilibre, Recommande)
+- `OuisprApp/Onboarding/OnboardingSuccessView.swift` - NEW: Full-screen success overlay with animated checkmark, French text, Commencer button
+- `OuisprApp/Onboarding/TestRecordingPage.swift` - Intercepts RecordingView completion to show success overlay
+- `OuisprApp/Onboarding/KeyboardSetupPage.swift` - Debounced keyboard detection + French accent fixes (Reglages -> Reglages, detecte -> detecte)
+- `OuisprApp/Onboarding/ModelDownloadPage.swift` - French accent fixes (6 strings: modele, telechargement, Precis, equilibre, Recommande)
 
 ## Decisions Made
 - Success screen implemented as ZStack overlay on TestRecordingPage rather than navigation push -- keeps the onboarding switch/case flow unchanged

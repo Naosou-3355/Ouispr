@@ -3,7 +3,7 @@ import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 import * as V5 from "./heroShapes";
 
-// DICTUS HERO V7 · three characters in the marker comic (the style and colours Pierre validated
+// OUISPR HERO V7 · three characters in the marker comic (the style and colours Pierre validated
 // in V6), same composition: a canvas spanning slides 1 and 2, the voice strokes leaving the
 // character's mouth and landing at PANEL_IN, the left edge of slide 2's recording panel.
 //
@@ -281,7 +281,7 @@ const curves: Cast = {
     g.pen(smooth([[582, 584], [628, 572], [676, 570]], false, 6), { w: 7, color: "#C9645A", seed: 90, wobble: 0.3, boil: 0, taper: 0.9, opacity: 0.85, retrace: false });
     g.pen(smooth([[594, 640], [628, 646], [658, 630]], false, 6), { w: 6, color: "#C9645A", seed: 91, wobble: 0.3, boil: 0, taper: 0.9, opacity: 0.75, retrace: false });
     outline(g, mouth, 4, 92);
-    // a small earring in the Dictus accent
+    // a small earring in the Ouispr accent
     fillShape(g, circle([436, 560], 9, 14), ACCENT); outline(g, circle([436, 560], 9, 14), 2.5, 93);
   },
 };
@@ -290,6 +290,6 @@ const film = (id: string, title: string, c: Cast): Film => ({
   meta: { title, W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id, start: 0, end: 1, draw: draw(c) }],
 });
-export const heroWoman = film("heroWoman", "Dictus hero V7 · woman", woman);
-export const heroMan = film("heroMan", "Dictus hero V7 · man", man);
-export const heroCurves = film("heroCurves", "Dictus hero V7 · woman, curves", curves);
+export const heroWoman = film("heroWoman", "Ouispr hero V7 · woman", woman);
+export const heroMan = film("heroMan", "Ouispr hero V7 · man", man);
+export const heroCurves = film("heroCurves", "Ouispr hero V7 · woman, curves", curves);

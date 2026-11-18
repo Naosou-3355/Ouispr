@@ -23,9 +23,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/EmojiPickerView.swift
-    - DictusKeyboard/Views/EmojiCategoryBar.swift
-    - DictusKeyboard/Models/EmojiData.swift
+    - OuisprKeyboard/Views/EmojiPickerView.swift
+    - OuisprKeyboard/Views/EmojiCategoryBar.swift
+    - OuisprKeyboard/Models/EmojiData.swift
 
 key-decisions:
   - "Category pagination over NSCache eviction -- simpler, eliminates root cause (unbounded glyph cache) instead of managing symptoms"
@@ -74,9 +74,9 @@ Each task was committed atomically:
 5. **Task 2: Human verification** - Approved (peak memory 32.67 MiB on device with Instruments)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/EmojiPickerView.swift` - Category-paginated grid replacing flat continuous grid, vertical layout, capped search results
-- `DictusKeyboard/Views/EmojiCategoryBar.swift` - Category bar with emoji icons replacing SF Symbols
-- `DictusKeyboard/Models/EmojiData.swift` - Category icon data updates
+- `OuisprKeyboard/Views/EmojiPickerView.swift` - Category-paginated grid replacing flat continuous grid, vertical layout, capped search results
+- `OuisprKeyboard/Views/EmojiCategoryBar.swift` - Category bar with emoji icons replacing SF Symbols
+- `OuisprKeyboard/Models/EmojiData.swift` - Category icon data updates
 
 ## Decisions Made
 - Category pagination chosen over NSCache eviction -- eliminates root cause (unbounded glyph rendering) rather than managing cache symptoms

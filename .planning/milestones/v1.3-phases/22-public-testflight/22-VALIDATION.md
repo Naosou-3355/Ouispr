@@ -19,7 +19,7 @@ created: 2026-03-31
 |----------|-------|
 | **Framework** | Xcode Instruments (Allocations) + manual verification |
 | **Config file** | N/A — Instruments profiling is manual |
-| **Quick run command** | `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'` |
+| **Quick run command** | `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'` |
 | **Full suite command** | Manual: Instruments profiling on device + App Store Connect upload verification |
 | **Estimated runtime** | ~60 seconds (build), ~5 min (profiling) |
 
@@ -27,7 +27,7 @@ created: 2026-03-31
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusApp -destination 'generic/platform=iOS'`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprApp -destination 'generic/platform=iOS'`
 - **After every plan wave:** Instruments memory profiling on device (emoji picker < 50 MiB)
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds (build)
@@ -39,7 +39,7 @@ created: 2026-03-31
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 22-01-01 | 01 | 1 | TF-01 | manual | Instruments memory profiling on device | N/A | ⬜ pending |
-| 22-01-02 | 01 | 1 | TF-01 | smoke | `grep -q "NSPrivacyAccessedAPICategoryFileTimestamp" DictusApp/PrivacyInfo.xcprivacy` | ✅ | ⬜ pending |
+| 22-01-02 | 01 | 1 | TF-01 | smoke | `grep -q "NSPrivacyAccessedAPICategoryFileTimestamp" OuisprApp/PrivacyInfo.xcprivacy` | ✅ | ⬜ pending |
 | 22-02-01 | 02 | 2 | TF-01 | manual | Xcode Archive + Upload to App Store Connect | N/A | ⬜ pending |
 | 22-02-02 | 02 | 2 | TF-02, TF-03 | manual | App Store Connect portal — external group + public link | N/A | ⬜ pending |
 | 22-02-03 | 02 | 2 | TF-04 | smoke | `grep -q "testflight.apple.com" README.md` | N/A | ⬜ pending |

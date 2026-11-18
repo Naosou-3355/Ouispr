@@ -4,11 +4,11 @@ verified: 2026-04-05T21:30:00Z
 status: human_needed
 score: 7/8 must-haves verified
 human_verification:
-  - test: "Build DictusApp on a physical device. Kill the app, open a third-party app (WhatsApp, Notes), switch to Dictus keyboard, tap mic. Observe the cold start overlay."
+  - test: "Build OuisprApp on a physical device. Kill the app, open a third-party app (WhatsApp, Notes), switch to Ouispr keyboard, tap mic. Observe the cold start overlay."
     expected: "iPhone mockup visible with animated waveform bars, glowing blue dot sliding on phone edge, hand.point.up icon below mockup, empathetic text in device language, bottom instruction 'Swipe right at the bottom of your screen / to return to your app' in accent color."
     why_human: "Visual animation quality (natural easing, timing, pause between cycles) cannot be verified by static code inspection. The 5-iteration design process indicates the design was refined against live visual feedback — only a physical device confirms the final result looks correct."
   - test: "With device set to French, verify the overlay shows French text with correct accents."
-    expected: "Title shows 'Dictée en cours', Listening label shows 'Écoute en cours...', empathetic text shows 'On aimerait éviter cette étape, mais iOS exige d'ouvrir Dictus pour activer le micro.', bottom instruction shows 'Glissez vers la droite en bas de votre écran / pour retourner sur votre application'."
+    expected: "Title shows 'Dictée en cours', Listening label shows 'Écoute en cours...', empathetic text shows 'On aimerait éviter cette étape, mais iOS exige d'ouvrir Ouispr pour activer le micro.', bottom instruction shows 'Glissez vers la droite en bas de votre écran / pour retourner sur votre application'."
     why_human: "xcstrings localization rendering on device. The summary documents an xcstrings duplicate key bug that required a short-key workaround ('swipeback_empathy_text') — that workaround needs device confirmation that Text() resolves short keys via NSLocalizedString correctly."
   - test: "Check TestFlight App Store Connect feedback panel for any additional beta reports not yet captured as GitHub issues."
     expected: "No critical unaddressed reports. Issue #71 (crash during phone call) is the only open priority:high bug."
@@ -32,7 +32,7 @@ human_verification:
 | 2 | ADR exists with clear REJECTED conclusion | VERIFIED | File exists at `.planning/adr-cold-start-autoreturn.md`. Contains `## Decision` section with "Auto-return is not viable with current iOS public APIs." and `**Status:** REJECTED`. 93 lines, 6 references. |
 | 3 | User sees a Wispr Flow-style overlay with iPhone mockup showing recording state | VERIFIED (code) / NEEDS HUMAN (visual) | `SwipeBackOverlayView.swift` (245 lines) contains `IPhoneMockupView` with 17 BrandWaveform bars, Dynamic Island capsule, glowing blue dot with chevron trail. 5 design iterations documented. |
 | 4 | User sees animated swipe gesture on the home bar area of the mockup | VERIFIED (code) / NEEDS HUMAN (visual) | `SwipeHandView` struct with `hand.point.up` SF Symbol. Timer-based loop: 1.2s animation + 0.8s pause. Material easing `timingCurve(0.4/0/0.2/1)`. Blue dot on phone edge with chevron trail. |
-| 5 | User reads empathetic explanation text in their device language (FR or EN) | VERIFIED (code) / NEEDS HUMAN (xcstrings rendering) | `swipeback_empathy_text` key in Localizable.xcstrings with EN and FR translations. FR: "On aimerait éviter cette étape, mais iOS exige d'ouvrir Dictus pour activer le micro." Short key used to avoid Xcode duplicate entry bug. |
+| 5 | User reads empathetic explanation text in their device language (FR or EN) | VERIFIED (code) / NEEDS HUMAN (xcstrings rendering) | `swipeback_empathy_text` key in Localizable.xcstrings with EN and FR translations. FR: "On aimerait éviter cette étape, mais iOS exige d'ouvrir Ouispr pour activer le micro." Short key used to avoid Xcode duplicate entry bug. |
 | 6 | Overlay text references returning to their previous app, NOT 'the keyboard' | VERIFIED | Bottom instruction: `"Swipe right at the bottom of your screen\nto return to your app"`. No reference to "Swipe back to the keyboard" anywhere in the file. FR translation: "pour retourner sur votre application". |
 | 7 | Critical beta bugs are triaged with fixes applied or GitHub issues filed | VERIFIED | Issue #73 (AUIOClient) closed as dev artifact. Issue #60 (DI stuck on REC) fixed — watchdog reduced from 10s to 2s in `LiveActivityManager.swift:488`. Issue #71 (crash during phone call) open with `priority:high` label. Issues #72, #69, #67 deferred to v1.5. |
 | 8 | GitHub issue #23 is updated with investigation summary | VERIFIED | `gh issue view 23` returns comment with "Cold Start Auto-Return Investigation Complete", 5-approach table, and link to ADR. |
@@ -44,17 +44,17 @@ human_verification:
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
 | `.planning/adr-cold-start-autoreturn.md` | ADR with REJECTED decision | VERIFIED | Exists, 93 lines, `## Decision` section present, "REJECTED" status, 5 approaches with evidence table, 7 references |
-| `DictusApp/DictusApp.swift` | sourceApplication diagnostic logging | VERIFIED | `@UIApplicationDelegateAdaptor(AppDelegate.self)` present, `sourceApplication` referenced 5+ times, `UIApplicationDelegateAdaptor` class added |
-| `DictusApp/Views/SwipeBackOverlayView.swift` | Wispr Flow-style overlay, min 100 lines | VERIFIED | 245 lines, `struct SwipeBackOverlayView: View` with no init parameters, `IPhoneMockupView` private struct, `SwipeHandView` private struct |
-| `DictusApp/Localizable.xcstrings` | French translations for overlay text | VERIFIED | Keys present: "Dictation in progress" (FR: "Dictée en cours"), "Swipe right at the bottom of your screen\nto return to your app" (FR with proper accents), "swipeback_empathy_text" (FR: "On aimerait éviter..."), "Listening..." (FR: "Écoute en cours...") |
-| `DictusApp/LiveActivityManager.swift` | Watchdog reduced to 2s | VERIFIED | `Task.sleep(nanoseconds: 2_000_000_000)` at line 488, comment confirms "Previously 10s — reduced to 2s for faster recovery (issue #60)" |
+| `OuisprApp/OuisprApp.swift` | sourceApplication diagnostic logging | VERIFIED | `@UIApplicationDelegateAdaptor(AppDelegate.self)` present, `sourceApplication` referenced 5+ times, `UIApplicationDelegateAdaptor` class added |
+| `OuisprApp/Views/SwipeBackOverlayView.swift` | Wispr Flow-style overlay, min 100 lines | VERIFIED | 245 lines, `struct SwipeBackOverlayView: View` with no init parameters, `IPhoneMockupView` private struct, `SwipeHandView` private struct |
+| `OuisprApp/Localizable.xcstrings` | French translations for overlay text | VERIFIED | Keys present: "Dictation in progress" (FR: "Dictée en cours"), "Swipe right at the bottom of your screen\nto return to your app" (FR with proper accents), "swipeback_empathy_text" (FR: "On aimerait éviter..."), "Listening..." (FR: "Écoute en cours...") |
+| `OuisprApp/LiveActivityManager.swift` | Watchdog reduced to 2s | VERIFIED | `Task.sleep(nanoseconds: 2_000_000_000)` at line 488, comment confirms "Previously 10s — reduced to 2s for faster recovery (issue #60)" |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
 | `SwipeBackOverlayView.swift` | `MainTabView.swift` | `SwipeBackOverlayView()` at line 42 | WIRED | `MainTabView.swift:42` calls `SwipeBackOverlayView()` inside `if isColdStartMode` guard. No parameters, matching struct definition. |
-| `SwipeBackOverlayView.swift` | `DictusApp/Localizable.xcstrings` | SwiftUI `Text()` auto-lookup | VERIFIED (code) | All 4 Text() calls use exact keys that exist in xcstrings. Short key `"swipeback_empathy_text"` resolves via `NSLocalizedString` — device verification recommended. |
+| `SwipeBackOverlayView.swift` | `OuisprApp/Localizable.xcstrings` | SwiftUI `Text()` auto-lookup | VERIFIED (code) | All 4 Text() calls use exact keys that exist in xcstrings. Short key `"swipeback_empathy_text"` resolves via `NSLocalizedString` — device verification recommended. |
 | `.planning/adr-cold-start-autoreturn.md` | GitHub issue #23 | `gh issue comment` | VERIFIED | Last comment on issue #23 matches ADR content, references ADR path, posted 2026-04-05. |
 
 ### Requirements Coverage
@@ -72,7 +72,7 @@ REQUIREMENTS.md still shows COLD-03 and BETA-01 as `[ ]` unchecked. These checkb
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `DictusApp/DictusApp.swift` | 5-26 | `AppDelegate` sourceApplication diagnostic logging marked as temporary | INFO | Per ADR, this is intentional temporary diagnostic code. Can be removed after physical device confirms `source=nil`. Does not block goal. |
+| `OuisprApp/OuisprApp.swift` | 5-26 | `AppDelegate` sourceApplication diagnostic logging marked as temporary | INFO | Per ADR, this is intentional temporary diagnostic code. Can be removed after physical device confirms `source=nil`. Does not block goal. |
 
 No placeholder implementations, empty stubs, TODO comments, or incomplete functions found in phase-modified files.
 
@@ -80,7 +80,7 @@ No placeholder implementations, empty stubs, TODO comments, or incomplete functi
 
 #### 1. Overlay Visual Quality and Animation
 
-**Test:** Build DictusApp on a physical device. Kill the app completely, open a third-party app (WhatsApp or Notes), switch to Dictus keyboard, tap the mic button.
+**Test:** Build OuisprApp on a physical device. Kill the app completely, open a third-party app (WhatsApp or Notes), switch to Ouispr keyboard, tap the mic button.
 **Expected:** Full-screen overlay appears with: iPhone mockup centered with animated waveform bars (gradient blue center, white edge bars), glowing blue dot sliding on the phone bottom edge with chevron trail, hand.point.up icon below the mockup sliding right, empathetic text in device language below, bottom instruction in accent blue.
 **Why human:** Animation easing, timing between cycles (1.2s animate + 0.8s pause), and overall visual polish cannot be verified by static code inspection. 5 design iterations were needed — the final version needs eyes-on validation.
 
@@ -92,7 +92,7 @@ No placeholder implementations, empty stubs, TODO comments, or incomplete functi
 
 #### 3. TestFlight Feedback Panel
 
-**Test:** Log into App Store Connect, navigate to Dictus app, TestFlight tab, Feedback section.
+**Test:** Log into App Store Connect, navigate to Ouispr app, TestFlight tab, Feedback section.
 **Expected:** No critical unaddressed reports. All reported crashes/issues should already be captured as GitHub issues (#67, #69, #71, #72).
 **Why human:** TestFlight feedback is only accessible via App Store Connect UI — cannot be queried programmatically.
 

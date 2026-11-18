@@ -23,11 +23,11 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Views/SettingsView.swift
-    - DictusApp/Views/RecordingView.swift
-    - DictusApp/Views/HomeView.swift
-    - DictusApp/Views/GaugeBarView.swift
-    - DictusApp/Views/MainTabView.swift
+    - OuisprApp/Views/SettingsView.swift
+    - OuisprApp/Views/RecordingView.swift
+    - OuisprApp/Views/HomeView.swift
+    - OuisprApp/Views/GaugeBarView.swift
+    - OuisprApp/Views/MainTabView.swift
 
 key-decisions:
   - "AnimatedMicButton transcription opacity 0.5 confirmed appropriate -- consistent across pill and circle modes, no adjustment needed"
@@ -57,7 +57,7 @@ completed: 2026-03-13
 
 ## Accomplishments
 - Fixed 12+ unaccented French UI strings across SettingsView, RecordingView, HomeView, MainTabView, GaugeBarView
-- Changed GaugeBarView Vitesse preview from green (.dictusSuccess) to blue (.dictusAccentHighlight)
+- Changed GaugeBarView Vitesse preview from green (.ouisprSuccess) to blue (.ouisprAccentHighlight)
 - Added async log export with ProgressView spinner in SettingsView
 - Evaluated AnimatedMicButton transcription opacity -- confirmed 0.5 is appropriate and consistent in both pill and circle modes
 
@@ -69,11 +69,11 @@ Each task was committed atomically:
 2. **Task 2: Mic button transcription opacity + Settings UX fixes** - `93a932e` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/SettingsView.swift` - Fixed accents (Francais, A propos, Reglages), added log export spinner with isExporting state
-- `DictusApp/Views/RecordingView.swift` - Fixed accents (Arreter, echoue/Verifiez/modele/telecharge, Copie)
-- `DictusApp/Views/HomeView.swift` - Fixed accents (Nouvelle dictee, Modele actif, Telecharger, Derniere, Copie)
-- `DictusApp/Views/MainTabView.swift` - Fixed accents (Reglages tab label, Modeles tab label)
-- `DictusApp/Views/GaugeBarView.swift` - Fixed Precision accent in preview, changed Vitesse color to blue
+- `OuisprApp/Views/SettingsView.swift` - Fixed accents (Francais, A propos, Reglages), added log export spinner with isExporting state
+- `OuisprApp/Views/RecordingView.swift` - Fixed accents (Arreter, echoue/Verifiez/modele/telecharge, Copie)
+- `OuisprApp/Views/HomeView.swift` - Fixed accents (Nouvelle dictee, Modele actif, Telecharger, Derniere, Copie)
+- `OuisprApp/Views/MainTabView.swift` - Fixed accents (Reglages tab label, Modeles tab label)
+- `OuisprApp/Views/GaugeBarView.swift` - Fixed Precision accent in preview, changed Vitesse color to blue
 
 ## Decisions Made
 - AnimatedMicButton transcription opacity 0.5 with shimmer animation confirmed appropriate for both pill and circle modes -- no adjustment needed
@@ -97,7 +97,7 @@ Each task was committed atomically:
 **Impact on plan:** Essential for complete accent coverage. No scope creep -- these were strings the audit was designed to catch.
 
 ## Issues Encountered
-- DictusCore swift test fails due to SwiftUI availability on macOS target (pre-existing, not caused by changes). iOS-only SwiftUI views cannot compile for macOS command-line test runner.
+- OuisprCore swift test fails due to SwiftUI availability on macOS target (pre-existing, not caused by changes). iOS-only SwiftUI views cannot compile for macOS command-line test runner.
 
 ## User Setup Required
 None - no external service configuration required.

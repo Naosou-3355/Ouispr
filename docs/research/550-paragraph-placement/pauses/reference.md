@@ -1,6 +1,6 @@
 # The reference, and how it was collected
 
-The speaker was shown the five Dictus-polished texts with numbered sentences and asked
+The speaker was shown the five Ouispr-polished texts with numbered sentences and asked
 one question: after which sentence do you want a blank line. He was shown no silence
 data, no candidate breaks and no measurement of any kind. The audio had already been
 analysed at that point and the result was withheld on purpose.
@@ -47,5 +47,5 @@ e37a96843f4376bb4c8d11742f85d2f5bb0a2cf0197d894d9646c8b1a6e88738  Texte B - Paus
 1cece2a4df52a3bfead6345a0aeb9460dcf58463e252ac0f33750623c2a0d742  Test E.m4a
 ```
 
-Transcriptions: `dictus-polish-debug-20260912-001017.json`, events 209 to 213, exported
+Transcriptions: `ouispr-polish-debug-20260912-001017.json`, events 209 to 213, exported
 from the app's Polish debug log. Reproduced in `transcripts.md`.

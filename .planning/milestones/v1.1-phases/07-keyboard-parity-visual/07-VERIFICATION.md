@@ -20,7 +20,7 @@ re_verification:
 
 # Phase 7: Keyboard Parity & Visual Verification Report
 
-**Phase Goal:** Users perceive the Dictus keyboard as equal to or better than Apple's native keyboard in core interactions, with a polished mic button and recording experience
+**Phase Goal:** Users perceive the Ouispr keyboard as equal to or better than Apple's native keyboard in core interactions, with a polished mic button and recording experience
 **Verified:** 2026-03-08T15:30:00Z
 **Status:** passed
 **Re-verification:** Yes -- after gap closure (plans 07-10, 07-11, 07-12)
@@ -49,15 +49,15 @@ re_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/.../HapticFeedback.swift` | Pre-allocated generators, warmUp(), keyTapped(), trackpadActivated() | VERIFIED | Static generators. warmUp() calls .prepare(). All methods guard isEnabled(). |
-| `DictusKeyboard/Views/SpecialKeyButton.swift` | ShiftKey, DeleteKey, SpaceKey, EmojiKey, AdaptiveAccentKey | VERIFIED | All views present. systemGray5 backgrounds. Case-preserving accents. AudioToolbox sounds. Line-based trackpad. |
-| `DictusKeyboard/Views/KeyboardView.swift` | KeySound enum, 3-category sounds, autocap, word delete | VERIFIED | KeySound enum with 3 IDs. AudioServicesPlaySystemSound on all callbacks. Autocap + deleteWordBackward(). |
-| `DictusKeyboard/Views/KeyButton.swift` | KeyMetrics dynamic height, long-press accents | VERIFIED | keyHeight with screen breakpoints. Long-press accent popup with DragGesture. |
-| `DictusKeyboard/Views/ToolbarView.swift` | Pill mic button, 48pt height | VERIFIED | AnimatedMicButton(isPill: true), frame height 48. |
-| `DictusKeyboard/Views/RecordingOverlay.swift` | PillButton cancel/validate, BrandWaveform | VERIFIED | PillButton with dictusGlass Capsule 56x36pt. BrandWaveform with isProcessing for transcribing. |
-| `DictusCore/.../BrandWaveform.swift` | Canvas rendering, silence threshold | VERIFIED | Canvas-based rendering. isProcessing mode with sinusoidal wave. |
-| `DictusCore/.../AccentedCharacters.swift` | Case-preserving adaptiveKeyLabel | VERIFIED | adaptiveKeyLabel preserves original case from lastTypedChar instead of lowercasing unconditionally. |
-| `DictusApp/DictationCoordinator.swift` | Cancel uses collectSamples() not stopRecording() | VERIFIED | cancelDictation() calls collectSamples(), resets bufferEnergy/bufferSeconds, keeps engine alive. |
+| `OuisprCore/.../HapticFeedback.swift` | Pre-allocated generators, warmUp(), keyTapped(), trackpadActivated() | VERIFIED | Static generators. warmUp() calls .prepare(). All methods guard isEnabled(). |
+| `OuisprKeyboard/Views/SpecialKeyButton.swift` | ShiftKey, DeleteKey, SpaceKey, EmojiKey, AdaptiveAccentKey | VERIFIED | All views present. systemGray5 backgrounds. Case-preserving accents. AudioToolbox sounds. Line-based trackpad. |
+| `OuisprKeyboard/Views/KeyboardView.swift` | KeySound enum, 3-category sounds, autocap, word delete | VERIFIED | KeySound enum with 3 IDs. AudioServicesPlaySystemSound on all callbacks. Autocap + deleteWordBackward(). |
+| `OuisprKeyboard/Views/KeyButton.swift` | KeyMetrics dynamic height, long-press accents | VERIFIED | keyHeight with screen breakpoints. Long-press accent popup with DragGesture. |
+| `OuisprKeyboard/Views/ToolbarView.swift` | Pill mic button, 48pt height | VERIFIED | AnimatedMicButton(isPill: true), frame height 48. |
+| `OuisprKeyboard/Views/RecordingOverlay.swift` | PillButton cancel/validate, BrandWaveform | VERIFIED | PillButton with ouisprGlass Capsule 56x36pt. BrandWaveform with isProcessing for transcribing. |
+| `OuisprCore/.../BrandWaveform.swift` | Canvas rendering, silence threshold | VERIFIED | Canvas-based rendering. isProcessing mode with sinusoidal wave. |
+| `OuisprCore/.../AccentedCharacters.swift` | Case-preserving adaptiveKeyLabel | VERIFIED | adaptiveKeyLabel preserves original case from lastTypedChar instead of lowercasing unconditionally. |
+| `OuisprApp/DictationCoordinator.swift` | Cancel uses collectSamples() not stopRecording() | VERIFIED | cancelDictation() calls collectSamples(), resets bufferEnergy/bufferSeconds, keeps engine alive. |
 
 ### Key Link Verification
 
@@ -82,7 +82,7 @@ re_verification:
 | KBD-05 | 07-01, 07-08 | Apple dictation mic removed | SATISFIED | No public API to suppress. 8pt bottom padding attempted. Documented. |
 | KBD-06 | 07-01, 07-07, 07-11 | Performance optimization | SATISFIED | Pre-allocated haptics. AudioServicesPlaySystemSound. Autocap + word-delete acceleration. |
 | VIS-01 | 07-03, 07-08 | Mic pill button | SATISFIED | AnimatedMicButton(isPill: true) with 48pt toolbar. 4 visual states. |
-| VIS-02 | 07-03 | Recording pill buttons | SATISFIED | PillButton 56x36pt with Capsule dictusGlass. Cancel + validate. |
+| VIS-02 | 07-03 | Recording pill buttons | SATISFIED | PillButton 56x36pt with Capsule ouisprGlass. Cancel + validate. |
 | VIS-03 | 07-03, 07-08, 07-12 | Waveform rework | SATISFIED | Canvas rendering, silence threshold, sinusoidal processing. Cancel uses collectSamples() to preserve engine. |
 
 ### Anti-Patterns Found
@@ -99,7 +99,7 @@ re_verification:
 **Why human:** Requires real device audio pipeline testing; collectSamples() fix is code-verified but audio state needs runtime validation
 
 ### 2. Key Sound Differentiation
-**Test:** Compare Dictus key sounds (letter, delete, space/return) with Apple keyboard
+**Test:** Compare Ouispr key sounds (letter, delete, space/return) with Apple keyboard
 **Expected:** 3 distinct sounds matching Apple's categories (IDs 1104, 1155, 1156)
 **Why human:** Sound differentiation requires auditory comparison on device
 

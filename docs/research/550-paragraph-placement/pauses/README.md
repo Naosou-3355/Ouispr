@@ -10,7 +10,7 @@ wants a paragraph.
 |---|---|
 | `findings.md` | The round: method, the sixteen-boundary table, two candidate rules, limits |
 | `reference.md` | The speaker's own paragraph marks and how they were collected before any measurement |
-| `transcripts.md` | The five fixtures, Dictus raw and Dictus polished |
+| `transcripts.md` | The five fixtures, Ouispr raw and Ouispr polished |
 | `boundaries.json` | The measured table, machine-readable |
 | `detect.py` | Silence detection and speech segmentation |
 | `score.py` | Scores candidate rules against `boundaries.json`. Reported, never barred |
@@ -28,7 +28,7 @@ python3 score.py             # needs only boundaries.json
 ```
 
 Mapping the silences onto sentence boundaries means cutting the audio at the reported
-silences and transcribing each speech segment on its own, then reading which Dictus
+silences and transcribing each speech segment on its own, then reading which Ouispr
 sentences each segment covers. `whisper.cpp` with `ggml-small` and `-l fr` was used. That
 step is manual on purpose: it is the step that makes the table trustworthy, and it is
 where an automated alignment would reintroduce the interpolation error that limited

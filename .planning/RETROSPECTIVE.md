@@ -24,13 +24,13 @@
 - **Two-process architecture**: Correct decision given 50MB keyboard extension limit
 
 ### What Was Inefficient
-- **Design file duplication**: 6 files manually synced between DictusApp and DictusKeyboard — a DictusUI SPM package would eliminate this
+- **Design file duplication**: 6 files manually synced between OuisprApp and OuisprKeyboard — a OuisprUI SPM package would eliminate this
 - **SmartModelRouter built then dropped**: Full TDD implementation (24 tests) that was bypassed at runtime because model switching breaks background recording. Should have prototyped before committing to the approach
 - **Multiple UAT rounds**: Phases 3 and 4 each needed 1-2 extra gap closure plans. Earlier device testing during initial plans would reduce rework
 - **FillerWordFilter built then removed**: Whisper model handles filler removal natively. Research should have caught this before implementation
 
 ### Patterns Established
-- `dictusGlass()` modifier for all glass surfaces (single point of iOS 26 upgrade)
+- `ouisprGlass()` modifier for all glass surfaces (single point of iOS 26 upgrade)
 - Darwin notification + Bool flag + UserDefaults for cross-process communication
 - `canImport(UIKit) && !os(macOS)` guard for shared SPM packages
 - Fixed font sizes for keyboard keys (native iOS behavior, not Dynamic Type)
@@ -57,7 +57,7 @@
 **Phases:** 5 | **Plans:** 29 | **Commits:** 186
 
 ### What Was Built
-- Shared design system in DictusCore (colors, glass, waveform, mic button, logo)
+- Shared design system in OuisprCore (colors, glass, waveform, mic button, logo)
 - Apple-parity keyboard: spacebar trackpad, adaptive accent key, emoji button, haptics, 3-category key sounds
 - Text prediction: 3-slot suggestion bar, French autocorrect via UITextChecker + frequency dictionary, accent suggestions, undo-on-backspace
 - Keyboard mode system: default layer selection (letters/numbers) with live preview in settings and onboarding
@@ -68,7 +68,7 @@
 - **UAT gap closure pattern matured**: Phases 07, 09, 10 all used the "execute → UAT → diagnose → fix" loop. The pattern is now systematic with dedicated UAT.md files.
 - **Integration checker at milestone audit**: Caught the MODE-01 architecture evolution (3 modes → 2 layers) and verified all 26 requirement wiring paths.
 - **Yolo mode + coarse granularity**: 29 plans in 5 days, minimal planning overhead. Average plan execution: ~4 minutes.
-- **DictusCore consolidation (Phase 06)**: Eliminated design file duplication early, every subsequent phase benefited from shared components.
+- **OuisprCore consolidation (Phase 06)**: Eliminated design file duplication early, every subsequent phase benefited from shared components.
 - **Notification bridge pattern**: viewWillAppear → NotificationCenter → SwiftUI solved the stale @State problem for keyboard mode sync.
 
 ### What Was Inefficient
@@ -91,7 +91,7 @@
 1. **UAT before building complex alternatives**: The 3-mode keyboard system was fully implemented before testing showed it was over-engineered. A paper prototype or minimal POC would have saved 3 plans.
 2. **NotificationCenter bridges UIKit lifecycle to SwiftUI**: viewWillAppear doesn't trigger SwiftUI body re-evaluation — posting a notification that SwiftUI observes is the correct pattern.
 3. **iOS keyboard extension constraints compound**: 50MB memory + no UIApplication + stale proxy reads + no line-width API = every feature needs creative workarounds.
-4. **Shared design package pays dividends immediately**: Phase 06's DictusCore consolidation was the foundation for every subsequent phase. Do infrastructure first.
+4. **Shared design package pays dividends immediately**: Phase 06's OuisprCore consolidation was the foundation for every subsequent phase. Do infrastructure first.
 5. **WhisperKit owns more than you think**: It controls audio session category, activation, and recording lifecycle. Align with it, don't fight it.
 
 ### Cost Observations

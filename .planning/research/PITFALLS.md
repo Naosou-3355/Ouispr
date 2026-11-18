@@ -2,9 +2,9 @@
 
 **Domain:** iOS keyboard extension — probability-based text prediction upgrade + cold start auto-return + stability fixes
 **Researched:** 2026-04-01
-**Confidence:** HIGH (based on SymSpell documentation, Apple DTS responses, issue #23 research report, issue #67/68 analysis, Dictus codebase audit, community reports)
+**Confidence:** HIGH (based on SymSpell documentation, Apple DTS responses, issue #23 research report, issue #67/68 analysis, Ouispr codebase audit, community reports)
 
-**Context:** Dictus v1.4 adds SymSpell-based spell correction, n-gram/trigram next-word prediction, fixes autocorrect undo state bug (#67), and researches cold start auto-return (#23). All changes target the existing keyboard extension with a 50MB memory limit, offline-only constraint, and must not degrade typing fluidity (<10ms per prediction).
+**Context:** Ouispr v1.4 adds SymSpell-based spell correction, n-gram/trigram next-word prediction, fixes autocorrect undo state bug (#67), and researches cold start auto-return (#23). All changes target the existing keyboard extension with a 50MB memory limit, offline-only constraint, and must not degrade typing fluidity (<10ms per prediction).
 
 ---
 
@@ -25,7 +25,7 @@ The SymSpellSwift library (v0.1.4, August 2025) calls `loadDictionary()` synchro
 SymSpell trades memory for speed. The algorithm pre-computes deletions so lookups are O(1), but the pre-computation requires holding all variants in memory simultaneously. Most SymSpell usage is in server-side applications with gigabytes of RAM, not 50MB iOS extensions.
 
 **Consequences:**
-Keyboard killed silently during dictionary load. Users see system keyboard appear instead of Dictus. On slower devices, keyboard appears blank for 1-3 seconds before keys render.
+Keyboard killed silently during dictionary load. Users see system keyboard appear instead of Ouispr. On slower devices, keyboard appears blank for 1-3 seconds before keys render.
 
 **Prevention:**
 1. **Limit dictionary size to 30K-50K words maximum**: The top 30K French words cover ~99% of daily usage. Pre-compute on a Mac, measure RAM with Instruments on device, and reduce until comfortably under 10MB resident
@@ -57,7 +57,7 @@ Extension crashes on first prediction query. Or: extension loads but crashes whe
 
 **Prevention:**
 1. **Use mmap from the start, not Dictionary in RAM**: Build a custom binary trie or use KenLM's binary format. Memory-map the file so only queried pages are resident. Target <2MB resident memory for the n-gram component
-2. **Store model file in the keyboard extension bundle, not the app bundle**: In Xcode, add the model file's Target Membership to DictusKeyboard, not DictusApp. Or store in the App Group container (writable, accessible by both targets)
+2. **Store model file in the keyboard extension bundle, not the app bundle**: In Xcode, add the model file's Target Membership to OuisprKeyboard, not OuisprApp. Or store in the App Group container (writable, accessible by both targets)
 3. **Pure Swift trigram engine over KenLM unless C++ bridging is already needed**: KenLM is fast but adds C++ compilation complexity to the keyboard extension target (see Pitfall 3). A custom binary trie in pure Swift with `mmap` via `Data(contentsOf:options:.mappedIfSafe)` achieves the same result without bridging headers
 4. **Prune aggressively**: Keep only trigrams that appear >5 times in the training corpus. For French, this typically reduces a 500MB model to 5-10MB while retaining 95%+ of prediction quality
 5. **Single language loaded at a time**: Never load both French and English models simultaneously. Load on language switch, unmap the previous model. Current architecture already does this for FrequencyDictionary
@@ -97,7 +97,7 @@ Build fails with 50+ errors after adding KenLM. Hours spent chasing linker error
 **Prevention:**
 1. **Strongly prefer a pure Swift n-gram engine over KenLM**: Write a custom binary trie reader in Swift. The query logic is simple: given W1 and W2, look up P(W3|W1,W2) and return top-3 candidates. This avoids all C++ complexity
 2. **If KenLM is chosen, wrap it in a static XCFramework**: Build KenLM as a static library (.a) on macOS with the iOS SDK, wrap it in an ObjC++ interface that exposes only `-(NSArray<NSString*>*)predictNext:(NSString*)context`, and import the framework. This isolates C++ from Swift
-3. **Test the build on a clean checkout before adding any feature code**: Add the C++ files, verify `xcodebuild -target DictusKeyboard` succeeds, commit. Then add feature code. This prevents conflating C++ build issues with logic bugs
+3. **Test the build on a clean checkout before adding any feature code**: Add the C++ files, verify `xcodebuild -target OuisprKeyboard` succeeds, commit. Then add feature code. This prevents conflating C++ build issues with logic bugs
 4. **Check KenLM does not call `fork()`, `exec()`, or `dlopen()`**: These are prohibited in app extensions. Grep KenLM source for these calls before integrating
 
 **Warning signs:**
@@ -130,7 +130,7 @@ Wasted development time on impossible approaches. Risk of implementing private A
    - Show the overlay within 200ms of cold start URL open
    - Auto-dismiss when `sceneDidEnterBackground` fires (user swiped back)
    - Optional: add the swipe-back instruction as a Dynamic Island Live Activity for even clearer guidance
-3. **Explore `sourceApplication` as a refinement, not a solution**: When the keyboard opens DictusApp via URL scheme, `UIApplication.OpenURLOptionsKey.sourceApplication` in `application(_:open:options:)` MAY contain the host app's bundle ID. If it does, you could display "Swipe back to [App Name]" instead of generic text. But this is a UX polish, not auto-return
+3. **Explore `sourceApplication` as a refinement, not a solution**: When the keyboard opens OuisprApp via URL scheme, `UIApplication.OpenURLOptionsKey.sourceApplication` in `application(_:open:options:)` MAY contain the host app's bundle ID. If it does, you could display "Swipe back to [App Name]" instead of generic text. But this is a UX polish, not auto-return
 4. **Consider session-based model (Wispr Flow pattern)**: Keep the audio engine alive in background between recordings so cold starts are rare. This is already partially implemented via `collectSamples()` pattern. The real fix for cold start is preventing cold starts, not auto-returning from them
 
 **Warning signs:**
@@ -163,7 +163,7 @@ Text corruption: words mangled by stale undo operations. User types "corriger te
 
 **Prevention:**
 1. **Fix issue #67 first, before any prediction engine changes**: The state management bug is independent of SymSpell. Fix the easy bug in isolation so you can verify the fix works with the current engine before adding complexity
-2. **Clear `lastAutocorrect` synchronously on main thread in the key handler, before dispatching async work**: The character input handler in `DictusKeyboardBridge` runs on main. Clear `lastAutocorrect = nil` there immediately, not inside the async suggestion callback
+2. **Clear `lastAutocorrect` synchronously on main thread in the key handler, before dispatching async work**: The character input handler in `OuisprKeyboardBridge` runs on main. Clear `lastAutocorrect = nil` there immediately, not inside the async suggestion callback
 3. **Make autocorrect a synchronous operation, not part of the async suggestion pipeline**: Autocorrect (replace word on space) should be a synchronous check on main thread — it's user-facing and must be deterministic. Only the suggestion bar population (showing 3 candidates) should be async
 4. **Add a generation counter to prevent stale autocorrect**: Increment a counter on every keystroke. The autocorrect callback checks if the counter matches — if not, the autocorrect result is stale and should be discarded
 5. **Test with rapid typing (>5 chars/second)**: Use `XCTestCase.measure {}` or a UI test that simulates fast typing to reproduce the race. The bug is invisible at normal typing speed
@@ -281,7 +281,7 @@ SymSpellSwift (github.com/gdetari/SymSpellSwift) has 16 commits, one contributor
 If the library has a subtle bug (e.g., crashes on words with combining diacritical marks like "e\u0301" vs "e-acute"), debugging it requires understanding both SymSpell's algorithm AND the library's Swift implementation.
 
 **Prevention:**
-1. **Vendor the source code, do not use as SPM dependency**: Copy the Swift files into `DictusKeyboard/TextPrediction/SymSpell/`. This allows fixing bugs directly without waiting for upstream
+1. **Vendor the source code, do not use as SPM dependency**: Copy the Swift files into `OuisprKeyboard/TextPrediction/SymSpell/`. This allows fixing bugs directly without waiting for upstream
 2. **Write integration tests for French-specific cases**: Test with: accented characters (e, e-acute, e-grave, e-circumflex), elisions (l'homme), compound words (peut-etre), Unicode normalization (NFC vs NFD)
 3. **Audit the source for obvious issues**: Check how it handles String iteration (should use `Character`, not `UInt8`). Check for `force try` or `fatalError` calls. Check dictionary loading for error handling
 4. **Consider writing a minimal SymSpell from scratch**: The core algorithm is ~200 lines. Given the library's minimal maintenance, implementing the symmetric delete lookup directly may be more reliable than depending on an unmaintained port
@@ -361,9 +361,9 @@ Bug fix phase (issue #67). Must be tested before prediction engine changes.
 - [SymSpellSwift library](https://github.com/gdetari/SymSpellSwift) — Swift port, v0.1.4, 16 commits (HIGH confidence, source code reviewed)
 - [SymSpell dictionary loading optimization issue #16](https://github.com/wolfgarbe/SymSpell/issues/16) — loading time, memory optimization techniques (HIGH confidence)
 - [Apple DTS response on auto-return (January 2026)](https://github.com/getdictus/dictus-ios/issues/23#issuecomment-4117827144) — "No API exists" confirmation (HIGH confidence)
-- [Dictus issue #23 research report](https://github.com/getdictus/dictus-ios/blob/99300f9/assets/reference/issue-23-report.md) — failed auto-return approaches documented (HIGH confidence)
-- [Dictus issue #67](https://github.com/getdictus/dictus-ios/issues/67) — autocorrect undo state bug, root cause analysis (HIGH confidence)
-- [Dictus issue #68](https://github.com/getdictus/dictus-ios/issues/68) — prediction upgrade proposal with SymSpell + n-gram architecture (HIGH confidence)
+- [Ouispr issue #23 research report](https://github.com/getdictus/dictus-ios/blob/99300f9/assets/reference/issue-23-report.md) — failed auto-return approaches documented (HIGH confidence)
+- [Ouispr issue #67](https://github.com/getdictus/dictus-ios/issues/67) — autocorrect undo state bug, root cause analysis (HIGH confidence)
+- [Ouispr issue #68](https://github.com/getdictus/dictus-ios/issues/68) — prediction upgrade proposal with SymSpell + n-gram architecture (HIGH confidence)
 - [Swift-C++ interop project setup](https://www.swift.org/documentation/cxx-interop/project-build-setup/) — bridging header requirements, extension limitations not documented (MEDIUM confidence)
 - [Apple: Custom Keyboard programming guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/CustomKeyboard.html) — extension memory limits, API restrictions (HIGH confidence)
 - [iOS keyboard extension memory limits](https://developer.apple.com/forums/thread/85478) — 30-50MB experimentally determined, device-dependent (MEDIUM confidence)
@@ -371,4 +371,4 @@ Bug fix phase (issue #67). Must be tested before prediction engine changes.
 - [HeliBoard / AOSP dictionaries](https://codeberg.org/Helium314/aosp-dictionaries) — pre-trained language models for 80+ languages (HIGH confidence)
 - [KenLM paper](https://kheafield.com/papers/avenue/kenlm.pdf) — mmap-based data structures for language models (HIGH confidence)
 - [sourceApplication API documentation](https://developer.apple.com/documentation/uikit/uiapplication/openurloptionskey/sourceapplication) — bundle ID of requesting app (HIGH confidence)
-- Dictus codebase: `TextPredictionEngine.swift`, `SuggestionState.swift`, `DictusKeyboardBridge.swift` — current architecture audit (HIGH confidence)
+- Ouispr codebase: `TextPredictionEngine.swift`, `SuggestionState.swift`, `OuisprKeyboardBridge.swift` — current architecture audit (HIGH confidence)

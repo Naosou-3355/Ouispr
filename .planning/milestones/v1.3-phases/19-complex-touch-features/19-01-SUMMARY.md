@@ -7,7 +7,7 @@ tags: [keyboard, accents, french, long-press, edge-keys, haptic, UICollectionVie
 # Dependency graph
 requires:
   - phase: 18-keyboard-base
-    provides: "GiellaKeyboardView UICollectionView keyboard, DictusKeyboardBridge delegate, FrenchKeyboardLayouts"
+    provides: "GiellaKeyboardView UICollectionView keyboard, OuisprKeyboardBridge delegate, FrenchKeyboardLayouts"
 provides:
   - "French accent long-press popup on all 8 base keys (e, a, u, i, o, c, y, n)"
   - "Case-aware accents (uppercase on shifted/capslock pages)"
@@ -24,9 +24,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/Vendored/Views/KeyboardView.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/Vendored/Views/KeyboardView.swift
 
 key-decisions:
   - "Case-insensitive longpress lookup via key.lowercased() instead of duplicating uppercase entries in dictionary"
@@ -73,9 +73,9 @@ Each task was committed atomically:
 2. **Task 2: Fix edge key touchDown with nearest-cell fallback** - `740e5a8` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - Populated frenchLongPress from AccentedCharacters.mappings
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Fixed handleAutoFullStop logic, added lastInsertedCharacter tracking
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` - Added nearestIndexPath fallback, case-insensitive longpress lookup, uppercase accent transformation, haptic pre-warm
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - Populated frenchLongPress from AccentedCharacters.mappings
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Fixed handleAutoFullStop logic, added lastInsertedCharacter tracking
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` - Added nearestIndexPath fallback, case-insensitive longpress lookup, uppercase accent transformation, haptic pre-warm
 
 ## Decisions Made
 - Used case-insensitive lookup (key.lowercased()) rather than duplicating uppercase entries in the longPress dictionary -- keeps data source single and consistent with AccentedCharacters.mappings

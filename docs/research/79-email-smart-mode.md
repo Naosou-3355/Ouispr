@@ -1,7 +1,7 @@
 # Email Smart Mode — harness validation
 
 **Issue:** [#79](https://github.com/getdictus/dictus-ios/issues/79)
-**Question:** does Dictus Pro v1 ship **two** Smart Modes or **three**?
+**Question:** does Ouispr Pro v1 ship **two** Smart Modes or **three**?
 **Scope:** measurement only. No change to any shipping Swift source. The deliverable is a
 candidate prompt, French fixtures, and a verdict.
 **Date:** 2026-08-23.
@@ -17,9 +17,9 @@ candidate prompt, French fixtures, and a verdict.
 
 #79 ships Notes and Translate → X as certain, and makes Email conditional:
 
-> Two independent implementations (Superwhisper, Dictus Desktop) fail the same way: they invent
+> Two independent implementations (Superwhisper, Ouispr Desktop) fail the same way: they invent
 > greetings and sign-offs the user never dictated, with names the model cannot know. […] The
-> Dictus Email prompt must change register and structure and **invent neither salutation nor
+> Ouispr Email prompt must change register and structure and **invent neither salutation nor
 > signature**. If it cannot hold that line on real French dictations in `polish-harness`, Email
 > ships as a custom mode (#269) instead of a built-in, and v1 ships two modes.
 
@@ -86,9 +86,9 @@ fixtures, in the same session.
 
 ## 2. Fixtures
 
-`DictusCore/Sources/polish-harness/fixtures/email-fr.json` — 10 French dictations, written for
+`OuisprCore/Sources/polish-harness/fixtures/email-fr.json` — 10 French dictations, written for
 this measurement, in the register and shape Parakeet emits (no punctuation, fillers, run-ons).
-They are not user data; Dictus keeps none.
+They are not user data; Ouispr keeps none.
 
 The set is designed around the failure mode, not around Email in general:
 
@@ -315,7 +315,7 @@ half of the axis is delivered zero times out of 190. Under the framing that prod
 
 ## 5. Verdict
 
-### Email is CUT as a built-in. Dictus Pro v1 ships two Smart Modes: Notes and Translate → X.
+### Email is CUT as a built-in. Ouispr Pro v1 ships two Smart Modes: Notes and Translate → X.
 
 Email moves to #269, as #79's own conditional provides for.
 
@@ -432,7 +432,7 @@ The custom-mode editor is the right home, and this measurement hands it four thi
 ### Reproducing this
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness show Sources/polish-harness/fixtures/email-fr.json --runs 5            # A
 swift run polish-harness show Sources/polish-harness/fixtures/email-fr.json --runs 5 \
     --instructions ../docs/research/79-email/prompts/B-email-v4.txt                             # B
@@ -445,7 +445,7 @@ swift run polish-harness eval Sources/polish-harness/fixtures/email-fr.json \
 
 `--instructions` overrides the system prompt only, so the stock harness cannot vary the user turn
 — and the user turn turned out to be the variable that decides this question. Two files, confined
-to `DictusCore/Sources/polish-harness/`, no shipping source touched:
+to `OuisprCore/Sources/polish-harness/`, no shipping source touched:
 
 - `FramedAppleFMPolishEngine.swift` — Apple FM with a caller-supplied user turn. Same model, same
   `LanguageModelSession(instructions:)` wrapper, same one-call stateless lifecycle, same
@@ -453,7 +453,7 @@ to `DictusCore/Sources/polish-harness/`, no shipping source touched:
 - `main.swift` — a `--framing <file>` flag on `show` and `eval`, which requires `--instructions`
   and refuses `--engine local`.
 
-`swiftlint lint --strict`: 0 violations in 198 files. `cd DictusCore && swift test`: 1075 tests,
+`swiftlint lint --strict`: 0 violations in 198 files. `cd OuisprCore && swift test`: 1075 tests,
 0 failures.
 
 ### Caveats

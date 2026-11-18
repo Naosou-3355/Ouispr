@@ -1,6 +1,6 @@
 # Language onboarding
 
-How to add a new transcription language to Dictus end-to-end. Written after onboarding German (issue #109) — the workflow below is what actually shipped, not what was planned.
+How to add a new transcription language to Ouispr end-to-end. Written after onboarding German (issue #109) — the workflow below is what actually shipped, not what was planned.
 
 The split between automated and curated work is deliberate: the maintainer authors a few small data files, and `tools/onboard_language.py` handles the mechanical Swift / Xcode / pipeline plumbing.
 
@@ -25,13 +25,13 @@ python3 tools/onboard_language.py verify it
 
 ## Pieces involved
 
-- **`SupportedLanguage`** (`DictusCore/Sources/DictusCore/SupportedLanguage.swift`) — the type-safe enum. Adding a case unlocks settings picker, keyboard cycle, and the autocorrect pipeline.
-- **`LanguageProfile`** (`DictusCore/Sources/DictusCore/Languages/LanguageProfile.swift`) — pure-data struct. One file per language under `Languages/<Lang>.swift`. Holds: `code`, `displayName`, `shortCode`, `defaultLayout`, `spaceName`, `returnName`, `overrides`, `accentMap`, `contractionPrefixes`. Algorithms read the profile; they don't switch on language code.
-- **Per-language tests** under `DictusCore/Tests/DictusCoreTests/Languages/<Lang>LanguageTests.swift`. One file per language.
-- **Frequency JSON** at `DictusKeyboard/Resources/<code>_frequency.json` — top ~40K word→count entries. Authored by `scripts/curate_<code>_dictionary.py`.
-- **Spellcheck binary** at `DictusKeyboard/Resources/<code>_spellcheck.dict` — built by `tools/dict_builder.py` from the frequency JSON.
-- **N-gram binary** at `DictusKeyboard/Resources/<code>_ngrams.dict` — built by `tools/ngram_builder.py` from OpenSubtitles + Google Books + Wikipedia CirrusSearch dumps.
-- **Xcode wiring** in `Dictus.xcodeproj/project.pbxproj` — three resources added to the `DictusKeyboard` target's `PBXResourcesBuildPhase`. Mechanical; the script handles it.
+- **`SupportedLanguage`** (`OuisprCore/Sources/OuisprCore/SupportedLanguage.swift`) — the type-safe enum. Adding a case unlocks settings picker, keyboard cycle, and the autocorrect pipeline.
+- **`LanguageProfile`** (`OuisprCore/Sources/OuisprCore/Languages/LanguageProfile.swift`) — pure-data struct. One file per language under `Languages/<Lang>.swift`. Holds: `code`, `displayName`, `shortCode`, `defaultLayout`, `spaceName`, `returnName`, `overrides`, `accentMap`, `contractionPrefixes`. Algorithms read the profile; they don't switch on language code.
+- **Per-language tests** under `OuisprCore/Tests/OuisprCoreTests/Languages/<Lang>LanguageTests.swift`. One file per language.
+- **Frequency JSON** at `OuisprKeyboard/Resources/<code>_frequency.json` — top ~40K word→count entries. Authored by `scripts/curate_<code>_dictionary.py`.
+- **Spellcheck binary** at `OuisprKeyboard/Resources/<code>_spellcheck.dict` — built by `tools/dict_builder.py` from the frequency JSON.
+- **N-gram binary** at `OuisprKeyboard/Resources/<code>_ngrams.dict` — built by `tools/ngram_builder.py` from OpenSubtitles + Google Books + Wikipedia CirrusSearch dumps.
+- **Xcode wiring** in `Ouispr.xcodeproj/project.pbxproj` — three resources added to the `OuisprKeyboard` target's `PBXResourcesBuildPhase`. Mechanical; the script handles it.
 
 ## The four phases
 
@@ -47,7 +47,7 @@ The script also does NOT auto-update the per-arm switches in `SupportedLanguage.
 
 Runs three Python scripts in order:
 
-1. `scripts/curate_<code>_dictionary.py` — language-specific. **You must author this** before running the phase. Output: `DictusKeyboard/Resources/<code>_frequency.json` (top ~40K word→count entries).
+1. `scripts/curate_<code>_dictionary.py` — language-specific. **You must author this** before running the phase. Output: `OuisprKeyboard/Resources/<code>_frequency.json` (top ~40K word→count entries).
 2. `tools/dict_builder.py` — corpus-agnostic. Reads the frequency JSON, builds a compressed patricia trie at `<code>_spellcheck.dict` (typically 0.4–0.5 MiB).
 3. `tools/ngram_builder.py --lang <code>` — pulls OpenSubtitles top sentences, Google Books German n-grams, and 50 000 articles across `<code>wikinews/wikiquote/wikibooks/wikivoyage` CirrusSearch dumps. Outputs `<code>_ngrams.dict` (~6–7 MiB after the 50K bigram + 30K trigram cap). Wikipedia parsing dominates run time (~3–5 minutes for German).
 
@@ -65,7 +65,7 @@ For `ngram_builder.py` to recognize the new language you must also extend two co
 
 ### 3. `wire-xcode`
 
-Edits `Dictus.xcodeproj/project.pbxproj` directly to add three resources to the `DictusKeyboard` target's resource build phase:
+Edits `Ouispr.xcodeproj/project.pbxproj` directly to add three resources to the `OuisprKeyboard` target's resource build phase:
 
 - `<code>_frequency.json`
 - `<code>_spellcheck.dict`
@@ -78,11 +78,11 @@ Four sections of the pbxproj need updates: `PBXBuildFile`, `PBXFileReference`, `
 Runs:
 
 ```
-cd DictusCore && swift test
-xcodebuild build -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' -configuration Debug
+cd OuisprCore && swift test
+xcodebuild build -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' -configuration Debug
 ```
 
-The DictusCore suite runs on the host Mac, not on a simulator. The package builds for macOS on purpose — that is what the `#if canImport(UIKit)` guards scattered through the library are for — and no test in the suite is gated to iOS, so a simulator destination costs minutes and buys no coverage. The app build below it is the part that needs a simulator.
+The OuisprCore suite runs on the host Mac, not on a simulator. The package builds for macOS on purpose — that is what the `#if canImport(UIKit)` guards scattered through the library are for — and no test in the suite is gated to iOS, so a simulator destination costs minutes and buys no coverage. The app build below it is the part that needs a simulator.
 
 ## Curated decisions (no automation can guess these)
 
@@ -118,7 +118,7 @@ The polish layer (issue #141, ADR 0003) runs a per-language system prompt agains
 
 ### Where to add the prompt
 
-`DictusCore/Sources/DictusCore/Polish/Prompts/PolishNaturalPrompt<XX>.swift` where `<XX>` is the uppercase two-letter ISO 639-1 code (`FR`, `EN`, `ES`, `DE`, …). One file per language, one `enum` per file, single static `instructions()` method returning the prompt string.
+`OuisprCore/Sources/OuisprCore/Polish/Prompts/PolishNaturalPrompt<XX>.swift` where `<XX>` is the uppercase two-letter ISO 639-1 code (`FR`, `EN`, `ES`, `DE`, …). One file per language, one `enum` per file, single static `instructions()` method returning the prompt string.
 
 ### What to copy from
 
@@ -165,7 +165,7 @@ case (.natural, .<yourLanguage>):
 
 The compiler enforces exhaustiveness — adding a new `SupportedLanguage` case without an arm here is a build error, which is what we want.
 
-No Xcode project edits are needed: the prompts live in the `DictusCore` SwiftPM target (`path: "Sources/DictusCore"`), which auto-discovers every `.swift` file under it. Just create the file in the `Prompts/` directory and it compiles.
+No Xcode project edits are needed: the prompts live in the `OuisprCore` SwiftPM target (`path: "Sources/OuisprCore"`), which auto-discovers every `.swift` file under it. Just create the file in the `Prompts/` directory and it compiles.
 
 ### Lost-word lexicon (optional, measured first)
 
@@ -186,7 +186,7 @@ Caveat (Apple FM, 26.x): cross-lingual reconstruction is not uniformly reliable.
 
 ### Validation
 
-A new prompt **needs native-speaker validation before being trusted in production**. The ES/DE prompts shipped in the round-1 Natural rollout are flagged in their file doc-comment as "authored on-paper without a native-speaker test set". Validation = read a written test script in the target language, dictate it through Dictus, export the polish ring JSON, compare to what a native speaker would have typed. File quality gaps against the language's GitHub issue or the post-launch playbook (#152).
+A new prompt **needs native-speaker validation before being trusted in production**. The ES/DE prompts shipped in the round-1 Natural rollout are flagged in their file doc-comment as "authored on-paper without a native-speaker test set". Validation = read a written test script in the target language, dictate it through Ouispr, export the polish ring JSON, compare to what a native speaker would have typed. File quality gaps against the language's GitHub issue or the post-launch playbook (#152).
 
 ### When to skip the prompt
 

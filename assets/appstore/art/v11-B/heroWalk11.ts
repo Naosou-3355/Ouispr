@@ -2,7 +2,7 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 
-// DICTUS HERO V11-B · "hands full", round 3 (V10-B is art/v10-B/heroWalk11.ts). Round 3: the voice
+// OUISPR HERO V11-B · "hands full", round 3 (V10-B is art/v10-B/heroWalk11.ts). Round 3: the voice
 // drops in front of the kerb and crosses the cut LEVEL with slide 2's waveform, running 250 px on
 // slide 2 before slipping under its panel (whose left edge screenshots.html moves to 1576); her
 // words split along it, "THANKS FOR THE" over the arch and "NOTES..." on the level run; the back
@@ -413,6 +413,6 @@ const draw = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroWalk11: Film = {
-  meta: { title: "Dictus hero V11-B · hands full, round 3", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: "Ouispr hero V11-B · hands full, round 3", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id: "heroWalk11", start: 0, end: 1, draw }],
 };

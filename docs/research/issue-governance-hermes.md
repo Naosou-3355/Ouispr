@@ -1,6 +1,6 @@
-# Hermes Agent governance and automation patterns reusable by Dictus
+# Hermes Agent governance and automation patterns reusable by Ouispr
 
-> Research note only. The canonical Dictus policy is [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md); recommendations in this note are inputs to that synthesis, not repository rules.
+> Research note only. The canonical Ouispr policy is [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md); recommendations in this note are inputs to that synthesis, not repository rules.
 
 Date: 2026-09-20
 
@@ -17,7 +17,7 @@ Hermes uses two related but distinct governance layers:
 2. **Runtime work governance**: a durable SQLite Kanban state machine governs task handoffs, retries, blockers, human intervention, review, and audit history.[9]
    Cron provides persistent scheduled execution, while webhooks and hooks provide event-driven activation with idempotency and capability controls.[10] [11] [15]
 
-The strongest reusable idea for Dictus is not “automate everything.” It is **automate evidence gathering, routing, and repeatable state transitions while reserving product judgment and risky approvals for humans**. Hermes makes that boundary explicit in both its repository instructions and its runtime primitives.[2] [9] [14]
+The strongest reusable idea for Ouispr is not “automate everything.” It is **automate evidence gathering, routing, and repeatable state transitions while reserving product judgment and risky approvals for humans**. Hermes makes that boundary explicit in both its repository instructions and its runtime primitives.[2] [9] [14]
 
 ## Research method and limitations
 
@@ -25,7 +25,7 @@ The strongest reusable idea for Dictus is not “automate everything.” It is *
 - Live labels and issue metadata were inspected through GitHub’s public repository/API surfaces on 2026-09-20.[6] [7] [8]
 - The repository milestones API returned an empty array, so no repository milestones were observable at research time.[16]
 - GitHub Projects v2 could not be fully enumerated because the available token lacked `read:project`. Therefore this note does **not** claim that Nous Research has no organization-level project boards. The two sampled governance issues had no project or milestone attached in their public metadata.[7] [8]
-- “Observed” below means directly present in a primary source. “Inference for Dictus” is a recommendation derived from those observations, not a claim about Hermes’s internal maintainer process.
+- “Observed” below means directly present in a primary source. “Inference for Ouispr” is a recommendation derived from those observations, not a claim about Hermes’s internal maintainer process.
 
 ## 1. Prioritization and issue taxonomy
 
@@ -45,7 +45,7 @@ There is some observable taxonomy drift: the feature-request form requests the l
 
 Hermes sometimes uses a parent tracking issue as the roadmap. The plugin-interface tracker declares itself the “plan of record,” decomposes work into dependency-ordered phases, gives every sub-issue design constraints and acceptance criteria, and uses GitHub sub-issues to show completion.[8] The repository milestones endpoint, by contrast, had no entries at the time of inspection.[16]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Adopt a **small multidimensional label schema**, not one giant workflow label:
 
@@ -55,7 +55,7 @@ Adopt a **small multidimensional label schema**, not one giant workflow label:
 - one workflow state from `needs-triage`, `needs-info`, `needs-decision`, `ready-for-agent`, `ready-for-human`, `blocked`;
 - optional `risk/*` labels for privacy, data loss, App Store/release, migration, and extension-memory limits.
 
-Keep priority definitions objective. For Dictus, a plausible mapping is:
+Keep priority definitions objective. For Ouispr, a plausible mapping is:
 
 - `P0`: privacy/data-loss/security issue, crash loop, or release-blocking keyboard failure;
 - `P1`: core dictation or keyboard insertion broken without a workaround;
@@ -78,7 +78,7 @@ Hermes also distinguishes different kinds of waiting through labels: `needs-repr
 
 The official automation-blueprints guide shows backlog triage and issue auto-labeling as agent-assisted workflows. Its nightly backlog example asks the agent to **suggest** priority/category labels and a triage note; its issue webhook example suggests labels and posts an initial response.[12] This is advisory automation rather than proof that every label is applied autonomously.
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Define an explicit triage decision table:
 
@@ -92,7 +92,7 @@ Define an explicit triage decision table:
 
 Automation should always leave a short evidence record: what it checked, which commit/current behavior it compared, the reason for the transition, and how a human can reverse it. Hermes’s public sweeper comment is a good model.[2] [7]
 
-Do **not** let a model close an issue merely because it judges the feature undesirable. For Dictus, product scope and user-facing behavior are maintainer decisions, even if an agent prepares the comparison and recommendation.
+Do **not** let a model close an issue merely because it judges the feature undesirable. For Ouispr, product scope and user-facing behavior are maintainer decisions, even if an agent prepares the comparison and recommendation.
 
 ## 3. Human-blocked work and durable queues
 
@@ -108,7 +108,7 @@ Review is a first-class state. A worker can request review with a durable summar
 
 The queue includes operational safeguards: atomic claims, stale-claim/crashed-worker recovery, heartbeats, per-board and per-profile concurrency caps, scheduled starts, idempotent creation, run history, notifications on terminal events, and a respawn guard for auth/quota errors, recent success, or an active linked PR.[9]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 GitHub Issues can approximate the same durable state machine without adopting Hermes Kanban itself:
 
@@ -150,7 +150,7 @@ Sensitive paths are not approved by green tests alone. Changes to CI-sensitive f
 
 The contribution guide and agent instructions prefer behavior contracts over snapshot/change-detector tests and require end-to-end validation for config propagation, security boundaries, remote backends, and real I/O paths where mocks could hide integration failures.[1] [2]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Use a two-tier merge gate:
 
@@ -174,7 +174,7 @@ Use a two-tier merge gate:
 
 A single human-approval label can gate all sensitive classes if the bot comment lists the class-specific checklist, mirroring Hermes’s `ci-reviewed` pattern.[14]
 
-Path-based CI is reusable, but Dictus should default to the broader suite on classifier uncertainty: if a changed path is unknown, run the broader suite rather than silently skipping coverage. Hermes explicitly treats post-merge/dispatch classification conservatively.[13]
+Path-based CI is reusable, but Ouispr should default to the broader suite on classifier uncertainty: if a changed path is unknown, run the broader suite rather than silently skipping coverage. Hermes explicitly treats post-merge/dispatch classification conservatively.[13]
 
 ## 5. Scheduled and event-driven automation
 
@@ -190,7 +190,7 @@ Webhook-triggered agent runs have a constrained default toolset because authenti
 
 The official blueprints combine these primitives for nightly backlog triage, PR review on pull-request events, docs-drift detection, dependency audits, issue auto-labeling, CI-failure analysis, and deploy verification. Quiet scheduled runs use `[SILENT]` to suppress no-op notifications.[12]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Use this split:
 
@@ -203,7 +203,7 @@ Use this split:
 
 Every event handler should use GitHub’s delivery ID as an idempotency key, reject unsigned events, constrain payload fields passed into prompts, and separate read-only triage credentials from write/release credentials.[11]
 
-## 6. Proposed minimum viable Dictus governance
+## 6. Proposed minimum viable Ouispr governance
 
 ### Labels
 
@@ -228,7 +228,7 @@ Use exactly one priority, one type, at least one area, and one active workflow s
 - description, expected and actual behavior;
 - minimal reproduction;
 - app version/commit, iOS version, device/simulator;
-- affected target (`DictusApp`, `DictusKeyboard`, `DictusCore`);
+- affected target (`OuisprApp`, `OuisprKeyboard`, `OuisprCore`);
 - model/engine and language when transcription-related;
 - logs or screenshots with privacy warning/redaction guidance;
 - regression status and last known good version, if known.
@@ -287,7 +287,7 @@ A task is not done when code is merely written. It is done when:
 
 ## 7. What not to copy blindly
 
-1. **Do not copy Hermes’s label volume.** Hermes has a very large product surface. Dictus should reuse the dimensions, not the count.[6]
+1. **Do not copy Hermes’s label volume.** Hermes has a very large product surface. Ouispr should reuse the dimensions, not the count.[6]
 2. **Do not assume issue forms stay synchronized automatically.** The observed legacy/richer-label mismatch shows why a validation or sync check is needed.[3] [4] [6]
 3. **Do not treat an agent’s confidence as evidence.** Require reproduction, code/doc citations, and test output before automatic disposition.[2] [7]
 4. **Do not keep retrying human-blocked work.** Persist the reason and unblock condition, then stop until an external event changes state.[9]

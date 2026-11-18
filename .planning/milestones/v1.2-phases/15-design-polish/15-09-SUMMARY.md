@@ -16,20 +16,20 @@ affects: [16-testflight]
 tech-stack:
   added: []
   patterns:
-    - "Background fill behind .dictusGlass() for active state tinting"
+    - "Background fill behind .ouisprGlass() for active state tinting"
 
 key-files:
   created: []
   modified:
-    - DictusApp/Views/ModelCardView.swift
-    - DictusApp/Views/ModelManagerView.swift
+    - OuisprApp/Views/ModelCardView.swift
+    - OuisprApp/Views/ModelManagerView.swift
 
 key-decisions:
   - "Active card uses both background tint (0.10 opacity) AND border stroke overlay -- dual visual indicator"
   - "Removed isSwitching state entirely -- model switch is instant, no artificial spinner delay"
 
 patterns-established:
-  - "Active state tint: .background(RoundedRectangle.fill) BEFORE .dictusGlass() so tint shows behind glass material"
+  - "Active state tint: .background(RoundedRectangle.fill) BEFORE .ouisprGlass() so tint shows behind glass material"
 
 requirements-completed: [DSGN-02, DSGN-03]
 
@@ -62,8 +62,8 @@ Each task was committed atomically:
 2. **Task 2: Fix swipe delete button height to match card** - `5374038` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/ModelCardView.swift` - Added blue background tint on active card, removed isSwitching state and spinner
-- `DictusApp/Views/ModelManagerView.swift` - Updated swipe delete button with Label and full-height frame
+- `OuisprApp/Views/ModelCardView.swift` - Added blue background tint on active card, removed isSwitching state and spinner
+- `OuisprApp/Views/ModelManagerView.swift` - Updated swipe delete button with Label and full-height frame
 
 ## Decisions Made
 - Active card uses both background tint (0.10 opacity) AND border stroke overlay for dual visual indicator

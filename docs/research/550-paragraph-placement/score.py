@@ -24,13 +24,13 @@ REFERENCES = json.loads((HERE / "references.json").read_text())
 # The fit, from bars.md §4. Five reference points, character count of the text a
 # paragrapher would be handed against the number of breaks the reference produced.
 # Two of the five character counts come from a Typeless output, because texts A and B
-# have no Dictus side. Reported with the fit rather than smoothed into it.
+# have no Ouispr side. Reported with the fit rather than smoothed into it.
 FIT_POINTS = [
-    ("Text A (both takes)", 246, 1, "Typeless text; no Dictus side exists"),
-    ("Text B (both takes)", 314, 1, "Typeless text; no Dictus side exists"),
-    ("Fixture 3, message draft", 356, 2, "Dictus polished"),
-    ("Fixture 1, free-form", 403, 1, "Dictus polished"),
-    ("Fixture 7, 89 s", 1150, 3, "Dictus polished"),
+    ("Text A (both takes)", 246, 1, "Typeless text; no Ouispr side exists"),
+    ("Text B (both takes)", 314, 1, "Typeless text; no Ouispr side exists"),
+    ("Fixture 3, message draft", 356, 2, "Ouispr polished"),
+    ("Fixture 1, free-form", 403, 1, "Ouispr polished"),
+    ("Fixture 7, 89 s", 1150, 3, "Ouispr polished"),
 ]
 
 

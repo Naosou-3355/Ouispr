@@ -12,8 +12,8 @@ provides:
 
 key-files:
   modified:
-    - DictusKeyboard/AccentedCharacters.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
+    - OuisprKeyboard/AccentedCharacters.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
 
 key-decisions:
   - "apostropheOverrides static set for extensible bigram matching"
@@ -39,7 +39,7 @@ completed: 2026-03-30
 - Added `apostropheOverrides` set in AccentedCharacters containing "qu" bigram
 - Extended `adaptiveKeyLabel`, `shouldReplace`, and `adaptiveKeyVowel` with optional `precedingChar` parameter
 - When bigram (precedingChar + lastChar) matches an override, apostrophe is returned instead of accent
-- Added `secondToLastInsertedCharacter` tracker in DictusKeyboardBridge for 2-char context detection
+- Added `secondToLastInsertedCharacter` tracker in OuisprKeyboardBridge for 2-char context detection
 - Verified on device: qu→apostrophe, Qu→apostrophe, u alone→ù, e→é, a→à all working correctly
 
 ## Task Commits
@@ -49,8 +49,8 @@ completed: 2026-03-30
 
 ## Files Modified
 
-- `DictusKeyboard/AccentedCharacters.swift` - Added apostropheOverrides set, precedingChar parameter to all 3 adaptive methods
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added secondToLastInsertedCharacter tracker, passes both chars to AccentedCharacters
+- `OuisprKeyboard/AccentedCharacters.swift` - Added apostropheOverrides set, precedingChar parameter to all 3 adaptive methods
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added secondToLastInsertedCharacter tracker, passes both chars to AccentedCharacters
 
 ## Deviations from Plan
 

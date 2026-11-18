@@ -20,16 +20,16 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Vendored/SymSpell/SymSpell.swift
-    - DictusKeyboard/Vendored/SymSpell/SuggestItem.swift
-    - DictusKeyboard/Vendored/SymSpell/StringExtension.swift
-    - DictusKeyboard/TextPrediction/SymSpellEngine.swift
+    - OuisprKeyboard/Vendored/SymSpell/SymSpell.swift
+    - OuisprKeyboard/Vendored/SymSpell/SuggestItem.swift
+    - OuisprKeyboard/Vendored/SymSpell/StringExtension.swift
+    - OuisprKeyboard/TextPrediction/SymSpellEngine.swift
     - scripts/curate_fr_dictionary.py
     - scripts/curate_en_dictionary.py
   modified:
-    - DictusKeyboard/Resources/fr_frequency.json
-    - DictusKeyboard/Resources/en_frequency.json
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/Resources/fr_frequency.json
+    - OuisprKeyboard/Resources/en_frequency.json
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Dictionary format changed from {word: rank} (lower=better) to {word: count} (higher=better) to align with SymSpell native expectations"
@@ -63,7 +63,7 @@ completed: 2026-04-02
 - English dictionary expanded from 1,126 to 40,000 words from Google Trillion Word Corpus
 - SymSpellSwift (3 source files) vendored with MIT license headers
 - SymSpellEngine wrapper provides clean load() and spellCheck() API for Plan 02 integration
-- DictusKeyboard builds successfully with all new files
+- OuisprKeyboard builds successfully with all new files
 
 ## Task Commits
 
@@ -73,15 +73,15 @@ Each task was committed atomically:
 2. **Task 2: Vendor SymSpellSwift and create SymSpellEngine wrapper** - `16ee330` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Resources/fr_frequency.json` - 40,292 French words with frequency counts
-- `DictusKeyboard/Resources/en_frequency.json` - 40,000 English words with frequency counts
-- `DictusKeyboard/Vendored/SymSpell/SymSpell.swift` - SymSpell algorithm (Symmetric Delete)
-- `DictusKeyboard/Vendored/SymSpell/SuggestItem.swift` - Suggestion result struct
-- `DictusKeyboard/Vendored/SymSpell/StringExtension.swift` - Damerau-Levenshtein distance
-- `DictusKeyboard/TextPrediction/SymSpellEngine.swift` - Wrapper with JSON loading and case restoration
+- `OuisprKeyboard/Resources/fr_frequency.json` - 40,292 French words with frequency counts
+- `OuisprKeyboard/Resources/en_frequency.json` - 40,000 English words with frequency counts
+- `OuisprKeyboard/Vendored/SymSpell/SymSpell.swift` - SymSpell algorithm (Symmetric Delete)
+- `OuisprKeyboard/Vendored/SymSpell/SuggestItem.swift` - Suggestion result struct
+- `OuisprKeyboard/Vendored/SymSpell/StringExtension.swift` - Damerau-Levenshtein distance
+- `OuisprKeyboard/TextPrediction/SymSpellEngine.swift` - Wrapper with JSON loading and case restoration
 - `scripts/curate_fr_dictionary.py` - Reproducible French dictionary curation from Lexique 3.83
 - `scripts/curate_en_dictionary.py` - Reproducible English dictionary curation from Norvig
-- `Dictus.xcodeproj/project.pbxproj` - Added 4 new source files to DictusKeyboard target
+- `Ouispr.xcodeproj/project.pbxproj` - Added 4 new source files to OuisprKeyboard target
 
 ## Decisions Made
 - Dictionary format changed from ranks (lower=better) to counts (higher=better) -- aligns with SymSpell native format. FrequencyDictionary struct update deferred to Plan 02.

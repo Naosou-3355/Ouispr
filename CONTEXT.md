@@ -1,17 +1,17 @@
-# Dictus — Domain Context
+# Ouispr — Domain Context
 
 Living glossary of the terms that domain conversations rely on. When a term in conversation conflicts with what's defined here, raise it: the glossary or the conversation needs to change.
 
 ## Languages and onboarding
 
 ### Language onboarding
-The process of adding a new transcription language to Dictus. **Distinct from user onboarding** (the first-run tutorial pages in `DictusApp/Onboarding/`). Language onboarding is a maintainer-facing workflow defined by `tools/onboard_language.py` + `docs/agents/language-onboarding.md`.
+The process of adding a new transcription language to Ouispr. **Distinct from user onboarding** (the first-run tutorial pages in `OuisprApp/Onboarding/`). Language onboarding is a maintainer-facing workflow defined by `tools/onboard_language.py` + `docs/agents/language-onboarding.md`.
 
 ### Supported language
-A language registered in `DictusCore/SupportedLanguage.swift` as an enum case. Registration unlocks: settings picker entry, keyboard toolbar cycle slot, autocorrect/predict pipeline, transcription language hint to Whisper. **Adding a `SupportedLanguage` case is the act of "registering" the language** — the script and checklist exist to make every other touch point a mechanical follow-on.
+A language registered in `OuisprCore/SupportedLanguage.swift` as an enum case. Registration unlocks: settings picker entry, keyboard toolbar cycle slot, autocorrect/predict pipeline, transcription language hint to Whisper. **Adding a `SupportedLanguage` case is the act of "registering" the language** — the script and checklist exist to make every other touch point a mechanical follow-on.
 
 ### Language profile (`LanguageProfile`)
-The per-language data struct in `DictusCore/Languages/LanguageProfile.swift`. Pure data — no logic. One file per language (`French.swift`, `English.swift`, `Spanish.swift`, `German.swift`). Holds: code, displayName, shortCode, defaultLayout, spaceName, returnName, longPressAccents, overrides, accentMap, collapseRules, contractionPrefixes. Algorithms in `AOSPTrieEngine` and elsewhere read the profile; they don't switch on language code.
+The per-language data struct in `OuisprCore/Languages/LanguageProfile.swift`. Pure data — no logic. One file per language (`French.swift`, `English.swift`, `Spanish.swift`, `German.swift`). Holds: code, displayName, shortCode, defaultLayout, spaceName, returnName, longPressAccents, overrides, accentMap, collapseRules, contractionPrefixes. Algorithms in `AOSPTrieEngine` and elsewhere read the profile; they don't switch on language code.
 
 ### Override map (`LanguageProfile.overrides`)
 Per-language **must-correct** map: input → forced correction, applied before edit-distance lookup. Used for cases the trie can't infer (e.g., French `ca → ça`: "ca" is itself never a valid French word). **Distinct from accent map** (which is generative — try adding accents and check the dict) and from **edit-distance correction** (which is statistical). Policy: empty for new languages on first ship; populated from real user feedback. See ADR 0001.
@@ -25,7 +25,7 @@ The length-changing counterpart of the accent map: two-character sequences that 
 `ss → ß` is **not settled the way the three Umlautersatz rules are.** `ss` for `ß` is a valid replacement rather than an error — mandatory in Switzerland and Liechtenstein, and used deliberately by native speakers elsewhere. What ships (`strasse` → `straße`, device validated in #321) stays as it is; changing it in either direction is a product decision needing native-speaker input, and is not implied by the Umlautersatz reasoning (#326).
 
 ### Adaptive accent key
-A French-specific feature of the AZERTY layout: the apostrophe/accent key on row 3 changes its label based on context (shows `é` after `e`, apostrophe after `qu`, etc.). **Not generalized to other languages.** Lives in `FrenchAdaptiveKey` (`DictusCore/AccentedCharacters.swift`). Since #272 the layout no longer implies the language, so the key checks the active language and behaves as a plain apostrophe outside French. Other languages reach accents via standard long-press popups, as does French on a non-AZERTY layout — those grids have no adaptive key slot.
+A French-specific feature of the AZERTY layout: the apostrophe/accent key on row 3 changes its label based on context (shows `é` after `e`, apostrophe after `qu`, etc.). **Not generalized to other languages.** Lives in `FrenchAdaptiveKey` (`OuisprCore/AccentedCharacters.swift`). Since #272 the layout no longer implies the language, so the key checks the active language and behaves as a plain apostrophe outside French. Other languages reach accents via standard long-press popups, as does French on a non-AZERTY layout — those grids have no adaptive key slot.
 
 ### Seed bigrams
 Hand-curated word pairs injected into the n-gram corpus by `tools/ngram_builder.py` to compensate for underrepresentation in encyclopedic sources (Wikipedia, Google Books). Required for splitting compound input like `pasmal → pas mal`. Per-language list in `SEED_BIGRAMS_BY_LANG`. Policy: empty for new languages onboarded by non-native maintainers; populated post-launch from native-speaker contributions. See ADR 0001.
@@ -44,7 +44,7 @@ A speech-to-text backend conforming to `SpeechModelProtocol`. Two exist today: `
 ## Post-transcription polish
 
 ### Polish
-The post-STT enhancement layer (issue #141). Runs synchronously in DictusApp after the STT engine emits final text and before the text is written to the App Group for keyboard injection. Off by default, toggled by the user in DictusApp Settings. **Distinct from Smart Mode (#79)**, which is user-triggered and reformulates clean text for tone/structure. Polish is automatic and corrective only.
+The post-STT enhancement layer (issue #141). Runs synchronously in OuisprApp after the STT engine emits final text and before the text is written to the App Group for keyboard injection. Off by default, toggled by the user in OuisprApp Settings. **Distinct from Smart Mode (#79)**, which is user-triggered and reformulates clean text for tone/structure. Polish is automatic and corrective only.
 
 ### Faithful contract
 The defining boundary between polish and Smart Mode (#79). Polish must preserve the user's **intent**, not necessarily their exact STT-output words. In Light mode the words are preserved; in Repair mode words may be substituted to recover intent when STT failed. Polish is forbidden from reformulating, reordering, changing tone, removing fillers/hesitations, or adding clarifying content. The contract enumerates ~20 operations as allowed or forbidden; see ADR 0002.
@@ -56,9 +56,9 @@ The polish prompt variant applied when the language detected on raw STT output m
 The polish prompt variant applied when raw STT output is in a different language than the target (typically Parakeet hallucinating in the wrong language) or when language detection is uncertain. Allowed to substitute words to reconstruct the user's intent in the target language, while preserving loanwords and proper nouns. Triggered only on Parakeet, never on Whisper. Skipped entirely (raw passes through) when raw output is gibberish — measured by `NLLanguageRecognizer` returning all candidate languages with low confidence. Also called **Mode B**.
 
 ### PolishGlossary — REMOVED 2026-09-10 (#536)
-Was a static, maintainer-curated list of domain terms (`Dictus`, `WhisperKit`, `Parakeet v3`, …) injected into every polish prompt, extended since #80 with the user's own canonical terms. Kept here as a term a reader will meet in old issues, commits and ADR 0002.
+Was a static, maintainer-curated list of domain terms (`Ouispr`, `WhisperKit`, `Parakeet v3`, …) injected into every polish prompt, extended since #80 with the user's own canonical terms. Kept here as a term a reader will meet in old issues, commits and ADR 0002.
 
-It is gone because it was measured to do nothing: Apple FM polished `dictus` into `dictés` and left `Parakit V3` alone with both correct spellings sitting in the prompt, while correcting `whisperflow` — in no list — from its own priors. A competitor asking for phonetic repair in a tagged block scored 0/5 on the same device, which closes the rewrite branch as well.
+It is gone because it was measured to do nothing: Apple FM polished `ouispr` into `dictés` and left `Parakit V3` alone with both correct spellings sitting in the prompt, while correcting `whisperflow` — in no list — from its own priors. A competitor asking for phonetic repair in a tagged block scored 0/5 on the same device, which closes the rewrite branch as well.
 
 Two mechanisms remain and they are distinct: **`LanguageProfile.overrides`** (keyboard autocorrect, offline trie) and **custom vocabulary** (#80, premium, user-managed), which rewrites transcripts deterministically through `VocabularyReplacer` and never touches a prompt.
 
@@ -72,10 +72,10 @@ Runtime sanity check applied to every polish output. Rejects the polished string
 
 Which checks run is the task's answer, not a global rule: `requiresGroundedNames` and `requiresAlignedPrefix` are fields on `PolishAcceptanceContract` so a custom mode (#269) has to answer rather than inherit. Checks 3 and 4 are both off for Repair and Translate, for the same reason — those transformations do not reuse the input's words.
 
-Lives in `DictusCore/Polish/PolishGuardrail.swift` and the two types beside it.
+Lives in `OuisprCore/Polish/PolishGuardrail.swift` and the two types beside it.
 
 ### Polish engine
-A polish backend conforming to `PolishEngineProtocol` (in DictusCore). One implementation at round 1: `AppleFoundationModelsPolishEngine` (in DictusApp, requires iOS 26+ with Apple Intelligence enabled and A17 Pro / M-series hardware). Round 2 will evaluate an OSS fallback backend (llama.cpp via LocalLLMClient, MLX, or Core ML) for devices without Apple Foundation Models; the decision is data-driven based on round 1 measurements.
+A polish backend conforming to `PolishEngineProtocol` (in OuisprCore). One implementation at round 1: `AppleFoundationModelsPolishEngine` (in OuisprApp, requires iOS 26+ with Apple Intelligence enabled and A17 Pro / M-series hardware). Round 2 will evaluate an OSS fallback backend (llama.cpp via LocalLLMClient, MLX, or Core ML) for devices without Apple Foundation Models; the decision is data-driven based on round 1 measurements.
 
 ## Keyboard
 
@@ -85,14 +85,14 @@ The physical key arrangement: `LayoutType.azerty` (French), `LayoutType.qwerty` 
 ### Inherited vs explicit layout
 A language with no stored layout is **inherited**: it resolves to `SupportedLanguage.defaultLayout` and keeps tracking it, so shipping a new default (QWERTZ for German, #151) reaches users who never expressed a preference. Picking a layout for that language — in Settings or on the keyboard panel's layout pills — makes it **explicit**, and `defaultLayout` stops applying to it. `defaultLayout` is therefore a seed, not a rule.
 
-QWERTZ carries dedicated ä/ö/ü keys, which makes its first two rows 11 units wide against 10 for every other row in every layout. The renderer normalizes each row against its own unit total, so those rows draw narrower keys. Row data lives in `DictusCore/KeyboardLayoutData.swift`; `DictusKeyboard/KeyboardLayouts.swift` builds the keys from it.
+QWERTZ carries dedicated ä/ö/ü keys, which makes its first two rows 11 units wide against 10 for every other row in every layout. The renderer normalizes each row against its own unit total, so those rows draw narrower keys. Row data lives in `OuisprCore/KeyboardLayoutData.swift`; `OuisprKeyboard/KeyboardLayouts.swift` builds the keys from it.
 
 ### Substitution-cost tables (`KeyboardProximity`, `AccentRelation`)
-The two tables the C++ trie scorer consults when it substitutes one character for another while walking correction candidates: **keyboard proximity** (how far apart two keys are on the active layout) and the **accent relation** (which accented letters are variants of which base letter, and at what cost). Both are declared in `DictusCore/Sources/DictusCore/TextCorrection/`, computed once per dictionary load, and installed into the scorer across the ObjC bridge; the scorer holds the lookup and the traversal, no rules of its own. **Distinct from `LanguageProfile.accentMap`**, which drives the Swift-side generative accent expansion — the accent relation is a *cost*, consulted during edit-distance scoring, not a list of variants to try. Declared in DictusCore because the keyboard target has no test bundle (#321, same reasoning as the QWERTZ rows in #151).
+The two tables the C++ trie scorer consults when it substitutes one character for another while walking correction candidates: **keyboard proximity** (how far apart two keys are on the active layout) and the **accent relation** (which accented letters are variants of which base letter, and at what cost). Both are declared in `OuisprCore/Sources/OuisprCore/TextCorrection/`, computed once per dictionary load, and installed into the scorer across the ObjC bridge; the scorer holds the lookup and the traversal, no rules of its own. **Distinct from `LanguageProfile.accentMap`**, which drives the Swift-side generative accent expansion — the accent relation is a *cost*, consulted during edit-distance scoring, not a list of variants to try. Declared in OuisprCore because the keyboard target has no test bundle (#321, same reasoning as the QWERTZ rows in #151).
 
 `ß` is deliberately outside the accent relation: its relation to `ss` changes length, which one-to-one substitution cannot express. That relation lives in `LanguageProfile.collapseRules` instead.
 
-The accent relation covers every accented character of every language Dictus ships: French since it shipped, German since #321, Spanish (`á í ñ ó ú`) since #327. Several Spanish pairs are two valid words (`si`/`sí`, `mas`/`más`, `ano`/`año`); relating them here is safe because the valid-word guard in `TextPredictionEngine.autocorrect` returns before the scorer that reads this table runs. Disambiguating two valid spellings needs the preceding words and belongs to #114.
+The accent relation covers every accented character of every language Ouispr ships: French since it shipped, German since #321, Spanish (`á í ñ ó ú`) since #327. Several Spanish pairs are two valid words (`si`/`sí`, `mas`/`más`, `ano`/`año`); relating them here is safe because the valid-word guard in `TextPredictionEngine.autocorrect` returns before the scorer that reads this table runs. Disambiguating two valid spellings needs the preceding words and belongs to #114.
 
 ### Long-press accents (`AccentedCharacters.mappings`)
 Pop-up accent variants shown when a key is long-pressed. Currently merged across languages (French + Spanish ñ + acute variants), keyed by base letter. To be migrated into `LanguageProfile.longPressAccents` so each language declares its own popups.
@@ -100,13 +100,13 @@ Pop-up accent variants shown when a key is long-pressed. Currently merged across
 ## Suggestions and learning
 
 ### Learned word
-An entry in `UserDictionary` (DictusCore), the per-user store in the App Group. **Distinct from a trie word**, which comes from the shipped `<lang>_spellcheck.dict`. The two sets never overlap by construction: since #287 a word is only learned when the trie does not already know it. Learned words carry no language tag — one store serves every language.
+An entry in `UserDictionary` (OuisprCore), the per-user store in the App Group. **Distinct from a trie word**, which comes from the shipped `<lang>_spellcheck.dict`. The two sets never overlap by construction: since #287 a word is only learned when the trie does not already know it. Learned words carry no language tag — one store serves every language.
 
 ### Undo site and boundary site
-The two places that learn. The **undo site** (`KeyboardRootView`) fires when the user rejects an applied autocorrection; it learns on the first occurrence, because rejecting a correction is an explicit statement. The **boundary site** (`DictusKeyboardBridge`) fires on any word the pipeline evaluated and did not correct; it learns only a word absent from the trie, seen twice, with autocorrect enabled. Their signal quality is not comparable and no rule should be shared between them without saying which one it is for (#287 decisions 2–4, 8).
+The two places that learn. The **undo site** (`KeyboardRootView`) fires when the user rejects an applied autocorrection; it learns on the first occurrence, because rejecting a correction is an explicit statement. The **boundary site** (`OuisprKeyboardBridge`) fires on any word the pipeline evaluated and did not correct; it learns only a word absent from the trie, seen twice, with autocorrect enabled. Their signal quality is not comparable and no rule should be shared between them without saying which one it is for (#287 decisions 2–4, 8).
 
 ### The three levels a learned word can hold
-**L1 — offered**: the word can appear in the suggestion bar, where it is only ever applied by a tap. **L2 — immune**: the word is never rewritten by autocorrect (`spellCheck` returns `nil` for it). **L3 — authoritative**: the keyboard may rewrite *another* word into it. Dictus grants L1 (#346) and L2, and withholds L3, which belongs to #114. The separation is categorical rather than scored, which no keyboard in the field does (`docs/research/287-user-dictionary-learning.md` §5.4) — see ADR 0004 for why it is affordable here.
+**L1 — offered**: the word can appear in the suggestion bar, where it is only ever applied by a tap. **L2 — immune**: the word is never rewritten by autocorrect (`spellCheck` returns `nil` for it). **L3 — authoritative**: the keyboard may rewrite *another* word into it. Ouispr grants L1 (#346) and L2, and withholds L3, which belongs to #114. The separation is categorical rather than scored, which no keyboard in the field does (`docs/research/287-user-dictionary-learning.md` §5.4) — see ADR 0004 for why it is affordable here.
 
 ### Suggestion mode (`SuggestionMode`)
 Which question the suggestion bar is answering. **`.completions`** — words starting with the partial word being typed; sourced from `UITextChecker`, ranked by `FrequencyDictionary`, merged with learned words since #346. **`.corrections`** — what `spellCheck` would apply on space, laid out `[typed | correction | alternative]`. **`.predictions`** — likely next words after a space, from the trie's n-grams, falling back to the language's most frequent words. **`.undoAvailable`** and **`.idle`** carry no candidates. Only `.corrections` previews something the space key will apply on its own; every other mode is tap-only.

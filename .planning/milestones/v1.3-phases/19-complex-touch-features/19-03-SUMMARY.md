@@ -29,11 +29,11 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/Vendored/Views/KeyboardView.swift
-    - DictusKeyboard/Vendored/Views/KeyView.swift
-    - DictusKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/Vendored/Views/KeyboardView.swift
+    - OuisprKeyboard/Vendored/Views/KeyView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
 
 key-decisions:
   - "UIWindow gesture delay was the root cause of edge key sluggishness since Phase 18 -- override delaysContentTouches and isMultipleTouchEnabled on window"
@@ -89,11 +89,11 @@ Each task was committed atomically:
 - `b989ede` - prevent keyboard height resize on top-row key tap
 
 ## Files Created/Modified
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - Added accent key with "accent" sentinel to AZERTY row 3 (normal + shifted)
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added handleAdaptiveAccentKey(), updateAccentKeyDisplay(), accent routing in didTriggerKey
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` - Point clamping for edge touches, updateAccentKeyLabel(), accentKeyLabel property, keyboard height stability
-- `DictusKeyboard/Vendored/Views/KeyView.swift` - Edge key rendering fixes
-- `DictusKeyboard/KeyboardViewController.swift` - UIWindow gesture delay override, preferredScreenEdgesDeferringSystemGestures
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - Added accent key with "accent" sentinel to AZERTY row 3 (normal + shifted)
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added handleAdaptiveAccentKey(), updateAccentKeyDisplay(), accent routing in didTriggerKey
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` - Point clamping for edge touches, updateAccentKeyLabel(), accentKeyLabel property, keyboard height stability
+- `OuisprKeyboard/Vendored/Views/KeyView.swift` - Edge key rendering fixes
+- `OuisprKeyboard/KeyboardViewController.swift` - UIWindow gesture delay override, preferredScreenEdgesDeferringSystemGestures
 
 ## Decisions Made
 - UIWindow gesture delay identified as root cause of edge key sluggishness since Phase 18 -- iOS's default `delaysContentTouches` on UIWindow was adding ~150ms delay to all touches, especially noticeable on edge keys. Overriding this on the keyboard's UIWindow provides immediate touch delivery.
@@ -108,28 +108,28 @@ Each task was committed atomically:
 - **Found during:** Task 2 (UAT)
 - **Issue:** UIWindow's default delaysContentTouches added ~150ms delay to all touches, making edge keys feel unresponsive
 - **Fix:** Override UIWindow properties: delaysContentTouches=false, isMultipleTouchEnabled=false
-- **Files modified:** DictusKeyboard/KeyboardViewController.swift
+- **Files modified:** OuisprKeyboard/KeyboardViewController.swift
 - **Committed in:** `62b950d`
 
 **2. [Rule 1 - Bug] Replaced nearestIndexPath with point clamping**
 - **Found during:** Task 2 (UAT)
 - **Issue:** nearestIndexPath distance-based search was unreliable for edge touches
 - **Fix:** Clamp touch coordinates to collectionView bounds before lookup
-- **Files modified:** DictusKeyboard/Vendored/Views/KeyboardView.swift
+- **Files modified:** OuisprKeyboard/Vendored/Views/KeyboardView.swift
 - **Committed in:** `d3205ac`
 
 **3. [Rule 1 - Bug] Fixed keyboard height expansion on top-row tap**
 - **Found during:** Task 2 (UAT)
 - **Issue:** Tapping top-row keys caused keyboard to resize/expand
 - **Fix:** Prevented auto-resize behavior on key press
-- **Files modified:** DictusKeyboard/Vendored/Views/KeyboardView.swift
+- **Files modified:** OuisprKeyboard/Vendored/Views/KeyboardView.swift
 - **Committed in:** `b989ede`
 
 **4. [Rule 1 - Bug] Fixed system edge gesture interception**
 - **Found during:** Task 2 (UAT)
 - **Issue:** iOS system gestures intercepting taps near screen edges
 - **Fix:** Override preferredScreenEdgesDeferringSystemGestures = .all
-- **Files modified:** DictusKeyboard/KeyboardViewController.swift
+- **Files modified:** OuisprKeyboard/KeyboardViewController.swift
 - **Committed in:** `099df97`
 
 **5. [Rule 1 - Bug] Fixed 5 UAT issues (edge keys, delete speed, trackpad, accent label)**

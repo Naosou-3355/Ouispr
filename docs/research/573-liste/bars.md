@@ -20,7 +20,7 @@ language, rules untouched since #79.
 | User turn and marker | `SmartModeNotesPrompt.userInstruction` / `outputMarker` | `PolishTask.userTurn`, `PolishTaskTests.testTheUserTurnCarriesTheTasksOwnImperativeAndMarker`, the #518 no-label test |
 | Contract `0.1…2.0`, grounded, unaligned | `SmartModeCatalogue.notes.contract` | `PolishGuardrail`, `SmartModeCatalogueTests`, `SmartModeSummaryTests` (Summary's floor equals List's) |
 | Short-input floor | `SmartMode.minimumInputCharacters` (nil for `notes`), read by `PolishService.skipForShortInput` | `SmartModeShortInputSkipTests` (asserts only Structuré has one: **must change**), the metrics event `smartModeSkippedShortInput` + `smartModeLengthSkip.mode`, `PolishDebugExporter.smartModesSkippedForLength` (already per mode), `PolishDebugView` |
-| The notice | `KeyboardPolishCoordinator.message(for:degraded:)`, one generic sentence for every mode | `DictusKeyboard/Localizable.xcstrings`. The app path (`DictationHandoff`) shows no non-fatal notice and is not changed |
+| The notice | `KeyboardPolishCoordinator.message(for:degraded:)`, one generic sentence for every mode | `OuisprKeyboard/Localizable.xcstrings`. The app path (`DictationHandoff`) shows no non-fatal notice and is not changed |
 | "List = actions" descriptions | `SmartModeCatalogue` header and `summary` doc, `structured` doc, `SmartModeSummaryPrompt` doc table, `SmartModeNotesPrompt` doc | doc comments only; no user-facing copy describes `Liste` (checked both catalogs) |
 
 **Decision 5's "own export event".** The skip already emits a `smartModeSkippedShortInput` metrics

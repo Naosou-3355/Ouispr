@@ -31,7 +31,7 @@ Make all Settings toggles functional end-to-end (language, filler words, haptics
 - One master toggle in Settings controls all haptics (key taps + dictation events) — no per-event granularity
 
 ### AccentPopup color
-- Replace hardcoded Color.blue with DictusColors equivalent — straightforward swap
+- Replace hardcoded Color.blue with OuisprColors equivalent — straightforward swap
 
 ### BrandWaveform unification
 - Unify to 30 bars everywhere (app and keyboard) — not just document the divergence
@@ -41,7 +41,7 @@ Make all Settings toggles functional end-to-end (language, filler words, haptics
 ### Claude's Discretion
 - Exact diagnosis and fix for haptic feedback bug
 - Bar width calculation approach for adaptive BrandWaveform sizing
-- Where to read the haptics setting in DictusKeyboard (KeyboardState or KeyButton level)
+- Where to read the haptics setting in OuisprKeyboard (KeyboardState or KeyButton level)
 
 </decisions>
 
@@ -49,10 +49,10 @@ Make all Settings toggles functional end-to-end (language, filler words, haptics
 ## Existing Code Insights
 
 ### Reusable Assets
-- `SharedKeys.language` / `.fillerWordsEnabled` / `.hapticsEnabled`: Already defined in DictusCore, already used by SettingsView via @AppStorage
-- `HapticFeedback` enum in DictusCore: 3 static methods (recordingStarted, recordingStopped, textInserted) — needs key tap method added
-- `FillerWordFilter.clean()` in DictusCore: Static method, currently always called in TranscriptionService line 126
-- `DictusColors` in DictusApp/Design: Full adaptive color system, ready to replace AccentPopup's Color.blue
+- `SharedKeys.language` / `.fillerWordsEnabled` / `.hapticsEnabled`: Already defined in OuisprCore, already used by SettingsView via @AppStorage
+- `HapticFeedback` enum in OuisprCore: 3 static methods (recordingStarted, recordingStopped, textInserted) — needs key tap method added
+- `FillerWordFilter.clean()` in OuisprCore: Static method, currently always called in TranscriptionService line 126
+- `OuisprColors` in OuisprApp/Design: Full adaptive color system, ready to replace AccentPopup's Color.blue
 
 ### Established Patterns
 - Settings stored via App Group UserDefaults — read with `UserDefaults(suiteName: AppGroup.identifier)`
@@ -65,8 +65,8 @@ Make all Settings toggles functional end-to-end (language, filler words, haptics
 - `TranscriptionService.swift:126` — `FillerWordFilter.clean(trimmed)` must be conditional on filler toggle
 - `KeyboardState.swift:94, 160, 184, 233` — HapticFeedback calls must check hapticsEnabled setting
 - `KeyButton.swift` — needs haptic feedback call on key press (currently only has click sounds)
-- `AccentPopup.swift:35` — `Color.blue` must become DictusColors equivalent
-- `DictusKeyboard/Design/BrandWaveform.swift` — 40 bars / 5pt width must become 30 bars / adaptive width
+- `AccentPopup.swift:35` — `Color.blue` must become OuisprColors equivalent
+- `OuisprKeyboard/Design/BrandWaveform.swift` — 40 bars / 5pt width must become 30 bars / adaptive width
 
 </code_context>
 

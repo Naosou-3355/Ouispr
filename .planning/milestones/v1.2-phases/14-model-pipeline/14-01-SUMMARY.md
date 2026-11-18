@@ -25,9 +25,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - DictusApp/Models/ModelManager.swift
-    - DictusApp/Views/ModelCardView.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - OuisprApp/Models/ModelManager.swift
+    - OuisprApp/Views/ModelCardView.swift
 
 key-decisions:
   - "Recommendation logic in ModelInfo (catalog layer), not ModelManager (state layer)"
@@ -71,9 +71,9 @@ Each task was committed atomically:
 2. **Task 2: Update ModelManager + fix ModelCardView progress and retry** - `b9d2cf2` (fix)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Removed Large Turbo entry, added recommendedIdentifier() and isRecommended() static methods
-- `DictusApp/Models/ModelManager.swift` - isRecommended() now delegates to ModelInfo.isRecommended()
-- `DictusApp/Views/ModelCardView.swift` - Fixed prewarm label, retry calls cleanupFailedModel(), removed redundant trash button
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Removed Large Turbo entry, added recommendedIdentifier() and isRecommended() static methods
+- `OuisprApp/Models/ModelManager.swift` - isRecommended() now delegates to ModelInfo.isRecommended()
+- `OuisprApp/Views/ModelCardView.swift` - Fixed prewarm label, retry calls cleanupFailedModel(), removed redundant trash button
 
 ## Decisions Made
 - Kept recommendation logic in ModelInfo (catalog layer) rather than ModelManager -- accessible from both onboarding and model manager without passing ObservableObject
@@ -88,7 +88,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (RAM logging)
 - **Issue:** Plan suggested `PersistentLog.log(.info, subsystem: .modelManager, message: ...)` but PersistentLog uses structured `LogEvent` enum cases, not freeform messages
 - **Fix:** Used `#if DEBUG print()` for RAM diagnostics instead
-- **Files modified:** DictusCore/Sources/DictusCore/ModelInfo.swift
+- **Files modified:** OuisprCore/Sources/OuisprCore/ModelInfo.swift
 - **Verification:** Build succeeds, RAM info printed in debug builds
 - **Committed in:** d70d62a (Task 1 commit)
 

@@ -19,7 +19,7 @@ created: 2026-04-02
 |----------|-------|
 | **Framework** | Manual device testing + Instruments profiling (keyboard extensions cannot run XCTest) |
 | **Config file** | none |
-| **Quick run command** | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Quick run command** | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Full suite command** | Build & run on physical device + Instruments memory profiling |
 | **Estimated runtime** | ~30 seconds (build) + manual testing |
 
@@ -40,7 +40,7 @@ created: 2026-04-02
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 24-01-01 | 01 | 1 | PRED-01 | smoke | `python3 scripts/curate_fr_dict.py && python3 -c "import json; d=json.load(open('fr_frequency.json')); print(len(d)); assert 30000<=len(d)<=50000"` | ❌ W0 | ⬜ pending |
 | 24-01-02 | 01 | 1 | PRED-02 | smoke | `python3 scripts/curate_en_dict.py && python3 -c "import json; d=json.load(open('en_frequency.json')); print(len(d)); assert 30000<=len(d)<=50000"` | ❌ W0 | ⬜ pending |
-| 24-02-01 | 02 | 1 | PRED-03 | build | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | ❌ W0 | ⬜ pending |
+| 24-02-01 | 02 | 1 | PRED-03 | build | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | ❌ W0 | ⬜ pending |
 | 24-02-02 | 02 | 1 | PRED-03 | manual | Type "helo" → bar shows "hello" as bold center slot | manual-only | ⬜ pending |
 | 24-02-03 | 02 | 1 | PRED-03 | manual | Type "cafe" → bar shows accented "café" | manual-only | ⬜ pending |
 | 24-02-04 | 02 | 1 | PRED-03 | manual | Autocorrect rejection: helo+space→hello→backspace→helo→space→helo stays | manual-only | ⬜ pending |
@@ -56,7 +56,7 @@ created: 2026-04-02
 - [ ] Python dictionary curation scripts (`scripts/curate_fr_dict.py`, `scripts/curate_en_dict.py`)
 - [ ] Expanded `fr_frequency.json` (30-50K entries from Lexique 3.83)
 - [ ] Expanded `en_frequency.json` (30-50K entries from Norvig count_1w.txt)
-- [ ] Vendored SymSpellSwift source files in `DictusKeyboard/Vendored/SymSpell/`
+- [ ] Vendored SymSpellSwift source files in `OuisprKeyboard/Vendored/SymSpell/`
 
 ---
 

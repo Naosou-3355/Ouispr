@@ -13,19 +13,19 @@ updated: 2026-03-06T11:50:00Z
 ## Tests
 
 ### 1. Toolbar Above Keyboard
-expected: Open any app with a text field. Activate the Dictus keyboard. A toolbar row appears above the keyboard with a gear icon on the left and a microphone button on the right.
+expected: Open any app with a text field. Activate the Ouispr keyboard. A toolbar row appears above the keyboard with a gear icon on the left and a microphone button on the right.
 result: pass
 
 ### 2. Start Recording
 expected: Tap the mic button in the toolbar. The keyboard disappears and is replaced by a recording overlay showing an animated waveform visualization (30 bars), a MM:SS timer counting up, and cancel/stop control buttons. A haptic tap is felt when recording starts.
 result: issue
-reported: "Quand je clique sur le micro ca ouvre l'application Dictus et ca lance le recording process dans Dictus directement. Ca ne montre pas le recording overlay dans le clavier."
+reported: "Quand je clique sur le micro ca ouvre l'application Ouispr et ca lance le recording process dans Ouispr directement. Ca ne montre pas le recording overlay dans le clavier."
 severity: blocker
 
 ### 3. Stop Recording and Auto-Insert
 expected: While recording, tap the stop button. Recording stops (haptic feedback felt), the overlay shows "Processing..." briefly, then transcribed text is automatically inserted into the active text field. The keyboard reappears.
 result: issue
-reported: "Impossible de tester - bloque par le bug du test 2. Le recording se fait dans l'app Dictus, la transcription fonctionne bien dans l'app mais pas d'auto-insert dans le champ texte au niveau du clavier."
+reported: "Impossible de tester - bloque par le bug du test 2. Le recording se fait dans l'app Ouispr, la transcription fonctionne bien dans l'app mais pas d'auto-insert dans le champ texte au niveau du clavier."
 severity: blocker
 
 ### 4. Cancel Recording
@@ -38,7 +38,7 @@ expected: With AZERTY layout active, long-press on a letter that has French acce
 result: pass
 
 ### 6. In-App Test Dictation Screen
-expected: Open the Dictus app. When a model is downloaded and ready, a navigation link to "Test Dictation" appears. Tap it to open a screen with a mic button. Tap to record, tap again to stop -- transcribed text appears on screen.
+expected: Open the Ouispr app. When a model is downloaded and ready, a navigation link to "Test Dictation" appears. Tap it to open a screen with a mic button. Tap to record, tap again to stop -- transcribed text appears on screen.
 result: pass
 
 ## Summary
@@ -53,14 +53,14 @@ skipped: 1
 
 - truth: "Mic button in keyboard toolbar starts recording overlay within the keyboard extension"
   status: failed
-  reason: "User reported: Mic button opens Dictus app instead of showing recording overlay in keyboard. Recording happens in the app, not in the keyboard extension."
+  reason: "User reported: Mic button opens Ouispr app instead of showing recording overlay in keyboard. Recording happens in the app, not in the keyboard extension."
   severity: blocker
   test: 2
-  root_cause: "ToolbarView.swift line 55 uses Link(destination: 'dictus://dictate') — the Phase 2 URL-scheme flow. Opens main app instead of triggering local recording state. KeyboardState has no startRecording() method."
+  root_cause: "ToolbarView.swift line 55 uses Link(destination: 'ouispr://dictate') — the Phase 2 URL-scheme flow. Opens main app instead of triggering local recording state. KeyboardState has no startRecording() method."
   artifacts:
-    - path: "DictusKeyboard/Views/ToolbarView.swift"
+    - path: "OuisprKeyboard/Views/ToolbarView.swift"
       issue: "Line 55: Link opens app via URL scheme instead of Button triggering local recording"
-    - path: "DictusKeyboard/KeyboardState.swift"
+    - path: "OuisprKeyboard/KeyboardState.swift"
       issue: "No startRecording() method — only observes app state, cannot initiate recording locally"
   missing:
     - "Replace Link with Button calling onMicTap callback in ToolbarView"
@@ -75,7 +75,7 @@ skipped: 1
   test: 3
   root_cause: "Same root cause as test 2. Recording never happens in keyboard extension context, so textDocumentProxy auto-insert path is never reached. Once test 2 fix enables in-keyboard recording, the existing auto-insert code in KeyboardState should work."
   artifacts:
-    - path: "DictusKeyboard/KeyboardState.swift"
+    - path: "OuisprKeyboard/KeyboardState.swift"
       issue: "Auto-insert code exists but is unreachable because recording never starts in keyboard"
   missing:
     - "Fix test 2 (mic button) — auto-insert should work once recording happens in-keyboard"

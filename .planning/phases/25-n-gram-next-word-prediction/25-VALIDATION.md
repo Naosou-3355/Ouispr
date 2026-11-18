@@ -18,16 +18,16 @@ created: 2026-04-03
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (Xcode) + Python pytest (pipeline) + manual device testing |
-| **Config file** | Dictus.xcodeproj (no separate test config) |
-| **Quick run command** | `xcodebuild build -project Dictus.xcodeproj -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
-| **Full suite command** | `python3 tools/test_ngram_builder.py && xcodebuild build -scheme DictusKeyboard` + manual device testing |
+| **Config file** | Ouispr.xcodeproj (no separate test config) |
+| **Quick run command** | `xcodebuild build -project Ouispr.xcodeproj -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Full suite command** | `python3 tools/test_ngram_builder.py && xcodebuild build -scheme OuisprKeyboard` + manual device testing |
 | **Estimated runtime** | ~30 seconds (build) + manual device verification |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusKeyboard`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprKeyboard`
 - **After every plan wave:** Device testing on physical iPhone
 - **Before `/gsd:verify-work`:** Full suite must be green, all PRED requirements verified on device
 - **Max feedback latency:** 30 seconds (build)
@@ -39,7 +39,7 @@ created: 2026-04-03
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 25-01-01 | 01 | 1 | PRED-04 | unit | `python3 tools/test_ngram_builder.py` | ❌ W0 | ⬜ pending |
-| 25-01-02 | 01 | 1 | PRED-06 | unit | `ls -la DictusKeyboard/Resources/*.dict` (check <20MB) | ❌ W0 | ⬜ pending |
+| 25-01-02 | 01 | 1 | PRED-06 | unit | `ls -la OuisprKeyboard/Resources/*.dict` (check <20MB) | ❌ W0 | ⬜ pending |
 | 25-02-01 | 02 | 2 | PRED-04 | manual | Device: type "je" + space → see 3 predictions | N/A | ⬜ pending |
 | 25-02-02 | 02 | 2 | PRED-05 | manual | Instruments Time Profiler: <10ms per keystroke | N/A | ⬜ pending |
 | 25-02-03 | 02 | 2 | PRED-04 | manual | Device: tap prediction → chains to new predictions | N/A | ⬜ pending |
@@ -52,7 +52,7 @@ created: 2026-04-03
 ## Wave 0 Requirements
 
 - [ ] `tools/test_ngram_builder.py` — unit tests for n-gram pipeline (frequency counting, binary serialization, round-trip verification)
-- [ ] Build verification: `xcodebuild build -scheme DictusKeyboard` compiles without errors
+- [ ] Build verification: `xcodebuild build -scheme OuisprKeyboard` compiles without errors
 
 *Existing infrastructure covers C++ build and mmap loading (from Phase 24.1).*
 

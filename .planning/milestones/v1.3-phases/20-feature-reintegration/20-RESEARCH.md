@@ -8,7 +8,7 @@
 
 Phase 20 is a pure integration phase -- all code already exists. The work is wiring existing components (dictation, predictions, emoji picker, settings) into the Phase 18-19 UIKit keyboard architecture. No new libraries, no new architectural patterns. The risk is in the coordination between UIKit (GiellaKeyboardView) and SwiftUI (toolbar, overlays, emoji picker) components, not in any individual feature.
 
-The primary integration point is `DictusKeyboardBridge`, which needs a `SuggestionState` reference to trigger prediction updates after each keystroke. Secondary integration points are: emoji button in `FrenchKeyboardLayouts`, emoji picker show/hide in `KeyboardViewController`, default layer setting in `viewWillAppear`, and post-transcription suggestion refresh in `KeyboardState.handleTranscriptionReady`.
+The primary integration point is `OuisprKeyboardBridge`, which needs a `SuggestionState` reference to trigger prediction updates after each keystroke. Secondary integration points are: emoji button in `FrenchKeyboardLayouts`, emoji picker show/hide in `KeyboardViewController`, default layer setting in `viewWillAppear`, and post-transcription suggestion refresh in `KeyboardState.handleTranscriptionReady`.
 
 **Primary recommendation:** Wire features incrementally -- predictions first (highest value, simplest integration), then dictation validation, then emoji button, then settings. Each feature should be validated on device before moving to the next.
 
@@ -16,7 +16,7 @@ The primary integration point is `DictusKeyboardBridge`, which needs a `Suggesti
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- DictusKeyboardBridge gets a direct reference to SuggestionState (injected by KeyboardViewController)
+- OuisprKeyboardBridge gets a direct reference to SuggestionState (injected by KeyboardViewController)
 - Bridge calls `suggestionState.updateAsync(context:)` after each keystroke (input, backspace, space, return)
 - No NotificationCenter or Combine relay -- direct call from bridge for minimal latency
 - Existing async coalescing (DispatchWorkItem cancel + background queue) handles rapid typing -- no extra debounce needed
@@ -38,7 +38,7 @@ The primary integration point is `DictusKeyboardBridge`, which needs a `Suggesti
 - Verify ALL settings during UAT: haptic toggle, sound toggle, layout type, default layer, language preference
 
 ### Claude's Discretion
-- How to inject SuggestionState reference into DictusKeyboardBridge (property injection vs init param)
+- How to inject SuggestionState reference into OuisprKeyboardBridge (property injection vs init param)
 - Emoji button key type in GiellaKeyboardView layout definition
 - Emoji picker show/hide implementation details (hosting controller management)
 - Post-transcription suggestion refresh timing
@@ -57,7 +57,7 @@ None -- discussion stayed within phase scope
 | DICT-02 | User sees recording overlay with waveform replacing keyboard during dictation | Already wired: RecordingOverlay in KeyboardRootView, giellaKeyboard.isHidden in handleDictationStatusChange. Validate only. |
 | DICT-03 | User gets transcription auto-inserted at cursor after recording | Already wired: handleTranscriptionReady() in KeyboardState. Need to add post-insert SuggestionState update. |
 | DICT-04 | User sees Full Access banner when permissions needed | Already wired: ToolbarView shows banner when hasFullAccess is false. Validate only. |
-| PRED-01 | User sees 3-slot suggestion bar with French autocorrect suggestions | Wire SuggestionState into DictusKeyboardBridge. SuggestionBarView already renders in ToolbarView. |
+| PRED-01 | User sees 3-slot suggestion bar with French autocorrect suggestions | Wire SuggestionState into OuisprKeyboardBridge. SuggestionBarView already renders in ToolbarView. |
 | PRED-02 | User can tap suggestion to insert it | Already wired: handleSuggestionTap in KeyboardRootView. Validate that tapping inserts correctly. |
 | PRED-03 | User can undo autocorrect by pressing backspace immediately after | Wire autocorrect-on-space in bridge handleSpace(). Wire undo in bridge handleBackspace(). |
 | SET-01 | User can select default opening layer with live preview | Read DefaultKeyboardLayer.active in viewWillAppear, set giellaKeyboard.page. |
@@ -74,7 +74,7 @@ KeyboardViewController (UIInputViewController)
   |     +-- hostingController.view (SwiftUI: ToolbarView + RecordingOverlay)
   |     +-- giellaKeyboard (GiellaKeyboardView: UICollectionView UIKit keyboard)
   |
-  +-- bridge (DictusKeyboardBridge: key event delegate)
+  +-- bridge (OuisprKeyboardBridge: key event delegate)
   +-- hostingController (UIHostingController<KeyboardRootView>)
 ```
 
@@ -86,7 +86,7 @@ For the SuggestionState -> Bridge wiring, the established pattern in this codeba
 - `bridge.keyboardView = keyboard` (line 74)
 - `state.controller = controller` (line 141 of KeyboardRootView)
 
-**Recommendation:** Add `weak var suggestionState: SuggestionState?` to DictusKeyboardBridge. Set it in KeyboardViewController.viewDidLoad after creating both the bridge and the hosting controller.
+**Recommendation:** Add `weak var suggestionState: SuggestionState?` to OuisprKeyboardBridge. Set it in KeyboardViewController.viewDidLoad after creating both the bridge and the hosting controller.
 
 **Challenge:** SuggestionState is currently owned by KeyboardRootView as `@StateObject`. The bridge needs a reference to the same instance. Two approaches:
 
@@ -128,7 +128,7 @@ The KeyType enum has no dedicated emoji case. Two options:
 1. **Reuse `.input(key: "emoji", alternate: "emoji")`** -- the bridge's `didTriggerKey` checks for this special alternate value and toggles emoji mode instead of inserting text.
 2. **Add a new KeyType case** -- requires modifying the vendored KeyDefinition.swift.
 
-**Recommendation:** Option 1 (reuse .input with special alternate). This avoids modifying vendored code. The bridge already checks `alternate == "accent"` for the adaptive accent key (line 69 of DictusKeyboardBridge). Same pattern: `alternate == "emoji"` triggers emoji toggle.
+**Recommendation:** Option 1 (reuse .input with special alternate). This avoids modifying vendored code. The bridge already checks `alternate == "accent"` for the adaptive accent key (line 69 of OuisprKeyboardBridge). Same pattern: `alternate == "emoji"` triggers emoji toggle.
 
 The visual rendering in GiellaKeyboardView will show the key text (a smiley emoji character) as-is, since it renders `.input` keys with their key string.
 
@@ -205,7 +205,7 @@ In `KeyboardState.handleTranscriptionReady()`, after `controller?.textDocumentPr
 ### Wiring SuggestionState into Bridge (main integration)
 
 ```swift
-// In DictusKeyboardBridge.swift -- add property
+// In OuisprKeyboardBridge.swift -- add property
 weak var suggestionState: SuggestionState?
 
 // In handleInputKey, after insertText:
@@ -353,10 +353,10 @@ if defaultLayer == .numbers {
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | XCTest (DictusCore SPM package) |
-| Config file | DictusCore/Package.swift |
-| Quick run command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter DictusCoreTests` |
-| Full suite command | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| Framework | XCTest (OuisprCore SPM package) |
+| Config file | OuisprCore/Package.swift |
+| Quick run command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter OuisprCoreTests` |
+| Full suite command | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -370,7 +370,7 @@ if defaultLayer == .numbers {
 | PRED-03 | Undo autocorrect with backspace | manual-only | On-device UAT (requires textDocumentProxy) | N/A |
 | SET-01 | Default opening layer | manual-only | On-device UAT (requires App Group + keyboard extension) | N/A |
 
-**Justification for manual-only:** All Phase 20 requirements involve keyboard extension runtime behavior (textDocumentProxy, UIInputViewController lifecycle, Darwin notifications, AVAudioSession). These cannot be unit tested in the DictusCore SPM package. They require on-device testing in the keyboard extension context.
+**Justification for manual-only:** All Phase 20 requirements involve keyboard extension runtime behavior (textDocumentProxy, UIInputViewController lifecycle, Darwin notifications, AVAudioSession). These cannot be unit tested in the OuisprCore SPM package. They require on-device testing in the keyboard extension context.
 
 ### Sampling Rate
 - **Per task commit:** Build + install on simulator, manual smoke test
@@ -378,12 +378,12 @@ if defaultLayer == .numbers {
 - **Phase gate:** All UAT items green on device before verify
 
 ### Wave 0 Gaps
-None -- existing test infrastructure covers DictusCore unit tests. Phase 20 features are integration-level (keyboard extension runtime) and require manual validation.
+None -- existing test infrastructure covers OuisprCore unit tests. Phase 20 features are integration-level (keyboard extension runtime) and require manual validation.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Codebase analysis: DictusKeyboardBridge.swift, KeyboardViewController.swift, KeyboardRootView.swift, SuggestionState.swift, FrenchKeyboardLayouts.swift, KeyDefinition.swift, KeyboardState.swift, SharedKeys.swift, KeyboardMode.swift, ToolbarView.swift, EmojiPickerView.swift
+- Codebase analysis: OuisprKeyboardBridge.swift, KeyboardViewController.swift, KeyboardRootView.swift, SuggestionState.swift, FrenchKeyboardLayouts.swift, KeyDefinition.swift, KeyboardState.swift, SharedKeys.swift, KeyboardMode.swift, ToolbarView.swift, EmojiPickerView.swift
 - Phase 18-19 CONTEXT.md architecture decisions
 - REQUIREMENTS.md requirement definitions
 

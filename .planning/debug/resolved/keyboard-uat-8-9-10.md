@@ -17,7 +17,7 @@ next_action: return structured findings
 expected: Keyboard matches native iOS keyboard in height/feel, recording overlay transitions cleanly, FullAccessBanner is readable with correct deep link, key labels don't scale, waveform is prominent
 actual: Layout shifts on mic tap, keyboard too short, banner too small, deep link wrong, keys scale with Dynamic Type, waveform too small
 errors: none (visual/UX issues)
-reproduction: Open Dictus keyboard in any text field
+reproduction: Open Ouispr keyboard in any text field
 started: Since initial implementation
 
 ## Eliminated
@@ -38,12 +38,12 @@ started: Since initial implementation
 
 - timestamp: 2026-03-07
   checked: Issue 3 — FullAccessBanner barely visible (FullAccessBanner.swift)
-  found: The banner uses `.font(.dictusCaption)` for both the icon and text (line 15, 18), which maps to `.system(.caption)` — approximately 12pt text. The vertical padding is only 6pt (line 32). Combined, the banner is roughly 24-26pt tall total. This is very compressed. The icon also uses `.dictusCaption` which makes the warning icon tiny.
+  found: The banner uses `.font(.ouisprCaption)` for both the icon and text (line 15, 18), which maps to `.system(.caption)` — approximately 12pt text. The vertical padding is only 6pt (line 32). Combined, the banner is roughly 24-26pt tall total. This is very compressed. The icon also uses `.ouisprCaption` which makes the warning icon tiny.
   implication: Font size too small, padding too tight — needs larger font, more padding, and a bigger icon
 
 - timestamp: 2026-03-07
   checked: Issue 4 — FullAccessBanner deep link wrong (FullAccessBanner.swift line 25)
-  found: The URL `"app-settings:"` opens the app's own Settings.bundle page in iOS Settings. However, Dictus likely does NOT have a Settings.bundle (keyboard enable/Full Access is under Settings > General > Keyboard > Keyboards, not in an app-specific settings page). So `app-settings:` opens either a blank settings page or the top level of iOS Settings. The correct approach for keyboard extensions is either (a) use `UIApplication.openSettingsURLString` (but unavailable in extensions), (b) deep link to DictusApp via `dictus://settings` URL scheme so the app can guide the user, or (c) accept that iOS provides no direct deep link to keyboard settings and improve the banner text with instructions.
+  found: The URL `"app-settings:"` opens the app's own Settings.bundle page in iOS Settings. However, Ouispr likely does NOT have a Settings.bundle (keyboard enable/Full Access is under Settings > General > Keyboard > Keyboards, not in an app-specific settings page). So `app-settings:` opens either a blank settings page or the top level of iOS Settings. The correct approach for keyboard extensions is either (a) use `UIApplication.openSettingsURLString` (but unavailable in extensions), (b) deep link to OuisprApp via `ouispr://settings` URL scheme so the app can guide the user, or (c) accept that iOS provides no direct deep link to keyboard settings and improve the banner text with instructions.
   implication: `app-settings:` doesn't navigate to keyboard-specific settings — it opens the app's Settings.bundle page which likely doesn't exist or is empty
 
 - timestamp: 2026-03-07

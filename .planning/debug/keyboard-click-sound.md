@@ -1,6 +1,6 @@
 ---
 status: diagnosed
-trigger: "System keyboard click sound does not work in DictusKeyboard extension"
+trigger: "System keyboard click sound does not work in OuisprKeyboard extension"
 created: 2026-03-05T00:00:00Z
 updated: 2026-03-05T00:00:00Z
 ---
@@ -17,7 +17,7 @@ next_action: Confirm root cause and recommend fix
 expected: With Full Access enabled and keyboard clicks on in iOS Settings, tapping keys produces the native iOS click sound
 actual: No click sound when tapping any key
 errors: None (silent failure — playInputClick() is a no-op when requirements not met)
-reproduction: Tap any character key on DictusKeyboard with Full Access enabled
+reproduction: Tap any character key on OuisprKeyboard with Full Access enabled
 started: Since initial implementation
 
 ## Eliminated

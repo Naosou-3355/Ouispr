@@ -21,25 +21,25 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Vendored/Views/KeyboardView.swift
-    - DictusKeyboard/Vendored/Views/KeyView.swift
-    - DictusKeyboard/Vendored/Views/KeyOverlayView.swift
-    - DictusKeyboard/Vendored/Models/KeyDefinition.swift
-    - DictusKeyboard/Vendored/Models/KeyboardDefinition.swift
-    - DictusKeyboard/Vendored/Models/Theme.swift
-    - DictusKeyboard/Vendored/Models/DeviceContext.swift
-    - DictusKeyboard/Vendored/Models/KeyboardHeightProvider.swift
-    - DictusKeyboard/Vendored/Models/InputContext.swift
-    - DictusKeyboard/Vendored/Models/SystemKeys.swift
-    - DictusKeyboard/Vendored/Controllers/LongPressController.swift
-    - DictusKeyboard/Vendored/Controllers/DeadKeyHandler.swift
-    - DictusKeyboard/Vendored/Controllers/Audio.swift
-    - DictusKeyboard/Vendored/GiellaUtils.swift
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
-    - DictusKeyboard/LegacyCompat.swift
+    - OuisprKeyboard/Vendored/Views/KeyboardView.swift
+    - OuisprKeyboard/Vendored/Views/KeyView.swift
+    - OuisprKeyboard/Vendored/Views/KeyOverlayView.swift
+    - OuisprKeyboard/Vendored/Models/KeyDefinition.swift
+    - OuisprKeyboard/Vendored/Models/KeyboardDefinition.swift
+    - OuisprKeyboard/Vendored/Models/Theme.swift
+    - OuisprKeyboard/Vendored/Models/DeviceContext.swift
+    - OuisprKeyboard/Vendored/Models/KeyboardHeightProvider.swift
+    - OuisprKeyboard/Vendored/Models/InputContext.swift
+    - OuisprKeyboard/Vendored/Models/SystemKeys.swift
+    - OuisprKeyboard/Vendored/Controllers/LongPressController.swift
+    - OuisprKeyboard/Vendored/Controllers/DeadKeyHandler.swift
+    - OuisprKeyboard/Vendored/Controllers/Audio.swift
+    - OuisprKeyboard/Vendored/GiellaUtils.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/LegacyCompat.swift
   modified:
-    - Dictus.xcodeproj/project.pbxproj
-    - DictusKeyboard/Models/KeyboardLayer.swift
+    - Ouispr.xcodeproj/project.pbxproj
+    - OuisprKeyboard/Models/KeyboardLayer.swift
 
 key-decisions:
   - "Renamed vendored KeyboardView to GiellaKeyboardView to avoid Swift type collision with existing SwiftUI KeyboardView"
@@ -50,7 +50,7 @@ key-decisions:
   - "Renamed vendored Audio class to GiellaAudio and removed KeyboardSettings dependency"
 
 patterns-established:
-  - "Vendored files in DictusKeyboard/Vendored/ with Views/Models/Controllers subdirectories"
+  - "Vendored files in OuisprKeyboard/Vendored/ with Views/Models/Controllers subdirectories"
   - "GiellaUtils.swift contains all shared UIKit extensions used across vendored files"
   - "FrenchKeyboardLayouts enum constructs KeyboardDefinition programmatically with helper functions"
 
@@ -76,7 +76,7 @@ completed: 2026-03-27
 - Vendored 13 giellakbd-ios source files covering the complete UICollectionView keyboard stack (views, models, controllers)
 - Stripped all external dependencies (Sentry, DivvunSpell, RxSwift, SQLite) with zero remaining references
 - Created French AZERTY and QWERTY layout definitions with numbers and symbols pages matching iOS stock French keyboard
-- Added DeviceKit 5.8+ as SPM dependency linked to DictusKeyboard target for per-device height calculation
+- Added DeviceKit 5.8+ as SPM dependency linked to OuisprKeyboard target for per-device height calculation
 - Project compiles with zero errors (only deprecation warnings in emoji picker)
 
 ## Task Commits
@@ -87,24 +87,24 @@ Each task was committed atomically:
 2. **Task 2: Create French AZERTY/QWERTY layout definitions** - `cceee26` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` - UICollectionView keyboard with direct touch handling (renamed to GiellaKeyboardView)
-- `DictusKeyboard/Vendored/Views/KeyView.swift` - Individual key cell rendering with theme-based styling
-- `DictusKeyboard/Vendored/Views/KeyOverlayView.swift` - Bezier path key popup preview with edge handling
-- `DictusKeyboard/Vendored/Models/KeyDefinition.swift` - Key type enum and sizing model
-- `DictusKeyboard/Vendored/Models/KeyboardDefinition.swift` - Layout structure with programmatic initializer
-- `DictusKeyboard/Vendored/Models/Theme.swift` - iOS 26 Liquid Glass + legacy theming with ThemeFactory
-- `DictusKeyboard/Vendored/Models/DeviceContext.swift` - DeviceKit-based device detection
-- `DictusKeyboard/Vendored/Models/KeyboardHeightProvider.swift` - Per-device height lookup table
-- `DictusKeyboard/Vendored/Models/InputContext.swift` - Word extraction from UITextDocumentProxy
-- `DictusKeyboard/Vendored/Models/SystemKeys.swift` - Bottom row generation for platform
-- `DictusKeyboard/Vendored/Controllers/LongPressController.swift` - Long-press overlay and cursor movement
-- `DictusKeyboard/Vendored/Controllers/DeadKeyHandler.swift` - Dead key transformations for accents
-- `DictusKeyboard/Vendored/Controllers/Audio.swift` - 3-category system sound playback
-- `DictusKeyboard/Vendored/GiellaUtils.swift` - Shared extensions (UIView.fill, NSLayoutConstraint.enable, etc.)
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - AZERTY/QWERTY/numbers/symbols layout definitions
-- `DictusKeyboard/LegacyCompat.swift` - Compatibility stubs for migration period
-- `DictusKeyboard/Models/KeyboardLayer.swift` - Removed KeyboardLayer struct, kept KeyboardLayerType enum
-- `Dictus.xcodeproj/project.pbxproj` - Added vendored files, DeviceKit SPM, updated build phases
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` - UICollectionView keyboard with direct touch handling (renamed to GiellaKeyboardView)
+- `OuisprKeyboard/Vendored/Views/KeyView.swift` - Individual key cell rendering with theme-based styling
+- `OuisprKeyboard/Vendored/Views/KeyOverlayView.swift` - Bezier path key popup preview with edge handling
+- `OuisprKeyboard/Vendored/Models/KeyDefinition.swift` - Key type enum and sizing model
+- `OuisprKeyboard/Vendored/Models/KeyboardDefinition.swift` - Layout structure with programmatic initializer
+- `OuisprKeyboard/Vendored/Models/Theme.swift` - iOS 26 Liquid Glass + legacy theming with ThemeFactory
+- `OuisprKeyboard/Vendored/Models/DeviceContext.swift` - DeviceKit-based device detection
+- `OuisprKeyboard/Vendored/Models/KeyboardHeightProvider.swift` - Per-device height lookup table
+- `OuisprKeyboard/Vendored/Models/InputContext.swift` - Word extraction from UITextDocumentProxy
+- `OuisprKeyboard/Vendored/Models/SystemKeys.swift` - Bottom row generation for platform
+- `OuisprKeyboard/Vendored/Controllers/LongPressController.swift` - Long-press overlay and cursor movement
+- `OuisprKeyboard/Vendored/Controllers/DeadKeyHandler.swift` - Dead key transformations for accents
+- `OuisprKeyboard/Vendored/Controllers/Audio.swift` - 3-category system sound playback
+- `OuisprKeyboard/Vendored/GiellaUtils.swift` - Shared extensions (UIView.fill, NSLayoutConstraint.enable, etc.)
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - AZERTY/QWERTY/numbers/symbols layout definitions
+- `OuisprKeyboard/LegacyCompat.swift` - Compatibility stubs for migration period
+- `OuisprKeyboard/Models/KeyboardLayer.swift` - Removed KeyboardLayer struct, kept KeyboardLayerType enum
+- `Ouispr.xcodeproj/project.pbxproj` - Added vendored files, DeviceKit SPM, updated build phases
 
 ## Decisions Made
 - Renamed vendored `KeyboardView` to `GiellaKeyboardView` to avoid type collision with the existing SwiftUI `KeyboardView` that is still used by `KeyboardRootView`. This is the minimal change approach -- the SwiftUI view will be fully replaced in plan 18-02.
@@ -118,17 +118,17 @@ Each task was committed atomically:
 
 **1. [Rule 3 - Blocking] Type name collision between vendored and existing files**
 - **Found during:** Task 1 (vendoring files)
-- **Issue:** Vendored `KeyboardView` (UIKit class) and `KeyDefinition` type names clash with existing Dictus SwiftUI types in the same module
+- **Issue:** Vendored `KeyboardView` (UIKit class) and `KeyDefinition` type names clash with existing Ouispr SwiftUI types in the same module
 - **Fix:** Renamed vendored KeyboardView to GiellaKeyboardView. Removed old conflicting files from build phase and created LegacyCompat.swift with compatibility stubs.
-- **Files modified:** DictusKeyboard/Vendored/Views/KeyboardView.swift, DictusKeyboard/LegacyCompat.swift, Dictus.xcodeproj/project.pbxproj
+- **Files modified:** OuisprKeyboard/Vendored/Views/KeyboardView.swift, OuisprKeyboard/LegacyCompat.swift, Ouispr.xcodeproj/project.pbxproj
 - **Verification:** xcodebuild succeeds with zero errors
 - **Committed in:** 204f378 (Task 1 commit)
 
 **2. [Rule 3 - Blocking] Audio.swift references non-existent KeyboardSettings**
 - **Found during:** Task 1 (dependency stripping)
-- **Issue:** giellakbd-ios Audio.swift depends on KeyboardSettings.isKeySoundEnabled which doesn't exist in Dictus
-- **Fix:** Renamed class to GiellaAudio, removed KeyboardSettings dependency. Sound always plays (existing Dictus behavior), silent switch respected by AudioServicesPlaySystemSound.
-- **Files modified:** DictusKeyboard/Vendored/Controllers/Audio.swift
+- **Issue:** giellakbd-ios Audio.swift depends on KeyboardSettings.isKeySoundEnabled which doesn't exist in Ouispr
+- **Fix:** Renamed class to GiellaAudio, removed KeyboardSettings dependency. Sound always plays (existing Ouispr behavior), silent switch respected by AudioServicesPlaySystemSound.
+- **Files modified:** OuisprKeyboard/Vendored/Controllers/Audio.swift
 - **Verification:** Build succeeds
 - **Committed in:** 204f378 (Task 1 commit)
 
