@@ -246,6 +246,11 @@ let isModelFreeFidelity = isReplay || rescorePath != nil
 /// blank line from one that emitted a single break. `show` printed the final text,
 /// where the two look identical. This flag is how that question is asked.
 let showEngineOut = args.contains("--engine-out")
+/// Warm the engine before each call, as the app does when recording starts.
+let prewarmEngine = args.contains("--prewarm")
+/// `--no-clean-gate`: run the engine on clean transcripts too (the behaviour before
+/// the gate), to measure what the gate saves and what it changes.
+let cleanGate = !args.contains("--no-clean-gate")
 // #439. Overrides every fixture's `lang`. See `Fixture.routed(through:)`.
 let langOverride = optionValue("--lang", in: args)
 let modeAIdentifier = optionValue("--mode-a", in: args) ?? modeIdentifier
@@ -536,6 +541,17 @@ func runOnce(_ fx: Fixture,
         return RunOutcome(final: fallback, engineOutput: nil, outcome: .skipped, engineMs: 0,
                           detected: detectedCode, task: nil, preprocessed: preprocessed)
     }
+    // Clean-input gate, off `PolishGatePolicy` so the harness skips exactly where the
+    // app does: a short transcript with nothing any prompt rule acts on returns the
+    // deterministic floor without the engine.
+    if cleanGate, PolishGatePolicy.skipsForCleanInput(
+        preprocessed, language: detected == target ? target : nil,
+        isMixed: mix.isMixed, task: smartTask ?? .natural
+    ) {
+        let floor = PolishPostpass.decodeFromEngine(preprocessed, language: target)
+        return RunOutcome(final: floor, engineOutput: nil, outcome: .skippedClean, engineMs: 0,
+                          detected: detectedCode, task: nil, preprocessed: preprocessed)
+    }
     // The armed mode when there is one, otherwise the free-polish variant the STT
     // engine and the detected-vs-target gap select. `detected ?? target` matches the
     // app: past the gate a mode may have no detection, and the variant it falls back
@@ -556,6 +572,12 @@ func runOnce(_ fx: Fixture,
         // it stands for the prompt target above.
         transcriptLanguageCode: PolishJob.transcriptLanguageCode(mode: .explicit(target), detectedCode: detectedCode)
     )
+    // `--prewarm`: warm the session the way the app does at recording start, so the
+    // timing is the one a user waits for rather than a cold session's.
+    if prewarmEngine {
+        await engine.prewarm(task: job.task, targetLanguage: job.promptLanguage)
+        try? await Task.sleep(for: .seconds(2))
+    }
     let r = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
     // nil for a Smart Mode on any non-success: it inserts nothing rather than the
     // untransformed floor, which #79 names as the worst outcome available.
@@ -591,6 +613,14 @@ func runOnceAuto(_ fx: Fixture,
                           detected: nil, task: nil, preprocessed: fx.raw)
     }
     let preprocessed = PolishPipeline.autoPreprocess(fx.raw, detectedCode: detectedCode)
+    // Clean-input gate, as in `PolishService.polishAutoDetected`.
+    if cleanGate, PolishGatePolicy.skipsForCleanInput(
+        preprocessed, language: detectedCode.flatMap(SupportedLanguage.init(rawValue:)),
+        isMixed: PolishLanguageMix.measure(fx.raw).isMixed, task: smartTask ?? .auto
+    ) {
+        return RunOutcome(final: preprocessed, engineOutput: nil, outcome: .skippedClean, engineMs: 0,
+                          detected: detectedCode, task: nil, preprocessed: preprocessed)
+    }
     let job = PolishJob(
         task: smartTask ?? .auto, promptLanguage: .english, languageAgnosticPath: true,
         // Same pre-flight input as the per-language path (#490). Measured on the raw
@@ -602,6 +632,12 @@ func runOnceAuto(_ fx: Fixture,
             mode: .autoDetect, detectedCode: PolishLanguageMix.measure(fx.raw).dominantCode ?? detectedCode
         )
     )
+    // `--prewarm`: warm the session the way the app does at recording start, so the
+    // timing is the one a user waits for rather than a cold session's.
+    if prewarmEngine {
+        await engine.prewarm(task: job.task, targetLanguage: job.promptLanguage)
+        try? await Task.sleep(for: .seconds(2))
+    }
     let r = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
     let final = PolishPipeline.resolvedOutput(r, preprocessed: preprocessed, job: job)
     return RunOutcome(final: final, engineOutput: r.engineOutput, outcome: r.outcome,

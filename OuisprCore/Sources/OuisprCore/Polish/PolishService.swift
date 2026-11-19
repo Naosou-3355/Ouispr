@@ -607,6 +607,37 @@ public final class PolishService {
             return PolishOutcome(text: fallback)
         }
 
+        // Clean-input gate: a short transcript Parakeet already wrote clean, with
+        // nothing any prompt rule acts on, skips the model and its seconds of
+        // latency (`PolishCleanInput`). Same deterministic floor as the gates above.
+        if PolishGatePolicy.skipsForCleanInput(
+            preprocessed,
+            language: request.detected == target ? target : nil,
+            isMixed: request.languageMix.isMixed,
+            task: request.smartTask ?? .natural
+        ) {
+            let preprocessMs = Int(Date().timeIntervalSince(methodStart) * 1000)
+            let postStart = Date()
+            let floor = PolishPostpass.decodeFromEngine(preprocessed, language: target)
+            let postMs = Int(Date().timeIntervalSince(postStart) * 1000)
+            let m = PolishMetrics(
+                engine: activeEngine.identifier,
+                mode: nil,
+                targetLanguage: target,
+                detectedLanguage: request.detectedCode,
+                rawCharCount: raw.count,
+                polishedCharCount: floor.count,
+                latencyMs: preprocessMs + postMs,
+                outcome: .skippedClean,
+                sttEngine: sttEngine.rawValue,
+                sttModelID: sttModelID,
+                timings: PolishTimings(preprocessMs: preprocessMs, engineMs: 0, postprocessMs: postMs),
+                languageResolution: resolution
+            )
+            await emit(m, raw: raw, engineRaw: request.engineRaw, polished: floor)
+            return PolishOutcome(text: floor)
+        }
+
         let job = PolishJob(
             task: request.smartTask ?? .polish(PolishPipeline.mode(
                 sttEngine: sttEngine, detected: request.detected ?? target, target: target
@@ -760,6 +791,25 @@ public final class PolishService {
             )
             await emit(m, raw: raw, engineRaw: request.engineRaw, polished: nil)
             return PolishOutcome(text: raw)
+        }
+
+        // Clean-input gate, as on the per-language path. Only for a transcript read
+        // as one of the languages `PolishCleanInput` has word lists for.
+        if PolishGatePolicy.skipsForCleanInput(
+            preprocessed,
+            language: request.detectedCode.flatMap(SupportedLanguage.init(rawValue:)),
+            isMixed: request.languageMix.isMixed,
+            task: request.smartTask ?? .auto
+        ) {
+            let detectMs = Int(Date().timeIntervalSince(methodStart) * 1000)
+            let m = autoEventMetrics(
+                outcome: .skippedClean, request: request, finalCount: preprocessed.count,
+                engineID: activeEngine.identifier,
+                detectedLanguage: request.detectedCode, latencyMs: detectMs,
+                timings: PolishTimings(preprocessMs: detectMs, engineMs: 0, postprocessMs: 0)
+            )
+            await emit(m, raw: raw, engineRaw: request.engineRaw, polished: preprocessed)
+            return PolishOutcome(text: preprocessed)
         }
 
         let job = PolishJob(

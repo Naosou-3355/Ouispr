@@ -37,6 +37,10 @@ public struct PolishMetrics: Sendable, Codable {
         /// model never loaded. Distinct from `skipped` (gibberish / low language
         /// confidence) so the debug JSON shows *why* the engine was bypassed.
         case skippedShort
+        /// LLM intentionally skipped because the transcript was already clean: short,
+        /// punctuated, and with nothing any rule of the free-polish prompt acts on
+        /// (`PolishCleanInput`). Deterministic passes still ran.
+        case skippedClean
         /// LEGACY — no longer emitted since #239. Between #226 and #239 the
         /// whole polish layer was bypassed in Whisper Auto-detect mode and the
         /// bypass was recorded under this outcome. Auto mode now runs the
