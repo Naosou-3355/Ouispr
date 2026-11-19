@@ -157,6 +157,7 @@
 		AA000484 /* ModelPreparationPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100484 /* ModelPreparationPresentation.swift */; };
 		AA000302 /* ModelLanguageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100302 /* ModelLanguageDetailView.swift */; };
 		AA0000F0 /* SpeechModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000F0 /* SpeechModelProtocol.swift */; };
+		DB7E0001 /* DeviceBenchRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7E0002 /* DeviceBenchRunner.swift */; };
 		AA0000F1 /* ParakeetEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000F1 /* ParakeetEngine.swift */; };
 		AA0000F2 /* SoundFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000F2 /* SoundFeedbackService.swift */; };
 		AA0000F3 /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000F3 /* SoundSettingsView.swift */; };
@@ -405,6 +406,7 @@
 		AA100484 /* ModelPreparationPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPreparationPresentation.swift; sourceTree = "<group>"; };
 		AA100302 /* ModelLanguageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelLanguageDetailView.swift; sourceTree = "<group>"; };
 		AA1000F0 /* SpeechModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelProtocol.swift; sourceTree = "<group>"; };
+		DB7E0002 /* DeviceBenchRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceBenchRunner.swift; sourceTree = "<group>"; };
 		AA1000F1 /* ParakeetEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParakeetEngine.swift; sourceTree = "<group>"; };
 		AA1000F2 /* SoundFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedbackService.swift; sourceTree = "<group>"; };
 		AA1000F3 /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
@@ -574,6 +576,7 @@
 				AA1000F5 /* LiveActivityManager.swift */,
 				SS400001 /* Subscription */,
 				AA400007 /* Audio */,
+				DB7E0003 /* DeviceBench */,
 				AA40000B /* Onboarding */,
 				AA40P200 /* Polish */,
 				VN6204000001 /* VoiceNotes */,
@@ -680,6 +683,14 @@
 				AA1000B4 /* EmojiSearchFR.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		DB7E0003 /* DeviceBench */ = {
+			isa = PBXGroup;
+			children = (
+				DB7E0002 /* DeviceBenchRunner.swift */,
+			);
+			path = DeviceBench;
 			sourceTree = "<group>";
 		};
 		AA400007 /* Audio */ = {
@@ -1386,6 +1397,7 @@
 				AA0000EA /* LanguageSetupPage.swift in Sources */,
 				AA0000F0 /* SpeechModelProtocol.swift in Sources */,
 				AA0000F1 /* ParakeetEngine.swift in Sources */,
+				DB7E0001 /* DeviceBenchRunner.swift in Sources */,
 				AA0000E2 /* GaugeBarView.swift in Sources */,
 				AA0000E3 /* ModelCardView.swift in Sources */,
 				AA0000E4 /* SwipeBackOverlayView.swift in Sources */,
