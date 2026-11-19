@@ -1436,6 +1436,8 @@ class KeyboardState: ObservableObject {
         // decision 15): N+1 cancels N and takes its place.
         MainActor.assumeIsolated {
             KeyboardPolishCoordinator.shared.cancelForNewDictation()
+            // The new dictation's session, warmed while the user speaks.
+            KeyboardPolishCoordinator.shared.prewarm()
         }
 
         // Issue #262: a model load is now a prepare-only handoff. Opening Ouispr

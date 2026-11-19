@@ -567,9 +567,9 @@ class DictationCoordinator: ObservableObject {
     /// in the extension, which holds its own `LanguageModelSession` cache. Warming a
     /// session here could not be used over there — the two are separate processes —
     /// so the call would cost model residency in a backgrounded app for nothing.
-    /// Keyboard-side prewarm was deliberately not added in its place: measured at
-    /// 1.4% on PR #373, inside the spread of both arms, against holding a session in
-    /// a process under a ~50 MB ceiling while the user is still speaking.
+    /// The keyboard warms its own session at the mic tap (`KeyboardPolishCoordinator.
+    /// prewarm`), since the iPhone bench of 2026-11-19 measured 1491 ms cold against
+    /// 770 ms warm.
     private func schedulePolishPrewarm() {
         guard dictationOrigin == .app else { return }
         polishPrewarmTask?.cancel()

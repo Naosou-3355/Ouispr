@@ -9,7 +9,7 @@ import Foundation
 /// (`ouispr-bench/623-windows/retry/RESULTS.md`, section "Design"). That bench is the only
 /// evidence the retry helps without hurting a clean dictation. A value changed here without
 /// re-running it is a value nobody has measured.
-enum DriftRetryParameters {
+public enum DriftRetryParameters {
 
     // MARK: Audio geometry
 
@@ -85,6 +85,21 @@ enum DriftRetryParameters {
     /// A re-decode times an edge word a few frames off the first pass, so a candidate keeps
     /// tokens from this many frames (0.32 s) before the span to as many after it.
     static let edgeToleranceFrames = 4
+
+    /// A re-decode at or above this mean confidence ends its span's grid early: the rest
+    /// of the nine could only beat it by a hair. #623 measured a right re-decode at 0.95
+    /// and above, a wrong one at ~0.65-0.75.
+    ///
+    /// WHY: each span costs nine serial decodes. On the iPhone (2026-11-19, 300 clips),
+    /// the 103 clips that triggered the retry took a median 436 ms to transcribe against 44
+    /// for the rest, and they were all of the slow tail.
+    ///
+    /// Measured on the Mac (2026-11-19): on alex01, a real 400 s dictation, 99 decodes
+    /// became 60 (8.6 s → 5.7 s of retry) for a transcript as close to the reference
+    /// (4.64217 % WER either way). On 1100 synthesized clips it rarely fires (3348 → 3290
+    /// decodes, WER 18.91245 → 18.91949 %). 0.90 and 0.85 were tried and lose accuracy on
+    /// alex01 (5.22244 % and 5.60928 %).
+    public static let earlyStopConfidence: Float = 0.95
 
     // MARK: Splice
 

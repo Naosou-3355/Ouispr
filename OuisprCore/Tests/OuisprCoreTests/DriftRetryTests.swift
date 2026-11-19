@@ -63,7 +63,7 @@ final class DriftRetryTests: XCTestCase {
         let timings = firstPass { self.drifted.contains($0) ? self.driftConfidence : 0.99 }
         let decoder = FakeDecoder(answer: confidentFrench)
         let outcome = try await DriftRetry.run(samples: samples, firstPassText: SyntheticTokens.text(of: timings),
-                                               firstPassTimings: timings, decode: decoder.decode)
+                                               firstPassTimings: timings, stopAt: nil, decode: decoder.decode)
         XCTAssertEqual(outcome.spans, 1)
         XCTAssertEqual(outcome.wins, 1)
         XCTAssertEqual(decoder.calls, 9)
@@ -73,6 +73,29 @@ final class DriftRetryTests: XCTestCase {
         XCTAssertTrue(outcome.text.hasSuffix("mot17 mot18 mot19"))
         // Every clip fits one encoder window: span ≤ 11 s plus at most 1.44 s on each side.
         XCTAssertTrue(decoder.clipLengths.allSatisfy { $0 <= 240_000 })
+    }
+
+    /// The grid stops at the first re-decode that wins at `earlyStopConfidence` or more:
+    /// on alex01 (2026-11-19) this cut 99 decodes to 60 for the same transcript.
+    func testAConfidentReDecodeEndsItsSpanEarly() async throws {
+        let timings = firstPass { self.drifted.contains($0) ? self.driftConfidence : 0.99 }
+        let decoder = FakeDecoder(answer: confidentFrench)
+        let full = try await DriftRetry.run(samples: samples, firstPassText: SyntheticTokens.text(of: timings),
+                                            firstPassTimings: timings, stopAt: nil) { self.confidentFrench($0) }
+        let outcome = try await DriftRetry.run(samples: samples, firstPassText: SyntheticTokens.text(of: timings),
+                                               firstPassTimings: timings, decode: decoder.decode)
+        XCTAssertEqual(decoder.calls, 1)
+        XCTAssertEqual(outcome.text, full.text)
+        XCTAssertEqual(outcome.wins, 1)
+    }
+
+    /// A winner under the threshold does not stop the grid: the other eight may beat it.
+    func testAWinnerUnderTheThresholdKeepsTheWholeGrid() async throws {
+        let timings = firstPass { self.drifted.contains($0) ? self.driftConfidence : 0.99 }
+        let decoder = FakeDecoder(answer: confidentFrench)
+        _ = try await DriftRetry.run(samples: samples, firstPassText: SyntheticTokens.text(of: timings),
+                                     firstPassTimings: timings, stopAt: 1.01, decode: decoder.decode)
+        XCTAssertEqual(decoder.calls, 9)
     }
 
     /// The replaced span is reported for the log (#861): its audio window and its text on

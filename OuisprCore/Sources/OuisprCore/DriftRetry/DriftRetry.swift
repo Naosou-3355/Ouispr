@@ -71,11 +71,14 @@ public enum DriftRetry {
     ///   - samples: The audio the first pass transcribed, 16 kHz mono.
     ///   - firstPassText: The first pass's text, returned unchanged when nothing wins.
     ///   - firstPassTimings: The first pass's tokens, as FluidAudio timed them.
-    ///   - decode: Re-decodes one clip. Called nine times per span, one at a time.
+    ///   - decode: Re-decodes one clip. Called up to nine times per span, one at a time.
     /// - Throws: `DriftRetryError.firstPassTokensDoNotMatchText` before any work, whatever
     ///   `decode` throws, and `CancellationError` between spans when the task is cancelled.
     ///   The caller decides what a failed retry means; it has the first pass either way.
+    ///   - stopAt: A span stops re-decoding at the first candidate that would win with at
+    ///     least this mean confidence. `nil` runs the whole grid, as RC v2 did.
     public static func run(samples: [Float], firstPassText: String, firstPassTimings: [DriftRetryTokenTiming],
+                           stopAt: Float? = DriftRetryParameters.earlyStopConfidence,
                            decode: ClipDecoder) async throws -> DriftRetryOutcome {
         let firstPass = firstPassTimings.map { DriftRetryPiece(firstPass: $0) }
         // Missing timings on a non-empty transcript would read as one long word-free gap,
@@ -99,6 +102,11 @@ public enum DriftRetry {
                 let timings = try await decode(clip.samples(from: samples))
                 if clip.endTrimmed { endTrimmed.insert(candidates.count) }
                 candidates.append(clip.candidate(from: timings, span: span))
+                if let stopAt, let index = DriftRetrySelection.winner(candidates: candidates, firstPass: original,
+                                                                      endTrimmed: endTrimmed),
+                   let score = DriftRetryText.meanConfidence(of: candidates[index]), score >= stopAt {
+                    break
+                }
             }
             if let winner = DriftRetrySelection.winner(candidates: candidates, firstPass: original, endTrimmed: endTrimmed) {
                 choices.append(DriftRetryChoice(range: range, pieces: candidates[winner], keepsFirstPass: false))
