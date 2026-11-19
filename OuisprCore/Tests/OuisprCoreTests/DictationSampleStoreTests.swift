@@ -103,7 +103,7 @@ final class DictationSampleStoreTests: XCTestCase {
     func testNewestFirstAndDelete() throws {
         let store = makeStore()
         let first = try XCTUnwrap(record(store, text: "un"))
-        Thread.sleep(forTimeInterval: 0.01)
+        Thread.sleep(forTimeInterval: 0.02)
         let second = try XCTUnwrap(record(store, text: "deux"))
         XCTAssertEqual(store.all().map(\.id), [second, first])
 

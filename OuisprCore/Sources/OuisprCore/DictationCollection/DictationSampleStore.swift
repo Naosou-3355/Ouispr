@@ -198,14 +198,31 @@ public final class DictationSampleStore: @unchecked Sendable {
     private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        encoder.dateEncodingStrategy = .iso8601
+        // Milliseconds kept: plain `.iso8601` drops them, and two dictations in the
+        // same second would then sort in no particular order.
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(DictationSampleStore.isoFormatter.string(from: date))
+        }
         return encoder
     }()
 
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let text = try decoder.singleValueContainer().decode(String.self)
+            if let date = DictationSampleStore.isoFormatter.date(from: text) ?? ISO8601DateFormatter().date(from: text) {
+                return date
+            }
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Bad date: \(text)"))
+        }
         return decoder
+    }()
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
     }()
 
     private static let fileStamp: DateFormatter = {
