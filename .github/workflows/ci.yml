@@ -70,9 +70,12 @@ jobs:
 
       - name: Resolve SwiftPM dependencies
         run: |
+          # Pinned: fails instead of silently moving to a newer version than the
+          # committed Package.resolved.
           xcodebuild -resolvePackageDependencies \
             -project Ouispr.xcodeproj \
-            -scheme OuisprApp
+            -scheme OuisprApp \
+            -onlyUsePackageVersionsFromResolvedFile
 
       - name: Build OuisprApp (and embedded Keyboard, Widgets, Core)
         run: |

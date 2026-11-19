@@ -48,9 +48,12 @@ jobs:
 
       - name: Resolve SwiftPM dependencies
         run: |
+          # Pinned: fails instead of silently moving to a newer version than the
+          # committed Package.resolved.
           xcodebuild -resolvePackageDependencies \
             -project Ouispr.xcodeproj \
-            -scheme OuisprApp
+            -scheme OuisprApp \
+            -onlyUsePackageVersionsFromResolvedFile
 
       # Device build without signing: AltStore signs it on the phone.
       - name: Build OuisprApp for iPhone (Release, unsigned)

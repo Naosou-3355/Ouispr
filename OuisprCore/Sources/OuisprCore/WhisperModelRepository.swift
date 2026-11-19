@@ -28,6 +28,14 @@ public enum WhisperModelRepository {
     /// Hugging Face repository hosting the Core ML Whisper variants.
     public static let repositoryID = "argmaxinc/whisperkit-coreml"
 
+    /// The repository commit every download is pinned to, instead of `main`.
+    ///
+    /// WHY: a download used to follow `main` at the time it started, so a model could
+    /// change under the app with no release. Pinned to the commit `main` pointed to on
+    /// 2026-11-19, last changed 2026-08-19. A newer model is adopted by changing this value in a release,
+    /// after a test.
+    public static let pinnedRevision = "0f63a7800b00dd0226abd051b906c246e1907482"
+
     /// Repository location relative to the Documents directory.
     public static let relativeRepositoryPath = "huggingface/models/argmaxinc/whisperkit-coreml"
 

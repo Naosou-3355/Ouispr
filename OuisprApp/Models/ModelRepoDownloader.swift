@@ -113,6 +113,7 @@ final class ModelRepoDownloader {
         static func parakeet() -> Configuration {
             Configuration(
                 repoPath: Repo.parakeetV3.remotePath,
+                revision: ParakeetModelRepository.pinnedRevision,
                 directoryPatterns: ParakeetEngine.requiredModelBundles.map { "\($0)/" }.sorted(),
                 includesRootMetadata: true,
                 requiredPaths: { _ in
@@ -139,6 +140,7 @@ final class ModelRepoDownloader {
         static func nemotron() -> Configuration {
             Configuration(
                 repoPath: NemotronModelRepository.repositoryID,
+                revision: NemotronModelRepository.pinnedRevision,
                 directoryPatterns: ["\(NemotronModelRepository.variantDirectory)/"],
                 includesRootMetadata: false,
                 requiredPaths: { _ in
@@ -185,6 +187,7 @@ final class ModelRepoDownloader {
         static func whisperKit(variant: String) -> Configuration {
             Configuration(
                 repoPath: WhisperModelRepository.repositoryID,
+                revision: WhisperModelRepository.pinnedRevision,
                 directoryPatterns: ["\(variant)/"],
                 includesRootMetadata: false,
                 requiredPaths: { cacheDir in
@@ -262,12 +265,11 @@ final class ModelRepoDownloader {
         modelName: String,
         onProgress: @escaping @Sendable (ModelRepoDownloader.Progress) -> Void
     ) async throws {
-        // Phase 1: pin the revision. Every URL from here on is the canonical
-        // `/resolve/<commit>/<path>` form, which is what makes a resume days later
-        // meaningful: `main` can move between the bytes on disk and the bytes about to
-        // arrive, and the redirected CDN URLs it lands on carry a short-lived signature
-        // that is worthless the moment it is written down (maintainer's note, #449).
-        let revision = await resolveRevision()
+        // Phase 1: the revision is pinned in the source (`Configuration.revision`). Every
+        // URL from here on is the canonical `/resolve/<commit>/<path>` form, which is also
+        // what makes a resume days later meaningful: the redirected CDN URLs carry a
+        // short-lived signature that is worthless the moment it is written down (#449).
+        let revision = configuration.revision
 
         // Phase 2: list the repo tree and select files (engine parity via Configuration).
         let files = try await listRequiredFiles(revision: revision)
@@ -386,33 +388,6 @@ final class ModelRepoDownloader {
         let type: String
         let size: Int?
         let lfs: TreeLFSPointer?
-    }
-
-    private struct RepoInfo: Decodable {
-        let sha: String?
-    }
-
-    /// The commit the whole download is pinned to, or `main` when it cannot be resolved.
-    ///
-    /// A failure here is not fatal: `main` is what every previous build used, and the
-    /// only thing lost is the guarantee that a resume days later reads the same
-    /// revision. The `If-Range` validator still catches that case, at the cost of
-    /// restarting the file instead of appending to it.
-    private func resolveRevision() async -> String {
-        guard let url = URL(string: "https://huggingface.co/api/models/\(configuration.repoPath)") else {
-            return "main"
-        }
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                return "main"
-            }
-            let info = try JSONDecoder().decode(RepoInfo.self, from: data)
-            guard let sha = info.sha, !sha.isEmpty else { return "main" }
-            return sha
-        } catch {
-            return "main"
-        }
     }
 
     /// Recursively lists the repo tree at `revision` and returns the files the engine
