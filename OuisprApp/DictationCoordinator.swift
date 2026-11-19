@@ -1035,6 +1035,10 @@ class DictationCoordinator: ObservableObject {
                 if !Task.isCancelled, sessionGeneration.mayReport(from: session) {
                     DictationTally.record(transcript.text, audioDuration: audioDuration)
                 }
+                // Opt-in collection mode: keeps this dictation's audio and raw
+                // transcript for an offline test bench. A no-op when off, and the
+                // files are written off the main thread.
+                collectionSampleID = sessionGeneration.mayReport(from: session) ? collectSample(samples, transcript, languagePolicy, dictationOrigin) : nil
                 // Polish and the hand-off below do not touch the speech engine.
                 releaseEngine()
 

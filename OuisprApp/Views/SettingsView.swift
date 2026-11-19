@@ -514,6 +514,11 @@ struct SettingsView: View {
                     }
                 }
 
+                // Opt-in collection of the user's own dictations, for a test bench.
+                NavigationLink("Collecte de dictées") {
+                    DictationCollectionView()
+                }
+
                 NavigationLink("Licenses") {
                     LicensesView()
                 }

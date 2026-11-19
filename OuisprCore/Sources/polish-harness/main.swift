@@ -548,7 +548,9 @@ func runOnce(_ fx: Fixture,
         preprocessed, language: detected == target ? target : nil,
         isMixed: mix.isMixed, task: smartTask ?? .natural
     ) {
-        let floor = PolishPostpass.decodeFromEngine(preprocessed, language: target)
+        let floor = PolishEmailLayout.apply(
+            PolishPostpass.decodeFromEngine(preprocessed, language: target), language: target
+        )
         return RunOutcome(final: floor, engineOutput: nil, outcome: .skippedClean, engineMs: 0,
                           detected: detectedCode, task: nil, preprocessed: preprocessed)
     }
@@ -619,7 +621,8 @@ func runOnceAuto(_ fx: Fixture,
         preprocessed, language: language,
         isMixed: PolishLanguageMix.measure(fx.raw).isMixed, task: smartTask ?? .auto
     ) {
-        return RunOutcome(final: preprocessed, engineOutput: nil, outcome: .skippedClean, engineMs: 0,
+        return RunOutcome(final: PolishEmailLayout.apply(preprocessed, language: language),
+                          engineOutput: nil, outcome: .skippedClean, engineMs: 0,
                           detected: detectedCode, task: nil, preprocessed: preprocessed)
     }
     let job = PolishJob(

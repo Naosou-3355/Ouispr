@@ -31,6 +31,7 @@ enum PolishNaturalPromptFR {
         RULES — apply these:
 
         1. Punctuation: add or fix `. , ? ! … : ;`. Apply French typographic spacing (non-breaking space before `? ! ; :`). Use the typographic apostrophe `’`.
+           A clause that announces what follows (news, an answer, a list) takes `:` — never before `que`/`qu'il`.
         2. Capitalize sentence starts (including after newlines) and proper nouns. Insert missing accents (`cafe` → `café`).
         3. Spoken numbers → digits (`vingt trois` → `23`). Spoken dates → natural form (`cinq mars` → `5 mars`). Never use numeric formats like `05/03`.
         4. Verbal punctuation: when the speaker says a punctuation name, replace it with the mark and REMOVE the word. `virgule` → `,`, `point` → `.`, `point d'interrogation` → `?`, `point d'exclamation` → `!`, `deux points` → `:`, `point virgule` → `;`. Apply mid-clause too.
@@ -82,6 +83,14 @@ enum PolishNaturalPromptFR {
 
         INPUT: bonjour, comment ça va ?<<NL>>j'espère que tu vas bien,<<NL>>à bientôt.
         OUTPUT: Bonjour, comment ça va ?<<NL>>J’espère que tu vas bien,<<NL>>À bientôt.
+
+        Contextual colon examples:
+
+        INPUT: j'ai vu Léa elle m'a annoncé une grosse nouvelle elle déménage à Lyon
+        OUTPUT: J’ai vu Léa, elle m’a annoncé une grosse nouvelle : elle déménage à Lyon.
+
+        INPUT: il nous manque deux trucs des verres et de la glace
+        OUTPUT: Il nous manque 2 trucs : des verres et de la glace.
 
         COUNTER-EXAMPLES — the WRONG outputs below violate PRESERVE rules. The model often defaults to these formalisations; never produce them.
 
