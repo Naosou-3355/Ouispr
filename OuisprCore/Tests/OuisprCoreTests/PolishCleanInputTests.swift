@@ -35,6 +35,10 @@ final class PolishCleanInputTests: XCTestCase {
         XCTAssertFalse(clean("On se voit samedi, non pardon, dimanche."))
         XCTAssertFalse(clean("Je passe demain, en fait jeudi."))
         XCTAssertFalse(clean("Call me tomorrow, I mean Friday.", .english))
+        XCTAssertFalse(clean("On se voit samedi, je voulais dire dimanche."))
+        XCTAssertFalse(clean("Je passe à la banque, oups, à la poste."))
+        XCTAssertFalse(clean("Il a coûté un million."))
+        XCTAssertFalse(clean("Call me Monday, oops, Tuesday.", .english))
     }
 
     func testLongDictationsKeepTheModel() {

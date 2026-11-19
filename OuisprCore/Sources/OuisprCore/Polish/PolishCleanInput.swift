@@ -98,6 +98,7 @@ public enum PolishCleanInput {
                 "euh", "euhh", "heu", "hum", "hmm", "bah", "ben", "hein",
                 // self-correction cues (rule 10)
                 "non", "pardon", "enfin", "plutôt", "attends", "trompé", "trompée",
+                "disons", "oups", "mince", "zut", "correction", "rectification",
                 // verbal punctuation (rule 4)
                 "virgule", "point", "points", "ligne", "guillemet", "guillemets",
                 "parenthèse", "tiret", "slash",
@@ -105,33 +106,35 @@ public enum PolishCleanInput {
                 "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix",
                 "onze", "douze", "treize", "quatorze", "quinze", "seize", "vingt", "vingts",
                 "trente", "quarante", "cinquante", "soixante", "cent", "cents", "mille",
+                "zéro", "million", "millions", "milliard", "milliards"
             ],
-            blockedPhrases: ["en fait", "je veux dire", "tu vois", "tu sais"],
+            blockedPhrases: ["en fait", "je veux dire", "je voulais dire", "je reprends", "tu vois", "tu sais"],
             missingComma: [
                 // "Salut Manu comment tu vas" → "Salut Manu, comment tu vas"
                 #"(^|[.?!…]\s+)(salut|bonjour|bonsoir|coucou|hello|hey|yo|merci)(\s+\p{Lu}[\p{L}-]*)?+\s+\p{L}"#,
                 // "Et franchement le mode" → "Et franchement, le mode"
                 #"(^|[.?!…]\s+)(et\s+|mais\s+)?(franchement|honnêtement|sincèrement|perso|personnellement|bref|sinon|d['’]ailleurs|écoute|écoutez|du coup|par contre|bon)\s+\p{L}"#,
                 // "tout à l'heure s'il te plaît" → "tout à l'heure, s'il te plaît"
-                #"\p{L}\s+s['’]il\s+(te|vous)\s+pla[iî]t"#,
+                #"\p{L}\s+s['’]il\s+(te|vous)\s+pla[iî]t"#
             ]
         )
 
         static let english = WordLists(
             blocked: [
                 "uh", "uhm", "um", "umm", "er", "erm", "hmm",
-                "no", "sorry", "actually", "rather", "wait",
+                "no", "sorry", "actually", "rather", "wait", "oops", "correction",
                 "comma", "period", "colon", "semicolon", "quote", "dash", "slash",
                 "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
                 "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
                 "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty", "sixty",
                 "seventy", "eighty", "ninety", "hundred", "thousand",
+                "zero", "million", "millions", "billion", "billions"
             ],
-            blockedPhrases: ["i mean", "you know", "scratch that", "new line", "full stop",
+            blockedPhrases: ["i mean", "i meant", "you know", "scratch that", "new line", "full stop",
                              "question mark", "exclamation mark", "exclamation point"],
             missingComma: [
                 #"(^|[.?!…]\s+)(hi|hello|hey|thanks|thank you)(\s+\p{Lu}[\p{L}-]*)?+\s+\p{L}"#,
-                #"(^|[.?!…]\s+)(honestly|frankly|anyway|so|well|basically)\s+\p{L}"#,
+                #"(^|[.?!…]\s+)(honestly|frankly|anyway|so|well|basically)\s+\p{L}"#
             ]
         )
     }
