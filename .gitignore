@@ -24,6 +24,8 @@ DerivedData/
 .build/
 Packages/
 Package.resolved
+# The app's dependency versions are pinned: the exact versions tested ship.
+!Ouispr.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 .swiftpm/
 
 # CocoaPods (au cas où)

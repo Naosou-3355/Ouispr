@@ -31,6 +31,14 @@ import Foundation
 /// has to hold for the answer to mean anything.
 public enum ParakeetModelRepository {
 
+    /// The repository commit every download is pinned to, instead of `main`.
+    ///
+    /// WHY: a download used to follow `main` at the time it started, so a model could
+    /// change under the app with no release. Pinned to the commit `main` pointed to on
+    /// 2026-11-19, the same commit `7dd20fe` the 0.15 migration was measured on (#558). A newer model is adopted by changing this value in a release,
+    /// after a test.
+    public static let pinnedRevision = "7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+
     /// Marker file every compiled Core ML bundle contains once it is fully written.
     public static let compiledModelMarkerFile = "coremldata.bin"
 

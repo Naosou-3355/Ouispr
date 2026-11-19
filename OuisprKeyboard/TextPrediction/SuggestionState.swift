@@ -423,7 +423,6 @@ class SuggestionState: ObservableObject {
             }
 
             let predictions = self.engine.predictNextWords(after: words)
-            print("[SuggestionState] updatePredictions context=\(words) results=\(predictions)")
 
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }

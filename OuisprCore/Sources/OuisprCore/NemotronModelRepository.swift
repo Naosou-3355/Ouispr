@@ -33,6 +33,15 @@ public enum NemotronModelRepository {
     /// The HuggingFace repository the model is downloaded from.
     public static let repositoryID = "FluidInference/Nemotron-3.5-ASR-Streaming-Multilingual-0.6b-CoreML"
 
+    /// The repository commit every download is pinned to, instead of `main`.
+    ///
+    /// WHY: a download used to follow `main` at the time it started, so a model could
+    /// change under the app with no release. Pinned to the commit `main` pointed to on
+    /// 2026-11-19, whose variant directory and root files are byte-identical to the July 2026 commit
+    /// `1a41b757` (only the README and new folders the app does not read changed). A newer model is adopted by changing this value in a release,
+    /// after a test.
+    public static let pinnedRevision = "a70b9d1c33594f1f4cf3f4eca9b4a0a8f44a9f59"
+
     /// The repository-relative directory of the one variant Ouispr uses. It is the model
     /// directory `StreamingNemotronMultilingualAsrManager.loadModels(from:)` is given.
     public static let variantDirectory = "multilingual/2240ms"
