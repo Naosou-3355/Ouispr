@@ -27,12 +27,12 @@ public enum PolishEditCheck {
     static let protectedWords: Set<String> = [
         "je", "tu", "il", "elle", "on", "nous", "vous", "ils", "elles",
         "me", "te", "se", "moi", "toi", "lui", "leur", "eux",
-        "pas", "jamais", "rien", "personne", "aucun", "aucune", "sans",
+        "pas", "jamais", "rien", "personne", "aucun", "aucune", "sans"
     ]
 
     /// Self-correction cues (rule 10): a deletion next to one is the speaker's own.
     static let cueWords: Set<String> = [
-        "non", "pardon", "enfin", "plutôt", "attends", "trompé", "trompée", "veux", "fait",
+        "non", "pardon", "enfin", "plutôt", "attends", "trompé", "trompée", "veux", "fait"
     ]
 
     /// How far from a deleted word a cue still makes the deletion the speaker's.

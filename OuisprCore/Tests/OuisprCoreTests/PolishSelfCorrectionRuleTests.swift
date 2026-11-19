@@ -42,7 +42,7 @@ final class PolishSelfCorrectionRuleTests: XCTestCase {
             "Enfin, la réunion est terminée.",
             "Il est enfin arrivé à la gare.",
             "J'attends le bus devant la gare.",
-            "Non mais tu crois que je vais à la fête ?",
+            "Non mais tu crois que je vais à la fête ?"
         ] {
             XCTAssertEqual(fix(text), text, text)
         }

@@ -26,7 +26,7 @@ public enum PolishSelfCorrection {
         ["je", "me", "suis", "trompé"], ["je", "me", "suis", "trompée"],
         ["ah", "non", "pardon"], ["en", "fait", "non"], ["non", "pardon"], ["enfin", "non"],
         ["ah", "non"], ["non", "attends"], ["non", "attend"], ["ou", "plutôt"], ["non", "plutôt"],
-        ["je", "veux", "dire"], ["pardon"],
+        ["je", "veux", "dire"], ["pardon"]
     ]
 
     /// Cues that are ordinary words just as often (`non`, `enfin`), and the forms
@@ -36,13 +36,13 @@ public enum PolishSelfCorrection {
     /// ordinary `non` does not.
     static let weakCues: [[String]] = [
         ["ou", "attends"], ["ou", "attend"], ["ou", "non"], ["en", "fin"],
-        ["attends"], ["attend"], ["enfin"], ["non"],
+        ["attends"], ["attend"], ["enfin"], ["non"]
     ]
 
     static let restartWords: Set<String> = [
         "à", "au", "aux", "devant", "derrière", "chez", "dans", "sur", "sous", "vers", "avec",
         "pour", "de", "du", "des", "le", "la", "les", "l'", "un", "une", "mon", "ma", "mes",
-        "ton", "ta", "tes", "son", "sa", "ses", "ce", "cette", "ces",
+        "ton", "ta", "tes", "son", "sa", "ses", "ce", "cette", "ces"
     ]
 
     /// How far back the retracted part may start, in words.
@@ -54,7 +54,7 @@ public enum PolishSelfCorrection {
          "septembre", "octobre", "novembre", "décembre"],
         ["le", "la", "les", "l'", "un", "une", "des", "du", "mon", "ma", "mes", "ton", "ta",
          "tes", "son", "sa", "ses", "notre", "nos", "votre", "vos", "leur", "leurs", "ce", "cette", "ces"],
-        ["demain", "aujourd'hui", "hier", "ce"],
+        ["demain", "aujourd'hui", "hier", "ce"]
     ]
 
     public static func apply(_ text: String, language: SupportedLanguage) -> String {

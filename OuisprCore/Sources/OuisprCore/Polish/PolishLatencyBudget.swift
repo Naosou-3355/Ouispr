@@ -67,11 +67,11 @@ public enum PolishLatencyBudget {
             #"\b(choses|trucs)\b"#,
             #"\bm['’](a|ont)\s+(répondu|annoncé|avoué|raconté|expliqué)\b"#,
             #"\brappel\b"#,
-            #"\bsimple\b"#,
+            #"\bsimple\b"#
         ]
         let english = [
             #"\b(no|sorry|actually|rather|wait)\b"#,
-            #"\b(i mean|scratch that)\b"#,
+            #"\b(i mean|scratch that)\b"#
         ]
         func compile(_ list: [String]) -> [NSRegularExpression] {
             list.compactMap { try? NSRegularExpression(pattern: $0, options: [.caseInsensitive]) }

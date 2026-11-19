@@ -25,7 +25,7 @@ public enum PolishFillerPass {
         .french: ["euh", "euhh", "euuh", "heu", "hum", "hmm", "uh", "uhm", "um"],
         .english: ["uh", "uhh", "uhm", "um", "umm", "erm", "hmm"],
         .spanish: ["ehm", "emm"],
-        .german: ["äh", "ähm", "öhm", "hm", "hmm"],
+        .german: ["äh", "ähm", "öhm", "hm", "hmm"]
     ]
 
     public static func apply(_ text: String, language: SupportedLanguage) -> String {
@@ -66,7 +66,7 @@ public enum PolishFillerPass {
             (#" +([,.…])"#, "$1"),
             (#"([.?!…]),+"#, "$1"),
             (#",{2,}"#, ","),
-            (#"^[\s,.…]+"#, ""),
+            (#"^[\s,.…]+"#, "")
         ]
         for (pattern, replacement) in rules {
             out = out.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
