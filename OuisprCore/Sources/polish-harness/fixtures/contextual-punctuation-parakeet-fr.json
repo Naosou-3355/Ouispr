@@ -1,0 +1,242 @@
+[
+ {
+  "id": "C01-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai croisé Tom, il m'a dit un truc de fou, il sort avec Anne."
+ },
+ {
+  "id": "C01-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai croisé tout une vadie en train de fou in sort avec elle."
+ },
+ {
+  "id": "C02-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Devine quoi j'ai eu le poste."
+ },
+ {
+  "id": "C02-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Deville quoi j'ai eu le poste."
+ },
+ {
+  "id": "C03-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Le problème c'est que personne n'a les clés."
+ },
+ {
+  "id": "C03-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Le problème c'est que personne n'a mes clé."
+ },
+ {
+  "id": "C04-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai une bonne nouvelle on part en vacances la semaine prochaine."
+ },
+ {
+  "id": "C04-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai une bonne nouvelle ou par en vacances la semaine prochaine."
+ },
+ {
+  "id": "C05-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Voilà ce qu'on va faire tu prends la voiture et je prends le train."
+ },
+ {
+  "id": "C05-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Voilà ce qu'on va faire, tu prends la voiture et je prends le train."
+ },
+ {
+  "id": "C06-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Il faut acheter trois choses du pain du lait et des œufs."
+ },
+ {
+  "id": "C06-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Il faut acheter trois choses du pain du lait et des oeufs."
+ },
+ {
+  "id": "C07-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Je te préviens il va pleuvoir tout le week-end."
+ },
+ {
+  "id": "C07-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Je te préviens, il va pleuvoir tout le week-end."
+ },
+ {
+  "id": "C08-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Tu sais ce qu'il m'a répondu il a dit qu'il s'en fichait."
+ },
+ {
+  "id": "C08-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Si c'est ce qu'il m'aurait pourvu, il a dit qu'il ne s'en fiche."
+ },
+ {
+  "id": "C09-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "La réponse est simple on n'a pas le budget."
+ },
+ {
+  "id": "C09-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "La réponse est simple, on n'a pas le budget."
+ },
+ {
+  "id": "C10-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai compris pourquoi sa plantée le câble était débranché."
+ },
+ {
+  "id": "C10-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai compris pourquoi ça plantée le câble était débranché."
+ },
+ {
+  "id": "N01-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Je suis passé chez Tom et il m'a prêté sa perceuse."
+ },
+ {
+  "id": "N01-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Je suis passé chez Tom et il m'a prêté sa perceuse."
+ },
+ {
+  "id": "N02-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "On se retrouve devant le cinéma ce soir après le travail."
+ },
+ {
+  "id": "N02-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "On se retrouve devant le cinéma ce soir après le travail."
+ },
+ {
+  "id": "N03-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Il m'a dit qu'il viendrait demain matin."
+ },
+ {
+  "id": "N03-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "In what he can feel with the bigger."
+ },
+ {
+  "id": "N04-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Le problème est réglé depuis hier."
+ },
+ {
+  "id": "N04-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Le problème est réglé depuis hier."
+ },
+ {
+  "id": "N05-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai acheté du pain et du lait en rentrant."
+ },
+ {
+  "id": "N05-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "J'ai acheté du peuple et du lail on toile."
+ },
+ {
+  "id": "M01-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Marc, je te confirme notre réunion de jeudi après-midi, je t'enverrai l'ordre du jour demain matin. Bonne journée Alex."
+ },
+ {
+  "id": "M01-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Marc, je te confirme notre réunion de jeudi après-midi, je t'enverrai l'ordre du jour demain matin. Bonne journée Alex."
+ },
+ {
+  "id": "M02-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Madame Martin, je vous écris au sujet de la facture du mois dernier. Elle comporte une erreur sur le montant. Pourriez-vous me renvoyer une version corrigée ? Merci d'avance cordialement, Paul Durand."
+ },
+ {
+  "id": "M02-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Madame Martin, je vous écris au sujet de la facture du mois dernier, elle comporte une erreur sur le montant pourri, vous me renvoyez une version corrigée, merci d'avance cordialement Paul Durand."
+ },
+ {
+  "id": "M03-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Salut Julie, merci pour ton message, je regarde ça ce soir et je te redis demain bisous."
+ },
+ {
+  "id": "M03-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Salut Julie, merci pour ton message, je regarde ça ce soir et je te redis demain bisous."
+ },
+ {
+  "id": "M04-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour à tous, petit rappel. La réunion d'équipe est déplacée à vendredi matin. Merci de confirmer votre présence à bientôt Sophie."
+ },
+ {
+  "id": "M04-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour à tous petit rappel, la réunion d'équipe est déplacée à vendredi matin, merci de confirmer votre présence à bientôt Sophie."
+ },
+ {
+  "id": "M05-thomas",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Thomas, suite à notre échange de ce matin, je t'envoie le devis en pièces jointe par ailleurs. J'ai besoin de ta validation pour le planning avant lundi. N'hésite pas si tu as des questions cordialement Paul."
+ },
+ {
+  "id": "M05-flo",
+  "lang": "fr",
+  "sttEngine": "PK",
+  "raw": "Bonjour Thomas, suite à notre échange de ce matin je t'envoie le devis en pièce jointe par ailleurs j'ai besoin de ta validation pour le planning avant lundi, n'hésite pas si tu as des questions cordialement Paul."
+ }
+]
