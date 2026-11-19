@@ -670,7 +670,8 @@ public final class PolishService {
             // engine already known to be refusing.
             await PolishPipeline.transform(
                 preprocessed: preprocessed, engine: currentEngine,
-                job: job, gate: self.availabilityGate
+                job: job, gate: self.availabilityGate,
+                budget: job.task.isSmart ? nil : PolishLatencyBudget.appliedSeconds(for: preprocessed, language: target)
             )
         }
         trackInflight(inflightTask)
@@ -834,7 +835,11 @@ public final class PolishService {
             // per-language path above (#315).
             await PolishPipeline.transform(
                 preprocessed: preprocessed, engine: currentEngine,
-                job: job, gate: self.availabilityGate
+                job: job, gate: self.availabilityGate,
+                budget: job.task.isSmart ? nil : PolishLatencyBudget.appliedSeconds(
+                    for: preprocessed,
+                    language: request.detectedCode.flatMap(SupportedLanguage.init(rawValue:))
+                )
             )
         }
         trackInflight(inflightTask)
