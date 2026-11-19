@@ -614,8 +614,9 @@ func runOnceAuto(_ fx: Fixture,
     }
     let preprocessed = PolishPipeline.autoPreprocess(fx.raw, detectedCode: detectedCode)
     // Clean-input gate, as in `PolishService.polishAutoDetected`.
-    if cleanGate, PolishGatePolicy.skipsForCleanInput(
-        preprocessed, language: detectedCode.flatMap(SupportedLanguage.init(rawValue:)),
+    if cleanGate, let language = detectedCode.flatMap(SupportedLanguage.init(rawValue:)),
+       PolishGatePolicy.skipsForCleanInput(
+        preprocessed, language: language,
         isMixed: PolishLanguageMix.measure(fx.raw).isMixed, task: smartTask ?? .auto
     ) {
         return RunOutcome(final: preprocessed, engineOutput: nil, outcome: .skippedClean, engineMs: 0,

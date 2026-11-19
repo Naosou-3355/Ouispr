@@ -28,7 +28,7 @@ import Foundation
 public enum PolishCleanInput {
 
     /// Longest transcript, in words, that can skip the model.
-    public static let maximumWords = 25
+    public static let maximumWords = 40
 
     public static func isClean(_ text: String, language: SupportedLanguage) -> Bool {
         guard let lists = WordLists.for(language) else { return false }
@@ -56,6 +56,12 @@ public enum PolishCleanInput {
         }
         let joined = " " + words.joined(separator: " ") + " "
         for phrase in lists.blockedPhrases where joined.contains(" \(phrase) ") { return false }
+        // Commas the model adds and Parakeet leaves out (rule 1): after a greeting
+        // and the name that follows it, after a sentence-opening discourse word,
+        // before "s'il te plaît".
+        let range = NSRange(trimmed.startIndex..., in: trimmed)
+        for pattern in lists.missingCommaPatterns
+        where pattern.firstMatch(in: trimmed, range: range) != nil { return false }
         return true
     }
 
@@ -68,6 +74,15 @@ public enum PolishCleanInput {
     struct WordLists {
         let blocked: Set<String>
         let blockedPhrases: [String]
+        let missingCommaPatterns: [NSRegularExpression]
+
+        init(blocked: Set<String>, blockedPhrases: [String], missingComma: [String]) {
+            self.blocked = blocked
+            self.blockedPhrases = blockedPhrases
+            // Literal patterns written below; a typo in one is a programming error.
+            // swiftlint:disable:next force_try
+            self.missingCommaPatterns = missingComma.map { try! NSRegularExpression(pattern: $0, options: [.caseInsensitive]) }
+        }
 
         static func `for`(_ language: SupportedLanguage) -> WordLists? {
             switch language {
@@ -91,7 +106,15 @@ public enum PolishCleanInput {
                 "onze", "douze", "treize", "quatorze", "quinze", "seize", "vingt", "vingts",
                 "trente", "quarante", "cinquante", "soixante", "cent", "cents", "mille",
             ],
-            blockedPhrases: ["en fait", "je veux dire", "tu vois", "tu sais"]
+            blockedPhrases: ["en fait", "je veux dire", "tu vois", "tu sais"],
+            missingComma: [
+                // "Salut Manu comment tu vas" → "Salut Manu, comment tu vas"
+                #"(^|[.?!…]\s+)(salut|bonjour|bonsoir|coucou|hello|hey|yo|merci)(\s+\p{Lu}[\p{L}-]*)?+\s+\p{L}"#,
+                // "Et franchement le mode" → "Et franchement, le mode"
+                #"(^|[.?!…]\s+)(et\s+|mais\s+)?(franchement|honnêtement|sincèrement|perso|personnellement|bref|sinon|d['’]ailleurs|écoute|écoutez|du coup|par contre|bon)\s+\p{L}"#,
+                // "tout à l'heure s'il te plaît" → "tout à l'heure, s'il te plaît"
+                #"\p{L}\s+s['’]il\s+(te|vous)\s+pla[iî]t"#,
+            ]
         )
 
         static let english = WordLists(
@@ -105,7 +128,11 @@ public enum PolishCleanInput {
                 "seventy", "eighty", "ninety", "hundred", "thousand",
             ],
             blockedPhrases: ["i mean", "you know", "scratch that", "new line", "full stop",
-                             "question mark", "exclamation mark", "exclamation point"]
+                             "question mark", "exclamation mark", "exclamation point"],
+            missingComma: [
+                #"(^|[.?!…]\s+)(hi|hello|hey|thanks|thank you)(\s+\p{Lu}[\p{L}-]*)?+\s+\p{L}"#,
+                #"(^|[.?!…]\s+)(honestly|frankly|anyway|so|well|basically)\s+\p{L}"#,
+            ]
         )
     }
 }

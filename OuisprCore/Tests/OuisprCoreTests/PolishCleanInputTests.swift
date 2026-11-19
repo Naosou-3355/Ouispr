@@ -60,3 +60,25 @@ final class PolishCleanInputTests: XCTestCase {
         XCTAssertFalse(PolishGatePolicy.skipsForCleanInput(text, language: .french, isMixed: false, task: smart))
     }
 }
+
+final class PolishCleanInputCommaTests: XCTestCase {
+
+    private func clean(_ text: String, _ language: SupportedLanguage = .french) -> Bool {
+        PolishCleanInput.isClean(text, language: language)
+    }
+
+    func testCommasTheModelWouldAddKeepTheModel() {
+        XCTAssertFalse(clean("Salut Manu comment tu vas ?"))
+        XCTAssertFalse(clean("Salut comment tu vas ?"))
+        XCTAssertFalse(clean("C'est super. Et franchement le mode structuré est pas mal."))
+        XCTAssertFalse(clean("Tu peux me le renvoyer s'il te plaît ?"))
+        XCTAssertFalse(clean("Hey John how are you?", .english))
+    }
+
+    func testCommasAlreadyThereAreClean() {
+        XCTAssertTrue(clean("Salut Manu, comment tu vas ?"))
+        XCTAssertTrue(clean("C'est super. Et franchement, le mode structuré est pas mal."))
+        XCTAssertTrue(clean("Tu peux me le renvoyer, s'il te plaît ?"))
+        XCTAssertTrue(clean("Merci."))
+    }
+}

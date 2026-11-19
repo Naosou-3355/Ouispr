@@ -802,14 +802,15 @@ public final class PolishService {
             task: request.smartTask ?? .auto
         ) {
             let detectMs = Int(Date().timeIntervalSince(methodStart) * 1000)
+            let floor = preprocessed
             let m = autoEventMetrics(
-                outcome: .skippedClean, request: request, finalCount: preprocessed.count,
+                outcome: .skippedClean, request: request, finalCount: floor.count,
                 engineID: activeEngine.identifier,
                 detectedLanguage: request.detectedCode, latencyMs: detectMs,
                 timings: PolishTimings(preprocessMs: detectMs, engineMs: 0, postprocessMs: 0)
             )
-            await emit(m, raw: raw, engineRaw: request.engineRaw, polished: preprocessed)
-            return PolishOutcome(text: preprocessed)
+            await emit(m, raw: raw, engineRaw: request.engineRaw, polished: floor)
+            return PolishOutcome(text: floor)
         }
 
         let job = PolishJob(
