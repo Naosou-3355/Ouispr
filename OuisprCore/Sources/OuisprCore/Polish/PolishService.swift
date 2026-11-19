@@ -618,7 +618,9 @@ public final class PolishService {
         ) {
             let preprocessMs = Int(Date().timeIntervalSince(methodStart) * 1000)
             let postStart = Date()
-            let floor = PolishPostpass.decodeFromEngine(preprocessed, language: target)
+            let floor = PolishEmailLayout.apply(
+                PolishPostpass.decodeFromEngine(preprocessed, language: target), language: target
+            )
             let postMs = Int(Date().timeIntervalSince(postStart) * 1000)
             let m = PolishMetrics(
                 engine: activeEngine.identifier,
@@ -802,7 +804,9 @@ public final class PolishService {
             task: request.smartTask ?? .auto
         ) {
             let detectMs = Int(Date().timeIntervalSince(methodStart) * 1000)
-            let floor = preprocessed
+            let floor = PolishEmailLayout.apply(
+                preprocessed, language: request.detectedCode.flatMap(SupportedLanguage.init(rawValue:))
+            )
             let m = autoEventMetrics(
                 outcome: .skippedClean, request: request, finalCount: floor.count,
                 engineID: activeEngine.identifier,

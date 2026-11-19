@@ -203,9 +203,13 @@ public enum PolishPipeline {
             // output (#572): the guardrails judge what the model wrote, and this pass
             // cannot change a word of it. Note the export then logs the tightened text,
             // as it already logs the decoded one.
+            // The free polish lays a dictated email out on lines, by the same rule:
+            // it moves words, never adds one (`PolishEmailLayout`).
             let delivered = job.task.smartMode?.prompt.shortOutputBlockLimit.map {
                 PolishPostpass.tightenBlocks(polished, whenShorterThan: $0)
-            } ?? polished
+            } ?? (job.task.isSmart ? polished : PolishEmailLayout.apply(
+                polished, language: job.typographyLanguage ?? detectLanguage(in: polished)
+            ))
             let postMs = Int(Date().timeIntervalSince(postStart) * 1000)
             return Result(engineOutput: delivered, outcome: .success, engineMs: engineMs, postprocessMs: postMs,
                           producedBy: labelled.engine)
@@ -420,8 +424,12 @@ public enum PolishPipeline {
     /// the language's typography decoded on the per-language path. Named so #573's
     /// declined list can insert the same floor when no second call fits the budget.
     public static func deterministicFloor(preprocessed: String, job: PolishJob) -> String {
-        guard let typography = job.typographyLanguage else { return preprocessed }
-        return PolishPostpass.decodeFromEngine(preprocessed, language: typography)
+        guard let typography = job.typographyLanguage else {
+            return job.task.isSmart ? preprocessed
+                : PolishEmailLayout.apply(preprocessed, language: detectLanguage(in: preprocessed))
+        }
+        let floor = PolishPostpass.decodeFromEngine(preprocessed, language: typography)
+        return job.task.isSmart ? floor : PolishEmailLayout.apply(floor, language: typography)
     }
 
     /// Whether an armed mode accepts the deterministic floor for this outcome.
