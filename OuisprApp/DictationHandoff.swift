@@ -143,6 +143,7 @@ extension DictationCoordinator {
         TranscriptionHistoryStore.shared.append(TranscriptionRecord(
             text: finalText, policy: languagePolicy, duration: audioDuration
         ))
+        DictationSampleStore.shared.setPolished(finalText, for: collectionSampleID)
         status = .ready
         defaults.set(finalText, forKey: SharedKeys.lastTranscription)
         defaults.set(Date().timeIntervalSince1970, forKey: SharedKeys.lastTranscriptionTimestamp)
@@ -407,6 +408,7 @@ extension DictationCoordinator {
             if let historyID {
                 TranscriptionHistoryStore.shared.updateText(id: historyID, to: produced)
             }
+            DictationSampleStore.shared.setPolished(produced, for: collectionSampleID)
         }
         PersistentLog.log(.polishHandoff(
             step: "finished",
@@ -493,5 +495,33 @@ extension DictationCoordinator {
                 step: "watchdog", outcome: "withdrawn", chars: pending.raw.count
             ))
         }
+    }
+}
+
+/// The collected sample of the current dictation, when collection mode is on, so the
+/// polished text can join its raw transcript. Nil when collection is off.
+///
+/// WHY a static box rather than a stored property: `DictationCoordinator.swift` sits
+/// at SwiftLint's file length limit, and the app has a single coordinator.
+@MainActor
+private enum CollectionState {
+    static var sampleID: UUID?
+}
+
+extension DictationCoordinator {
+    /// The current dictation's collected sample id (see `CollectionState`).
+    var collectionSampleID: UUID? {
+        get { CollectionState.sampleID }
+        set { CollectionState.sampleID = newValue }
+    }
+
+    /// Keep this dictation for the opt-in collection mode. Nil when collection is off.
+    func collectSample(_ samples: [Float],
+                       _ transcript: DictationTranscript,
+                       _ policy: TranscriptionLanguagePolicy,
+                       _ origin: DictationOrigin) -> UUID? {
+        DictationSampleStore.shared.recordIfEnabled(
+            samples: samples, transcript: transcript, policy: policy, origin: origin
+        )
     }
 }

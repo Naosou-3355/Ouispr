@@ -24,6 +24,7 @@
 		AA512072 /* VocabularySuggestionDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA512172 /* VocabularySuggestionDictionary.swift */; };
 		SS000009 /* PaywallPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS100009 /* PaywallPresentation.swift */; };
 		AA700070 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA700170 /* HistoryView.swift */; };
+		AA7C0071 /* DictationCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C0171 /* DictationCollectionView.swift */; };
 		AA700071 /* TranscriptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA700171 /* TranscriptionDetailView.swift */; };
 		AA723071 /* TranscriptTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA723171 /* TranscriptTextView.swift */; };
 		AA700072 /* SwipeUpHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA700172 /* SwipeUpHintView.swift */; };
@@ -432,6 +433,7 @@
 		AA512172 /* VocabularySuggestionDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularySuggestionDictionary.swift; sourceTree = "<group>"; };
 		SS100009 /* PaywallPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallPresentation.swift; sourceTree = "<group>"; };
 		AA700170 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		AA7C0171 /* DictationCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCollectionView.swift; sourceTree = "<group>"; };
 		AA700171 /* TranscriptionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionDetailView.swift; sourceTree = "<group>"; };
 		AA723171 /* TranscriptTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptTextView.swift; sourceTree = "<group>"; };
 		AA700172 /* SwipeUpHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeUpHintView.swift; sourceTree = "<group>"; };
@@ -749,6 +751,7 @@
 				AA512172 /* VocabularySuggestionDictionary.swift */,
 				SS100009 /* PaywallPresentation.swift */,
 				AA700170 /* HistoryView.swift */,
+				AA7C0171 /* DictationCollectionView.swift */,
 				AA700171 /* TranscriptionDetailView.swift */,
 				AA723171 /* TranscriptTextView.swift */,
 				AA700172 /* SwipeUpHintView.swift */,
@@ -1413,6 +1416,7 @@
 				AA512072 /* VocabularySuggestionDictionary.swift in Sources */,
 				SS000009 /* PaywallPresentation.swift in Sources */,
 				AA700070 /* HistoryView.swift in Sources */,
+				AA7C0071 /* DictationCollectionView.swift in Sources */,
 				AA700071 /* TranscriptionDetailView.swift in Sources */,
 				AA723071 /* TranscriptTextView.swift in Sources */,
 				AA700072 /* SwipeUpHintView.swift in Sources */,
