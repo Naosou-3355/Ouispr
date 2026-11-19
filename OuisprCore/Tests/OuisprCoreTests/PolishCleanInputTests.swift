@@ -81,4 +81,24 @@ final class PolishCleanInputCommaTests: XCTestCase {
         XCTAssertTrue(clean("Tu peux me le renvoyer, s'il te plaît ?"))
         XCTAssertTrue(clean("Merci."))
     }
+
+    func testAnnouncementsTheModelWouldCloseWithAColonKeepTheModel() {
+        XCTAssertFalse(clean("J'ai croisé Tom, il m'a dit un truc de fou, il sort avec Anne."))
+        XCTAssertFalse(clean("Devine quoi j'ai eu le poste."))
+        XCTAssertFalse(clean("J'ai une bonne nouvelle on part en vacances."))
+        XCTAssertFalse(clean("Voilà ce qu'on va faire, tu prends la voiture."))
+        XCTAssertFalse(clean("Tu sais ce qu'il m'a répondu, il s'en fichait."))
+    }
+
+    func testAnnouncementsAlreadyClosedAreClean() {
+        XCTAssertTrue(clean("Il m'a dit un truc de fou : il sort avec Anne."))
+        XCTAssertTrue(clean("Voilà ce qu'on va faire : tu prends la voiture."))
+        XCTAssertTrue(clean("Il m'a dit qu'il viendrait demain matin."))
+    }
+
+    func testEmailEndsRunIntoASentenceKeepTheModel() {
+        XCTAssertFalse(clean("N'hésite pas si tu as des questions cordialement Paul."))
+        XCTAssertFalse(clean("Je t'envoie le devis par ailleurs j'ai besoin de toi."))
+        XCTAssertTrue(clean("N'hésite pas si tu as des questions. Cordialement, Paul."))
+    }
 }

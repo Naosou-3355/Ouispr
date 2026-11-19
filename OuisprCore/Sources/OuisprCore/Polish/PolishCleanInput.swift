@@ -56,9 +56,9 @@ public enum PolishCleanInput {
         }
         let joined = " " + words.joined(separator: " ") + " "
         for phrase in lists.blockedPhrases where joined.contains(" \(phrase) ") { return false }
-        // Commas the model adds and Parakeet leaves out (rule 1): after a greeting
-        // and the name that follows it, after a sentence-opening discourse word,
-        // before "s'il te plaît".
+        // Marks the model adds and Parakeet leaves out (rule 1): a comma after a
+        // greeting and the name that follows it, after a sentence-opening discourse
+        // word, before "s'il te plaît"; a colon after an announcement.
         let range = NSRange(trimmed.startIndex..., in: trimmed)
         for pattern in lists.missingCommaPatterns
         where pattern.firstMatch(in: trimmed, range: range) != nil { return false }
@@ -114,6 +114,21 @@ public enum PolishCleanInput {
                 #"(^|[.?!…]\s+)(et\s+|mais\s+)?(franchement|honnêtement|sincèrement|perso|personnellement|bref|sinon|d['’]ailleurs|écoute|écoutez|du coup|par contre|bon)\s+\p{L}"#,
                 // "tout à l'heure s'il te plaît" → "tout à l'heure, s'il te plaît"
                 #"\p{L}\s+s['’]il\s+(te|vous)\s+pla[iî]t"#,
+                // Announcements the model closes with `:` (rule 1):
+                // "il m'a dit un truc de fou, il sort avec Anne" → "un truc de fou : il sort"
+                #"\b(truc|chose|histoire)\s+(de\s+(fou|dingue|ouf)|incroyable)\s*,?\s+\p{L}"#,
+                #"\b(devine|tu\s+sais|sais-tu)\s+quoi\s*,?\s+\p{L}"#,
+                #"\b(bonne|mauvaise|grosse|grande|super|petite)\s+nouvelle\s*,?\s+\p{L}"#,
+                #"\bvoilà\s+ce\s+(qu['’]|que\b|qui\b)[^:.?!…]*[.?!…]"#,
+                #"\b\d+\s+(choses|trucs|points|questions|options|solutions|raisons)\s*,?\s+\p{L}"#,
+                #"\bm['’](a|ont)\s+(répondu|annoncé|avoué|raconté|expliqué)\s*,?\s+\p{L}"#,
+                #"\b(petit\s+)?rappel\s*,?\s+\p{L}"#,
+                #"\b(est|c['’]est)\s+simple\s*,?\s+\p{L}"#,
+                // An email sign-off run into the last sentence ("des questions cordialement
+                // Paul"), and a topic change run into the previous one: the model splits
+                // them, and the email layout needs them split.
+                #"[\p{L},]\s+(bien\s+)?(cordialement|bisous|bises|amicalement|bonne\s+journée|bonne\s+soirée|à\s+bientôt)\b"#,
+                #"\p{L}\s+(par\s+ailleurs|d['’]autre\s+part)\b"#,
             ]
         )
 
