@@ -15,6 +15,12 @@ the Mac's, and the same quality counts.
   pause standing for the recording, then the pipeline, timed). One row per clip is
   appended to `Documents/device-bench/out/results.tsv`, so a crash loses one clip and a
   relaunch resumes.
+- Before the clips, `load.tsv` gets the model loads: Parakeet first load in the
+  process (cold) and again while loaded (preloaded), its first inference, and one
+  Apple Intelligence call cold then prewarmed.
+- Each row has the engine time (`polish_ms`, the Mac's figure) and the whole pipeline
+  after the speaker stops (`polish_wall_ms`, deterministic passes included);
+  `e2e_ms` = transcription + that, end of speech → final text.
 - The screen is kept awake while it runs. Each row carries the thermal state.
 
 ## Corpus
@@ -28,7 +34,13 @@ python3 ../../tools/device-bench/gen.py
 ../../tools/device-bench/synth.sh cases.json corpus
 ```
 
-About 115 MB. It stays out of git (`build/`).
+About 115 MB. It stays out of git (`build/`). For a shorter run, `subset.py` draws a
+balanced subset (50 per category, spread over the ten voices, seeded):
+
+```bash
+python3 tools/device-bench/subset.py build/device-bench/cases.json build/device-bench/corpus build/device-bench/corpus-300
+CORPUS=build/device-bench/corpus-300 tools/device-bench/run.sh push
+```
 
 ## Run (about 1 h)
 
@@ -48,13 +60,13 @@ and the count.
 
 ```bash
 python3 tools/device-bench/score.py build/device-bench/cases.json \
-  --device build/device-bench/out/results.tsv --label iphone \
+  --load build/device-bench/out/load.tsv --device build/device-bench/out/results.tsv --label iphone \
   --mac <v3.tsv> <polish-harness-show.txt> --label mac
 ```
 
 Total = transcription of the whole clip + polish engine time (0 when the model is
 skipped), the rule of the Mac bench. Median, p90, p95, max, % ≤ 1 s and ≤ 2 s, each
-part apart, then self-corrections, `:`, emails, one-line messages, hesitations.
+part apart, the check that cleanup p95 ≤ 1 s, then self-corrections, `:`, emails, one-line messages, hesitations.
 
 ## Not the same as the Mac
 

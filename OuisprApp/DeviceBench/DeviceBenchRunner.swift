@@ -55,9 +55,11 @@ final class DeviceBenchRunner {
     private var corpusDirectory: URL { root.appendingPathComponent("corpus", isDirectory: true) }
     private var outDirectory: URL { root.appendingPathComponent("out", isDirectory: true) }
     private var resultsFile: URL { outDirectory.appendingPathComponent("results.tsv") }
+    /// One `metric<TAB>ms` line per load measurement, appended on every launch.
+    private var loadFile: URL { outDirectory.appendingPathComponent("load.tsv") }
 
     private static let header = [
-        "id", "audio_s", "asr_ms", "polish_ms", "total_ms", "outcome", "check",
+        "id", "audio_s", "asr_ms", "polish_ms", "total_ms", "polish_wall_ms", "e2e_ms", "outcome", "check",
         "thermal", "hypothesis", "polished", "engine_out"
     ].joined(separator: "\t") + "\n"
 
@@ -72,8 +74,12 @@ final class DeviceBenchRunner {
         try? line.write(to: outDirectory.appendingPathComponent("progress.txt"), atomically: true, encoding: .utf8)
     }
 
-    private func append(_ row: String) {
-        guard let data = row.data(using: .utf8), let handle = try? FileHandle(forWritingTo: resultsFile) else { return }
+    private func append(_ row: String, to file: URL? = nil) {
+        let file = file ?? resultsFile
+        if !FileManager.default.fileExists(atPath: file.path) {
+            FileManager.default.createFile(atPath: file.path, contents: nil)
+        }
+        guard let data = row.data(using: .utf8), let handle = try? FileHandle(forWritingTo: file) else { return }
         defer { try? handle.close() }
         _ = try? handle.seekToEnd()
         try? handle.write(contentsOf: data)
@@ -133,11 +139,24 @@ final class DeviceBenchRunner {
         // compilations at once on the Neural Engine crash (see ParakeetEngine). Let it finish.
         try await Task.sleep(for: .seconds(20))
 
+        // Model loads. "cold" is the first load in this process (the compiled model may
+        // still be in the system's Core ML cache from earlier launches, as for a user);
+        // "preloaded" loads it again while the first copy is resident.
         let stt = ParakeetEngine()
-        try await stt.prepare(modelIdentifier: "parakeet-tdt-0.6b-v3")
-        try await stt.runWarmInference()
-
+        let sttLoad = try await Self.timed { try await stt.prepare(modelIdentifier: "parakeet-tdt-0.6b-v3") }
+        let sttWarm = try await Self.timed { try await stt.runWarmInference() }
+        let sttReload = try await Self.timed {
+            try await ParakeetEngine().prepare(modelIdentifier: "parakeet-tdt-0.6b-v3")
+        }
         let polish = AppleFoundationModelsPolishEngine()
+        let fmCold = await timedEngineCall(engine: polish, prewarm: false)
+        let fmPrewarmed = await timedEngineCall(engine: polish, prewarm: true)
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        for (metric, ms) in [("parakeet_load_cold", sttLoad), ("parakeet_first_inference", sttWarm),
+                             ("parakeet_load_preloaded", sttReload), ("applefm_call_cold", fmCold),
+                             ("applefm_call_prewarmed", fmPrewarmed)] {
+            append("\(metric)\t\(String(format: "%.0f", ms))\t\(stamp)\n", to: loadFile)
+        }
         writePhase("running")
 
         var done = doneIDs.count
@@ -163,6 +182,8 @@ final class DeviceBenchRunner {
                 String(format: "%.0f", asrMs),
                 "\(result.ms)",
                 String(format: "%.0f", asrMs + Double(result.ms)),
+                String(format: "%.0f", result.wallMs),
+                String(format: "%.0f", asrMs + result.wallMs),
                 result.outcome,
                 result.check,
                 thermal,
@@ -185,17 +206,52 @@ final class DeviceBenchRunner {
         let ms: Int
         let check: String
         let engineOut: String?
+        /// The whole pipeline after the speaker stops, deterministic passes included:
+        /// what the user waits for once transcription is done. Excludes the prewarm and
+        /// the 2 s pause, which happen while they are still speaking.
+        var wallMs: Double = 0
+    }
+
+    private static func timed(_ work: () async throws -> Void) async throws -> Double {
+        let start = Date()
+        try await work()
+        return Date().timeIntervalSince(start) * 1000
+    }
+
+    /// One engine call on a fixed sentence the clean gate does not skip, timed end to end.
+    @available(iOS 26.0, *)
+    private func timedEngineCall(engine: any PolishEngineProtocol, prewarm: Bool) async -> Double {
+        let raw = "euh je t'envoie le dossier demain matin enfin non jeudi matin cordialement Paul"
+        let target = SupportedLanguage.french
+        let job = PolishJob(task: .polish(PolishPipeline.mode(sttEngine: .parakeet, detected: target, target: target)),
+                            promptLanguage: target, languageAgnosticPath: false,
+                            inputLanguageCodes: ["fr"], transcriptLanguageCode: "fr")
+        if prewarm {
+            await engine.prewarm(task: job.task, targetLanguage: target)
+            try? await Task.sleep(for: .seconds(2))
+        }
+        let preprocessed = VerbalPunctuationPrepass.apply(raw, language: target)
+        let start = Date()
+        _ = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
+        return Date().timeIntervalSince(start) * 1000
     }
 
     @available(iOS 26.0, *)
     private func polishOnce(_ raw: String, engine: any PolishEngineProtocol) async -> PolishOutcome {
+        let start = Date()
+        var paused: TimeInterval = 0
+        func done(_ o: PolishOutcome) -> PolishOutcome {
+            var o = o
+            o.wallMs = (Date().timeIntervalSince(start) - paused) * 1000
+            return o
+        }
         let target = SupportedLanguage.french
         let preprocessed = VerbalPunctuationPrepass.apply(raw, language: target)
         let mix = PolishLanguageMix.measure(raw)
         let detected = mix.dominantSupportedLanguage
         if PolishGatePolicy.skipsForGibberish(hasDetectedLanguage: detected != nil, task: .natural) {
             let floor = PolishPostpass.decodeFromEngine(preprocessed, language: target)
-            return PolishOutcome(text: floor, outcome: "skipped", ms: 0, check: "", engineOut: nil)
+            return done(PolishOutcome(text: floor, outcome: "skipped", ms: 0, check: "", engineOut: nil))
         }
         if PolishGatePolicy.skipsForCleanInput(
             preprocessed, language: detected == target ? target : nil,
@@ -204,7 +260,7 @@ final class DeviceBenchRunner {
             let floor = PolishEmailLayout.apply(
                 PolishPostpass.decodeFromEngine(preprocessed, language: target), language: target
             )
-            return PolishOutcome(text: floor, outcome: "skippedClean", ms: 0, check: "", engineOut: nil)
+            return done(PolishOutcome(text: floor, outcome: "skippedClean", ms: 0, check: "", engineOut: nil))
         }
         let job = PolishJob(
             task: .polish(PolishPipeline.mode(sttEngine: .parakeet, detected: detected ?? target, target: target)),
@@ -215,12 +271,14 @@ final class DeviceBenchRunner {
         )
         // Warm the session as the app does when recording starts, then wait the 2 s the
         // Mac bench waits: the timing is the one a user sees after they stop speaking.
+        let pauseStart = Date()
         await engine.prewarm(task: job.task, targetLanguage: job.promptLanguage)
         try? await Task.sleep(for: .seconds(2))
+        paused = Date().timeIntervalSince(pauseStart)
         let r = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
         let final = PolishPipeline.resolvedOutput(r, preprocessed: preprocessed, job: job) ?? ""
-        return PolishOutcome(text: final, outcome: r.outcome.rawValue, ms: r.engineMs,
-                             check: r.rejectedCheck?.rawValue ?? "", engineOut: r.engineOutput)
+        return done(PolishOutcome(text: final, outcome: r.outcome.rawValue, ms: r.engineMs,
+                                  check: r.rejectedCheck?.rawValue ?? "", engineOut: r.engineOutput))
     }
 
     // MARK: - Helpers
