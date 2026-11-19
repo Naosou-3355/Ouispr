@@ -597,6 +597,11 @@ class ModelManager: ObservableObject {
     /// sequence around it, and in particular the Core ML prewarm, which never runs
     /// anywhere but the foreground.
     func downloadModel(_ identifier: String) async throws {
+        // Keep the screen awake for the whole download and Core ML compile: an
+        // auto-lock mid-compile suspends the app and the compile starts over.
+        IdleTimerHold.begin()
+        defer { IdleTimerHold.end() }
+
         // A fresh download starts from a fresh Core ML cache, so whatever this install had
         // recorded about this model's warmth is no longer a claim it can back (#542). Cleared
         // at the START of the transfer, not at the end: the moment the files begin to change,
@@ -1600,5 +1605,30 @@ func withPrewarmTimeout<T: Sendable>(
         )
     } catch let expiry as DeadlineExpired {
         throw ModelManagerError.prewarmTimeout(seconds: expiry.seconds)
+    }
+}
+
+// MARK: - Screen awake while a model is being prepared
+
+/// Keeps the iPhone from auto-locking while at least one model downloads or compiles.
+///
+/// WHY a counter and not a plain `true`/`false`: two downloads can overlap (a launch
+/// repair and an onboarding download), and the first to finish must not let the
+/// screen sleep under the other. WHY only the auto-lock: a press on the side button
+/// still locks the phone, which the user chose.
+@MainActor
+enum IdleTimerHold {
+    private static var holders = 0
+
+    static func begin() {
+        holders += 1
+        UIApplication.shared.isIdleTimerDisabled = true
+    }
+
+    static func end() {
+        holders = max(holders - 1, 0)
+        if holders == 0 {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
     }
 }
