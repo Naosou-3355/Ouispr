@@ -44,7 +44,7 @@ public enum PolishEmailLayout {
         let formulas = closing.groups[0].map(String.init) ?? ""
         let signature = closing.groups[1].map(String.init)
         let isFormal = greeting.groups[0].map { !informalGreetings.contains($0.lowercased()) } ?? false
-            || !formulasAreInformal(formulas)
+            || formulasAreFormal(formulas)
         let wordCount = trimmed.split(whereSeparator: \.isWhitespace).count
         guard isFormal || wordCount >= informalMinimumWords else { return text }
 
@@ -63,7 +63,7 @@ public enum PolishEmailLayout {
         "par ailleurs", "d'autre part", "d’autre part", "sinon", "autre chose", "concernant",
         "en ce qui concerne", "pour finir", "pour le reste", "de plus", "enfin",
         "n'hésite pas", "n’hésite pas", "n'hésitez pas", "n’hésitez pas",
-        "je reste à", "je suis à ta disposition", "je suis à votre disposition",
+        "je reste à", "je suis à ta disposition", "je suis à votre disposition"
     ]
 
     static func paragraphs(_ body: String) -> [String] {
@@ -103,16 +103,14 @@ public enum PolishEmailLayout {
     // MARK: - Sign-off
 
     static let informalGreetings: Set<String> = ["salut", "coucou", "hello", "hey", "yo"]
-    static let informalFormulas = ["bisous", "bises", "grosses bises", "gros bisous", "à plus", "à +", "biz"]
+    /// Sign-offs only an email uses. After an informal greeting, anything else
+    /// (`À demain`, `Bonne soirée`, `Merci d’avance`, `Bisous`) reads as a text message.
+    static let formalFormulaWords = ["cordialement", "bien à", "salutations", "amicalement"]
 
-    static func formulasAreInformal(_ formulas: String) -> Bool {
+    static func formulasAreFormal(_ formulas: String) -> Bool {
         let lower = formulas.lowercased()
-        return informalFormulas.contains { lower.contains($0) }
-            && !formalFormulaWords.contains { lower.contains($0) }
+        return formalFormulaWords.contains { lower.contains($0) }
     }
-
-    static let formalFormulaWords = ["cordialement", "bien à", "journée", "soirée", "semaine",
-                                     "bientôt", "salutations", "avance", "amicalement"]
 
     /// One line per formula; the last one takes a comma when a signature follows.
     /// `Merci d’avance` before another formula is its own paragraph, as a sentence.
@@ -163,10 +161,17 @@ public enum PolishEmailLayout {
     /// The sign-off zone at the very end: one or two formulas, then an optional
     /// signature of one to three capitalised words. Group 1 is the formulas, group 2
     /// the signature.
+    ///
+    /// A formula that is also ordinary French (`une bonne journée`, `reportée à
+    /// demain`) is a sign-off only after a sentence mark or a comma; one that only a
+    /// sign-off uses (`cordialement`, `bisous`) may also be run into the last sentence.
     static let closingPattern: NSRegularExpression = {
-        let formula = #"(?:bien cordialement|cordialement|bien à (?:vous|toi)|bonne (?:fin de )?(?:journée|soirée|semaine|continuation)|belle (?:journée|soirée)|à (?:bientôt|plus|demain|très vite)|grosses bises|gros bisous|bisous|bises|amicalement|salutations distinguées|merci d['’]avance)"#
+        let runIn = #"(?:bien cordialement|cordialement|grosses bises|gros bisous|bisous|bises|amicalement|salutations distinguées|à (?:bientôt|très vite))"#
+        let bounded = #"(?:bien à (?:vous|toi)|bonne (?:fin de )?(?:journée|soirée|semaine|continuation)|belle (?:journée|soirée)|à (?:plus|demain)|merci d['’]avance)"#
+        let formula = "(?:" + runIn + "|" + bounded + ")"
+        let lead = #"(?:^|(?<=[.!?…,;])\s*|\s(?=(?i:"# + runIn + #")))"#
         let name = #"\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2}"#
-        return regex(#"(?:^|[\s,.;!?])((?i:"# + formula + #")(?:[\s,.!]+(?i:"# + formula + #"))?)[\s,.!]*(?:("# + name + #"))?[\s.!]*$"#)
+        return regex(lead + #"((?i:"# + formula + #")(?:[\s,.!]+(?i:"# + formula + #"))?)[\s,.!]*(?:("# + name + #"))?[\s.!]*$"#)
     }()
 
     // MARK: - Helpers

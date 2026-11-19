@@ -41,6 +41,37 @@ final class PolishEmailLayoutTests: XCTestCase {
         XCTAssertEqual(layout(sms), sms)
     }
 
+    func testSignOffRunIntoTheLastSentence() {
+        XCTAssertEqual(
+            layout("Bonjour Thomas, n’hésite pas si tu as des questions cordialement Paul."),
+            "Bonjour Thomas,\n\nN’hésite pas si tu as des questions.\n\nCordialement,\nPaul"
+        )
+    }
+
+    func testOrdinaryWordsAtTheEndAreNotASignOff() {
+        for text in [
+            "Bonjour Marc, je te souhaite une bonne journée.",
+            "Bonjour Paul, la réunion est reportée à demain.",
+            "Bonjour à tous, j’ai passé une belle soirée.",
+        ] {
+            XCTAssertEqual(layout(text), text)
+        }
+    }
+
+    func testInformalGreetingWithACommonSignOffIsATextMessage() {
+        for text in [
+            "Salut Paul, ok pour jeudi. À demain !",
+            "Coucou, je rentre tard ce soir. Bonne soirée.",
+            "Salut, tu peux m’envoyer le doc ? Merci d’avance.",
+        ] {
+            XCTAssertEqual(layout(text), text)
+        }
+        XCTAssertEqual(
+            layout("Salut Paul, je t’envoie le devis. Cordialement, Marc."),
+            "Salut Paul,\n\nJe t’envoie le devis.\n\nCordialement,\nMarc"
+        )
+    }
+
     func testOneEndAloneIsNotAnEmail() {
         for text in [
             "Bonjour, je voulais savoir si le devis était prêt.",
