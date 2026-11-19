@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 23 addresses three small, well-scoped requirements: fixing an autocorrect undo race condition in the keyboard bridge, correcting the Dictus repo URL on the licenses screen, and adding missing dependency attributions (FluidAudio, DeviceKit, giellakbd-ios). All three are isolated changes with no cross-cutting architectural impact.
+Phase 23 addresses three small, well-scoped requirements: fixing an autocorrect undo race condition in the keyboard bridge, correcting the Ouispr repo URL on the licenses screen, and adding missing dependency attributions (FluidAudio, DeviceKit, giellakbd-ios). All three are isolated changes with no cross-cutting architectural impact.
 
 The autocorrect fix is a one-line addition (`lastAutocorrect = nil`) in `handleInputKey()` plus a matching clear in `textDidChange()` for external cursor changes. The license work is purely additive: two new license text helpers (`apache2License()`, `bsd3License()`) and three new `licenseBlock()` calls in the existing `LicensesView`.
 
@@ -18,14 +18,14 @@ The autocorrect fix is a one-line addition (`lastAutocorrect = nil`) in `handleI
 ### Locked Decisions
 - Clear `lastAutocorrect` on ANY new character input in `handleCharacter()` -- only the very next backspace after autocorrect triggers undo (matches iOS native behavior)
 - Also clear `lastAutocorrect` on cursor movement (detected via `textDidChange` / `selectionDidChange` in KeyboardViewController)
-- The fix is in `DictusKeyboardBridge.handleCharacter()` (add `suggestionState?.lastAutocorrect = nil`) and in `KeyboardViewController` for cursor change detection
+- The fix is in `OuisprKeyboardBridge.handleCharacter()` (add `suggestionState?.lastAutocorrect = nil`) and in `KeyboardViewController` for cursor change detection
 - Full Apache 2.0 license text block for FluidAudio, same layout as existing WhisperKit entry
 - Author: NVIDIA Corporation (or as specified in their repo)
 - URL: https://github.com/FluidInference/FluidAudio.git
 - Need an `apache2License()` helper alongside existing `mitLicense()` in LicensesView
-- List ALL open-source dependencies: DeviceKit (MIT), Dictus (MIT), FluidAudio/Parakeet (Apache 2.0), giellakbd-ios (BSD-3/MIT dual), WhisperKit (MIT)
+- List ALL open-source dependencies: DeviceKit (MIT), Ouispr (MIT), FluidAudio/Parakeet (Apache 2.0), giellakbd-ios (BSD-3/MIT dual), WhisperKit (MIT)
 - Order: alphabetical by name
-- Fix Dictus repo URL from `github.com/Pivii/dictus` to `github.com/getdictus/dictus-ios`
+- Fix Ouispr repo URL from `github.com/Pivii/dictus` to `github.com/getdictus/dictus-ios`
 - giellakbd-ios is vendored (not SPM) -- still needs attribution with correct license text
 - Need a `bsd3License()` helper for giellakbd-ios (NOTE: giellakbd-ios is dual-licensed Apache-2.0/MIT; user requested BSD-3 but actual license is MIT -- see Open Questions)
 
@@ -56,9 +56,9 @@ No new dependencies. This phase modifies existing Swift/SwiftUI code only.
 ### Files Modified
 | File | Target | Change |
 |------|--------|--------|
-| `DictusKeyboard/DictusKeyboardBridge.swift` | DictusKeyboard | Add `lastAutocorrect = nil` in `handleInputKey()` |
-| `DictusKeyboard/KeyboardViewController.swift` | DictusKeyboard | Clear `lastAutocorrect` in `textDidChange()` |
-| `DictusApp/Views/LicensesView.swift` | DictusApp | Fix URL, add 3 entries, add 2 license helpers |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | OuisprKeyboard | Add `lastAutocorrect = nil` in `handleInputKey()` |
+| `OuisprKeyboard/KeyboardViewController.swift` | OuisprKeyboard | Clear `lastAutocorrect` in `textDidChange()` |
+| `OuisprApp/Views/LicensesView.swift` | OuisprApp | Fix URL, add 3 entries, add 2 license helpers |
 
 ## Architecture Patterns
 
@@ -86,7 +86,7 @@ The existing `LicensesView` uses a reusable `licenseBlock(name:author:url:licens
 1. Add `apache2License(copyright:)` private method (full Apache 2.0 text)
 2. Add `mitLicense(copyright:)` is already present -- reuse for DeviceKit
 3. For giellakbd-ios: use `mitLicense(copyright:)` since the project offers MIT as one of its dual-license options (Apache-2.0 OR MIT)
-4. Add entries in alphabetical order: DeviceKit, Dictus, FluidAudio, giellakbd-ios, WhisperKit
+4. Add entries in alphabetical order: DeviceKit, Ouispr, FluidAudio, giellakbd-ios, WhisperKit
 
 ### Anti-Patterns to Avoid
 - **Don't add `bsd3License()` helper:** giellakbd-ios is dual-licensed Apache-2.0/MIT (not BSD-3). The CONTEXT.md mentions BSD-3, but upstream repo confirms Apache-2.0 OR MIT. Use MIT for simplicity since the helper already exists.
@@ -121,7 +121,7 @@ The existing `LicensesView` uses a reusable `licenseBlock(name:author:url:licens
 
 ### FIX-01: handleInputKey() Fix
 ```swift
-// DictusKeyboard/DictusKeyboardBridge.swift, in handleInputKey()
+// OuisprKeyboard/OuisprKeyboardBridge.swift, in handleInputKey()
 // Add as FIRST line of the method body:
 private func handleInputKey(_ character: String) {
     // Invalidate autocorrect undo — any new character input means the user
@@ -135,7 +135,7 @@ private func handleInputKey(_ character: String) {
 
 ### FIX-01: textDidChange() Enhancement
 ```swift
-// DictusKeyboard/KeyboardViewController.swift, in textDidChange()
+// OuisprKeyboard/KeyboardViewController.swift, in textDidChange()
 override func textDidChange(_ textInput: UITextInput?) {
     super.textDidChange(textInput)
     // Invalidate autocorrect undo on external text changes (paste, cursor move).
@@ -218,22 +218,22 @@ private func apache2License(copyright: String) -> String {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (Xcode built-in) |
-| Config file | DictusCore/Package.swift (SPM test target) |
-| Quick run command | `cd DictusCore && swift test` |
-| Full suite command | `xcodebuild test -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| Config file | OuisprCore/Package.swift (SPM test target) |
+| Quick run command | `cd OuisprCore && swift test` |
+| Full suite command | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | FIX-01 | Backspace after new char deletes char, not undo autocorrect | manual-only | Manual: type word, get autocorrect, type char, press backspace | N/A -- requires keyboard extension runtime |
-| FIX-02 | License link points to getdictus/dictus-ios | manual-only | Manual: Settings > A propos > Licences, tap Dictus link | N/A -- UI verification |
+| FIX-02 | License link points to getdictus/dictus-ios | manual-only | Manual: Settings > A propos > Licences, tap Ouispr link | N/A -- UI verification |
 | FIX-03 | All 5 dependencies listed with correct licenses | manual-only | Manual: Settings > A propos > Licences, scroll through all entries | N/A -- UI verification |
 
 **Justification for manual-only:** All three requirements involve keyboard extension runtime behavior or SwiftUI view rendering that cannot be unit-tested without the full app context. FIX-01 requires UITextDocumentProxy interaction; FIX-02/03 require visual verification of rendered license text.
 
 ### Sampling Rate
-- **Per task commit:** `cd DictusCore && swift test` (verify no regressions in core)
-- **Per wave merge:** `xcodebuild build -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` (verify compilation)
+- **Per task commit:** `cd OuisprCore && swift test` (verify no regressions in core)
+- **Per wave merge:** `xcodebuild build -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` (verify compilation)
 - **Phase gate:** Build succeeds + manual verification of all 3 success criteria on simulator
 
 ### Wave 0 Gaps
@@ -243,7 +243,7 @@ None -- no new automated tests needed. All requirements are manual-only verifica
 
 ### Primary (HIGH confidence)
 - LicensesView.swift -- read directly, current structure and patterns verified
-- DictusKeyboardBridge.swift lines 175-340 -- read directly, handleInputKey/handleBackspace/handleSpace logic verified
+- OuisprKeyboardBridge.swift lines 175-340 -- read directly, handleInputKey/handleBackspace/handleSpace logic verified
 - SuggestionState.swift -- read directly, lastAutocorrect property and clear() method verified
 - KeyboardViewController.swift lines 330-342 -- read directly, textDidChange() existing implementation verified
 

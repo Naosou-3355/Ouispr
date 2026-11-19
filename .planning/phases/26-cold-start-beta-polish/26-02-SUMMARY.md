@@ -26,9 +26,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Views/SwipeBackOverlayView.swift
-    - DictusApp/Localizable.xcstrings
-    - DictusApp/LiveActivityManager.swift
+    - OuisprApp/Views/SwipeBackOverlayView.swift
+    - OuisprApp/Localizable.xcstrings
+    - OuisprApp/LiveActivityManager.swift
 
 key-decisions:
   - decision: "Use hand.point.up SF Symbol with chevron trail on blue dot, not circle animation"

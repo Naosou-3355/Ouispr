@@ -22,15 +22,15 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift
-    - DictusCore/Sources/DictusCore/Design/BrandWaveform.swift
-    - DictusKeyboard/Views/ToolbarView.swift
-    - DictusKeyboard/Views/RecordingOverlay.swift
+    - OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift
+    - OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift
+    - OuisprKeyboard/Views/ToolbarView.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
 
 key-decisions:
   - "AnyShape type erasure for Circle/Capsule conditional rendering"
   - "Canvas solid Color instead of per-bar LinearGradient -- acceptable visual simplification for GPU perf"
-  - "dictusSuccess green for validate button to distinguish from cancel"
+  - "ouisprSuccess green for validate button to distinguish from cancel"
 
 patterns-established:
   - "isPill parameter pattern: same component, different shape for different contexts"
@@ -69,15 +69,15 @@ Each task was committed atomically:
 2. **Task 2: Pill recording buttons and Canvas waveform with zero-energy stillness** - `b0e7a17` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` - Added isPill parameter, AnyShape for conditional Circle/Capsule, dimension properties
-- `DictusCore/Sources/DictusCore/Design/BrandWaveform.swift` - Canvas rendering, zero minHeight for non-processing, resolvedBarColor for plain Color
-- `DictusKeyboard/Views/ToolbarView.swift` - Uses isPill: true, removed scaleEffect(0.45) hack
-- `DictusKeyboard/Views/RecordingOverlay.swift` - PillButton struct with dictusGlass(in: Capsule()), green validate button
+- `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` - Added isPill parameter, AnyShape for conditional Circle/Capsule, dimension properties
+- `OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift` - Canvas rendering, zero minHeight for non-processing, resolvedBarColor for plain Color
+- `OuisprKeyboard/Views/ToolbarView.swift` - Uses isPill: true, removed scaleEffect(0.45) hack
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - PillButton struct with ouisprGlass(in: Capsule()), green validate button
 
 ## Decisions Made
 - Used AnyShape type erasure (iOS 16+) to unify Circle/Capsule into a single return type, avoiding duplicate code paths
-- Canvas waveform uses solid brand blue (dictusGradientStart) for center bars instead of per-bar LinearGradient -- minor visual simplification but significant performance gain
-- Validate button uses dictusSuccess green to visually distinguish from secondary-color cancel button
+- Canvas waveform uses solid brand blue (ouisprGradientStart) for center bars instead of per-bar LinearGradient -- minor visual simplification but significant performance gain
+- Validate button uses ouisprSuccess green to visually distinguish from secondary-color cancel button
 
 ## Deviations from Plan
 

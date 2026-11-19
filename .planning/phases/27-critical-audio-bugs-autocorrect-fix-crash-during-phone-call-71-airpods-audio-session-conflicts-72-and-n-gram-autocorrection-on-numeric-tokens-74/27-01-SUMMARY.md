@@ -21,11 +21,11 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Audio/CallStateMonitor.swift
+    - OuisprApp/Audio/CallStateMonitor.swift
   modified:
-    - DictusApp/Audio/UnifiedAudioEngine.swift
-    - DictusApp/DictationCoordinator.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprApp/Audio/UnifiedAudioEngine.swift
+    - OuisprApp/DictationCoordinator.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Prevention over try/catch for phone call crash: NSException from installTapOnBus cannot be caught by Swift do/catch"
@@ -58,8 +58,8 @@ completed: 2026-04-07
 ## Accomplishments
 - Phone call detection via CXCallObserver blocks recording with user-visible error instead of crashing
 - Audio session fully deactivated with .notifyOthersOnDeactivation after every recording/cancel
-- AirPods play/pause controls return to other apps (Spotify, YouTube) when Dictus is idle
-- Build succeeds for DictusApp target
+- AirPods play/pause controls return to other apps (Spotify, YouTube) when Ouispr is idle
+- Build succeeds for OuisprApp target
 
 ## Task Commits
 
@@ -69,10 +69,10 @@ Each task was committed atomically:
 2. **Task 2: Add audio session idle deactivation** - `e7083b4` (fix)
 
 ## Files Created/Modified
-- `DictusApp/Audio/CallStateMonitor.swift` - CXCallObserver wrapper detecting active phone calls
-- `DictusApp/Audio/UnifiedAudioEngine.swift` - Added deactivateAndIdle() for post-recording cleanup
-- `DictusApp/DictationCoordinator.swift` - Call guard before recording + deactivateAndIdle after stop/cancel
-- `Dictus.xcodeproj/project.pbxproj` - Added CallStateMonitor.swift to DictusApp target
+- `OuisprApp/Audio/CallStateMonitor.swift` - CXCallObserver wrapper detecting active phone calls
+- `OuisprApp/Audio/UnifiedAudioEngine.swift` - Added deactivateAndIdle() for post-recording cleanup
+- `OuisprApp/DictationCoordinator.swift` - Call guard before recording + deactivateAndIdle after stop/cancel
+- `Ouispr.xcodeproj/project.pbxproj` - Added CallStateMonitor.swift to OuisprApp target
 
 ## Decisions Made
 - Prevention over try/catch for phone call crash: NSException from installTapOnBus cannot be caught by Swift do/catch, so we check CXCallObserver state before attempting to record
@@ -87,15 +87,15 @@ Each task was committed atomically:
 - **Found during:** Task 2 (build verification)
 - **Issue:** IDs AA0000C1/AA1000C1 were already used by Settings.bundle, causing CallStateMonitor to not compile
 - **Fix:** Changed to AA0000C2/AA1000C2
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** Build succeeded
 - **Committed in:** e7083b4 (Task 2 commit)
 
-**2. [Rule 3 - Blocking] Added missing DictusCore import to CallStateMonitor**
+**2. [Rule 3 - Blocking] Added missing OuisprCore import to CallStateMonitor**
 - **Found during:** Task 2 (build verification)
-- **Issue:** DictusLogger is defined in DictusCore framework, import was missing
-- **Fix:** Added `import DictusCore` to CallStateMonitor.swift
-- **Files modified:** DictusApp/Audio/CallStateMonitor.swift
+- **Issue:** OuisprLogger is defined in OuisprCore framework, import was missing
+- **Fix:** Added `import OuisprCore` to CallStateMonitor.swift
+- **Files modified:** OuisprApp/Audio/CallStateMonitor.swift
 - **Verification:** Build succeeded
 - **Committed in:** e7083b4 (Task 2 commit)
 

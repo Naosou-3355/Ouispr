@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Offer a demo voice-note transcript to the Dictus keyboard in a simulator (#637).
+"""Offer a demo voice-note transcript to the Ouispr keyboard in a simulator (#637).
 
 Usage: inject-voice-note.py <udid> <language> <duration-seconds> "<transcript>"
        inject-voice-note.py <udid> --hide
 
-Writes one delivery file where DictusApp writes it after a shared voice note is
+Writes one delivery file where OuisprApp writes it after a shared voice note is
 transcribed (VoiceNoteKeyboardDeliveryStore: VoiceNotes/KeyboardDelivery/
 Deliveries/<id>.json), then posts voiceNoteResultReady. The shipping keyboard
 shows its chip; tapping the chip (axe tap --tap-style physical) opens the real
@@ -36,7 +36,7 @@ def group_root(udid):
     for line in out.splitlines():
         if line.startswith("group.solutions.pivi.dictus"):
             return os.path.join(line.split("\t", 1)[1], "VoiceNotes", "KeyboardDelivery")
-    raise SystemExit("App Group not found: install and launch Dictus first")
+    raise SystemExit("App Group not found: install and launch Ouispr first")
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
     with open(os.path.join(folder, f"{DEMO_ID}.json"), "w") as f:
         json.dump(delivery, f)
     subprocess.run(["xcrun", "simctl", "spawn", udid, "notifyutil", "-p",
-                    "com.pivi.dictus.voiceNoteResultReady"], check=True)
+                    "com.pivi.ouispr.voiceNoteResultReady"], check=True)
 
 
 if __name__ == "__main__":

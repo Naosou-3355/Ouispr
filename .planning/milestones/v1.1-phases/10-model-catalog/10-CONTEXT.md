@@ -57,18 +57,18 @@ Clean up the model catalog (remove underperforming WhisperKit models), integrate
 ## Existing Code Insights
 
 ### Reusable Assets
-- `ModelInfo` (DictusCore): Current model metadata struct with identifier, displayName, sizeLabel, accuracyLabel, speedLabel, sizeBytes — needs extension for engine type and gauge values
-- `ModelManager` (DictusApp): Full download/select/delete lifecycle — needs protocol abstraction for multi-engine support
+- `ModelInfo` (OuisprCore): Current model metadata struct with identifier, displayName, sizeLabel, accuracyLabel, speedLabel, sizeBytes — needs extension for engine type and gauge values
+- `ModelManager` (OuisprApp): Full download/select/delete lifecycle — needs protocol abstraction for multi-engine support
 - `ModelManagerView` + `ModelRow`: Current UI with glass cards, download progress, state display — needs redesign for gauges
 - `TranscriptionService`: Currently WhisperKit-only — needs protocol-based engine switching
-- `SmartModelRouter` (DictusCore): Bypassed but still in codebase — candidate for cleanup or update
+- `SmartModelRouter` (OuisprCore): Bypassed but still in codebase — candidate for cleanup or update
 
 ### Established Patterns
 - App Group for cross-process state (SharedKeys.activeModel, SharedKeys.downloadedModels)
 - @MainActor + ObservableObject for model state management
 - WhisperKit.download() for HuggingFace model fetching with progress callback
 - Serial prewarm lock (one CoreML compilation at a time to avoid ANE crashes)
-- dictusGlass() modifier for card styling
+- ouisprGlass() modifier for card styling
 
 ### Integration Points
 - `ModelInfo.all` is referenced by ModelManager init and ModelManagerView ForEach — changing the catalog updates both

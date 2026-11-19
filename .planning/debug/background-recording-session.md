@@ -27,10 +27,10 @@ phase: 03-dictation-ux (gap closure + improvements)
 - `UIBackgroundModes: audio` keeps app alive with running engine
 
 **Key files changed:**
-- `DictusCore/Sources/DictusCore/DarwinNotifications.swift` — added `startRecording` notification
-- `DictusApp/DictationCoordinator.swift` — observer + pre-load + simplified pipeline
-- `DictusApp/Audio/AudioRecorder.swift` — `warmUp()`, `collectSamples()`, `configureAudioSession()`, engine state management
-- `DictusKeyboard/KeyboardState.swift` — notification-first approach with URL fallback
+- `OuisprCore/Sources/OuisprCore/DarwinNotifications.swift` — added `startRecording` notification
+- `OuisprApp/DictationCoordinator.swift` — observer + pre-load + simplified pipeline
+- `OuisprApp/Audio/AudioRecorder.swift` — `warmUp()`, `collectSamples()`, `configureAudioSession()`, engine state management
+- `OuisprKeyboard/KeyboardState.swift` — notification-first approach with URL fallback
 
 **Status:** Background recording WORKS after engine is warm. Pierre confirmed.
 
@@ -92,7 +92,7 @@ Task {
 **Severity:** High (UX)
 **When:** User taps mic in keyboard, app is NOT running (force-closed or killed by iOS).
 **What happens:**
-1. Keyboard opens DictusApp via URL scheme (`dictus://dictate`)
+1. Keyboard opens OuisprApp via URL scheme (`ouispr://dictate`)
 2. App opens on its main screen (settings/home) — no loading indicator
 3. WhisperKit loads in background (3-5s depending on model)
 4. Recording starts silently — user doesn't know it's happening
@@ -112,8 +112,8 @@ Super Whisper and Wispr Flow both return the user to the previous app automatica
 
 #### 1b. Loading/feedback screen when app opens from keyboard
 If auto-return can't be solved, the UX needs improvement:
-- **In-app:** Show a dedicated "loading" screen when opened via `dictus://dictate` — progress indicator + "WhisperKit is loading..." message + "You can return to your keyboard" instruction
-- **In-keyboard:** Before opening URL, show a brief message like "Opening Dictus... Please return here after" so the user knows what to expect
+- **In-app:** Show a dedicated "loading" screen when opened via `ouispr://dictate` — progress indicator + "WhisperKit is loading..." message + "You can return to your keyboard" instruction
+- **In-keyboard:** Before opening URL, show a brief message like "Opening Ouispr... Please return here after" so the user knows what to expect
 - **After recording starts:** Show "Recording in progress — tap ◄ Back to return to your keyboard"
 
 **Priority:** Research auto-return first (1a). If not feasible, implement the loading/feedback UX (1b) as a fallback.
@@ -130,7 +130,7 @@ If auto-return can't be solved, the UX needs improvement:
 ## Architecture Overview (Current State)
 
 ```
-[Keyboard Extension]                    [DictusApp]
+[Keyboard Extension]                    [OuisprApp]
 
 KeyboardState.startRecording()          DictationCoordinator.init()
   |                                       |
@@ -139,7 +139,7 @@ KeyboardState.startRecording()          DictationCoordinator.init()
   |                                       |   (engine starts idle)
   +-- 500ms timeout:                      |
       if still .requested                 Observes:
-        -> openURL(dictus://dictate)      - startRecording notification
+        -> openURL(ouispr://dictate)      - startRecording notification
                                           - stopRecording notification
                                           - cancelRecording notification
 
@@ -164,12 +164,12 @@ Stop flow:                              stopDictation()
 
 | File | Changes |
 |------|---------|
-| `DictusCore/.../DarwinNotifications.swift` | Added `startRecording` notification |
-| `DictusApp/DictationCoordinator.swift` | Background recording observer, pre-load, removed SmartModelRouter, removed suspend |
-| `DictusApp/Audio/AudioRecorder.swift` | `warmUp()`, `collectSamples()`, `configureAudioSession()`, `isEngineRunning`, model switch handling |
-| `DictusApp/DictusApp.swift` | Simplified URL handler |
-| `DictusKeyboard/KeyboardState.swift` | Notification-first + URL fallback, duplicate insertion fix |
-| `DictusKeyboard/KeyboardRootView.swift` | Toolbar hidden during recording |
+| `OuisprCore/.../DarwinNotifications.swift` | Added `startRecording` notification |
+| `OuisprApp/DictationCoordinator.swift` | Background recording observer, pre-load, removed SmartModelRouter, removed suspend |
+| `OuisprApp/Audio/AudioRecorder.swift` | `warmUp()`, `collectSamples()`, `configureAudioSession()`, `isEngineRunning`, model switch handling |
+| `OuisprApp/OuisprApp.swift` | Simplified URL handler |
+| `OuisprKeyboard/KeyboardState.swift` | Notification-first + URL fallback, duplicate insertion fix |
+| `OuisprKeyboard/KeyboardRootView.swift` | Toolbar hidden during recording |
 
 ---
 

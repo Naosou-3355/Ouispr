@@ -487,7 +487,7 @@ export const voicePath = (pose: Pose): Path => {
   const mid = (k: number): P => [s0[0] + (edge[0] - s0[0]) * k, s0[1] + (edge[1] - s0[1]) * k - 10 * Math.sin(Math.PI * k)];
   return pathOf([s0, mid(1 / 3), mid(2 / 3), edge, into], 20);
 };
-// Her voice as the Dictus waveform crossing the gap (Pierre's pick in round 7, over the App Store
+// Her voice as the Ouispr waveform crossing the gap (Pierre's pick in round 7, over the App Store
 // art's marker strokes): small rounded bars, upright, ride the path from her lips into the phone,
 // born small, swelling mid-way with her speech, shrinking as they reach it. The row moves 17
 // bar-spacings a loop, in the blues of the BrandWaveform's centre.

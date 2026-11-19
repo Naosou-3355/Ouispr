@@ -6,9 +6,9 @@
 <domain>
 ## Phase Boundary
 
-Guarantee that transcribed text reaches the host app's text field on every dictation, across all existing insertion paths (warm insert via Darwin notification, cold start Audio Bridge, chained recording). When insertion fails anyway, surface the failure loudly so the user can recover the transcription from DictusApp and so the failure is diagnosable from logs.
+Guarantee that transcribed text reaches the host app's text field on every dictation, across all existing insertion paths (warm insert via Darwin notification, cold start Audio Bridge, chained recording). When insertion fails anyway, surface the failure loudly so the user can recover the transcription from OuisprApp and so the failure is diagnosable from logs.
 
-In scope: `KeyboardState.handleTranscriptionReady` and the cold start Audio Bridge insertion path, diagnostic instrumentation, retry logic, user-facing failure UX, DictusApp retrieval surface, verification on real device.
+In scope: `KeyboardState.handleTranscriptionReady` and the cold start Audio Bridge insertion path, diagnostic instrumentation, retry logic, user-facing failure UX, OuisprApp retrieval surface, verification on real device.
 
 Out of scope: Any redesign of the Darwin notification trigger, the App Group transport, or the recording pipeline. New capabilities (history, cloud sync, auto-paste to other apps). Telemetry escalation flows.
 
@@ -34,11 +34,11 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 - Existing 100ms UserDefaults retry stays (it solves a different problem: App Group propagation lag).
 
 ### Loud-fail UX
-- **Dynamic Island:** error icon + short `Dictus` label (expanded view: short error line). Does not carry the actionable recovery message.
-- **Toolbar banner:** reuses existing error-banner pattern. Actionable copy pointing to DictusApp. Auto-hide after **4 seconds**. Accompanied by error haptic via `HapticFeedback`.
-  - FR: `Insertion impossible. Retrouvez votre transcription dans Dictus.`
-  - EN: `Couldn't insert. Find your transcription in Dictus.`
-- **DictusApp home:** dedicated "last transcription" card always visible when a recent transcription exists in the App Group. Shows the text (or a preview) and a copy-to-clipboard button. This is the recovery surface users are directed to.
+- **Dynamic Island:** error icon + short `Ouispr` label (expanded view: short error line). Does not carry the actionable recovery message.
+- **Toolbar banner:** reuses existing error-banner pattern. Actionable copy pointing to OuisprApp. Auto-hide after **4 seconds**. Accompanied by error haptic via `HapticFeedback`.
+  - FR: `Insertion impossible. Retrouvez votre transcription dans Ouispr.`
+  - EN: `Couldn't insert. Find your transcription in Ouispr.`
+- **OuisprApp home:** dedicated "last transcription" card always visible when a recent transcription exists in the App Group. Shows the text (or a preview) and a copy-to-clipboard button. This is the recovery surface users are directed to.
 - No auto-copy to system pasteboard (privacy + surprise behavior).
 - No repeated-failure escalation in v1 — ship minimal, observe real-world rate via logs, revisit later if needed.
 
@@ -68,14 +68,14 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 - GitHub issue #118 — full repro logs, hypotheses (stale `textDocumentProxy`), proposed pre/post probe sketch, related closed issues (#45, #16)
 
 ### Insertion code paths
-- `DictusKeyboard/KeyboardState.swift` (handleTranscriptionReady at ~line 328; warm insertion path at :341; 100ms retry path at :363-383)
-- `DictusKeyboard/KeyboardViewController.swift` — controller lifecycle, `textDidChange` integration, cold start wiring
-- `DictusKeyboard/DictusKeyboardBridge.swift` — text-proxy utility access points (context reads, corrections, predictions)
+- `OuisprKeyboard/KeyboardState.swift` (handleTranscriptionReady at ~line 328; warm insertion path at :341; 100ms retry path at :363-383)
+- `OuisprKeyboard/KeyboardViewController.swift` — controller lifecycle, `textDidChange` integration, cold start wiring
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` — text-proxy utility access points (context reads, corrections, predictions)
 
 ### Logging + feedback
-- `DictusCore/PersistentLog.swift` (and `LogEvent` definitions) — existing structured log event system the probe must plug into
-- `DictusKeyboard/Views/ToolbarView.swift` — existing toolbar error-banner pattern the loud-fail UX reuses
-- `DictusKeyboard/HapticFeedback.swift` — error haptic API (`HapticFeedback.textInserted()` shows the existing success pattern)
+- `OuisprCore/PersistentLog.swift` (and `LogEvent` definitions) — existing structured log event system the probe must plug into
+- `OuisprKeyboard/Views/ToolbarView.swift` — existing toolbar error-banner pattern the loud-fail UX reuses
+- `OuisprKeyboard/HapticFeedback.swift` — error haptic API (`HapticFeedback.textInserted()` shows the existing success pattern)
 
 ### Architecture context
 - `.planning/PROJECT.md` Key Decisions — two-process architecture (keyboard ↔ app via App Group)
@@ -92,7 +92,7 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 - Toolbar error-banner pattern in `ToolbarView.swift` — reuse for the loud-fail message. Pattern is already familiar to users for other error states.
 - `HapticFeedback` service — add/reuse an error haptic; `textInserted()` shows the existing idiom.
 - 100ms UserDefaults-lag retry at `KeyboardState.swift:363` — separate problem (App Group propagation), leave in place; the new retry layer addresses proxy-disconnect silent drops.
-- DictusApp home screen — already receives transcriptions via App Group; extend with a persistent "last transcription" card.
+- OuisprApp home screen — already receives transcriptions via App Group; extend with a persistent "last transcription" card.
 
 ### Established Patterns
 - Darwin notification + UserDefaults `SharedKeys.lastTranscription` → clear-before-insert to prevent duplicates (keep this pattern, do not touch).
@@ -104,7 +104,7 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 - Cold start Audio Bridge insertion (in `KeyboardViewController` / `KeyboardState`) — second call site for the same helper.
 - `ToolbarView` — new banner state for "insertion failed" alongside existing error states.
 - `KeyboardRootView` — may need to surface the failure banner state from `KeyboardState` to the toolbar.
-- DictusApp root view — new "last transcription" card reading from App Group.
+- OuisprApp root view — new "last transcription" card reading from App Group.
 - Dynamic Island activity — extend existing DI state machine with an "insertion failed" variant (brief, auto-dismiss with transcribing end).
 
 </code_context>
@@ -114,7 +114,7 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 
 - Treat the probe's output as the primary evidence for closing issue #118 — success criterion #1 ("50 consecutive dictations no silent drops") is verified by probe logs, not by user perception.
 - Toolbar banner copy must be actionable (tell the user where to recover the text), not just informational ("Transcription non insérée" alone is rejected — user would assume the text is lost).
-- The "last transcription" card in DictusApp is the real recovery surface; the banner is only a nudge. Card must always reflect the most recent transcription that exists in the App Group.
+- The "last transcription" card in OuisprApp is the real recovery surface; the banner is only a nudge. Card must always reflect the most recent transcription that exists in the App Group.
 - Privacy bar: the probe never logs raw transcription text or document context strings. Counts, booleans, timings, identifiers only.
 
 </specifics>
@@ -122,9 +122,9 @@ Out of scope: Any redesign of the Darwin notification trigger, the App Group tra
 <deferred>
 ## Deferred Ideas
 
-- Tappable banner → URL-scheme deep-link into DictusApp "last transcription" view. Considered, kept out of scope for v1 (adds URL scheme handling + routing). Revisit if banner-tap rate is low in telemetry.
+- Tappable banner → URL-scheme deep-link into OuisprApp "last transcription" view. Considered, kept out of scope for v1 (adds URL scheme handling + routing). Revisit if banner-tap rate is low in telemetry.
 - Repeated-failure escalation (Full Access nudge, anonymous failure counter, "reinstall keyboard" hint). Out of scope for v1 — will reconsider once real-world failure rate is measured from the probe.
-- Transcription history view in DictusApp. Out of scope — premium/Pro scope per `.planning/REQUIREMENTS.md` Out of Scope table (#70).
+- Transcription history view in OuisprApp. Out of scope — premium/Pro scope per `.planning/REQUIREMENTS.md` Out of Scope table (#70).
 - Queue-on-resume for transcriptions that land while the keyboard is suspended. Rejected after weighing wrong-field / stale-flush / password-field hazards.
 - Automated XCUITest harness for the 3 insertion paths. Deferred — manual scripted run chosen for v1 velocity; revisit if regressions recur.
 

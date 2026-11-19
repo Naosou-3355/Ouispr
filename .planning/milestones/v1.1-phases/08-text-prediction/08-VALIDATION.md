@@ -18,9 +18,9 @@ created: 2026-03-09
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (built-in) via Swift Package Manager |
-| **Config file** | DictusCore/Package.swift (testTarget with Fixtures resources) |
-| **Quick run command** | `cd DictusCore && swift test --filter FrequencyDictionaryTests 2>&1 \| tail -10` |
-| **Full suite command** | `cd DictusCore && swift test 2>&1 \| tail -30` |
+| **Config file** | OuisprCore/Package.swift (testTarget with Fixtures resources) |
+| **Quick run command** | `cd OuisprCore && swift test --filter FrequencyDictionaryTests 2>&1 \| tail -10` |
+| **Full suite command** | `cd OuisprCore && swift test 2>&1 \| tail -30` |
 | **Estimated runtime** | ~10 seconds |
 
 ---
@@ -28,7 +28,7 @@ created: 2026-03-09
 ## Sampling Rate
 
 - **After every task commit:** Run quick command (FrequencyDictionaryTests)
-- **After every plan wave:** Run full DictusCore test suite
+- **After every plan wave:** Run full OuisprCore test suite
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 10 seconds
 
@@ -38,11 +38,11 @@ created: 2026-03-09
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 08-01-T1 | 01 | 1 | PRED-01 | unit | `cd DictusCore && swift test --filter FrequencyDictionaryTests` | Created in task | ⬜ pending |
-| 08-01-T2 | 01 | 1 | PRED-01, PRED-02, PRED-03 | build | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
-| 08-01-T3 | 01 | 1 | PRED-01 | data | `python3 -c "import json; fr=json.load(open('DictusKeyboard/Resources/fr_frequency.json')); assert len(fr) > 1000"` | N/A (data verify) | ⬜ pending |
-| 08-02-T1 | 02 | 2 | PRED-01, PRED-03 | build | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
-| 08-02-T2 | 02 | 2 | PRED-02 | build | `xcodebuild build -scheme Dictus -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
+| 08-01-T1 | 01 | 1 | PRED-01 | unit | `cd OuisprCore && swift test --filter FrequencyDictionaryTests` | Created in task | ⬜ pending |
+| 08-01-T2 | 01 | 1 | PRED-01, PRED-02, PRED-03 | build | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
+| 08-01-T3 | 01 | 1 | PRED-01 | data | `python3 -c "import json; fr=json.load(open('OuisprKeyboard/Resources/fr_frequency.json')); assert len(fr) > 1000"` | N/A (data verify) | ⬜ pending |
+| 08-02-T1 | 02 | 2 | PRED-01, PRED-03 | build | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
+| 08-02-T2 | 02 | 2 | PRED-02 | build | `xcodebuild build -scheme Ouispr -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | N/A (build verify) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -52,9 +52,9 @@ created: 2026-03-09
 
 All Wave 0 test files are created within Plan 01 Task 1 (not a separate plan):
 
-- [x] `DictusCore/Tests/DictusCoreTests/FrequencyDictionaryTests.swift` — covers dictionary loading, ranking, case insensitivity, invalid data
-- [x] `DictusCore/Tests/DictusCoreTests/Fixtures/fr_frequency_test.json` — test fixture with ~20 French words
-- [x] `DictusCore/Package.swift` updated with `resources: [.copy("Fixtures")]` for test bundle
+- [x] `OuisprCore/Tests/OuisprCoreTests/FrequencyDictionaryTests.swift` — covers dictionary loading, ranking, case insensitivity, invalid data
+- [x] `OuisprCore/Tests/OuisprCoreTests/Fixtures/fr_frequency_test.json` — test fixture with ~20 French words
+- [x] `OuisprCore/Package.swift` updated with `resources: [.copy("Fixtures")]` for test bundle
 
 Note: TextPredictionEngine uses UITextChecker (UIKit) which cannot be tested in SPM's macOS test runner. Behavioral verification of TextPredictionEngine relies on simulator build verification + manual testing (see Manual-Only Verifications below). FrequencyDictionary is the testable pure-logic component and has full unit test coverage.
 

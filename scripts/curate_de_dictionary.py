@@ -42,7 +42,7 @@ import urllib.request
 
 HERMITDAVE_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/de/de_50k.txt"
 TXT_FILE = "de_50k.txt"
-OUTPUT = os.path.join(os.path.dirname(__file__), "..", "DictusKeyboard", "Resources", "de_frequency.json")
+OUTPUT = os.path.join(os.path.dirname(__file__), "..", "OuisprKeyboard", "Resources", "de_frequency.json")
 
 # Minimum frequency multiplier of an umlaut variant over the unaccented input
 # required to drop the unaccented form. 5x mirrors AccentExpander's dominance
@@ -60,7 +60,7 @@ GERMAN_SINGLE_ACCENTS = {
 }
 
 # Two-character sequences that collapse to a single German character. Mirrors
-# `germanProfile.collapseRules` in DictusCore/Sources/DictusCore/Languages/German.swift
+# `germanProfile.collapseRules` in OuisprCore/Sources/OuisprCore/Languages/German.swift
 # one for one — the curation and the runtime expander must agree on what counts
 # as a transliteration, or a word gets dropped here that the expander can never
 # reconstruct (or the reverse, which is issue #326).

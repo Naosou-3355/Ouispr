@@ -26,21 +26,21 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Models/ModelManager.swift
-    - DictusApp/Views/ModelManagerView.swift
+    - OuisprApp/Models/ModelManager.swift
+    - OuisprApp/Views/ModelManagerView.swift
   modified:
-    - DictusApp/Audio/TranscriptionService.swift
-    - DictusApp/DictationCoordinator.swift
-    - DictusApp/ContentView.swift
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - DictusCore/Sources/DictusCore/SmartModelRouter.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprApp/Audio/TranscriptionService.swift
+    - OuisprApp/DictationCoordinator.swift
+    - OuisprApp/ContentView.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - OuisprCore/Sources/OuisprCore/SmartModelRouter.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Serial model prewarming instead of parallel — ANE crashes when multiple CoreML compilations run concurrently"
   - "Removed large-v3-turbo from model list — ANE incompatible on many devices, no software fix possible"
   - "Added explicit delete button alongside swipe — swipe-to-delete not discoverable for most users"
-  - "Double-start guard on dictus://dictate — iOS sometimes sends duplicate URL opens"
+  - "Double-start guard on ouispr://dictate — iOS sometimes sends duplicate URL opens"
 
 patterns-established:
   - "Serial CoreML prewarming: prewarm models one at a time to prevent ANE resource contention"
@@ -86,20 +86,20 @@ Post-checkpoint bugfixes:
 - `9cbc243` (fix) - Remove large-v3-turbo model (ANE incompatible)
 
 ## Files Created/Modified
-- `DictusApp/Models/ModelManager.swift` - Full model lifecycle manager (download, select, delete, App Group persistence)
-- `DictusApp/Views/ModelManagerView.swift` - Model list UI with download progress, active selection, delete confirmation
-- `DictusApp/Audio/TranscriptionService.swift` - Added FillerWordFilter integration
-- `DictusApp/DictationCoordinator.swift` - Added SmartModelRouter integration, double-start guard
-- `DictusApp/ContentView.swift` - Navigation to Model Manager screen
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Removed large-v3-turbo, made Identifiable
-- `DictusCore/Sources/DictusCore/SmartModelRouter.swift` - Minor adjustment for model list
-- `Dictus.xcodeproj/project.pbxproj` - Registered new files
+- `OuisprApp/Models/ModelManager.swift` - Full model lifecycle manager (download, select, delete, App Group persistence)
+- `OuisprApp/Views/ModelManagerView.swift` - Model list UI with download progress, active selection, delete confirmation
+- `OuisprApp/Audio/TranscriptionService.swift` - Added FillerWordFilter integration
+- `OuisprApp/DictationCoordinator.swift` - Added SmartModelRouter integration, double-start guard
+- `OuisprApp/ContentView.swift` - Navigation to Model Manager screen
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Removed large-v3-turbo, made Identifiable
+- `OuisprCore/Sources/OuisprCore/SmartModelRouter.swift` - Minor adjustment for model list
+- `Ouispr.xcodeproj/project.pbxproj` - Registered new files
 
 ## Decisions Made
 - Serial model prewarming instead of parallel — ANE crashes when multiple CoreML compilations run concurrently
 - Removed large-v3-turbo from available models — ANE incompatible on many devices (TextDecoder too large for Neural Engine), no software fix possible
 - Added explicit delete button alongside swipe-to-delete — swipe gesture not discoverable enough
-- Added double-start guard on dictus://dictate URL handling — iOS sometimes fires duplicate URL open events
+- Added double-start guard on ouispr://dictate URL handling — iOS sometimes fires duplicate URL open events
 
 ## Deviations from Plan
 
@@ -109,35 +109,35 @@ Post-checkpoint bugfixes:
 - **Found during:** Post-checkpoint device testing
 - **Issue:** `deletingLastPathComponent()` on model path removed one directory too many, failing to delete model files
 - **Fix:** Corrected path calculation for model directory deletion
-- **Files modified:** DictusApp/Models/ModelManager.swift
+- **Files modified:** OuisprApp/Models/ModelManager.swift
 - **Committed in:** e696ff2
 
-**2. [Rule 1 - Bug] Duplicate dictus://dictate URL caused double-start**
+**2. [Rule 1 - Bug] Duplicate ouispr://dictate URL caused double-start**
 - **Found during:** Post-checkpoint device testing
 - **Issue:** iOS sends duplicate URL open events, causing DictationCoordinator to start recording twice
 - **Fix:** Added guard to ignore dictate requests while already recording/transcribing
-- **Files modified:** DictusApp/DictationCoordinator.swift
+- **Files modified:** OuisprApp/DictationCoordinator.swift
 - **Committed in:** e696ff2
 
 **3. [Rule 1 - Bug] Parallel CoreML prewarming crashed ANE**
 - **Found during:** Post-checkpoint device testing
 - **Issue:** Prewarming multiple models concurrently caused Neural Engine resource contention and crashes
 - **Fix:** Serialized prewarming — models are prewarmed one at a time in sequence
-- **Files modified:** DictusApp/Models/ModelManager.swift
+- **Files modified:** OuisprApp/Models/ModelManager.swift
 - **Committed in:** bf356a7
 
 **4. [Rule 2 - Missing Critical] No delete option for failed model downloads**
 - **Found during:** Post-checkpoint device testing
 - **Issue:** Models stuck in error state had no way to be removed or retried
 - **Fix:** Added explicit delete button visible for error-state models
-- **Files modified:** DictusApp/Views/ModelManagerView.swift
+- **Files modified:** OuisprApp/Views/ModelManagerView.swift
 - **Committed in:** c73b8cd
 
 **5. [Rule 1 - Bug] large-v3-turbo ANE incompatibility**
 - **Found during:** Post-checkpoint device testing
 - **Issue:** openai_whisper-large-v3_turbo fails ANE compilation on many devices (TextDecoder.mlmodelc too large)
 - **Fix:** Removed from ModelInfo.all — model is not usable on most hardware
-- **Files modified:** DictusCore/Sources/DictusCore/ModelInfo.swift, DictusCoreTests/ModelInfoTests.swift
+- **Files modified:** OuisprCore/Sources/OuisprCore/ModelInfo.swift, OuisprCoreTests/ModelInfoTests.swift
 - **Committed in:** 9cbc243
 
 ---

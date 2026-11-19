@@ -28,7 +28,7 @@ Jump to [Findings](#findings), [the measured results](#q1b-q2-q3--measured-on-de
 
 [#315](https://github.com/getdictus/dictus-ios/issues/315) established, first from Apple's documentation and then from a controlled device experiment on 2026-08-13, that `LanguageModelSession.GenerationError.rateLimited` is a **per-call decision applied to backgrounded processes**. The same process, seconds apart, is refused when backgrounded and served in ~800 ms when active. A foreground visit does not refund the budget; only a fresh process resets it.
 
-DictusApp is backgrounded for every polish call by design — the keyboard extension holds the screen while the app records, transcribes and polishes behind it. So polish runs in the one state Apple deprioritises, on every single dictation.
+OuisprApp is backgrounded for every polish call by design — the keyboard extension holds the screen while the app records, transcribes and polishes behind it. So polish runs in the one state Apple deprioritises, on every single dictation.
 
 **The keyboard extension is in the foreground at exactly the moment polish would run.** If the extension's process is treated as foreground by this limiter, the problem stops existing rather than needing to be handled.
 
@@ -53,12 +53,12 @@ Every claim in the findings carries one, and the label is part of the claim.
 
 ## The constraint that shapes this plan
 
-`docs/agents/simulator.md` §7 establishes **by experiment, not by assumption**, that the Dictus keyboard cannot be enabled in any iOS simulator. Four methods were tried and all four failed; the extension registers with the plug-in system but never appears in `UITextInputMode.activeInputModes`.
+`docs/agents/simulator.md` §7 establishes **by experiment, not by assumption**, that the Ouispr keyboard cannot be enabled in any iOS simulator. Four methods were tried and all four failed; the extension registers with the plug-in system but never appears in `UITextInputMode.activeInputModes`.
 
 Therefore:
 
 - **Q2 and Q3 are not measurable by an agent on this machine.** They require the extension's process to actually run.
-- **An app-target measurement cannot stand in for either.** The entire question is whether the *extension's process* is treated differently from the app's. Running the same code in DictusApp answers nothing, and reporting it as an extension result would be worse than reporting nothing.
+- **An app-target measurement cannot stand in for either.** The entire question is whether the *extension's process* is treated differently from the app's. Running the same code in OuisprApp answers nothing, and reporting it as an extension result would be worse than reporting nothing.
 - Q4 likewise requires a live extension.
 
 So this spike splits into **what is answerable now by build and by SDK** (Q1's static half), and **a probe plus a written procedure** for everything else. The probe is the deliverable for Q2/Q3/Q4; the answers arrive when the maintainer runs it.
@@ -79,10 +79,10 @@ This question has a static half and a runtime half, and **they are not the same 
 
 | | Criterion |
 | --- | --- |
-| **YES** | (i) `FoundationModels.swiftinterface` in the iOS SDK carries no `iOSApplicationExtension, unavailable` annotation, **and** that grep is calibrated against a framework in the same SDK where the annotation does appear, so a null result is a real absence and not a broken method; **and** (ii) the `DictusKeyboard` target compiles and links a real `LanguageModelSession` call. |
+| **YES** | (i) `FoundationModels.swiftinterface` in the iOS SDK carries no `iOSApplicationExtension, unavailable` annotation, **and** that grep is calibrated against a framework in the same SDK where the annotation does appear, so a null result is a real absence and not a broken method; **and** (ii) the `OuisprKeyboard` target compiles and links a real `LanguageModelSession` call. |
 | **NO** | A compile error naming the API as unavailable in application extensions, a link failure, or a documented prohibition. |
 
-**Why (ii) is strong evidence and not merely suggestive:** `DictusKeyboard` builds with `APPLICATION_EXTENSION_API_ONLY = YES` (`Dictus.xcodeproj/project.pbxproj:1231`, `:1259`). That setting makes the compiler *enforce* extension-safety — an API marked unavailable to extensions is a hard error, not a warning. A clean build of that target is the toolchain stating that the call is permitted.
+**Why (ii) is strong evidence and not merely suggestive:** `OuisprKeyboard` builds with `APPLICATION_EXTENSION_API_ONLY = YES` (`Ouispr.xcodeproj/project.pbxproj:1231`, `:1259`). That setting makes the compiler *enforce* extension-safety — an API marked unavailable to extensions is a hard error, not a warning. A clean build of that target is the toolchain stating that the call is permitted.
 
 **A documented prohibition outranks a clean build.** If Apple documents FoundationModels as unsupported in extensions, that is the answer regardless of what compiles today.
 
@@ -101,13 +101,13 @@ The question the whole issue turns on.
 
 | | Criterion |
 | --- | --- |
-| **YES** | While DictusApp is **demonstrably** in the refusing state, a **burst of ten** generations issued from the extension succeeds with no `rateLimited`. |
+| **YES** | While OuisprApp is **demonstrably** in the refusing state, a **burst of ten** generations issued from the extension succeeds with no `rateLimited`. |
 | **NO** | The burst starts returning `rateLimited` partway through, in the same window. |
 | **INCONCLUSIVE** | The app is not actually refusing at the moment the probe runs. |
 
 Two traps, and the design is built around both.
 
-**The first is the confound that makes a single call worthless.** #315 established the budget is **per process** and only a fresh process resets it. The keyboard extension is a *different process* from DictusApp, so one successful call from it has two explanations that a single result cannot separate:
+**The first is the confound that makes a single call worthless.** #315 established the budget is **per process** and only a fresh process resets it. The keyboard extension is a *different process* from OuisprApp, so one successful call from it has two explanations that a single result cannot separate:
 
 1. the extension counts as foreground and is never limited — the hypothesis; or
 2. the extension is simply a fresh process whose background budget has never been spent, and it would have succeeded either way.
@@ -141,9 +141,9 @@ Honest limit, stated in advance: the probe can establish what happens to an in-f
 
 ### What it is
 
-A new file, `DictusKeyboard/AppleFMExtensionProbe.swift`. Throwaway diagnostic code, marked as such, following the precedent of `DictusKeyboard/KeyboardLifecycleProbe.swift` (the #281 probe): observation only, no control flow depends on it.
+A new file, `OuisprKeyboard/AppleFMExtensionProbe.swift`. Throwaway diagnostic code, marked as such, following the precedent of `OuisprKeyboard/KeyboardLifecycleProbe.swift` (the #281 probe): observation only, no control flow depends on it.
 
-It runs the **real** engine — `AppleFoundationModelsPolishEngine` from DictusCore, the shipping prompts, the real session lifecycle — on a **fixed synthetic French string**. Using the production engine is what makes the measurement transferable: it prices exactly what a future implementation would pay. Using a fixed string rather than the user's text keeps user speech out of a log that gets exported and mailed.
+It runs the **real** engine — `AppleFoundationModelsPolishEngine` from OuisprCore, the shipping prompts, the real session lifecycle — on a **fixed synthetic French string**. Using the production engine is what makes the measurement transferable: it prices exactly what a future implementation would pay. Using a fixed string rather than the user's text keeps user speech out of a log that gets exported and mailed.
 
 ### Why it is safe to leave on this branch
 
@@ -153,7 +153,7 @@ The branch may sit for a while, so the bar is that a normal dictation must be bi
 - **One-shot.** Arming is consumed on the first run, so a forgotten flag cannot turn into a probe that fires on every keyboard appearance.
 - **No allocation on the normal path.** The session, the strings and the engine are constructed only inside the armed branch. This matters because the keyboard runs under a hard memory ceiling and a `didReceiveMemoryWarning` storm is a known hazard in this codebase.
 - **One line at one existing call site.** `KeyboardRootView.onAppear`. Deliberately **not** `KeyboardViewController.swift`, `KeyboardLayouts.swift` or `Vendored/Views/KeyboardView.swift` — PR #354 is open against all three.
-- **No new `LogEvent` case.** It reports through the existing `.diagnosticProbe(component:instanceID:action:details:)` event, so `DictusCore` is untouched and nothing has to be kept decoding later.
+- **No new `LogEvent` case.** It reports through the existing `.diagnosticProbe(component:instanceID:action:details:)` event, so `OuisprCore` is untouched and nothing has to be kept decoding later.
 
 ### Arming surface
 
@@ -220,10 +220,10 @@ The method detects the annotation when it is present. Its absence from Foundatio
 
 ### 3. The extension target builds, under a setting proven to bite **[build]**
 
-`DictusKeyboard` builds with `APPLICATION_EXTENSION_API_ONLY = YES` — confirmed *in effect*, not merely read out of the pbxproj:
+`OuisprKeyboard` builds with `APPLICATION_EXTENSION_API_ONLY = YES` — confirmed *in effect*, not merely read out of the pbxproj:
 
 ```console
-$ xcodebuild -project Dictus.xcodeproj -target DictusKeyboard -configuration Debug -showBuildSettings
+$ xcodebuild -project Ouispr.xcodeproj -target OuisprKeyboard -configuration Debug -showBuildSettings
     APPLICATION_EXTENSION_API_ONLY = YES
     PRODUCT_BUNDLE_IDENTIFIER = com.pivi.dictus.keyboard
 ```
@@ -232,7 +232,7 @@ That setting makes extension-unsafe API a hard compile error. With `AppleFMExten
 
 ```console
 $ ./scripts/patch-fluidaudio-swift5.sh build/DerivedDataDevice
-$ xcodebuild build -project Dictus.xcodeproj -scheme DictusKeyboard -configuration Debug \
+$ xcodebuild build -project Ouispr.xcodeproj -scheme OuisprKeyboard -configuration Debug \
     -destination 'generic/platform=iOS' -derivedDataPath build/DerivedDataDevice \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_IDENTITY=""
 ** BUILD SUCCEEDED **
@@ -241,7 +241,7 @@ $ xcodebuild build -project Dictus.xcodeproj -scheme DictusKeyboard -configurati
 **The negative control matters more than the build itself.** A green build under a setting that was silently inert would be worthless, so the setting was tested directly. Temporarily adding `UIApplication.shared.applicationState` to the very same file, in the same target:
 
 ```
-DictusKeyboard/AppleFMExtensionProbe.swift:92:27: error: 'shared' is unavailable in
+OuisprKeyboard/AppleFMExtensionProbe.swift:92:27: error: 'shared' is unavailable in
 application extensions for iOS: Use view controller based solutions where appropriate
 instead.
 ** BUILD FAILED **
@@ -254,8 +254,8 @@ instead.
 Compiling is not linking. The built `.appex`, device SDK:
 
 ```console
-$ otool -L build/DerivedDataDevice/Build/Products/Debug-iphoneos/DictusApp.app/
-    PlugIns/DictusKeyboard.appex/DictusKeyboard.debug.dylib | grep -i foundationmodels
+$ otool -L build/DerivedDataDevice/Build/Products/Debug-iphoneos/OuisprApp.app/
+    PlugIns/OuisprKeyboard.appex/OuisprKeyboard.debug.dylib | grep -i foundationmodels
 	/System/Library/Frameworks/FoundationModels.framework/FoundationModels
 	    (compatibility version 1.0.0, current version 1.4.34, weak)
 ```
@@ -268,7 +268,7 @@ static FoundationModels.SystemLanguageModel.default.getter
 enum case for FoundationModels.LanguageModelSession.GenerationError.rateLimited(…)
 ```
 
-A note for whoever repeats this: in a Debug configuration the `.appex`'s main binary is a stub and the code lives in `DictusKeyboard.debug.dylib` beside it. `otool -L` on the stub lists no frameworks and looks like a negative result. Check the dylib.
+A note for whoever repeats this: in a Debug configuration the `.appex`'s main binary is a stub and the code lives in `OuisprKeyboard.debug.dylib` beside it. `otool -L` on the stub lists no frameworks and looks like a negative result. Check the dylib.
 
 ### 5. Apple documents no prohibition — and documents nothing at all **[doc]**
 
@@ -338,7 +338,7 @@ The criteria in [Falsifiable criteria](#falsifiable-criteria-written-before-meas
 | | Criterion as written | Result |
 | --- | --- | --- |
 | **Q1b YES** | `SystemLanguageModel.default.availability` reports `.available` inside the extension, **and** a `respond()` returns generated text | **Met.** `availability=available`, and ten responses of 463–472 characters. |
-| **Q2 YES** | While DictusApp is **demonstrably** in the refusing state, a burst of ten generations from the extension succeeds with no `rateLimited` | **Met.** Ten of ten, zero refusals, with the app's refusal pinned in the same log window. |
+| **Q2 YES** | While OuisprApp is **demonstrably** in the refusing state, a burst of ten generations from the extension succeeds with no `rateLimited` | **Met.** Ten of ten, zero refusals, with the app's refusal pinned in the same log window. |
 | **Q2 INCONCLUSIVE** | The app is not actually refusing when the probe runs | **Excluded**, by the four refusals at 07:28:18–07:28:52 and the export. |
 | **Q3 ROOM** | Peak stays clearly below the ceiling with the keyboard's footprint loaded, no memory warning, no process death | **Met at 15 MB baseline only.** 22 MB peak, all ten calls completed, no kill. **The "with the keyboard's footprint already loaded" half was not satisfied — see the caveat.** |
 | **Q4** | Start line with no completion line means the process died in flight | **Not run.** |
@@ -352,7 +352,7 @@ This is the result #315 was waiting on, and it makes the mechanism plain: Apple'
 **How strong: strong, not airtight.** Two things support it and one bounds it.
 
 - The app latches after roughly a dozen calls in a dense session; the extension took ten back-to-back without a single refusal or any sign of degradation — call 10 was as fast as call 1. Under the "fresh process, unspent budget" alternative the burst should have started refusing partway through, as the app does. It did not.
-- **The second argument, which survives even if the first is soft.** Suppose the extension does have its own background budget. It would still not produce the app's failure mode, because iOS tears down and recreates keyboard extensions constantly during normal use — this project has measured roughly nine controller instances across a dictation. A budget that resets that often never accumulates. What makes the limit a *product* problem in DictusApp is precisely that the app process persists for a whole working session and its budget never refills; that condition does not exist in the extension.
+- **The second argument, which survives even if the first is soft.** Suppose the extension does have its own background budget. It would still not produce the app's failure mode, because iOS tears down and recreates keyboard extensions constantly during normal use — this project has measured roughly nine controller instances across a dictation. A budget that resets that often never accumulates. What makes the limit a *product* problem in OuisprApp is precisely that the app process persists for a whole working session and its budget never refills; that condition does not exist in the extension.
 - **The bound.** Ten is not twenty. A 20-call burst in one extension process would settle it outright, and it is cheap now that the instrument exists. Recorded as owed work in #361.
 
 ### Q3 — 7 MB, and the caveat that matters more than the number
@@ -410,7 +410,7 @@ The procedure that produced the results above, kept because #361 needs it twice 
 1. **Drive the app into the refusing state:** polish on, one ordinary dictation every one to two minutes, for roughly twenty-five minutes.
 2. **Confirm it is actually refusing.** Settings → long-press the Version row 3 s → Polish debug. You need a run of `engineFailed` / `rateLimited` with the latest returning in single-digit milliseconds. **Skipping this is what makes a result inconclusive.**
 3. **Arm the probe** on that screen, section "#357 spike". From here on, do not force-quit the app and do not restart the phone — a fresh process resets the state being measured.
-4. **Bring the Dictus keyboard up in any text field and leave it up** for about ninety seconds. The probe fires on appearance.
+4. **Bring the Ouispr keyboard up in any text field and leave it up** for about ninety seconds. The probe fires on appearance.
 5. **Export** the persistent log (Settings → Debug log → Export) and the Polish debug JSON, which is what pins the app's state to the same window.
 
 For #361's two outstanding measurements, the changes are small and both are one-line edits to `AppleFMExtensionProbe.swift`:
@@ -422,7 +422,7 @@ For #361's two outstanding measurements, the changes are small and both are one-
 
 ## Recommendation
 
-**The direction is settled: move the polish call into the keyboard extension.** That is #361, and it should be treated as a Dictus Pro prerequisite rather than an optimisation — #315 decision 3 holds paid features to a higher reliability bar than free polish, and this is the only measured path to clearing it.
+**The direction is settled: move the polish call into the keyboard extension.** That is #361, and it should be treated as a Ouispr Pro prerequisite rather than an optimisation — #315 decision 3 holds paid features to a higher reliability bar than free polish, and this is the only measured path to clearing it.
 
 1. **Do not move #351 or #268 onto the Pro critical path.** Decision 15 of the #315 grilling suspended decision 6 on this measurement; the measurement came back yes. Apple FM is viable for #79 Smart Modes, from the extension.
 2. **Re-measure memory before committing to #361.** The 7 MB figure was taken on a 15 MB idle keyboard, and the real moment is around 55 MB. This is the one result that could still reverse the decision.

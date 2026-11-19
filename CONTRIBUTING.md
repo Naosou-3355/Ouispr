@@ -1,6 +1,6 @@
-# Contributing to Dictus
+# Contributing to Ouispr
 
-Thank you for your interest in contributing to Dictus! Whether you are fixing a bug, adding a feature, or improving documentation, your help is welcome. First-time contributors are encouraged.
+Thank you for your interest in contributing to Ouispr! Whether you are fixing a bug, adding a feature, or improving documentation, your help is welcome. First-time contributors are encouraged.
 
 ## How to Contribute
 
@@ -18,7 +18,7 @@ Before starting an issue, read [Issue governance and delivery](docs/ISSUE-GOVERN
 
 ## Code Conventions
 
-Dictus is built with **Swift 5.9+** and **SwiftUI**.
+Ouispr is built with **Swift 5.9+** and **SwiftUI**.
 
 - **Naming**: `camelCase` for variables and functions, `PascalCase` for types and structs.
 - **One file = one responsibility** -- keep files focused.
@@ -30,20 +30,20 @@ Dictus is built with **Swift 5.9+** and **SwiftUI**.
 
 | Target | Role |
 |---|---|
-| **DictusApp** | Main app -- onboarding, settings, model manager |
-| **DictusKeyboard** | Keyboard extension -- custom keyboard + dictation trigger |
-| **DictusCore** | Shared framework -- App Group storage, models, preferences |
+| **OuisprApp** | Main app -- onboarding, settings, model manager |
+| **OuisprKeyboard** | Keyboard extension -- custom keyboard + dictation trigger |
+| **OuisprCore** | Shared framework -- App Group storage, models, preferences |
 
 ### Important Constraints
 
-- **DictusKeyboard** has a ~50 MB memory limit. Only tiny, base, and small models run in the extension.
+- **OuisprKeyboard** has a ~50 MB memory limit. Only tiny, base, and small models run in the extension.
 - **No `UIApplication.shared`** in the keyboard extension -- iOS does not allow it.
 - All shared data goes through the **App Group** (`group.solutions.pivi.dictus`).
 
 ## Running Tests
 
 ```bash
-cd DictusCore
+cd OuisprCore
 swift test
 ```
 
@@ -52,8 +52,8 @@ swift test
 Every pull request runs through GitHub Actions. Three checks run, each reported separately, and all three must pass before a PR can be merged:
 
 - **SwiftLint** -- enforces style rules defined in `.swiftlint.yml`. Runs on Linux, completes in under a minute.
-- **Build (iOS Simulator)** -- compiles the `DictusApp` scheme (which embeds `DictusKeyboard`, `DictusWidgets`, and depends on `DictusCore`) for iOS Simulator. Runs on macOS, takes 5-10 minutes.
-- **DictusCore Tests** -- runs the command above, `cd DictusCore && swift test`, on the pull request's head commit. Runs on macOS with the same Xcode as the build, no simulator.
+- **Build (iOS Simulator)** -- compiles the `OuisprApp` scheme (which embeds `OuisprKeyboard`, `OuisprWidgets`, and depends on `OuisprCore`) for iOS Simulator. Runs on macOS, takes 5-10 minutes.
+- **OuisprCore Tests** -- runs the command above, `cd OuisprCore && swift test`, on the pull request's head commit. Runs on macOS with the same Xcode as the build, no simulator.
 
 To check locally before pushing:
 
@@ -73,11 +73,11 @@ file. If you need a force unwrap, keep it and write a
 saying why the value cannot be nil — that is the project convention, not a
 workaround.
 
-The CI does **not** sign builds, run the app or the keyboard extension (no simulator, no UI tests), or upload to TestFlight. It catches broken compilations, style regressions and `DictusCore` test failures. A green CI is not a device test: keyboard behaviour still has to be checked on a physical iPhone.
+The CI does **not** sign builds, run the app or the keyboard extension (no simulator, no UI tests), or upload to TestFlight. It catches broken compilations, style regressions and `OuisprCore` test failures. A green CI is not a device test: keyboard behaviour still has to be checked on a physical iPhone.
 
 ## Adding an App to Auto-Return
 
-After a dictation, Dictus returns the user to the app they were typing in, if that app is in the catalogue in `KnownAppSchemes.swift`. To add one, follow [docs/auto-return-catalogue.md](docs/auto-return-catalogue.md). An entry needs a resume test on a device first.
+After a dictation, Ouispr returns the user to the app they were typing in, if that app is in the catalogue in `KnownAppSchemes.swift`. To add one, follow [docs/auto-return-catalogue.md](docs/auto-return-catalogue.md). An entry needs a resume test on a device first.
 
 ## Pull Request Guidelines
 

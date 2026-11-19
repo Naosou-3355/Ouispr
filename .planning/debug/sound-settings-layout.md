@@ -53,5 +53,5 @@ fix: |
   2. Remove the Spacer() since .menu Picker handles inline layout
 
 files_changed:
-  - DictusApp/Views/SoundSettingsView.swift
+  - OuisprApp/Views/SoundSettingsView.swift
 verification: All three rows should show label left, compact menu picker right, play button far right

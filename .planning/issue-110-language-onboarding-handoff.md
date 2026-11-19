@@ -20,7 +20,7 @@
 ## Phase status
 
 - ✅ **Phase 0** (commit `d60bdf2`): `CONTEXT.md` + ADR 0001 (override/seed policy)
-- ✅ **Phase 1** (commit `8efda46`): `LanguageProfile` struct + algorithm helpers + `FrequencyProvider` protocol + 57 new tests + 5 stale-test fixes. **193/193 DictusCore tests pass.**
+- ✅ **Phase 1** (commit `8efda46`): `LanguageProfile` struct + algorithm helpers + `FrequencyProvider` protocol + 57 new tests + 5 stale-test fixes. **193/193 OuisprCore tests pass.**
 - ⬜ **Phase 2** (next): refactor `AOSPTrieEngine` to consume the helpers
 - ⬜ **Phase 3**: gate adaptive accent key as French-only + derive `SettingsView` picker from `SupportedLanguage.allCases`
 - ⬜ **PR1 ready**: smoke test 6 cases, push, open PR
@@ -38,14 +38,14 @@ After PR1 merges + 24-48h soak, PR2 begins.
 7. **German seed bigrams**: also empty on first ship (ADR 0001). Wikipedia + OpenSubtitles + Google Books pipeline runs alone.
 8. **Settings picker UX**: leave as-is; cycle includes German automatically. Improvement tracked in #52.
 9. **Onboarding script API**: phased commands — `scaffold`, `build-dicts`, `wire-xcode`, `verify`.
-10. **Test split**: regression in `DictusCoreTests`; per-language in `Tests/Languages/<Lang>LanguageTests.swift` (one file per language). Onboard script scaffolds both.
+10. **Test split**: regression in `OuisprCoreTests`; per-language in `Tests/Languages/<Lang>LanguageTests.swift` (one file per language). Onboard script scaffolds both.
 11. **Branches**: PR1 + PR2 (see above).
 12. **TestFlight cadence**: ship after each PR merge with 24-48h soak between.
 13. **`LanguageProfile` shape**: minimal Swift-side. Python tooling stays standalone with its own `LANG_MAP` / seeds / stopwords. Code consistency verified by `onboard_language.py verify`.
-14. **`LanguageProfile` location**: `DictusCore/Sources/DictusCore/Languages/<Lang>.swift`, free-standing constants, `SupportedLanguage.profile` is a switch (compile-time exhaustive).
+14. **`LanguageProfile` location**: `OuisprCore/Sources/OuisprCore/Languages/<Lang>.swift`, free-standing constants, `SupportedLanguage.profile` is a switch (compile-time exhaustive).
 15. **Doc scope**: `docs/agents/language-onboarding.md` = reference + checklist + rationale (~150-200 lines). Post-launch quality playbook = separate issue #152.
 16. **Follow-up issues**: #151 (QWERTZ) and #152 (post-launch playbook) filed before starting work.
-17. **Test approach** (overriding the original "byte-for-byte tests on AOSPTrieEngine" plan): refactor algorithms into pure-Swift DictusCore helpers driven by a `FrequencyProvider` protocol. Algorithm tests in `DictusCoreTests` use `MockFrequencyProvider`. Bridge integration covered by manual smoke test, not by a new Xcode test target.
+17. **Test approach** (overriding the original "byte-for-byte tests on AOSPTrieEngine" plan): refactor algorithms into pure-Swift OuisprCore helpers driven by a `FrequencyProvider` protocol. Algorithm tests in `OuisprCoreTests` use `MockFrequencyProvider`. Bridge integration covered by manual smoke test, not by a new Xcode test target.
 
 ## Out of scope (do NOT pull in)
 
@@ -58,17 +58,17 @@ After PR1 merges + 24-48h soak, PR2 begins.
 ## Phase 2 work (concrete)
 
 **Touch points:**
-- `DictusKeyboard/TextPrediction/AOSPTrieEngine.swift`: replace internal `languageOverrides` dict, accent map switch, and contraction prefix list with calls to `applyOverride(profile:word:)`, `expandAccents(profile:word:provider:)`, `expandContractions(profile:word:provider:)` from DictusCore.
+- `OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift`: replace internal `languageOverrides` dict, accent map switch, and contraction prefix list with calls to `applyOverride(profile:word:)`, `expandAccents(profile:word:provider:)`, `expandContractions(profile:word:provider:)` from OuisprCore.
 - Make `AOSPTrieEngine` conform to `FrequencyProvider` (or wrap the bridge in an adapter). Methods needed: `isReady`, `frequency(of:)`, `wordExists(_:)`. Already exist on the bridge — adapt the names.
 - Public API of `AOSPTrieEngine` (`spellCheck`, `accentExpansion`, `contractionExpansion`, `languageOverride`) stays the same — internal delegation only.
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift`: replace `if language == "fr"` checks with `profile.contractionPrefixes.isEmpty` reads (or equivalent semantic).
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift`: replace `if language == "fr"` checks with `profile.contractionPrefixes.isEmpty` reads (or equivalent semantic).
 
 **Validation:**
-- 193/193 DictusCore tests still pass.
-- Full Xcode build (DictusApp + DictusKeyboard + DictusWidgets) clean.
+- 193/193 OuisprCore tests still pass.
+- Full Xcode build (OuisprApp + OuisprKeyboard + OuisprWidgets) clean.
 - Smoke test 6 cases (below) on simulator before commit.
 
-**Commit shape:** one commit, `feat(#110): AOSPTrieEngine consumes DictusCore helpers`. No behavior change for fr/en/es.
+**Commit shape:** one commit, `feat(#110): AOSPTrieEngine consumes OuisprCore helpers`. No behavior change for fr/en/es.
 
 ## Phase 3 work (concrete)
 

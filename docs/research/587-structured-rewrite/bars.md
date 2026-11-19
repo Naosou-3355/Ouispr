@@ -226,7 +226,7 @@ landed string is the benched one.
 ## 7. What is run
 
 ```sh
-cd DictusCore
+cd OuisprCore
 H="swift run polish-harness fidelity"
 A=../docs/research/587-structured-rewrite/arms/C1.txt
 O=../docs/research/587-structured-rewrite
@@ -258,7 +258,7 @@ meaning without knowing whether the shipping prompt fails the same languages.
    Scandinavian trio, Simplified/Traditional). §4 B1b says how those are reported.
 5. **The fidelity scorers are FR/EN** (#570 bars.md §9 item 3); B4 is therefore read on R1
    alone, which is French.
-6. **One speaker, one domain.** Every real fixture is Pierre talking about Dictus.
+6. **One speaker, one domain.** Every real fixture is Pierre talking about Ouispr.
 
 ## 9. Amendments made after §1–§8 were committed, and still before the first model call
 

@@ -1,6 +1,6 @@
 ---
 status: diagnosed
-trigger: "Investigate the layout overflow issues in EmojiMicroModeView for the Dictus keyboard extension"
+trigger: "Investigate the layout overflow issues in EmojiMicroModeView for the Ouispr keyboard extension"
 created: 2026-03-10T00:00:00Z
 updated: 2026-03-10T00:00:00Z
 ---
@@ -48,8 +48,8 @@ started: Since EmojiMicroModeView was created
 
 - timestamp: 2026-03-10
   checked: Globe button vs settings module
-  found: EmojiMicroModeView has a globe button (controller.advanceToNextInputMode()). Full mode's ToolbarView has a gear icon linking to dictus:// (settings). The EmojiCategoryBar already has an "ABC" dismiss button that could serve as the keyboard-switch function.
-  implication: Globe in EmojiMicroModeView toolbar should be replaced with settings gear (Link to dictus://)
+  found: EmojiMicroModeView has a globe button (controller.advanceToNextInputMode()). Full mode's ToolbarView has a gear icon linking to ouispr:// (settings). The EmojiCategoryBar already has an "ABC" dismiss button that could serve as the keyboard-switch function.
+  implication: Globe in EmojiMicroModeView toolbar should be replaced with settings gear (Link to ouispr://)
 
 - timestamp: 2026-03-10
   checked: How full mode avoids overflow
@@ -73,7 +73,7 @@ root_cause: |
      insufficient space for the grid, or the category bar itself gets clipped.
 
   3. GLOBE BUTTON: EmojiMicroModeView's toolbar has a globe button for input method switching.
-     The user wants it replaced with the settings gear (Link to dictus://) matching ToolbarView.
+     The user wants it replaced with the settings gear (Link to ouispr://) matching ToolbarView.
      The globe/input-switching function is already available via the "ABC" button in
      EmojiCategoryBar -- but in emojiMicro mode, onDismiss is a no-op, so ABC does nothing.
      Either the ABC button should become the globe (advanceToNextInputMode), or the toolbar
@@ -87,7 +87,7 @@ fix: |
   Recommended approach -- make EmojiMicroModeView mirror full mode's pattern:
 
   A) Replace the 48pt toolbar with a modified approach:
-     - Replace globe button with settings gear (Link to dictus://)
+     - Replace globe button with settings gear (Link to ouispr://)
      - Keep mic pill on the right
      - Add .clipped() to the overall VStack or EmojiPickerView container
 

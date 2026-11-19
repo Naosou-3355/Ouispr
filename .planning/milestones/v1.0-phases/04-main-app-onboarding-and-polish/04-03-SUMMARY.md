@@ -7,49 +7,49 @@ tags: [swiftui, glass-effect, waveform, dynamic-type, ios26, liquid-glass, brand
 # Dependency graph
 requires:
   - phase: 04-main-app-onboarding-and-polish
-    provides: "Design system components (GlassModifier, DictusColors, BrandWaveform, AnimatedMicButton, DictusTypography)"
+    provides: "Design system components (GlassModifier, OuisprColors, BrandWaveform, AnimatedMicButton, OuisprTypography)"
 provides:
   - "Glass styling applied to all app and keyboard surfaces"
   - "BrandWaveform replacing all old waveform views (50-bar app, 30-bar keyboard)"
   - "AnimatedMicButton wired into keyboard ToolbarView"
   - "Dynamic Type scaling via @ScaledMetric throughout keyboard extension"
   - "Brand colors replacing all hardcoded Color literals"
-  - "Design files duplicated in DictusKeyboard/Design/ for extension target"
+  - "Design files duplicated in OuisprKeyboard/Design/ for extension target"
 affects: []
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Design file duplication for keyboard extension (cannot import DictusApp)"
+    - "Design file duplication for keyboard extension (cannot import OuisprApp)"
     - "@ScaledMetric for Dynamic Type scaling of icon and timer sizes"
     - "Conditional glass via #available(iOS 26, *) for toolbar backgrounds"
 
 key-files:
   created:
-    - "DictusKeyboard/Design/GlassModifier.swift"
-    - "DictusKeyboard/Design/DictusColors.swift"
-    - "DictusKeyboard/Design/BrandWaveform.swift"
-    - "DictusKeyboard/Design/AnimatedMicButton.swift"
-    - "DictusKeyboard/Design/DictusTypography.swift"
+    - "OuisprKeyboard/Design/GlassModifier.swift"
+    - "OuisprKeyboard/Design/OuisprColors.swift"
+    - "OuisprKeyboard/Design/BrandWaveform.swift"
+    - "OuisprKeyboard/Design/AnimatedMicButton.swift"
+    - "OuisprKeyboard/Design/OuisprTypography.swift"
   modified:
-    - "DictusApp/Views/RecordingView.swift"
-    - "DictusApp/Views/ModelManagerView.swift"
-    - "DictusApp/Views/MainTabView.swift"
-    - "DictusApp/Design/BrandWaveform.swift"
-    - "DictusKeyboard/Views/RecordingOverlay.swift"
-    - "DictusKeyboard/Views/ToolbarView.swift"
-    - "DictusKeyboard/Views/KeyButton.swift"
-    - "DictusKeyboard/Views/FullAccessBanner.swift"
-    - "Dictus.xcodeproj/project.pbxproj"
+    - "OuisprApp/Views/RecordingView.swift"
+    - "OuisprApp/Views/ModelManagerView.swift"
+    - "OuisprApp/Views/MainTabView.swift"
+    - "OuisprApp/Design/BrandWaveform.swift"
+    - "OuisprKeyboard/Views/RecordingOverlay.swift"
+    - "OuisprKeyboard/Views/ToolbarView.swift"
+    - "OuisprKeyboard/Views/KeyButton.swift"
+    - "OuisprKeyboard/Views/FullAccessBanner.swift"
+    - "Ouispr.xcodeproj/project.pbxproj"
 
 key-decisions:
   - "BrandWaveform redesigned from 3-bar to 30-bar after visual verification"
-  - "Design files copied into DictusKeyboard target (not shared via DictusCore) to avoid adding UIKit/SwiftUI dep to shared package"
+  - "Design files copied into OuisprKeyboard target (not shared via OuisprCore) to avoid adding UIKit/SwiftUI dep to shared package"
   - "AnimatedMicButton scaled to 0.45x in keyboard toolbar to fit compact 32pt space"
 
 patterns-established:
-  - "DictusKeyboard/Design/ mirrors DictusApp/Design/ -- update both when changing design components"
+  - "OuisprKeyboard/Design/ mirrors OuisprApp/Design/ -- update both when changing design components"
   - "@ScaledMetric on all fixed font sizes and icon sizes in keyboard extension"
 
 requirements-completed: [KBD-06, DSN-01, DSN-02, DSN-03, DSN-04]
@@ -75,9 +75,9 @@ completed: 2026-03-06
 - Replaced 50-bar WaveformView in RecordingView and 30-bar KeyboardWaveformView in RecordingOverlay with BrandWaveform (redesigned to 30-bar multi-bar visualizer after visual feedback)
 - AnimatedMicButton with 4-state animations (idle glow, recording pulse, transcribing shimmer, success flash) wired into keyboard ToolbarView
 - Glass modifier applied to all card surfaces, toolbar backgrounds, key buttons, and FullAccessBanner
-- All hardcoded Color literals replaced with DictusColors equivalents across modified files
+- All hardcoded Color literals replaced with OuisprColors equivalents across modified files
 - Dynamic Type support via @ScaledMetric on key font sizes, timer sizes, icon sizes in keyboard extension
-- 5 Design files duplicated into DictusKeyboard/Design/ and registered in pbxproj
+- 5 Design files duplicated into OuisprKeyboard/Design/ and registered in pbxproj
 
 ## Task Commits
 
@@ -88,24 +88,24 @@ Each task was committed atomically:
 3. **Task 3: Visual verification** - `99eb89f` (fix: waveform redesign from 3-bar to 30-bar)
 
 ## Files Created/Modified
-- `DictusApp/Views/RecordingView.swift` - Replaced WaveformView with BrandWaveform, branded colors, glass result card
-- `DictusApp/Views/ModelManagerView.swift` - DictusColors for badges/buttons, DictusTypography for model names
-- `DictusApp/Views/MainTabView.swift` - .tint(.dictusAccent) on TabView
-- `DictusApp/Design/BrandWaveform.swift` - Redesigned from 3-bar to 30-bar multi-bar visualizer
-- `DictusKeyboard/Design/GlassModifier.swift` - Copy of DictusApp/Design for extension target
-- `DictusKeyboard/Design/DictusColors.swift` - Copy of DictusApp/Design for extension target
-- `DictusKeyboard/Design/BrandWaveform.swift` - Copy (updated with 30-bar design)
-- `DictusKeyboard/Design/AnimatedMicButton.swift` - Copy of DictusApp/Design for extension target
-- `DictusKeyboard/Design/DictusTypography.swift` - Copy of DictusApp/Design for extension target
-- `DictusKeyboard/Views/RecordingOverlay.swift` - BrandWaveform replacing 30-bar KeyboardWaveformView, @ScaledMetric
-- `DictusKeyboard/Views/ToolbarView.swift` - AnimatedMicButton replacing inline mic, glass bar background
-- `DictusKeyboard/Views/KeyButton.swift` - Glass background, @ScaledMetric key font, semantic foreground
-- `DictusKeyboard/Views/FullAccessBanner.swift` - dictusGlass replacing tertiarySystemBackground, dictusAccent link
-- `Dictus.xcodeproj/project.pbxproj` - 5 new files registered under DictusKeyboard Design group
+- `OuisprApp/Views/RecordingView.swift` - Replaced WaveformView with BrandWaveform, branded colors, glass result card
+- `OuisprApp/Views/ModelManagerView.swift` - OuisprColors for badges/buttons, OuisprTypography for model names
+- `OuisprApp/Views/MainTabView.swift` - .tint(.ouisprAccent) on TabView
+- `OuisprApp/Design/BrandWaveform.swift` - Redesigned from 3-bar to 30-bar multi-bar visualizer
+- `OuisprKeyboard/Design/GlassModifier.swift` - Copy of OuisprApp/Design for extension target
+- `OuisprKeyboard/Design/OuisprColors.swift` - Copy of OuisprApp/Design for extension target
+- `OuisprKeyboard/Design/BrandWaveform.swift` - Copy (updated with 30-bar design)
+- `OuisprKeyboard/Design/AnimatedMicButton.swift` - Copy of OuisprApp/Design for extension target
+- `OuisprKeyboard/Design/OuisprTypography.swift` - Copy of OuisprApp/Design for extension target
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - BrandWaveform replacing 30-bar KeyboardWaveformView, @ScaledMetric
+- `OuisprKeyboard/Views/ToolbarView.swift` - AnimatedMicButton replacing inline mic, glass bar background
+- `OuisprKeyboard/Views/KeyButton.swift` - Glass background, @ScaledMetric key font, semantic foreground
+- `OuisprKeyboard/Views/FullAccessBanner.swift` - ouisprGlass replacing tertiarySystemBackground, ouisprAccent link
+- `Ouispr.xcodeproj/project.pbxproj` - 5 new files registered under OuisprKeyboard Design group
 
 ## Decisions Made
 - **BrandWaveform 30-bar redesign:** The original 3-bar logo-inspired waveform was too minimal for recording feedback. After visual verification, redesigned to 30 bars that still use brand colors (blue gradient center, white opacity edges) but provide better audio visualization.
-- **Design file duplication over DictusCore sharing:** Keyboard extension cannot import DictusApp. Moving design files to DictusCore would add UIKit/SwiftUI dependency to the shared package (used for SPM tests on macOS). Copying ~200 lines is the pragmatic approach.
+- **Design file duplication over OuisprCore sharing:** Keyboard extension cannot import OuisprApp. Moving design files to OuisprCore would add UIKit/SwiftUI dependency to the shared package (used for SPM tests on macOS). Copying ~200 lines is the pragmatic approach.
 - **AnimatedMicButton 0.45x scale in toolbar:** The AnimatedMicButton is designed at 72pt for the main app. Scaling to 0.45x fits the 32pt keyboard toolbar space while preserving all animation states.
 
 ## Deviations from Plan
@@ -116,7 +116,7 @@ Each task was committed atomically:
 - **Found during:** Task 3 (visual verification)
 - **Issue:** The 3-bar logo-inspired waveform was too sparse to provide meaningful audio energy feedback during recording
 - **Fix:** Redesigned BrandWaveform as a 30-bar multi-bar visualizer maintaining brand identity (blue gradient center band, white opacity edge bars, fixed frame to prevent layout shifts)
-- **Files modified:** DictusApp/Design/BrandWaveform.swift, DictusKeyboard/Design/BrandWaveform.swift
+- **Files modified:** OuisprApp/Design/BrandWaveform.swift, OuisprKeyboard/Design/BrandWaveform.swift
 - **Verification:** User approved visual result on device
 - **Committed in:** 99eb89f
 
@@ -142,7 +142,7 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-- All 5 DictusKeyboard/Design/ files: FOUND
+- All 5 OuisprKeyboard/Design/ files: FOUND
 - Commit 8de6d27 (Task 1): FOUND
 - Commit 8c389bd (Task 2): FOUND
 - Commit 99eb89f (Task 3 fix): FOUND

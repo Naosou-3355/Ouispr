@@ -6,7 +6,7 @@ tags: [swiftui, homeview, modelinfo, navigation]
 
 requires:
   - phase: 06-01
-    provides: Design tokens and DictusCore public extensions
+    provides: Design tokens and OuisprCore public extensions
 provides:
   - Clean HomeView without duplicate navigation title
   - Human-readable model display using ModelInfo lookup
@@ -19,7 +19,7 @@ tech-stack:
 
 key-files:
   created: []
-  modified: [DictusApp/Views/HomeView.swift]
+  modified: [OuisprApp/Views/HomeView.swift]
 
 key-decisions:
   - "Used onAppear loadState() rather than shared singleton to fix stale model state after onboarding"
@@ -47,7 +47,7 @@ completed: 2026-03-07
 - **Files modified:** 1
 
 ## Accomplishments
-- Removed `.navigationTitle("Dictus")` that created a duplicate white title bar above the logo section
+- Removed `.navigationTitle("Ouispr")` that created a duplicate white title bar above the logo section
 - Model card now shows "Whisper Small" + "~250 MB" instead of raw "openai_whisper-small" identifier
 - Added `.onAppear { modelManager.loadState() }` to fix stale state after onboarding completes
 
@@ -60,7 +60,7 @@ Each task was committed atomically:
 **Plan metadata:** [pending] (docs: complete plan)
 
 ## Files Created/Modified
-- `DictusApp/Views/HomeView.swift` - Removed nav title, added ModelInfo lookup for display name/size, added onAppear state refresh
+- `OuisprApp/Views/HomeView.swift` - Removed nav title, added ModelInfo lookup for display name/size, added onAppear state refresh
 
 ## Decisions Made
 - Used `onAppear { modelManager.loadState() }` rather than converting to a shared singleton -- simpler fix that addresses the root cause (separate ModelManager instances in onboarding vs home)

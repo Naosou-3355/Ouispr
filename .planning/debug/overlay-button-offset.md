@@ -46,7 +46,7 @@ started: Since RecordingOverlay was implemented
   found: |
     RecordingOverlay's recordingContent is a VStack(spacing: 0).
     First child: HStack with PillButtons, padded .padding(.horizontal, 12) .padding(.vertical, 8).
-    PillButton frame: 56x36 with .dictusGlass(in: Capsule()). No outer ring/glow effect.
+    PillButton frame: 56x36 with .ouisprGlass(in: Capsule()). No outer ring/glow effect.
 
     Vertical: 8pt top padding + 18pt (half of 36pt) = 26pt from top of overlay.
     Horizontal: The 56pt PillButton is right-aligned at 12pt from screen edge.
@@ -129,7 +129,7 @@ fix: |
           .foregroundColor(color)
           .frame(width: 56, height: 36)
           .contentShape(Rectangle())
-          .dictusGlass(in: Capsule())
+          .ouisprGlass(in: Capsule())
   }
   .buttonStyle(GlassPressStyle())
   .frame(width: 66, height: 46)  // Match AnimatedMicButton's ring frame

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Move issues on the "Dictus 2.0.0" project board (getdictus/projects/2).
+# Move issues on the "Ouispr 2.0.0" project board (getdictus/projects/2).
 #
 #   project-status.sh <in-progress|in-review> <issue-number>...
 #
@@ -21,7 +21,7 @@ OPT_IN_REVIEW="b4af331b"
 OPT_DONE="98236657"
 
 REPO_OWNER="${REPO_OWNER:-getdictus}"
-REPO_NAME="${REPO_NAME:-dictus-ios}"
+REPO_NAME="${REPO_NAME:-ouispr-ios}"
 
 target="${1:?usage: project-status.sh <in-progress|in-review> <issue>...}"
 shift

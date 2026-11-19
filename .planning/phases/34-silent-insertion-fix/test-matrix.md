@@ -35,7 +35,7 @@ created: 2026-04-15
 
 **Scenario distribution across the 50 runs:**
 - Runs 01-30: **warm path** — keyboard already up, dictate, wait for insert
-- Runs 31-40: **cold start** — force-kill DictusApp via app switcher before each run
+- Runs 31-40: **cold start** — force-kill OuisprApp via app switcher before each run
 - Runs 41-50: **rapid chained** — 2-3 dictations back-to-back in same app
 
 **Per-run procedure:**
@@ -63,7 +63,7 @@ criterion #2).
 | # | Scenario | Steps | Expected | Result | Log Evidence |
 |---|----------|-------|----------|--------|--------------|
 | 1 | Warm same-app dictation | Keyboard already up in Notes, dictate short phrase | Text lands, 1× probe `path=warmDarwin attempt=0` | ⬜ pending | — |
-| 2 | Cold start | Force-kill DictusApp, open Messages, tap mic, dictate | Text lands, 1× probe `path=coldStartBridge attempt=0` | ⬜ pending | — |
+| 2 | Cold start | Force-kill OuisprApp, open Messages, tap mic, dictate | Text lands, 1× probe `path=coldStartBridge attempt=0` | ⬜ pending | — |
 | 3 | Backgrounded keyboard | Switch app while dictation in flight, return | Either text lands OR banner+DI failure + home card updated | ⬜ pending | — |
 | 4 | Rapid chained recordings | Three back-to-back dictations in Notes | 3× text landed, 3× probe entries with distinct sessionIDs | ⬜ pending | — |
 
@@ -77,7 +77,7 @@ new helper and observed in logs (STAB-01 success criterion #3).
 | Path | How exercised | Expected log signature | Result | Notes |
 |------|---------------|------------------------|--------|-------|
 | warm Darwin | Keyboard up when Darwin notification arrives | `keyboardInsertProbe path=warmDarwin` | ⬜ pending | — |
-| cold start Audio Bridge | DictusApp killed, keyboard bridges via URL scheme, Darwin arrives post-wake | `keyboardInsertProbe path=coldStartBridge` | ⬜ pending | — |
+| cold start Audio Bridge | OuisprApp killed, keyboard bridges via URL scheme, Darwin arrives post-wake | `keyboardInsertProbe path=coldStartBridge` | ⬜ pending | — |
 | chained recording | Second dictation starts before first state fully resets | `keyboardInsertProbe` with two distinct `sessionID` values in quick succession | ⬜ pending | — |
 
 ---

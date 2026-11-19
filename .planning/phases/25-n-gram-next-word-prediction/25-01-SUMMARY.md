@@ -8,7 +8,7 @@ requires:
   - phase: 24.1-replace-symspell-with-aosp-style-compressed-trie
     provides: C++ vendored engine pattern, mmap loading, ObjC++ bridge pattern
 provides:
-  - NGRM binary format for n-gram data (dictus_ngram_format.h)
+  - NGRM binary format for n-gram data (ouispr_ngram_format.h)
   - Python pipeline to generate NGRM binaries from Google Books Ngram data
   - C++ NgramEngine with mmap loading and O(log n) binary search
   - French and English n-gram binary files (bigrams + trigrams)
@@ -22,11 +22,11 @@ tech-stack:
 key-files:
   created:
     - tools/ngram_builder.py
-    - DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram_format.h
-    - DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram.h
-    - DictusKeyboard/Vendored/AOSPTrie/src/dictus_ngram.cpp
-    - DictusKeyboard/Resources/fr_ngrams.dict
-    - DictusKeyboard/Resources/en_ngrams.dict
+    - OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram_format.h
+    - OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram.h
+    - OuisprKeyboard/Vendored/AOSPTrie/src/ouispr_ngram.cpp
+    - OuisprKeyboard/Resources/fr_ngrams.dict
+    - OuisprKeyboard/Resources/en_ngrams.dict
   modified: []
 
 key-decisions:
@@ -73,11 +73,11 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 - `tools/ngram_builder.py` - Python pipeline: downloads n-gram CSVs, processes, serializes to NGRM binary
-- `DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram_format.h` - NGRM binary format constants and NgramHeader struct
-- `DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram.h` - C++ NgramEngine class declaration
-- `DictusKeyboard/Vendored/AOSPTrie/src/dictus_ngram.cpp` - mmap loading, index building, binary search, Stupid Backoff scoring
-- `DictusKeyboard/Resources/fr_ngrams.dict` - French bigram+trigram binary (38 KiB)
-- `DictusKeyboard/Resources/en_ngrams.dict` - English bigram+trigram binary (44 KiB)
+- `OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram_format.h` - NGRM binary format constants and NgramHeader struct
+- `OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram.h` - C++ NgramEngine class declaration
+- `OuisprKeyboard/Vendored/AOSPTrie/src/ouispr_ngram.cpp` - mmap loading, index building, binary search, Stupid Backoff scoring
+- `OuisprKeyboard/Resources/fr_ngrams.dict` - French bigram+trigram binary (38 KiB)
+- `OuisprKeyboard/Resources/en_ngrams.dict` - English bigram+trigram binary (44 KiB)
 
 ## Decisions Made
 - **NGRM binary format**: 32-byte header with magic/version/counts/offsets, followed by sorted variable-length entries (key_hash + result_count + results), followed by packed string table. Consistent with existing DTRI trie format pattern.

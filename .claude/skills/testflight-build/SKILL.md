@@ -1,6 +1,6 @@
 ---
 name: testflight-build
-description: Cut a Dictus version, upload it to TestFlight, and put it in the right tester group. Use when Pierre asks to cut a version, ship a build to testers, or publish to the public beta ("coupe 1.8.2", "monte un build", "envoie ça aux testeurs", "publie au public"). It stops at TestFlight. The App Store is a separate skill only Pierre starts.
+description: Cut a Ouispr version, upload it to TestFlight, and put it in the right tester group. Use when Pierre asks to cut a version, ship a build to testers, or publish to the public beta ("coupe 1.8.2", "monte un build", "envoie ça aux testeurs", "publie au public"). It stops at TestFlight. The App Store is a separate skill only Pierre starts.
 ---
 
 # Cut a build and put it on TestFlight
@@ -31,7 +31,7 @@ The bare form is the default and is right almost always. Pass a version only whe
 
 The script bumps all three plists together, commits, tags `build/N` and pushes. It refuses a dirty tree, a branch other than `develop`, and a duplicate `build/N`.
 
-**Before cutting, the lane must be empty.** [`docs/ROADMAP.md`](../../../docs/ROADMAP.md) holds the ordered queue and says what a cycle contains. Check the milestone has no open issues, run `cd DictusCore && swift test`, and run `swiftlint lint --strict --no-cache`. CI runs the same suite on every pull request and every push to `develop` (#534); the local run checks the exact commit you are about to cut, before a build number is spent on it.
+**Before cutting, the lane must be empty.** [`docs/ROADMAP.md`](../../../docs/ROADMAP.md) holds the ordered queue and says what a cycle contains. Check the milestone has no open issues, run `cd OuisprCore && swift test`, and run `swiftlint lint --strict --no-cache`. CI runs the same suite on every pull request and every push to `develop` (#534); the local run checks the exact commit you are about to cut, before a build number is spent on it.
 
 ## 2. Upload
 
@@ -59,7 +59,7 @@ English, user-facing, no issue numbers (they are not clickable in TestFlight). N
 
 `Public Beta` is explicit, and **it needs a device smoke test first**:
 
-> Install the build from TestFlight, open any app, switch to the Dictus keyboard, type one letter, dictate one sentence.
+> Install the build from TestFlight, open any app, switch to the Ouispr keyboard, type one letter, dictate one sentence.
 
 A green build does not mean the keyboard extension launches. That gate exists because the two have come apart before, and Pierre is the only one who can run it. Ask him, wait for the answer, and do not read a merged PR or a passing test suite as a substitute.
 

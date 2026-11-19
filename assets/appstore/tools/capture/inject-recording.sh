@@ -1,18 +1,18 @@
 #!/bin/bash
-# Show the Dictus keyboard's real RecordingOverlay in a simulator, without a microphone.
+# Show the Ouispr keyboard's real RecordingOverlay in a simulator, without a microphone.
 #
 # Usage: inject-recording.sh <udid> [seconds=14]
 #
 # WHY: a real dictation in a simulator records the Mac's microphone, which is
 # the room the maintainer works in (docs/agents/simulator.md, section 8), and
 # needs a downloaded model. The keyboard draws its overlay from App Group
-# state alone, so this script writes that state the way DictusApp does
+# state alone, so this script writes that state the way OuisprApp does
 # (UnifiedAudioEngine: status, a ~1 Hz heartbeat, 30 waveform bins, elapsed
 # seconds, then the Darwin notifications), and the shipping keyboard renders it.
 # Nothing in the app is changed; the screenshot is the real UI.
 #
-# Prerequisites: Dictus installed and launched once (the App Group exists),
-# the Dictus keyboard on screen in some text field. Screenshot while it runs:
+# Prerequisites: Ouispr installed and launched once (the App Group exists),
+# the Ouispr keyboard on screen in some text field. Screenshot while it runs:
 #   xcrun simctl io <udid> screenshot shot.png
 #
 # The heartbeat is written as a string on purpose: `defaults write -float`
@@ -27,9 +27,9 @@ w() { xcrun simctl spawn "$UDID" defaults write "$PL" "$@"; }
 now() { python3 -c "import time; print(time.time())"; }
 post() { xcrun simctl spawn "$UDID" notifyutil -p "$1"; }
 
-w dictus.dictationStatus recording
-w dictus.recordingHeartbeat -string "$(now)"
-post com.pivi.dictus.statusChanged
+w ouispr.dictationStatus recording
+w ouispr.recordingHeartbeat -string "$(now)"
+post com.pivi.ouispr.statusChanged
 START=$(now)
 i=0
 while python3 -c "import sys,time; sys.exit(0 if time.time()-$START < $DUR else 1)"; do
@@ -45,14 +45,14 @@ print(json.dumps(bins).encode().hex())
 PY
 )
   T=$(now)
-  w dictus.waveformEnergy -data "$HEX"
-  w dictus.recordingElapsedSeconds -float "$(python3 -c "print(round($T - $START + 3.0, 2))")"
-  w dictus.recordingHeartbeat -string "$T"
-  post com.pivi.dictus.waveformUpdate
+  w ouispr.waveformEnergy -data "$HEX"
+  w ouispr.recordingElapsedSeconds -float "$(python3 -c "print(round($T - $START + 3.0, 2))")"
+  w ouispr.recordingHeartbeat -string "$T"
+  post com.pivi.ouispr.waveformUpdate
   i=$((i + 1))
 done
 # Leave the keyboard idle again.
-w dictus.dictationStatus idle
-xcrun simctl spawn "$UDID" defaults delete "$PL" dictus.waveformEnergy 2>/dev/null || true
-xcrun simctl spawn "$UDID" defaults delete "$PL" dictus.recordingHeartbeat 2>/dev/null || true
-post com.pivi.dictus.statusChanged
+w ouispr.dictationStatus idle
+xcrun simctl spawn "$UDID" defaults delete "$PL" ouispr.waveformEnergy 2>/dev/null || true
+xcrun simctl spawn "$UDID" defaults delete "$PL" ouispr.recordingHeartbeat 2>/dev/null || true
+post com.pivi.ouispr.statusChanged

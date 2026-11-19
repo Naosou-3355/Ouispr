@@ -1,4 +1,4 @@
-# Can a backgrounded DictusApp reach the ANE for LLM inference? — D2
+# Can a backgrounded OuisprApp reach the ANE for LLM inference? — D2
 
 **Issue:** [#268](https://github.com/getdictus/dictus-ios/issues/268)
 **Scope:** measurement only. No `PolishEngineProtocol` implementation, no model
@@ -37,7 +37,7 @@ Same scheme as the predecessor, because the two documents are read together.
 **#268's question is answered, and the answer is no — but not for any of the
 reasons the spike expected.**
 
-1. **A backgrounded DictusApp *can* reach the Neural Engine.** On the phone,
+1. **A backgrounded OuisprApp *can* reach the Neural Engine.** On the phone,
    backgrounded, Core ML's compute plan is byte-for-byte the Mac's: **1,166 ANE
    operations against 13 CPU** in the transformer chunk, **0 GPU** everywhere
    **[measured]**. It does not silently re-plan onto the CPU when the app leaves
@@ -71,7 +71,7 @@ reasons the spike expected.**
 
 6. **Sustained ANE inference throttles the phone.** A first run that began at
    `thermal=fair` crossed to `serious` within ninety seconds; decode fell from
-   13.5 to 7.0 tok/s and the call reached **33.9 s** **[measured]**. DictusApp
+   13.5 to 7.0 tok/s and the call reached **33.9 s** **[measured]**. OuisprApp
    stays warm between dictations by design, which is the pattern that produces
    this curve.
 
@@ -113,7 +113,7 @@ measurement core:
 Three decisions inside it are worth stating, because each one is a way the
 measurement could have been quietly wrong.
 
-**The prompt is built from DictusCore at runtime, not transcribed.** The
+**The prompt is built from OuisprCore at runtime, not transcribed.** The
 resolved instructions come through `AppleFoundationModelsPolishEngine.instructions(for:language:)`
 — the same entry point both shipping engines use **[code]** — and the user turn
 is the same `Input:` / `Polished output:` framing, over text that has been
@@ -188,7 +188,7 @@ no English:
 
 > Ce que j'aimerais bien tester aussi, c'est un texte un petit peu plus long, que
 > je décris à l'oral, comme je suis en train de le faire en fait. […] j'ai envie
-> de voir exactement comment ça se comporte avec dictus mais aussi avec
+> de voir exactement comment ça se comporte avec ouispr mais aussi avec
 > whisperflow.
 
 This is a sanity gate, not a quality score — see
@@ -320,8 +320,8 @@ same prompt, same `temperature: 0`, thinking off. Collected 2026-08-22
 
 Line 2 of every export in this repository carries `rev <sha>@<branch>`, and this
 one says **`rev unknown`**. That is not a fault in the run: the harness is not a
-target of `Dictus.xcodeproj`, so the "Generate build info" phase that writes
-`DictusBuildInfo.plist` never runs for it, and `PersistentLog.codeRevision`
+target of `Ouispr.xcodeproj`, so the "Generate build info" phase that writes
+`OuisprBuildInfo.plist` never runs for it, and `PersistentLog.codeRevision`
 correctly reports that it has no revision to report rather than guessing
 **[code]**.
 
@@ -378,12 +378,12 @@ most contradicts the predecessor:
 | --- | --- |
 | Jetsam headroom with the whole model loaded | **3,090 MB** |
 | `phys_footprint` | **284–285 MB** |
-| D1's baseline, DictusApp at launch, same device | 3,369 MB **[field]** |
+| D1's baseline, OuisprApp at launch, same device | 3,369 MB **[field]** |
 
 **1.8 GB of weights cost about 280 MB of jetsam headroom.** Core ML maps ANE
 weights rather than allocating them into the process, so almost none of the model
 lands in the budget jetsam enforces. The 280 MB is a comparison across two
-different processes — this harness against DictusApp in D1 — so read it as an
+different processes — this harness against OuisprApp in D1 — so read it as an
 order of magnitude; the load-bearing figure is the absolute one, **3,090 MB still
 available with the model fully loaded and running**, which needs no comparison at
 all. Every memory argument in the predecessor —
@@ -447,8 +447,8 @@ Decode falls from 13.5 to 7.0 tok/s across roughly ninety seconds of ANE work.
 **Sustained LLM inference on the ANE heats an iPhone until the SoC throttles**,
 and the throttled figure is 34 s — 6.8× the budget.
 
-This matters more for Dictus than a benchmark footnote suggests, because
-DictusApp runs under `UIBackgroundModes: audio` and stays warm between
+This matters more for Ouispr than a benchmark footnote suggests, because
+OuisprApp runs under `UIBackgroundModes: audio` and stays warm between
 dictations. A user dictating repeatedly would be holding the ANE busy in exactly
 the pattern that produced this curve, and thermal state also throttles the
 transcription that has to happen first.
@@ -575,7 +575,7 @@ Issue #268 pre-registered this:
 
 > **Negative** — the ANE cannot hold the prompt, or backgrounded latency lands
 > above the p50 ≤ 5 s budget: **close this issue permanently**. Both rationales
-> are then answered and a second local backend is not a thing Dictus does.
+> are then answered and a second local backend is not a thing Ouispr does.
 
 The first clause fails and the second holds. The ANE *does* hold the prompt, and
 memory turned out not to be a constraint at all — but backgrounded latency is
@@ -746,7 +746,7 @@ in that directory's `README.md`.
 
 ```sh
 # The exact prompt, from the shipping source of truth
-cd DictusCore
+cd OuisprCore
 swift run polish-harness prompt Sources/polish-harness/fixtures/seed.json --id 3-long
 
 # Mac: the ANE run, the CPU control, and the reasoning-on control (Finding 7)
@@ -762,7 +762,7 @@ xcodebuild build -project AneHarness.xcodeproj -scheme AneHarness -configuration
 xcrun devicectl device install app --device <device-id> \
   build/DerivedData/Build/Products/Debug-iphoneos/AneHarness.app
 xcrun devicectl device process launch --device <device-id> --terminate-existing \
-  com.pivi.dictus.anebench
+  com.pivi.ouispr.anebench
 
 # Poll Documents/phase.txt until it reads waiting-for-background (~2 min the first
 # time, ~5 s after), then background the harness without touching the phone:
@@ -770,5 +770,5 @@ xcrun devicectl device process launch --device <device-id> com.apple.Preferences
 
 # Poll again until phase.txt reads done (~45 s), then:
 xcrun devicectl device copy from --device <device-id> --domain-type appDataContainer \
-  --domain-identifier com.pivi.dictus.anebench --source Documents --destination ./out
+  --domain-identifier com.pivi.ouispr.anebench --source Documents --destination ./out
 ```

@@ -8,7 +8,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
-cd "$REPO/DictusCore"
+cd "$REPO/OuisprCore"
 
 inputs=(../docs/research/413-414-guardrail/*.json)
 inputs+=(../docs/research/587-*/capture*.json ../docs/research/587-*/round*/capture*.json)

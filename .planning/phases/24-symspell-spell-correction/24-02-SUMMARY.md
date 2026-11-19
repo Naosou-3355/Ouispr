@@ -77,12 +77,12 @@ Wired SymSpellEngine into the keyboard prediction pipeline with autocorrect-on-s
 
 key-files:
   created:
-    - DictusCore/Sources/DictusCore/UserDictionary.swift
+    - OuisprCore/Sources/OuisprCore/UserDictionary.swift
   modified:
-    - DictusKeyboard/TextPrediction/SymSpellEngine.swift
-    - DictusKeyboard/TextPrediction/TextPredictionEngine.swift
-    - DictusKeyboard/TextPrediction/SuggestionState.swift
-    - DictusKeyboard/Views/SuggestionBarView.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusCore/Sources/DictusCore/FrequencyDictionary.swift
+    - OuisprKeyboard/TextPrediction/SymSpellEngine.swift
+    - OuisprKeyboard/TextPrediction/TextPredictionEngine.swift
+    - OuisprKeyboard/TextPrediction/SuggestionState.swift
+    - OuisprKeyboard/Views/SuggestionBarView.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift

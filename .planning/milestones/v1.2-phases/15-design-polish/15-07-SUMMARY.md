@@ -23,9 +23,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusApp/Views/RecordingView.swift
-    - DictusApp/Views/SettingsView.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprApp/Views/RecordingView.swift
+    - OuisprApp/Views/SettingsView.swift
 
 key-decisions:
   - "Auto-advance after 1.5s delay gives user time to see transcription result before success screen"
@@ -67,9 +67,9 @@ Each task was committed atomically:
 3. **Task 3: Settings tap feedback** - `d2b2f77` (fix)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardRootView.swift` - Asymmetric transition (fade+slide in, fade-only out)
-- `DictusApp/Views/RecordingView.swift` - Removed Terminer button, added auto-advance and retry
-- `DictusApp/Views/SettingsView.swift` - Added SettingsRowStyle for press highlight
+- `OuisprKeyboard/KeyboardRootView.swift` - Asymmetric transition (fade+slide in, fade-only out)
+- `OuisprApp/Views/RecordingView.swift` - Removed Terminer button, added auto-advance and retry
+- `OuisprApp/Views/SettingsView.swift` - Added SettingsRowStyle for press highlight
 
 ## Decisions Made
 - 1.5s delay before auto-advance lets user see their transcription result briefly

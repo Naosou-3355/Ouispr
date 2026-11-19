@@ -22,8 +22,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/DictationCoordinator.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
+    - OuisprApp/DictationCoordinator.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
 
 key-decisions:
   - "Cancel uses collectSamples() not stopRecording() to preserve engine for background recording"
@@ -54,7 +54,7 @@ completed: 2026-03-08
 ## Accomplishments
 - Fixed cancel flow to keep audio engine alive (waveform works after cancel)
 - Documented emoji key advanceToNextInputMode() as accepted iOS limitation
-- Both DictusApp and DictusKeyboard build successfully
+- Both OuisprApp and OuisprKeyboard build successfully
 
 ## Task Commits
 
@@ -64,8 +64,8 @@ Each task was committed atomically:
 2. **Task 2: Document emoji button as iOS limitation** - `effdffc` (docs)
 
 ## Files Created/Modified
-- `DictusApp/DictationCoordinator.swift` - Changed cancelDictation() from stopRecording() to collectSamples()
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - Updated EmojiKey doc comment with iOS limitation details
+- `OuisprApp/DictationCoordinator.swift` - Changed cancelDictation() from stopRecording() to collectSamples()
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - Updated EmojiKey doc comment with iOS limitation details
 
 ## Decisions Made
 - Cancel uses collectSamples() not stopRecording() — preserves engine for instant next recording from background

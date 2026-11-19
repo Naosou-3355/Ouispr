@@ -1,4 +1,4 @@
-    /Users/pierreviviere/dev/dictus-wt/439/DictusCore/Sources/polish-harness/README.md
+    /Users/pierreviviere/dev/ouispr-wt/439/OuisprCore/Sources/polish-harness/README.md
 Building for debugging...
 Build of product 'polish-harness' complete! (0.17s)
 

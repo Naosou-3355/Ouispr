@@ -1,7 +1,7 @@
 {
-  "_what": "Where Typeless put its paragraph breaks, expressed as the 1-based number of the sentence that STARTS each new paragraph, in the Dictus sentence cut the arms are scored against (PolishSegmentation.sentences, printed in raw/round1-5runs.txt).",
+  "_what": "Where Typeless put its paragraph breaks, expressed as the 1-based number of the sentence that STARTS each new paragraph, in the Ouispr sentence cut the arms are scored against (PolishSegmentation.sentences, printed in raw/round1-5runs.txt).",
   "_status": "REPORTED, NEVER BARRED. bars.md §2: text A is the same four sentences split two different ways on two takes, both defensible, so the reference is one acceptable answer among several. #437 scored against a single correct boundary and that is the mistake this round is built to avoid — in both directions.",
-  "_mapping": "Typeless rewrites, so its sentences do not map one-to-one onto the Dictus cut. Each break is placed by content: the Dictus sentence whose content opens the Typeless paragraph. Where Typeless deleted a sentence outright (P7 sentence 4, 'Bref, on va avoir un truc qui va être beaucoup plus structuré.'), the break is placed at the next surviving sentence.",
+  "_mapping": "Typeless rewrites, so its sentences do not map one-to-one onto the Ouispr cut. Each break is placed by content: the Ouispr sentence whose content opens the Typeless paragraph. Where Typeless deleted a sentence outright (P7 sentence 4, 'Bref, on va avoir un truc qui va être beaucoup plus structuré.'), the break is placed at the next surviving sentence.",
   "_excluded": "P2, P4, P5 and P6 have a Typeless output and it is NOT paragraphing: numbered lists, bullets and invented headings, measured in #437 (comment of 2026-08-27 14:39). Its line count there is list structure. Scoring placement against it would fit against a transformation ADR 0003 forbids, so those four carry no reference at all rather than a weak one.",
 
   "P1-free-form": {

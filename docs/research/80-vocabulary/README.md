@@ -7,7 +7,7 @@ Apple Intelligence.
 ## Replaying it
 
 ```bash
-cd DictusCore
+cd OuisprCore
 swift run polish-harness vocabulary ../docs/research/80-vocabulary/corpus.json
 ```
 
@@ -100,4 +100,4 @@ canonical spelling plus a handful of variants is enough coverage per term.
 ```
 
 `origin` is `captured` or `constructed`, and `isEnabled` is optional on an entry and
-defaults to true, which is what the add sheet produces. The decoder is `VocabularyCorpus` in `DictusCore/Sources/polish-harness/`.
+defaults to true, which is what the add sheet produces. The decoder is `VocabularyCorpus` in `OuisprCore/Sources/polish-harness/`.

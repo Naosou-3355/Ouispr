@@ -9,7 +9,7 @@ requires: []
 provides:
   - "Autocorrect undo invalidation on new character input and external text changes"
   - "Complete open-source license attribution for all 5 dependencies"
-  - "Corrected Dictus GitHub URL in license screen"
+  - "Corrected Ouispr GitHub URL in license screen"
 affects: [24-symspell-corrections]
 
 # Tech tracking
@@ -22,9 +22,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusApp/Views/LicensesView.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprApp/Views/LicensesView.swift
 
 key-decisions:
   - "Used MIT for giellakbd-ios (dual-licensed Apache-2.0/MIT) since mitLicense helper already existed"
@@ -54,7 +54,7 @@ completed: 2026-04-01
 
 ## Accomplishments
 - Fixed autocorrect undo race condition: backspace after typing new characters now deletes normally instead of undoing a stale autocorrect
-- Corrected Dictus license URL from github.com/Pivii/dictus to github.com/getdictus/dictus-ios
+- Corrected Ouispr license URL from github.com/Pivii/dictus to github.com/getdictus/dictus-ios
 - Added 3 missing dependency attributions (DeviceKit, FluidAudio, giellakbd-ios) with correct authors and license types
 - Added apache2License() helper for FluidAudio's Apache 2.0 attribution
 
@@ -66,9 +66,9 @@ Each task was committed atomically:
 2. **Task 2: Complete license attribution screen (FIX-02, FIX-03)** - `99c3961` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added lastAutocorrect = nil in handleInputKey() before character insertion
-- `DictusKeyboard/KeyboardViewController.swift` - Added lastAutocorrect = nil in textDidChange() for external text changes
-- `DictusApp/Views/LicensesView.swift` - Rewrote with 5 alphabetical entries, corrected URL, added apache2License helper
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added lastAutocorrect = nil in handleInputKey() before character insertion
+- `OuisprKeyboard/KeyboardViewController.swift` - Added lastAutocorrect = nil in textDidChange() for external text changes
+- `OuisprApp/Views/LicensesView.swift` - Rewrote with 5 alphabetical entries, corrected URL, added apache2License helper
 
 ## Decisions Made
 - Used MIT license for giellakbd-ios (dual-licensed Apache-2.0/MIT) since the mitLicense helper already existed and MIT is one of the two valid options

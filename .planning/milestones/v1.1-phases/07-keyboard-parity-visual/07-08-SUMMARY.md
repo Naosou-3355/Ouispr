@@ -24,13 +24,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/ToolbarView.swift
-    - DictusCore/Sources/DictusCore/Design/BrandWaveform.swift
-    - DictusKeyboard/Views/RecordingOverlay.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/ToolbarView.swift
+    - OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
 
 key-decisions:
   - "Toolbar height 48pt (from 44pt) to accommodate mic pill glow without clipping"
@@ -74,13 +74,13 @@ Each task was committed atomically:
 2. **Task 2: Key tap sounds on all keys and Apple dictation mic overlay-hide attempt** - `da4302f` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/ToolbarView.swift` - Toolbar height increased to 48pt for mic pill glow room
-- `DictusCore/Sources/DictusCore/Design/BrandWaveform.swift` - Added 0.05 silence threshold in energyForBar
-- `DictusKeyboard/Views/RecordingOverlay.swift` - Replaced ProcessingAnimation with BrandWaveform(isProcessing: true)
-- `DictusKeyboard/KeyboardRootView.swift` - Updated toolbarHeight to 48pt, added 8pt bottom spacer
-- `DictusKeyboard/KeyboardViewController.swift` - Updated toolbarHeight to 48pt, added bottomPadding to height calc
-- `DictusKeyboard/Views/KeyboardView.swift` - Added playInputClick() to globe, layerSwitch, symbolToggle, accent handlers
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - Added playInputClick() to ShiftKey button action
+- `OuisprKeyboard/Views/ToolbarView.swift` - Toolbar height increased to 48pt for mic pill glow room
+- `OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift` - Added 0.05 silence threshold in energyForBar
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - Replaced ProcessingAnimation with BrandWaveform(isProcessing: true)
+- `OuisprKeyboard/KeyboardRootView.swift` - Updated toolbarHeight to 48pt, added 8pt bottom spacer
+- `OuisprKeyboard/KeyboardViewController.swift` - Updated toolbarHeight to 48pt, added bottomPadding to height calc
+- `OuisprKeyboard/Views/KeyboardView.swift` - Added playInputClick() to globe, layerSwitch, symbolToggle, accent handlers
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - Added playInputClick() to ShiftKey button action
 
 ## Decisions Made
 - Toolbar height 48pt (from 44pt) gives 6pt breathing room above and below the 36pt mic pill, preventing glow clipping

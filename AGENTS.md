@@ -1,24 +1,24 @@
-# AGENTS.md — Dictus
+# AGENTS.md — Ouispr
 
 ## Projet
 
-Dictus — iOS keyboard extension pour dictation vocale offline (WhisperKit).
+Ouispr — iOS keyboard extension pour dictation vocale offline (WhisperKit).
 Voir PRD.md pour les specs complètes et DEVELOPMENT.md pour le guide de développement.
 
 ## Stack
 
 - Swift 5.9+ / SwiftUI
 - WhisperKit (argmaxinc) via SPM
-- FluidAudio (Parakeet STT) via SPM — DictusApp only
+- FluidAudio (Parakeet STT) via SPM — OuisprApp only
 - App Group: group.solutions.pivi.dictus
 - Minimum iOS: 17.0
 - Design: iOS 26 Liquid Glass
 
 ## Targets Xcode
 
-- **DictusApp** — App principale (onboarding, settings, model manager)
-- **DictusKeyboard** — Keyboard Extension (clavier custom + dictation)
-- **DictusCore** — Framework partagé (App Group, modèles, préférences)
+- **OuisprApp** — App principale (onboarding, settings, model manager)
+- **OuisprKeyboard** — Keyboard Extension (clavier custom + dictation)
+- **OuisprCore** — Framework partagé (App Group, modèles, préférences)
 
 ## Conventions
 
@@ -30,7 +30,7 @@ Voir PRD.md pour les specs complètes et DEVELOPMENT.md pour le guide de dévelo
 
 ## Contraintes importantes
 
-- DictusKeyboard : mémoire max ~50MB → modèles tiny/base/small uniquement
+- OuisprKeyboard : mémoire max ~50MB → modèles tiny/base/small uniquement
 - Pas d'UIApplication.shared dans l'extension keyboard
 - Toutes les données partagées passent par App Group
 - RequestsOpenAccess = true dans Info.plist de l'extension (pour le micro)
@@ -43,14 +43,14 @@ Voir PRD.md pour les specs complètes et DEVELOPMENT.md pour le guide de dévelo
 
 ## Brand & Design
 
-Le brand kit complet est dans `assets/brand/dictus-brand-kit.html`.
+Le brand kit complet est dans `assets/brand/ouispr-brand-kit.html`.
 Il contient les SVG du logo, tous les codes couleur et les gradients.
 
 Quand tu as besoin de générer des assets visuels :
 
 1. Lire le HTML pour extraire les valeurs exactes
 2. Générer les fichiers SVG dans `assets/brand/`
-3. Générer les PNG iOS dans `Dictus/Assets.xcassets/AppIcon.appiconset/`
+3. Générer les PNG iOS dans `Ouispr/Assets.xcassets/AppIcon.appiconset/`
 
 ### Couleurs principales (résumé rapide)
 
@@ -67,7 +67,7 @@ Quand tu as besoin de générer des assets visuels :
 Barre centrale = dégradé #6BA3FF → #2563EB
 Barres latérales = blanc à 45% et 65% d'opacité
 Fond icône = dégradé #0D2040 → #071020 à 135°
-Largeur des barres = 9/42 de la plus haute, écart = 7,5/42, bouts en capsule (rayon = largeur / 2, jamais une valeur fixe en points). Source : `assets/brand/appicon-dark.svg`, code : `DictusLogoGeometry` (#636)
+Largeur des barres = 9/42 de la plus haute, écart = 7,5/42, bouts en capsule (rayon = largeur / 2, jamais une valeur fixe en points). Source : `assets/brand/appicon-dark.svg`, code : `OuisprLogoGeometry` (#636)
 
 ## Agent skills
 
@@ -87,4 +87,4 @@ Single-context — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily b
 
 Boot, build, install, launch, capture, and what a simulator cannot show. See `docs/agents/simulator.md`.
 
-**Smoke test:** `scripts/simulator-smoke-test.sh` runs the app → keyboard → app path headlessly in about two minutes and ends with `SMOKE PASS` or `SMOKE FAIL step N`. Run it while verifying any change to DictusApp, DictusKeyboard, onboarding or the App Group hand-off, and before a TestFlight cut. A pass is not a device validation. See `docs/agents/simulator-smoke-test.md`.
+**Smoke test:** `scripts/simulator-smoke-test.sh` runs the app → keyboard → app path headlessly in about two minutes and ends with `SMOKE PASS` or `SMOKE FAIL step N`. Run it while verifying any change to OuisprApp, OuisprKeyboard, onboarding or the App Group hand-off, and before a TestFlight cut. A pass is not a device validation. See `docs/agents/simulator-smoke-test.md`.

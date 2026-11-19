@@ -14,14 +14,14 @@ The full dictation loop works fluidly from the keyboard: tap mic, record (with v
 ## Implementation Decisions
 
 ### Dictation flow (Wispr Flow-inspired)
-- Tap mic in keyboard toolbar -> DictusApp opens briefly (for microphone activation) -> auto-return to the app the user was in
+- Tap mic in keyboard toolbar -> OuisprApp opens briefly (for microphone activation) -> auto-return to the app the user was in
 - Recording continues while user is back in their app — keyboard shows recording UI
 - Keyboard letters are entirely replaced by recording UI during active recording
 - Recording UI: waveform animation (center), timer (below waveform), X cancel (top-left), checkmark stop (top-right)
 - After stop: keyboard stays in recording UI mode showing "processing" state until transcription completes
 - Text auto-inserts via `textDocumentProxy.insertText()` — no preview bar, no confirmation step
 - After insertion: keyboard snaps back to normal letter layout immediately — no confirmation message
-- **Architecture change from Phase 1:** Recording/stop now controlled from the keyboard UI, not from DictusApp. Researcher must investigate feasibility (recording in keyboard extension vs background audio in main app with real-time signaling)
+- **Architecture change from Phase 1:** Recording/stop now controlled from the keyboard UI, not from OuisprApp. Researcher must investigate feasibility (recording in keyboard extension vs background audio in main app with real-time signaling)
 
 ### Undo behavior
 - No dedicated undo button — DUX-02 dropped by user decision
@@ -54,7 +54,7 @@ The full dictation loop works fluidly from the keyboard: tap mic, record (with v
 - Accented characters were deferred from Phase 1 — delivered now
 
 ### In-app test dictation screen
-- APP-04: Test screen for end-to-end transcription testing without leaving Dictus
+- APP-04: Test screen for end-to-end transcription testing without leaving Ouispr
 - Placement in app navigation: Claude's discretion (simple approach, full navigation redesign deferred to Phase 4)
 
 ### Claude's Discretion
@@ -102,8 +102,8 @@ The full dictation loop works fluidly from the keyboard: tap mic, record (with v
 ### Integration Points
 - `KeyboardRootView`: Needs conditional rendering — normal keyboard vs recording UI
 - `KeyboardState`: Needs new states/properties for recording-in-keyboard mode
-- `DictationCoordinator` in DictusApp: May need changes if recording architecture shifts
-- `SharedKeys` in DictusCore: May need new keys for real-time waveform data or recording control
+- `DictationCoordinator` in OuisprApp: May need changes if recording architecture shifts
+- `SharedKeys` in OuisprCore: May need new keys for real-time waveform data or recording control
 - `KeyboardLayout`: Add QWERTY layout data alongside existing AZERTY
 - `KeyRow`/`KeyButton`: Add long-press gesture for accented character popups on AZERTY
 

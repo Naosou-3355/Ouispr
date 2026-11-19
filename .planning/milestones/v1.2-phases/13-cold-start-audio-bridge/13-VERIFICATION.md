@@ -5,16 +5,16 @@ status: human_needed
 score: 9/9 must-haves verified
 human_verification:
   - test: "Cold start flow end-to-end on device"
-    expected: "Force-quit app, open Notes, switch to Dictus keyboard, tap mic. App opens showing SwipeBackOverlayView (brand gradient + animated swipe). Swipe back to Notes. Recording overlay appears in keyboard with live waveform. Speak, stop. Transcription inserted in text field."
+    expected: "Force-quit app, open Notes, switch to Ouispr keyboard, tap mic. App opens showing SwipeBackOverlayView (brand gradient + animated swipe). Swipe back to Notes. Recording overlay appears in keyboard with live waveform. Speak, stop. Transcription inserted in text field."
     why_human: "Requires physical device, keyboard extension activation, background audio session, and cross-process IPC — none of which can be verified statically"
   - test: "Normal launch shows tabs, not overlay"
-    expected: "Tap the DictusApp icon from home screen. Standard three-tab UI (Home, Models, Settings) appears with no SwipeBackOverlayView."
+    expected: "Tap the OuisprApp icon from home screen. Standard three-tab UI (Home, Models, Settings) appears with no SwipeBackOverlayView."
     why_human: "Launch mode conditional rendering depends on runtime URL open event"
   - test: "Cold start flag clears on background"
-    expected: "After cold start overlay is shown, press Home button to background DictusApp. Re-open app normally. Normal tab UI appears, not the overlay."
+    expected: "After cold start overlay is shown, press Home button to background OuisprApp. Re-open app normally. Normal tab UI appears, not the overlay."
     why_human: "scenePhase .background cleanup requires runtime state transition"
   - test: "Direct recording from HomeView unaffected (COLD-06)"
-    expected: "Open DictusApp normally, tap mic on HomeView. Recording starts, waveform is visible, stop produces transcription. No regression."
+    expected: "Open OuisprApp normally, tap mic on HomeView. Recording starts, waveform is visible, stop produces transcription. No regression."
     why_human: "Requires device audio session and full recording pipeline"
   - test: "Waveform animation live in keyboard while app is backgrounded"
     expected: "After swipe-back from cold start overlay, keyboard shows recording overlay with moving waveform bars (not frozen). Timer increments."
@@ -40,14 +40,14 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | App distinguishes cold start vs normal launch via URL query param | VERIFIED | `DictusApp.swift` sets `coldStartActive` on `source=keyboard` in `handleIncomingURL`; `MainTabView` sets `isColdStartMode` via `.onOpenURL` |
+| 1 | App distinguishes cold start vs normal launch via URL query param | VERIFIED | `OuisprApp.swift` sets `coldStartActive` on `source=keyboard` in `handleIncomingURL`; `MainTabView` sets `isColdStartMode` via `.onOpenURL` |
 | 2 | MainTabView shows SwipeBackOverlayView on cold start | VERIFIED | `MainTabView.swift` line 37-42: `if isColdStartMode { SwipeBackOverlayView() }` |
-| 3 | Direct recording from HomeView mic still works (COLD-06) | VERIFIED | `DictusApp.swift` — `startDictation(fromURL: false)` path is separate; plan 03 summary confirms untouched |
-| 4 | Cold start flag cleaned up on background | VERIFIED | `DictusApp.swift` line 62: `AppGroup.defaults.set(false, forKey: SharedKeys.coldStartActive)` in `.background` handler; `MainTabView` line 98-100: `isColdStartMode = false` on `.background` |
+| 3 | Direct recording from HomeView mic still works (COLD-06) | VERIFIED | `OuisprApp.swift` — `startDictation(fromURL: false)` path is separate; plan 03 summary confirms untouched |
+| 4 | Cold start flag cleaned up on background | VERIFIED | `OuisprApp.swift` line 62: `AppGroup.defaults.set(false, forKey: SharedKeys.coldStartActive)` in `.background` handler; `MainTabView` line 98-100: `isColdStartMode = false` on `.background` |
 | 5 | KnownAppSchemes URL scheme list integrity verified by tests | VERIFIED | `KnownAppSchemesTests.swift` — 5 tests covering count, URL validity, queryScheme match, no duplicates |
 | 6 | Cold start shows branded swipe-back overlay with animation | VERIFIED | `SwipeBackOverlayView.swift` — 157 lines, brand gradient (`0x0D2040`/`0x071020`), `SwipeAnimationView` with `repeatForever` animation, bilingual text |
-| 7 | Keyboard sends `source=keyboard` parameter in URL | VERIFIED | `KeyboardState.swift` line 361: `URL(string: "dictus://dictate?source=keyboard")` |
-| 8 | LSApplicationQueriesSchemes configured in both Info.plist files | VERIFIED | `DictusApp/Info.plist` line 45 and `DictusKeyboard/Info.plist` line 23 both contain `LSApplicationQueriesSchemes` |
+| 7 | Keyboard sends `source=keyboard` parameter in URL | VERIFIED | `KeyboardState.swift` line 361: `URL(string: "ouispr://dictate?source=keyboard")` |
+| 8 | LSApplicationQueriesSchemes configured in both Info.plist files | VERIFIED | `OuisprApp/Info.plist` line 45 and `OuisprKeyboard/Info.plist` line 23 both contain `LSApplicationQueriesSchemes` |
 | 9 | Waveform forwarding from audio thread (fixes background throttling) | VERIFIED | `RawAudioCapture.swift` — `installTap` callback writes `SharedKeys.waveformEnergy` to App Group directly from audio thread (line 92/273) |
 
 **Score:** 9/9 truths verified
@@ -56,26 +56,26 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/SharedKeys.swift` | `coldStartActive` + `sourceAppScheme` keys | VERIFIED | Both keys present at lines 60-63 |
-| `DictusCore/Sources/DictusCore/KnownAppSchemes.swift` | URL scheme mapping for 10 apps | VERIFIED | `KnownAppSchemes.all` has exactly 10 entries; `AppScheme` struct with `name`, `scheme`, `queryScheme` |
-| `DictusCore/Tests/DictusCoreTests/KnownAppSchemesTests.swift` | 5 unit tests for scheme integrity | VERIFIED | All 5 tests present: `testAllSchemesNotEmpty`, `testSchemeURLsAreValid`, `testQuerySchemesMatchSchemes`, `testNoDuplicateSchemes`, `testNoDuplicateNames` |
-| `DictusApp/DictusApp.swift` | `handleIncomingURL` with cold start detection | VERIFIED | Sets `coldStartActive`, parses `source=keyboard`, clears on `.background` |
-| `DictusApp/Views/MainTabView.swift` | Conditional rendering: overlay vs tabs | VERIFIED | `isColdStartMode` state, `.onOpenURL` handler, `.onChange(scenePhase)` cleanup, `SwipeBackOverlayView()` in cold start branch |
-| `DictusApp/Views/SwipeBackOverlayView.swift` | Full-screen overlay with animation | VERIFIED | 157 lines, brand gradient, `SwipeAnimationView` subview, bilingual text driven by `SharedKeys.language` |
-| `DictusKeyboard/KeyboardState.swift` | URL with `source=keyboard` param | VERIFIED | Line 361 confirmed |
-| `DictusApp/Info.plist` | `LSApplicationQueriesSchemes` | VERIFIED | Key present |
-| `DictusKeyboard/Info.plist` | `LSApplicationQueriesSchemes` | VERIFIED | Key present |
-| `DictusApp/Audio/RawAudioCapture.swift` | Audio-thread waveform writes | VERIFIED | `installTap` callback writes `waveformEnergy` to App Group |
+| `OuisprCore/Sources/OuisprCore/SharedKeys.swift` | `coldStartActive` + `sourceAppScheme` keys | VERIFIED | Both keys present at lines 60-63 |
+| `OuisprCore/Sources/OuisprCore/KnownAppSchemes.swift` | URL scheme mapping for 10 apps | VERIFIED | `KnownAppSchemes.all` has exactly 10 entries; `AppScheme` struct with `name`, `scheme`, `queryScheme` |
+| `OuisprCore/Tests/OuisprCoreTests/KnownAppSchemesTests.swift` | 5 unit tests for scheme integrity | VERIFIED | All 5 tests present: `testAllSchemesNotEmpty`, `testSchemeURLsAreValid`, `testQuerySchemesMatchSchemes`, `testNoDuplicateSchemes`, `testNoDuplicateNames` |
+| `OuisprApp/OuisprApp.swift` | `handleIncomingURL` with cold start detection | VERIFIED | Sets `coldStartActive`, parses `source=keyboard`, clears on `.background` |
+| `OuisprApp/Views/MainTabView.swift` | Conditional rendering: overlay vs tabs | VERIFIED | `isColdStartMode` state, `.onOpenURL` handler, `.onChange(scenePhase)` cleanup, `SwipeBackOverlayView()` in cold start branch |
+| `OuisprApp/Views/SwipeBackOverlayView.swift` | Full-screen overlay with animation | VERIFIED | 157 lines, brand gradient, `SwipeAnimationView` subview, bilingual text driven by `SharedKeys.language` |
+| `OuisprKeyboard/KeyboardState.swift` | URL with `source=keyboard` param | VERIFIED | Line 361 confirmed |
+| `OuisprApp/Info.plist` | `LSApplicationQueriesSchemes` | VERIFIED | Key present |
+| `OuisprKeyboard/Info.plist` | `LSApplicationQueriesSchemes` | VERIFIED | Key present |
+| `OuisprApp/Audio/RawAudioCapture.swift` | Audio-thread waveform writes | VERIFIED | `installTap` callback writes `waveformEnergy` to App Group |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `DictusApp/DictusApp.swift` | `SharedKeys.coldStartActive` | Sets flag on `source=keyboard` URL open | VERIFIED | Pattern `SharedKeys.coldStartActive` present in both set and clear contexts |
-| `DictusApp/Views/MainTabView.swift` | `SwipeBackOverlayView.swift` | `if isColdStartMode { SwipeBackOverlayView() }` | VERIFIED | Pattern `SwipeBackOverlayView` confirmed in MainTabView grep |
+| `OuisprApp/OuisprApp.swift` | `SharedKeys.coldStartActive` | Sets flag on `source=keyboard` URL open | VERIFIED | Pattern `SharedKeys.coldStartActive` present in both set and clear contexts |
+| `OuisprApp/Views/MainTabView.swift` | `SwipeBackOverlayView.swift` | `if isColdStartMode { SwipeBackOverlayView() }` | VERIFIED | Pattern `SwipeBackOverlayView` confirmed in MainTabView grep |
 | `SwipeBackOverlayView.swift` | `SharedKeys.language` | `@AppStorage(SharedKeys.language, store: AppGroup.defaults)` | VERIFIED | Line 23 of SwipeBackOverlayView.swift |
-| `DictusKeyboard/KeyboardState.swift` | `DictusApp/DictusApp.swift` | `dictus://dictate?source=keyboard` URL scheme | VERIFIED | Line 361 in KeyboardState, handled in handleIncomingURL |
-| `DictusApp/DictusApp.swift` | `KnownAppSchemes.swift` | Was `attemptAutoReturn()` — intentionally removed | NOTE | Auto-return removed after device testing revealed it opened wrong app (first installed, not source). Swipe overlay is deliberate replacement. Not a gap — plan 03 documents this as correct decision. |
+| `OuisprKeyboard/KeyboardState.swift` | `OuisprApp/OuisprApp.swift` | `ouispr://dictate?source=keyboard` URL scheme | VERIFIED | Line 361 in KeyboardState, handled in handleIncomingURL |
+| `OuisprApp/OuisprApp.swift` | `KnownAppSchemes.swift` | Was `attemptAutoReturn()` — intentionally removed | NOTE | Auto-return removed after device testing revealed it opened wrong app (first installed, not source). Swipe overlay is deliberate replacement. Not a gap — plan 03 documents this as correct decision. |
 
 ### Requirements Coverage
 
@@ -103,13 +103,13 @@ No blocking anti-patterns detected.
 
 #### 1. Cold Start Flow End-to-End
 
-**Test:** Force-quit DictusApp, open Notes, switch to Dictus keyboard, tap the mic button.
+**Test:** Force-quit OuisprApp, open Notes, switch to Ouispr keyboard, tap the mic button.
 **Expected:** App opens showing the SwipeBackOverlayView (dark brand gradient + animated sliding circle on iPhone outline). Normal tab UI does NOT appear. Swipe right from bottom of screen returns to Notes. Recording overlay appears in keyboard with live moving waveform bars. Speak, tap stop. Transcription is inserted.
 **Why human:** Requires physical device, keyboard extension activation, URL scheme cross-process open, background audio session, and App Group IPC — not statically verifiable.
 
 #### 2. Normal Launch Shows Tabs
 
-**Test:** Tap the DictusApp icon from the home screen (no prior cold start in session).
+**Test:** Tap the OuisprApp icon from the home screen (no prior cold start in session).
 **Expected:** Three-tab UI (Home, Models, Settings) appears. SwipeBackOverlayView does NOT appear.
 **Why human:** Conditional rendering depends on the presence/absence of the `source=keyboard` URL parameter at runtime.
 

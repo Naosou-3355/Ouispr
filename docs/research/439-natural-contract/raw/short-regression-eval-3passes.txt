@@ -1,5 +1,5 @@
 ───── seed pass 1
-    /Users/pierreviviere/dev/dictus-wt/439/DictusCore/Sources/polish-harness/README.md
+    /Users/pierreviviere/dev/ouispr-wt/439/OuisprCore/Sources/polish-harness/README.md
 Build of product 'polish-harness' complete! (0.18s)
 ✓ [1-normal]  (success, 3241ms)
 ✓ [2-bilingue]  (success, 2018ms)

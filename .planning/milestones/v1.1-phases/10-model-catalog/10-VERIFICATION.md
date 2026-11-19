@@ -34,7 +34,7 @@ re_verification:
 | 3 | Parakeet v3 available as alternative STT engine | VERIFIED | `ParakeetEngine.swift` (105 lines) wraps FluidAudio. `DictationCoordinator` routes `.parakeet` engine. `ModelInfo.all` includes Parakeet on iOS 17+. |
 | 4 | Model selection UI displays both engines with metadata | VERIFIED | `ModelCardView` (220 lines) shows engine badge, gauge bars, description. `ModelManagerView` (183 lines) has Downloaded/Available sections with correct French accents throughout. |
 | 5 | SmartModelRouter removed from codebase | VERIFIED | `grep -r "SmartModelRouter" --include="*.swift"` returns zero results. |
-| 6 | TranscriptionService routes to correct engine | VERIFIED | `TranscriptionService.transcribe()` checks `activeEngine` first, falls back to WhisperKit. Logs language value via DictusLogger before transcription. |
+| 6 | TranscriptionService routes to correct engine | VERIFIED | `TranscriptionService.transcribe()` checks `activeEngine` first, falls back to WhisperKit. Logs language value via OuisprLogger before transcription. |
 | 7 | Unit tests consistent with final catalog state | VERIFIED | `ModelInfoTests.swift` (93 lines, 10 tests) asserts: count==5 available, count==7 total, 2 deprecated, 6 WhisperKit + 1 Parakeet. All identifiers checked including `openai_whisper-large-v3_turbo` (underscore). No reference to removed distil model. |
 
 **Score:** 7/7 truths verified
@@ -43,22 +43,22 @@ re_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/ModelInfo.swift` | Corrected 7-model catalog | VERIFIED | 181 lines. distil removed, turbo uses underscore identifier, 5 available + 2 deprecated |
-| `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` | Tests for 7-model catalog | VERIFIED | 93 lines, 10 tests, assertions match 7-model catalog exactly |
-| `DictusApp/DictusApp.swift` | Language default persistence | VERIFIED | 77 lines. Lines 32-35 persist "fr" via SharedKeys.language with nil-check guard |
-| `DictusApp/Audio/TranscriptionService.swift` | Diagnostic logging + engine routing | VERIFIED | 155 lines. Line 106 logs language value. activeEngine protocol dispatch at line 109-110 |
-| `DictusApp/Audio/SpeechModelProtocol.swift` | Protocol + WhisperKitEngine | VERIFIED | 113 lines, unchanged from previous verification |
-| `DictusApp/Audio/ParakeetEngine.swift` | FluidAudio Parakeet STT | VERIFIED | 105 lines, unchanged from previous verification |
-| `DictusApp/Views/GaugeBarView.swift` | 5-segment gauge bar | VERIFIED | 54 lines, unchanged |
-| `DictusApp/Views/ModelCardView.swift` | Model card with badges and gauges | VERIFIED | 220 lines, unchanged |
-| `DictusApp/Views/ModelManagerView.swift` | Sections + engine descriptions + correct accents | VERIFIED | 183 lines. All French text uses correct accents: Telecharges->Telecharges, Modeles->Modeles, developpe->developpe, optimise->optimise, entraines->entraines |
+| `OuisprCore/Sources/OuisprCore/ModelInfo.swift` | Corrected 7-model catalog | VERIFIED | 181 lines. distil removed, turbo uses underscore identifier, 5 available + 2 deprecated |
+| `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` | Tests for 7-model catalog | VERIFIED | 93 lines, 10 tests, assertions match 7-model catalog exactly |
+| `OuisprApp/OuisprApp.swift` | Language default persistence | VERIFIED | 77 lines. Lines 32-35 persist "fr" via SharedKeys.language with nil-check guard |
+| `OuisprApp/Audio/TranscriptionService.swift` | Diagnostic logging + engine routing | VERIFIED | 155 lines. Line 106 logs language value. activeEngine protocol dispatch at line 109-110 |
+| `OuisprApp/Audio/SpeechModelProtocol.swift` | Protocol + WhisperKitEngine | VERIFIED | 113 lines, unchanged from previous verification |
+| `OuisprApp/Audio/ParakeetEngine.swift` | FluidAudio Parakeet STT | VERIFIED | 105 lines, unchanged from previous verification |
+| `OuisprApp/Views/GaugeBarView.swift` | 5-segment gauge bar | VERIFIED | 54 lines, unchanged |
+| `OuisprApp/Views/ModelCardView.swift` | Model card with badges and gauges | VERIFIED | 220 lines, unchanged |
+| `OuisprApp/Views/ModelManagerView.swift` | Sections + engine descriptions + correct accents | VERIFIED | 183 lines. All French text uses correct accents: Telecharges->Telecharges, Modeles->Modeles, developpe->developpe, optimise->optimise, entraines->entraines |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| DictusApp.init() | App Group UserDefaults | SharedKeys.language persistence | WIRED | Lines 32-35: nil-check then set "fr" |
-| TranscriptionService | DictusLogger | Language diagnostic log | WIRED | Line 106: logs language before transcription |
+| OuisprApp.init() | App Group UserDefaults | SharedKeys.language persistence | WIRED | Lines 32-35: nil-check then set "fr" |
+| TranscriptionService | OuisprLogger | Language diagnostic log | WIRED | Line 106: logs language before transcription |
 | ModelCardView | ModelInfo | model.accuracyScore, speedScore, engine | WIRED | Unchanged, no regression |
 | ModelManagerView | ModelInfo.all / allIncludingDeprecated | Filter into sections | WIRED | Unchanged, no regression |
 | DictationCoordinator | SpeechModelProtocol | Engine routing by SpeechEngine | WIRED | Unchanged, no regression |
@@ -106,7 +106,7 @@ Plan 10-04 closed both UAT-identified gaps plus two related improvements:
 
 2. **English-only distil model (major):** `distil-whisper_distil-large-v3_turbo` completely removed from `allIncludingDeprecated` array. Catalog reduced from 8 to 7 models. Verified: zero occurrences of "distil" in ModelInfo.swift.
 
-3. **Language default persistence (major):** `DictusApp.init()` now writes "fr" to App Group UserDefaults via SharedKeys.language on first launch (nil-check guard preserves user overrides). TranscriptionService logs the language value for diagnostics.
+3. **Language default persistence (major):** `OuisprApp.init()` now writes "fr" to App Group UserDefaults via SharedKeys.language on first launch (nil-check guard preserves user overrides). TranscriptionService logs the language value for diagnostics.
 
 4. **French accent corrections:** All UI strings in ModelManagerView now use proper French accents. Verified: grep for unaccented variants returns zero matches.
 

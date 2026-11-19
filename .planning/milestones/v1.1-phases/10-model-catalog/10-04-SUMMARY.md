@@ -21,16 +21,16 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift
-    - DictusApp/DictusApp.swift
-    - DictusApp/Audio/TranscriptionService.swift
-    - DictusApp/Views/ModelManagerView.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift
+    - OuisprApp/OuisprApp.swift
+    - OuisprApp/Audio/TranscriptionService.swift
+    - OuisprApp/Views/ModelManagerView.swift
 
 key-decisions:
   - "Persist language default in App Group at init() rather than relying on @AppStorage defaults"
   - "Remove distil-whisper entirely rather than marking deprecated (English-only, no French use)"
-  - "Remove iOS 14 availability guard on DictusLogger (deployment target is iOS 17)"
+  - "Remove iOS 14 availability guard on OuisprLogger (deployment target is iOS 17)"
 
 patterns-established:
   - "Critical App Group defaults persisted at app init with nil-check guard"
@@ -68,23 +68,23 @@ Each task was committed atomically:
 2. **Task 2: Persist language default, add diagnostic logging, fix UI accents** - `d317453` (fix)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Removed distil entry, fixed turbo underscore identifier
-- `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` - Updated counts for 7-model catalog
-- `DictusApp/DictusApp.swift` - Language default persistence at init
-- `DictusApp/Audio/TranscriptionService.swift` - Diagnostic logging for language value
-- `DictusApp/Views/ModelManagerView.swift` - French accent corrections throughout
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Removed distil entry, fixed turbo underscore identifier
+- `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` - Updated counts for 7-model catalog
+- `OuisprApp/OuisprApp.swift` - Language default persistence at init
+- `OuisprApp/Audio/TranscriptionService.swift` - Diagnostic logging for language value
+- `OuisprApp/Views/ModelManagerView.swift` - French accent corrections throughout
 
 ## Decisions Made
 - Persist language default in App Group at init() rather than relying on @AppStorage defaults -- @AppStorage defaults are in-memory only and never written to UserDefaults until the Picker is interacted with
 - Remove distil-whisper entirely rather than marking deprecated -- English-only model has no place in a French-focused catalog
-- Removed iOS 14 availability guard on DictusLogger since deployment target is iOS 17
+- Removed iOS 14 availability guard on OuisprLogger since deployment target is iOS 17
 
 ## Deviations from Plan
 
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- DictusCore `swift test` fails due to pre-existing platform availability errors in unrelated files (BrandWaveform Color.opacity). Verified via xcodebuild build which succeeded. This is a known pre-existing issue, not caused by our changes.
+- OuisprCore `swift test` fails due to pre-existing platform availability errors in unrelated files (BrandWaveform Color.opacity). Verified via xcodebuild build which succeeded. This is a known pre-existing issue, not caused by our changes.
 
 ## User Setup Required
 

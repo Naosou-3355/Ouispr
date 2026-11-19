@@ -42,23 +42,23 @@ jobs:
           path: |
             ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
             ~/Library/Caches/org.swift.swiftpm
-          key: spm-fa015-${{ runner.os }}-${{ hashFiles('Dictus.xcodeproj/project.pbxproj', 'DictusCore/Package.swift') }}
+          key: spm-fa015-${{ runner.os }}-${{ hashFiles('Ouispr.xcodeproj/project.pbxproj', 'OuisprCore/Package.swift') }}
           restore-keys: |
             spm-fa015-${{ runner.os }}-
 
       - name: Resolve SwiftPM dependencies
         run: |
           xcodebuild -resolvePackageDependencies \
-            -project Dictus.xcodeproj \
-            -scheme DictusApp
+            -project Ouispr.xcodeproj \
+            -scheme OuisprApp
 
       # Device build without signing: AltStore signs it on the phone.
-      - name: Build DictusApp for iPhone (Release, unsigned)
+      - name: Build OuisprApp for iPhone (Release, unsigned)
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Dictus.xcodeproj \
-            -scheme DictusApp \
+            -project Ouispr.xcodeproj \
+            -scheme OuisprApp \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
@@ -74,7 +74,7 @@ jobs:
       - name: Embed entitlements (ad-hoc signature)
         run: |
           set -euo pipefail
-          APP=build/DerivedData/Build/Products/Release-iphoneos/DictusApp.app
+          APP=build/DerivedData/Build/Products/Release-iphoneos/OuisprApp.app
           sign_nested_code() {
             find "$1" -maxdepth 2 \( -name '*.framework' -o -name '*.dylib' \) -path '*/Frameworks/*' -print0 |
               while IFS= read -r -d '' f; do codesign -f -s - "$f"; done
@@ -86,7 +86,7 @@ jobs:
             codesign -f -s - --entitlements "$NAME/$NAME.entitlements" "$EXT"
           done
           sign_nested_code "$APP"
-          codesign -f -s - --entitlements DictusApp/DictusApp.entitlements "$APP"
+          codesign -f -s - --entitlements OuisprApp/OuisprApp.entitlements "$APP"
           for B in "$APP" "$APP"/PlugIns/*.appex "$APP"/Extensions/*.appex; do
             [ -d "$B" ] || continue
             echo "== $B"
@@ -97,7 +97,7 @@ jobs:
       - name: Package Ouispr.ipa
         run: |
           set -euo pipefail
-          APP=build/DerivedData/Build/Products/Release-iphoneos/DictusApp.app
+          APP=build/DerivedData/Build/Products/Release-iphoneos/OuisprApp.app
           test -d "$APP"
           mkdir -p ipa/Payload
           cp -R "$APP" ipa/Payload/

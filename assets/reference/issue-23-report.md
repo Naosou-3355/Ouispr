@@ -2,7 +2,7 @@
 
 ## Contexte précis et symptômes observés
 
-Vous décrivez une architecture typique « clavier iOS + app conteneur » pour faire de la dictée/transcription : le clavier (extension) sert d’UI et de point d’entrée, et l’app (Dictus) sert à obtenir l’accès micro / audio système et à exécuter la pipeline de transcription. Ce découpage se heurte à plusieurs contraintes de plateforme, surtout visibles lors d’un *cold start* (app fermée/tuée), car l’ouverture de l’app conteneur casse le contexte de saisie dans l’app hôte et vous cherchez à y revenir automatiquement (sans action manuelle). citeturn25view0turn23view1turn18view1
+Vous décrivez une architecture typique « clavier iOS + app conteneur » pour faire de la dictée/transcription : le clavier (extension) sert d’UI et de point d’entrée, et l’app (Ouispr) sert à obtenir l’accès micro / audio système et à exécuter la pipeline de transcription. Ce découpage se heurte à plusieurs contraintes de plateforme, surtout visibles lors d’un *cold start* (app fermée/tuée), car l’ouverture de l’app conteneur casse le contexte de saisie dans l’app hôte et vous cherchez à y revenir automatiquement (sans action manuelle). citeturn25view0turn23view1turn18view1
 
 Votre observation « ça marche mieux dans des apps très connues (Notes, WhatsApp, Facebook, Instagram…) mais pas dans une app exotique » est compatible avec deux réalités iOS :
 
@@ -96,19 +96,19 @@ Mais il a des contraintes fortes : pour continuer à enregistrer en arrière-pl
 
 Et côté extensions, rappelez-vous : vous ne pouvez pas déplacer `UIBackgroundModes` dans l’extension (rejet), donc tout doit être porté par l’app conteneur. citeturn23view1
 
-## Recommandation d’architecture pour Dictus en 2026
+## Recommandation d’architecture pour Ouispr en 2026
 
 ### Le design cible “compliant” qui maximise l’impression de continuité
 Pour un comportement stable et acceptable App Store, la synthèse des sources mène à ce design :
 
 1) **Dans le clavier**  
-   - Bouton micro = “Démarrer une session Dictus” (si session inactive).  
+   - Bouton micro = “Démarrer une session Ouispr” (si session inactive).  
    - Une fois session active, le bouton micro déclenche la capture/stream et l’insertion de texte via `textDocumentProxy.insertText`, sans rouvrir l’app.  
    Les App Groups + Full Access sont généralement nécessaires pour partager état/audio/transcript entre app et extension. citeturn25view2turn23view1  
 
 2) **Au premier démarrage (cold start)**  
-   - Le tap micro ouvre Dictus via un custom URL scheme. Apple DTS confirme qu’ouvrir l’app conteneur depuis le clavier est autorisé, et donne un exemple de code. citeturn18view1  
-   - Dictus active la session audio (permission micro si nécessaire) et affiche un écran minimal avec une instruction claire “Touchez Retour à <App> en haut à gauche”. Apple DTS cite explicitement cette flèche comme mécanisme prévu par le système, en rappelant qu’il n’existe pas de retour automatique. citeturn18view1turn5view1  
+   - Le tap micro ouvre Ouispr via un custom URL scheme. Apple DTS confirme qu’ouvrir l’app conteneur depuis le clavier est autorisé, et donne un exemple de code. citeturn18view1  
+   - Ouispr active la session audio (permission micro si nécessaire) et affiche un écran minimal avec une instruction claire “Touchez Retour à <App> en haut à gauche”. Apple DTS cite explicitement cette flèche comme mécanisme prévu par le système, en rappelant qu’il n’existe pas de retour automatique. citeturn18view1turn5view1  
 
 3) **Gestion du “Full Access”**  
    - Anticiper qu’en iOS récent, l’ouverture de l’app conteneur depuis le clavier peut exiger Full Access (sinon code -54), et construire l’onboarding en conséquence : si Full Access désactivé, afficher un UI qui guide vers Réglages (et explique pourquoi). Les discussions 2025–2026 montrent ce changement côté OS et l’incertitude autour d’exceptions observées sur certains claviers. citeturn18view1turn19search0turn25view2  

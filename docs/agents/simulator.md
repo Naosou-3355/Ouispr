@@ -1,6 +1,6 @@
 # Headless Simulator
 
-How an agent gets DictusApp running on an iOS Simulator and produces a screenshot, without opening a window.
+How an agent gets OuisprApp running on an iOS Simulator and produces a screenshot, without opening a window.
 
 Every command below was executed on this machine (Xcode 26.4.1, iOS 26.5 runtime, iPhone 17). The outputs shown are the ones they produced.
 
@@ -56,7 +56,7 @@ Two things a simulator reports about "the device" behave in opposite ways, and g
 **The model identifier is yours to choose.** A device type and a runtime are different things: `iPhone 11` is a stock *device type* that pairs with whatever runtime is installed, so an A13 device exists here even though no iOS 13 runtime does.
 
 ```bash
-xcrun simctl create "Dictus A13 iPhone 11" \
+xcrun simctl create "Ouispr A13 iPhone 11" \
   com.apple.CoreSimulator.SimDeviceType.iPhone-11 \
   com.apple.CoreSimulator.SimRuntime.iOS-26-5
 ```
@@ -101,43 +101,43 @@ A fresh worktree resolves its packages from zero, so both steps are needed the f
 
 ```bash
 xcodebuild -resolvePackageDependencies \
-  -project Dictus.xcodeproj -scheme DictusApp \
+  -project Ouispr.xcodeproj -scheme OuisprApp \
   -derivedDataPath build/DerivedData
 
 xcodebuild build \
-  -project Dictus.xcodeproj -scheme DictusApp -configuration Debug \
+  -project Ouispr.xcodeproj -scheme OuisprApp -configuration Debug \
   -destination 'platform=iOS Simulator,id=<udid>' \
   -derivedDataPath build/DerivedData
 ```
 
 There used to be a third step between them, `./scripts/patch-fluidaudio-swift5.sh build/DerivedData`, which forced FluidAudio 0.12 into Swift 5 mode. FluidAudio 0.15.7 compiles unpatched under Xcode 26.4.1 / Swift 6.3, and the script was deleted with that bump (#558). A branch still on FluidAudio 0.12 carries its own copy of the script; run it there, and only there.
 
-Building `DictusApp` builds the embedded keyboard, widgets and core. The product lands at:
+Building `OuisprApp` builds the embedded keyboard, widgets and core. The product lands at:
 
 ```
-build/DerivedData/Build/Products/Debug-iphonesimulator/DictusApp.app
-build/DerivedData/Build/Products/Debug-iphonesimulator/DictusApp.app/PlugIns/DictusKeyboard.appex
-build/DerivedData/Build/Products/Debug-iphonesimulator/DictusApp.app/PlugIns/DictusWidgets.appex
+build/DerivedData/Build/Products/Debug-iphonesimulator/OuisprApp.app
+build/DerivedData/Build/Products/Debug-iphonesimulator/OuisprApp.app/PlugIns/OuisprKeyboard.appex
+build/DerivedData/Build/Products/Debug-iphonesimulator/OuisprApp.app/PlugIns/OuisprWidgets.appex
 ```
 
 **Do not copy CI's signing flags into a build you intend to run.** `.github/workflows/ci.yml` passes `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_IDENTITY=""`, which is right for a compile-only check and wrong here. That build is unsigned:
 
 ```bash
-codesign -d --entitlements - build/DerivedData/Build/Products/Debug-iphonesimulator/DictusApp.app
+codesign -d --entitlements - build/DerivedData/Build/Products/Debug-iphonesimulator/OuisprApp.app
 ```
 
 ```
-Executable=/Users/…/DictusApp.app/DictusApp
+Executable=/Users/…/OuisprApp.app/OuisprApp
 ```
 
-With that build, `AppGroup.containerURL` comes back nil on the device, so `dictus_debug.log` is never written and nothing crossing the App Group can be observed. Built without those flags, the app is ad-hoc signed and the container resolves. Drop the flags.
+With that build, `AppGroup.containerURL` comes back nil on the device, so `ouispr_debug.log` is never written and nothing crossing the App Group can be observed. Built without those flags, the app is ad-hoc signed and the container resolves. Drop the flags.
 
 Do not read a mechanism into that. The ad-hoc signed build carries an *empty* entitlements dictionary — no `application-groups` key — and its container resolves anyway, so the simulator is not gating on the entitlement the way a device does. Signed-versus-unsigned is what was observed to matter here, not why.
 
 ## 3. Install and launch
 
 ```bash
-xcrun simctl install <udid> build/DerivedData/Build/Products/Debug-iphonesimulator/DictusApp.app
+xcrun simctl install <udid> build/DerivedData/Build/Products/Debug-iphonesimulator/OuisprApp.app
 xcrun simctl launch <udid> com.pivi.dictus
 ```
 
@@ -169,7 +169,7 @@ Nothing but the header means the process is gone. The reason is in the device lo
 ```bash
 xcrun simctl spawn <udid> log show --last 10m --style compact \
   --predicate 'process == "SpringBoard" AND eventMessage CONTAINS "Process exited"' \
-  | grep pivi.dictus
+  | grep pivi.ouispr
 ```
 
 ```
@@ -189,7 +189,7 @@ xcrun simctl get_app_container <udid> com.pivi.dictus groups
 group.solutions.pivi.dictus	/Users/…/Devices/<udid>/data/Containers/Shared/AppGroup/3B7549C4-…
 ```
 
-`dictus_debug.log` sits at the root of that directory.
+`ouispr_debug.log` sits at the root of that directory.
 
 ## 4. Capture
 
@@ -343,7 +343,7 @@ That is the right behaviour, and it is a nudge: give controls an agent is expect
 axe tap -x 201 -y 815 --udid <udid>    # Models tab
 ```
 
-Verified end to end on 2026-08-22: installing DictusApp, tapping through the onboarding pages by label, and reaching the Models and Settings tabs by coordinate. The frontmost application stayed the terminal throughout.
+Verified end to end on 2026-08-22: installing OuisprApp, tapping through the onboarding pages by label, and reaching the Models and Settings tabs by coordinate. The frontmost application stayed the terminal throughout.
 
 **A long press needs one HID session, which means `batch`.** A held press is what opens iOS's own menus — the globe key's keyboard picker above all — and `axe` holds the press only inside a single batch:
 
@@ -360,12 +360,12 @@ A menu opened that way **stays open after the release**, so there is no race —
 
 ```bash
 axe describe-ui --udid <udid>
-axe tap --label "Dictus, multilingue" --udid <udid>
+axe tap --label "Ouispr, multilingue" --udid <udid>
 ```
 
-The row reads `Dictus, <declared language>` in the device's language. Since #653 the keyboard declares `PrimaryLanguage = mul`, so it is `Dictus, multilingue` on a French device and `Dictus, Multiple languages` on an English one; a build from before #653 still shows `Dictus, français`.
+The row reads `Ouispr, <declared language>` in the device's language. Since #653 the keyboard declares `PrimaryLanguage = mul`, so it is `Ouispr, multilingue` on a French device and `Ouispr, Multiple languages` on an English one; a build from before #653 still shows `Ouispr, français`.
 
-**Never tap the globe to change keyboard.** A tap cycles through the enabled keyboards and skips the third-party ones, so it never lands on Dictus. That single mistake is what produced the wrong conclusion this file carried until 2026-08-23 (section 8).
+**Never tap the globe to change keyboard.** A tap cycles through the enabled keyboards and skips the third-party ones, so it never lands on Ouispr. That single mistake is what produced the wrong conclusion this file carried until 2026-08-23 (section 8).
 
 **A control missing from the accessibility tree needs `--tap-style physical`.** With the default `automatic` style, `axe` falls back to a simulator tap and such a control does not react. Measured 2026-08-23 on the Full Access switch, which `describe-ui` does not report at all (section 8); expect the same wherever a control you can see in a screenshot has no element in the tree.
 
@@ -433,7 +433,7 @@ xcrun simctl ui <udid> appearance light
 xcrun simctl uninstall <udid> com.pivi.dictus
 ```
 
-`uninstall` also deletes the App Group container, so `dictus_debug.log` and every persisted preference go with it. Read what you need first.
+`uninstall` also deletes the App Group container, so `ouispr_debug.log` and every persisted preference go with it. Read what you need first.
 
 Revert any `defaults write` you made on the device — those survive uninstall.
 
@@ -447,7 +447,7 @@ xcrun simctl shutdown <udid>
 
 **Tapping and typing are no longer on this list.** They were, until 2026-08-22, on the grounds that `simctl` has no touch injection. That is still true of `simctl` and was never true of the machine: see section 5. Do not re-derive the old limit from the `simctl` man page.
 
-**The Dictus keyboard renders in a simulator, takes Full Access, and drives the whole dictation chain.** This file said the rendering was unresolved until 2026-08-23. It was wrong, and the reason was in how the keyboard was being reached: the globe key was being *tapped*, and a tap cycles past the third-party keyboards. Long-press it and pick Dictus from the menu — section 5 has the sequence, `axe batch` included.
+**The Ouispr keyboard renders in a simulator, takes Full Access, and drives the whole dictation chain.** This file said the rendering was unresolved until 2026-08-23. It was wrong, and the reason was in how the keyboard was being reached: the globe key was being *tapped*, and a tap cycles past the third-party keyboards. Long-press it and pick Ouispr from the menu — section 5 has the sequence, `axe batch` included.
 
 Measured end to end on 2026-08-23. The keyboard draws its own AZERTY layout, with the `espace` bar, the hamburger panel button and the mic button.
 
@@ -458,7 +458,7 @@ xcrun simctl spawn <udid> pluginkit -m -v -p com.apple.keyboard-service
 ```
 
 ```
-     com.pivi.dictus.keyboard(1.8.0)	657D5A4D-…	/Users/…/DictusApp.app/PlugIns/DictusKeyboard.appex
+     com.pivi.dictus.keyboard(1.8.0)	657D5A4D-…	/Users/…/OuisprApp.app/PlugIns/OuisprKeyboard.appex
 ```
 
 `pkd` logs `Created plugin` for `com.pivi.dictus.keyboard(1.8.0)`, and SpringBoard lists it under `com.apple.keyboard-service`.
@@ -474,11 +474,11 @@ d['AppleKeyboards'] = [
 ]
 ```
 
-**On a fresh or erased device, add `AppleKeyboardsExpanded = 1` in the same write.** Without it, iOS ignores `AppleKeyboards` and rebuilds the list from `AppleLanguages`, without Dictus. Measured 2026-10-14 on iOS 26.5: Settings showed Français, Anglais (R.-U.) and Emoji while the plist still held the list above. Reading it back from inside the device works: `xcrun simctl spawn <udid> defaults read -g AppleKeyboards`.
+**On a fresh or erased device, add `AppleKeyboardsExpanded = 1` in the same write.** Without it, iOS ignores `AppleKeyboards` and rebuilds the list from `AppleLanguages`, without Ouispr. Measured 2026-10-14 on iOS 26.5: Settings showed Français, Anglais (R.-U.) and Emoji while the plist still held the list above. Reading it back from inside the device works: `xcrun simctl spawn <udid> defaults read -g AppleKeyboards`.
 
-Then boot, probe `axe` and attach Simulator.app only if the probe fails (section 5), install, and open any text field. Tapping through Settings → Général → Clavier → Claviers → Ajouter un clavier → Dictus reaches the same state and also works. `defaults write` from the host does not land, and neither does the `com.apple.Preferences` domain — `AppleKeyboards` does not live there; the version of this file before #378 made both mistakes at once and concluded from them that the keyboard could not be enabled at all.
+Then boot, probe `axe` and attach Simulator.app only if the probe fails (section 5), install, and open any text field. Tapping through Settings → Général → Clavier → Claviers → Ajouter un clavier → Ouispr reaches the same state and also works. `defaults write` from the host does not land, and neither does the `com.apple.Preferences` domain — `AppleKeyboards` does not live there; the version of this file before #378 made both mistakes at once and concluded from them that the keyboard could not be enabled at all.
 
-**Full Access.** Granted by tap, in Réglages → Général → Clavier → Claviers → Dictus. The switch is not in the accessibility tree, so `axe`'s default `automatic` style falls back to a simulator tap and the toggle does not move; `--tap-style physical` moves it:
+**Full Access.** Granted by tap, in Réglages → Général → Clavier → Claviers → Ouispr. The switch is not in the accessibility tree, so `axe`'s default `automatic` style falls back to a simulator tap and the toggle does not move; `--tap-style physical` moves it:
 
 ```bash
 axe tap -x 337 -y 161 --tap-style physical --udid <udid>   # the Full Access switch
@@ -514,12 +514,12 @@ defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 **Custom-scheme URLs prompt.** `simctl openurl` raises a confirmation the user must accept — though section 5 can now accept it:
 
 ```bash
-xcrun simctl openurl <udid> "dictus://dictate?source=keyboard"
+xcrun simctl openurl <udid> "ouispr://dictate?source=keyboard"
 ```
 
-exits 0 and raises an `Ouvrir dans « Dictus » ?` confirmation alert, which needs a tap. It behaves the same whether Dictus is frontmost or the device is on the Home screen.
+exits 0 and raises an `Ouvrir dans « Ouispr » ?` confirmation alert, which needs a tap. It behaves the same whether Ouispr is frontmost or the device is on the Home screen.
 
-**The dictation chain runs; the capture at the end of it does not.** Tapping the keyboard's mic reaches DictusApp and comes back with the `No model downloaded` failure quoted in the keyboard entry above. Past that point nothing was exercised, and the reason is structural. The audio session does configure:
+**The dictation chain runs; the capture at the end of it does not.** Tapping the keyboard's mic reaches OuisprApp and comes back with the `No model downloaded` failure quoted in the keyboard entry above. Past that point nothing was exercised, and the reason is structural. The audio session does configure:
 
 ```
 […] INFO    [audio] <APP> audioSessionConfigured category=playAndRecord
@@ -530,7 +530,7 @@ No transcription model is installed, and installing one means the Models tab —
 
 Two things to know before trying: the simulator captures the **Mac's** input device, so a recording started here records the room Pierre is sitting in; and transcription runs on Mac silicon, so any timing measured in a simulator says nothing about the phone.
 
-**A host app's spell-check underlines are not a usable probe.** Measured 2026-10-05 for #653 in Reminders' inline title field, typing with the Dictus keyboard: the first session underlined a nonsense word (`xqzvb`) in red. After a reinstall of Dictus, the same field underlined nothing — with the old `fr-FR` build as with the new one, with the simulated hardware keyboard too, and still after a reboot. A missing underline here says nothing about the keyboard; that check belongs on a physical iPhone.
+**A host app's spell-check underlines are not a usable probe.** Measured 2026-10-05 for #653 in Reminders' inline title field, typing with the Ouispr keyboard: the first session underlined a nonsense word (`xqzvb`) in red. After a reinstall of Ouispr, the same field underlined nothing — with the old `fr-FR` build as with the new one, with the simulated hardware keyboard too, and still after a reboot. A missing underline here says nothing about the keyboard; that check belongs on a physical iPhone.
 
 **StoreKit is inert.** The paywall and subscription state cannot be exercised without a StoreKit configuration:
 
@@ -538,4 +538,4 @@ Two things to know before trying: the simulator captures the **Mac's** input dev
 […] ERROR   [lifecycle] <APP> subscriptionError action=loadProducts error=empty result (StoreKit configuration missing or product ID unknown)
 ```
 
-**What does work**, beyond plain screens: the App Group container and `dictus_debug.log` (with a signed build), and Live Activities — one started and rendered in the Dynamic Island during this run.
+**What does work**, beyond plain screens: the App Group container and `ouispr_debug.log` (with a signed build), and Live Activities — one started and rendered in the Dynamic Island during this run.

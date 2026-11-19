@@ -1,4 +1,4 @@
-# Release plan — Dictus
+# Release plan — Ouispr
 
 What ships next, and why. Complements [VERSIONING.md](VERSIONING.md), which says *how* to number a release; this file says *what* the current and next cycles are.
 
@@ -11,7 +11,7 @@ Last reviewed: 2026-10-22.
 | | |
 | --- | --- |
 | App Store | **1.9.0 (build 36)**, released 2026-09-24 with a phased rollout, tag `v1.9.0` |
-| Current cycle | **2.0.0**, the Dictus Pro launch. No 2.0.0 build cut yet: `develop` still says 1.9.0 (36) |
+| Current cycle | **2.0.0**, the Ouispr Pro launch. No 2.0.0 build cut yet: `develop` still says 1.9.0 (36) |
 | Gate | The open lines of [ROADMAP.md](ROADMAP.md) "Now": #512 step 2, #380 audio session inactivity timeout, #279 the flip, #489 Smart Modes armed only from the keyboard, #793 "Continue for free" opened Safari |
 | `PremiumFlags.paywallVisible` | `true` on `develop` since PR #776 (2026-10-24, refs #279) |
 
@@ -27,7 +27,7 @@ This is the rule the rest of the plan follows from.
 
 **TestFlight is where the product is built.** Its ~190 testers signed up to watch that happen. Unfinished Pro surfaces, greyed features and rough edges are the point, not a leak. StoreKit runs in sandbox there, so the paywall and the purchase flow can be exercised end to end, for real, before Apple ever sees them.
 
-**The App Store is what has been announced.** It shows only what Dictus is prepared to claim publicly. The product page currently sells an app that is free, open source, and asks for no account. Until monetisation is announced deliberately, nothing on that surface may say otherwise. A user who long-presses the mic and reads "Dictus Pro" learns of a business model before its author has stated it, and the App Store page carries the reviews that mistake would cost.
+**The App Store is what has been announced.** It shows only what Ouispr is prepared to claim publicly. The product page currently sells an app that is free, open source, and asks for no account. Until monetisation is announced deliberately, nothing on that surface may say otherwise. A user who long-presses the mic and reads "Ouispr Pro" learns of a business model before its author has stated it, and the App Store page carries the reviews that mistake would cost.
 
 `PremiumFlags.paywallVisible` is the valve between the two. One constant decides whether the product looks free or freemium, and it is the gate every Pro entry point must consult. #460 exists because the Smart Mode fan does not.
 

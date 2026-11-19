@@ -21,11 +21,11 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Views/MicroModeView.swift
-    - DictusKeyboard/Views/EmojiMicroModeView.swift
+    - OuisprKeyboard/Views/MicroModeView.swift
+    - OuisprKeyboard/Views/EmojiMicroModeView.swift
   modified:
-    - DictusKeyboard/KeyboardRootView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/KeyboardRootView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Custom large mic pill (120pt) instead of scaleEffect on AnimatedMicButton to avoid retina blur"
@@ -71,13 +71,13 @@ Each task was committed atomically:
 2. **Task 2: Wire mode-based rendering in KeyboardRootView** - `ae060c7` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/MicroModeView.swift` - Dictation-only mode: large mic pill + globe, no other controls
-- `DictusKeyboard/Views/EmojiMicroModeView.swift` - Emoji picker + simplified mic toolbar + globe
-- `DictusKeyboard/KeyboardRootView.swift` - Mode-based switch routing, reads KeyboardMode.active on appear
-- `Dictus.xcodeproj/project.pbxproj` - Added new view files to DictusKeyboard target
+- `OuisprKeyboard/Views/MicroModeView.swift` - Dictation-only mode: large mic pill + globe, no other controls
+- `OuisprKeyboard/Views/EmojiMicroModeView.swift` - Emoji picker + simplified mic toolbar + globe
+- `OuisprKeyboard/KeyboardRootView.swift` - Mode-based switch routing, reads KeyboardMode.active on appear
+- `Ouispr.xcodeproj/project.pbxproj` - Added new view files to OuisprKeyboard target
 
 ## Decisions Made
-- Custom large mic pill (120pt Capsule with dictusGlass) rather than using scaleEffect on AnimatedMicButton, which causes bitmap blur on retina
+- Custom large mic pill (120pt Capsule with ouisprGlass) rather than using scaleEffect on AnimatedMicButton, which causes bitmap blur on retina
 - Globe button in bottom-left for MicroMode (mimics minimal layout), in toolbar for EmojiMicroMode (consistent with toolbar pattern)
 - EmojiPickerView onDismiss is a no-op in emojiMicro mode since emoji IS the mode (no keyboard to toggle back to)
 - isEmojiMode state only applies when currentMode == .full, keeping emoji toggle logic isolated
@@ -97,7 +97,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 - All three keyboard modes render correctly based on KeyboardMode.active
 - Ready for Plan 09-03 (settings mode picker) to let users switch between modes
-- Mode can be tested by setting UserDefaults value in App Group: `UserDefaults(suiteName: "group.com.pivi.dictus")?.set("micro", forKey: "dictus.keyboardMode")`
+- Mode can be tested by setting UserDefaults value in App Group: `UserDefaults(suiteName: "group.com.pivi.dictus")?.set("micro", forKey: "ouispr.keyboardMode")`
 
 ---
 *Phase: 09-keyboard-modes*

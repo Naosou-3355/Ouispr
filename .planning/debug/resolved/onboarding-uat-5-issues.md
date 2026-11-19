@@ -24,12 +24,12 @@ started: Since initial implementation
 
 - timestamp: 2026-03-07
   checked: WelcomePage.swift lines 19-21
-  found: WelcomePage uses DictusLogo (static 3-bar logo), NOT BrandWaveform. The comment on line 7 mentions "BrandWaveform with animated energy" but the implementation on line 20 is `DictusLogo(height: 100)`. No animation state, no energy levels, no timer — just a static logo render.
+  found: WelcomePage uses OuisprLogo (static 3-bar logo), NOT BrandWaveform. The comment on line 7 mentions "BrandWaveform with animated energy" but the implementation on line 20 is `OuisprLogo(height: 100)`. No animation state, no energy levels, no timer — just a static logo render.
   implication: Issue 1 root cause — the animated waveform was never implemented, only documented in comments.
 
 - timestamp: 2026-03-07
   checked: WelcomePage.swift line 42, KeyboardSetupPage.swift line 70, TestRecordingPage.swift lines 118/135
-  found: All buttons use `.foregroundStyle(.primary)` for text color. `.primary` is black in light mode, white-ish in dark mode. The buttons have colored backgrounds (`.dictusAccent` blue or `.dictusSuccess` green). Only WelcomePage line 42 uses `.foregroundColor(.white)` — the others use `.foregroundStyle(.primary)`. In dark mode, `.primary` is near-white which works. In light mode, `.primary` is black text on blue/green background — poor contrast.
+  found: All buttons use `.foregroundStyle(.primary)` for text color. `.primary` is black in light mode, white-ish in dark mode. The buttons have colored backgrounds (`.ouisprAccent` blue or `.ouisprSuccess` green). Only WelcomePage line 42 uses `.foregroundColor(.white)` — the others use `.foregroundStyle(.primary)`. In dark mode, `.primary` is near-white which works. In light mode, `.primary` is black text on blue/green background — poor contrast.
   implication: Issue 2 root cause — button text uses `.foregroundStyle(.primary)` instead of hardcoded `.white`.
 
 - timestamp: 2026-03-07
@@ -43,9 +43,9 @@ started: Since initial implementation
   implication: Issue 4 root cause — BrandWaveform outer bar color is hardcoded white, not adaptive.
 
 - timestamp: 2026-03-07
-  checked: DictusLogo.swift line 42
-  found: DictusLogo side bars also use `Color.white.opacity(opacities[index])` hardcoded. Same issue — invisible on light backgrounds.
-  implication: DictusLogo has the same light-mode invisibility issue (bonus finding).
+  checked: OuisprLogo.swift line 42
+  found: OuisprLogo side bars also use `Color.white.opacity(opacities[index])` hardcoded. Same issue — invisible on light backgrounds.
+  implication: OuisprLogo has the same light-mode invisibility issue (bonus finding).
 
 - timestamp: 2026-03-07
   checked: TestRecordingPage.swift lines 28-33

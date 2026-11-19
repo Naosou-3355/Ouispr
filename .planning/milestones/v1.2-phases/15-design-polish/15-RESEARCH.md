@@ -6,9 +6,9 @@
 
 ## Summary
 
-Phase 15 is a UI polish phase touching 10+ existing Swift files across DictusApp, DictusKeyboard, and DictusCore. The work breaks into four categories: (1) French accent audit across all UI strings, (2) model card redesign (tap-to-select, swipe-to-delete, blue-only gauge colors, active highlight), (3) recording overlay and mic button interaction improvements (hit area, haptics, dismiss animation), and (4) onboarding/settings UX fixes including a new success screen, two bugs (#25, #26), and one intermittent waveform bug.
+Phase 15 is a UI polish phase touching 10+ existing Swift files across OuisprApp, OuisprKeyboard, and OuisprCore. The work breaks into four categories: (1) French accent audit across all UI strings, (2) model card redesign (tap-to-select, swipe-to-delete, blue-only gauge colors, active highlight), (3) recording overlay and mic button interaction improvements (hit area, haptics, dismiss animation), and (4) onboarding/settings UX fixes including a new success screen, two bugs (#25, #26), and one intermittent waveform bug.
 
-All changes are constrained to existing SwiftUI patterns already established in the codebase. No new dependencies are needed. The codebase already has `HapticFeedback` with pre-allocated generators, `GlassPressStyle` for button interactions, `dictusGlass()` for card styling, and `withAnimation(.easeOut)` as the standard animation pattern.
+All changes are constrained to existing SwiftUI patterns already established in the codebase. No new dependencies are needed. The codebase already has `HapticFeedback` with pre-allocated generators, `GlassPressStyle` for button interactions, `ouisprGlass()` for card styling, and `withAnimation(.easeOut)` as the standard animation pattern.
 
 **Primary recommendation:** Group work into 4 waves -- (1) French accent audit + gauge colors (quick text/color changes), (2) model card redesign (interaction model change), (3) overlay/mic polish + settings UX, (4) onboarding success screen + bug fixes. This ordering lets visual consistency land first before interaction changes.
 
@@ -16,11 +16,11 @@ All changes are constrained to existing SwiftUI patterns already established in 
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- **Active model highlight**: Subtle blue background tint (dictusAccent at ~0.08-0.12 opacity) on the active model card -- no border, no "Actif" badge
+- **Active model highlight**: Subtle blue background tint (ouisprAccent at ~0.08-0.12 opacity) on the active model card -- no border, no "Actif" badge
 - **Tap to select**: Tapping anywhere on a downloaded model card selects it as active. Remove "Choisir" button entirely
 - **Tap to download**: Tapping anywhere on a non-downloaded model card starts the download. Remove download arrow icon button. User can cancel during download
 - **Swipe to delete**: Remove visible trash button. Swipe left to reveal "Supprimer" action (like iOS Mail). Active model cannot be deleted
-- **Gauge bar colors**: Change from blue/green to blue accent (#3D7EFF for Precision) + blue highlight (#6BA3FF for Vitesse). No more dictusSuccess green
+- **Gauge bar colors**: Change from blue/green to blue accent (#3D7EFF for Precision) + blue highlight (#6BA3FF for Vitesse). No more ouisprSuccess green
 - **Badges**: WK/PK engine badge and "Recommande" badge stay as-is
 - **X button hit area**: Keep visual size (56x36 PillButton) but add invisible `.contentShape(Rectangle())` to ensure 44pt minimum tap area
 - **Haptic feedback**: Claude's discretion on impact style (light vs medium) for both X (cancel) and checkmark (validate)
@@ -67,15 +67,15 @@ All changes are constrained to existing SwiftUI patterns already established in 
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 17+ | All UI views | Already the project's UI framework |
-| DictusCore | local SPM | Shared design system, haptics, colors | Existing shared framework |
+| OuisprCore | local SPM | Shared design system, haptics, colors | Existing shared framework |
 
 ### Supporting
 | Library | Purpose | When to Use |
 |---------|---------|-------------|
-| `HapticFeedback` (DictusCore) | Pre-allocated UIImpactFeedbackGenerator | Overlay button taps |
-| `GlassPressStyle` (DictusCore) | Button press animation | All interactive glass elements |
-| `dictusGlass()` modifier | Glass/material background | Card styling |
-| `PersistentLog` (DictusCore) | Diagnostic logging | Waveform bug investigation |
+| `HapticFeedback` (OuisprCore) | Pre-allocated UIImpactFeedbackGenerator | Overlay button taps |
+| `GlassPressStyle` (OuisprCore) | Button press animation | All interactive glass elements |
+| `ouisprGlass()` modifier | Glass/material background | Card styling |
+| `PersistentLog` (OuisprCore) | Diagnostic logging | Waveform bug investigation |
 
 ### No New Dependencies
 This phase requires zero new SPM packages. All work uses existing project infrastructure.
@@ -85,7 +85,7 @@ This phase requires zero new SPM packages. All work uses existing project infras
 ### Files That Need Modification
 
 ```
-DictusApp/
+OuisprApp/
 ├── Views/
 │   ├── ModelCardView.swift       # DSGN-02/03/04: full redesign
 │   ├── ModelManagerView.swift    # DSGN-03: add swipe-to-delete
@@ -100,14 +100,14 @@ DictusApp/
 │   └── OnboardingSuccessView.swift  # NEW: #27 success overlay
 ├── Models/
 │   └── ModelManager.swift        # #25: verify persistState after onboarding download
-DictusKeyboard/
+OuisprKeyboard/
 ├── Views/
 │   └── RecordingOverlay.swift    # DSGN-05/06: hit area, haptics, dismiss anim, waveform bug
 ├── KeyboardRootView.swift        # DSGN-06: transition animation on overlay show/hide
-DictusCore/
-├── Sources/DictusCore/Design/
+OuisprCore/
+├── Sources/OuisprCore/Design/
 │   ├── AnimatedMicButton.swift   # DSGN-07: transcription opacity evaluation
-│   └── DictusColors.swift        # Reference only (color constants)
+│   └── OuisprColors.swift        # Reference only (color constants)
 ```
 
 ### Pattern 1: Tap-to-Select Model Card
@@ -129,9 +129,9 @@ var body: some View {
         .background(
             // Active model highlight
             RoundedRectangle(cornerRadius: 16)
-                .fill(isActive ? Color.dictusAccent.opacity(0.10) : Color.clear)
+                .fill(isActive ? Color.ouisprAccent.opacity(0.10) : Color.clear)
         )
-        .dictusGlass()
+        .ouisprGlass()
     }
     .buttonStyle(GlassPressStyle())
     .disabled(state == .downloading || state == .prewarming)
@@ -218,7 +218,7 @@ struct OnboardingSuccessView: View {
             // Animated checkmark circle
             ZStack {
                 Circle()
-                    .fill(Color.dictusSuccess)
+                    .fill(Color.ouisprSuccess)
                     .frame(width: 120, height: 120)
                 Image(systemName: "checkmark")
                     .font(.system(size: 48, weight: .bold))
@@ -229,9 +229,9 @@ struct OnboardingSuccessView: View {
             if showText {
                 VStack(spacing: 12) {
                     Text("C'est pret !")
-                        .font(.dictusHeading)
-                    Text("Dictus est configure et pret a l'emploi")
-                        .font(.dictusBody)
+                        .font(.ouisprHeading)
+                    Text("Ouispr est configure et pret a l'emploi")
+                        .font(.ouisprBody)
                         .foregroundStyle(.secondary)
                 }
                 .transition(.opacity)
@@ -269,7 +269,7 @@ struct OnboardingSuccessView: View {
 |---------|-------------|-------------|-----|
 | Haptic feedback | Raw UIImpactFeedbackGenerator | `HapticFeedback.recordingStopped()` / `.keyTapped()` | Pre-allocated generators, respects user toggle |
 | Button press animation | Custom gesture + scale | `GlassPressStyle()` | Consistent feel across all glass surfaces |
-| Glass card background | Custom material + blur | `.dictusGlass()` modifier | Handles iOS 26 Liquid Glass + iOS 17 fallback |
+| Glass card background | Custom material + blur | `.ouisprGlass()` modifier | Handles iOS 26 Liquid Glass + iOS 17 fallback |
 | Swipe actions in List | Custom DragGesture | `.swipeActions()` on List items | Native iOS behavior, handles edge cases |
 
 ## Common Pitfalls
@@ -329,7 +329,7 @@ Verified strings needing accent fixes (grep results from codebase):
 | KeyboardSetupPage.swift:50 | `"Ouvrir les Reglages"` | `"Ouvrir les Réglages"` |
 | KeyboardSetupPage.swift:57 | `"sera detecte automatiquement"` | `"sera détecté automatiquement"` |
 | KeyboardSetupPage.swift:65 | `"Clavier detecte"` | `"Clavier détecté"` |
-| KeyboardSetupPage.swift:129 | `"Reglages > Dictus"` | `"Réglages > Dictus"` |
+| KeyboardSetupPage.swift:129 | `"Reglages > Ouispr"` | `"Réglages > Ouispr"` |
 | ModelDownloadPage.swift:44 | `"Modele vocal"` | `"Modèle vocal"` |
 | ModelDownloadPage.swift:50 | `"modele vocal. Le telechargement"` | `"modèle vocal. Le téléchargement"` |
 | ModelDownloadPage.swift:118 | `"Installer le modele"` | `"Installer le modèle"` |
@@ -347,7 +347,7 @@ Verified strings needing accent fixes (grep results from codebase):
 GaugeBarView(
     value: model.speedScore,
     label: "Vitesse",
-    color: .dictusAccentHighlight  // was .dictusSuccess
+    color: .ouisprAccentHighlight  // was .ouisprSuccess
 )
 ```
 
@@ -360,7 +360,7 @@ Button(action: action) {
         .foregroundColor(color)
         .frame(width: 56, height: 44) // increase height from 36 to 44
         .contentShape(Rectangle()) // ensure full area is tappable
-        .dictusGlass(in: Capsule())
+        .ouisprGlass(in: Capsule())
 }
 .buttonStyle(GlassPressStyle())
 ```
@@ -373,7 +373,7 @@ PillButton(icon: "xmark", color: secondaryForeground) {
     onCancel()
 }
 
-PillButton(icon: "checkmark", color: .dictusSuccess) {
+PillButton(icon: "checkmark", color: .ouisprSuccess) {
     HapticFeedback.recordingStopped()  // light impact for validate
     onStop()
 }
@@ -411,9 +411,9 @@ PillButton(icon: "checkmark", color: .dictusSuccess) {
 | Property | Value |
 |----------|-------|
 | Framework | Swift Testing / XCTest via SPM |
-| Config file | `DictusCore/Package.swift` |
-| Quick run command | `cd DictusCore && swift test --filter DictusCoreTests` |
-| Full suite command | `cd DictusCore && swift test` |
+| Config file | `OuisprCore/Package.swift` |
+| Quick run command | `cd OuisprCore && swift test --filter OuisprCoreTests` |
+| Full suite command | `cd OuisprCore && swift test` |
 
 ### Phase Requirements to Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -429,8 +429,8 @@ PillButton(icon: "checkmark", color: .dictusSuccess) {
 **Justification for manual-only:** All DSGN requirements are visual/interaction polish. They cannot be meaningfully validated via unit tests. They require visual inspection in Simulator (iPhone 17 Pro) and haptic testing on physical device.
 
 ### Sampling Rate
-- **Per task commit:** `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter DictusCoreTests` (ensure no regressions in shared framework)
-- **Per wave merge:** Full `swift test` + Xcode build for both DictusApp and DictusKeyboard targets
+- **Per task commit:** `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter OuisprCoreTests` (ensure no regressions in shared framework)
+- **Per wave merge:** Full `swift test` + Xcode build for both OuisprApp and OuisprKeyboard targets
 - **Phase gate:** All targets build without errors + visual verification on Simulator
 
 ### Wave 0 Gaps

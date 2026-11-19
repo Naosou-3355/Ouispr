@@ -1,0 +1,753 @@
+// OuisprApp/Views/SettingsView.swift
+// iOS-style grouped settings list with preferences persisted via App Group.
+import SwiftUI
+import UIKit
+import OuisprCore
+
+/// Settings screen: Ouispr Pro, Transcription, Keyboard, About.
+///
+/// WHY @AppStorage with App Group store:
+/// Preferences need to be readable by both the main app AND the keyboard extension.
+/// @AppStorage with the App Group suite writes to the shared UserDefaults container,
+/// making preferences available across processes without any additional sync logic.
+///
+/// WHY grouped List style:
+/// iOS standard settings pattern — users immediately recognize the familiar
+/// grouped rows with section headers and footers.
+struct SettingsView: View {
+
+    @EnvironmentObject var proStatus: ProStatusManager
+
+    /// The saved dictations, for the destructive row below (#70).
+    @EnvironmentObject var history: TranscriptionHistoryStore
+
+    // MARK: - Preferences (App Group persisted)
+
+    @AppStorage(SharedKeys.language, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var language = "fr"
+
+    /// Transcription (STT) language mode, decoupled from the keyboard language (#226).
+    /// Stored as its raw App Group encoding: "follow" (default), "auto", or an
+    /// explicit code ("fr"/"en"/"es"/"de"). "follow" preserves the historical
+    /// behavior where STT tracks the keyboard language.
+    @AppStorage(SharedKeys.transcriptionLanguage, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var transcriptionLanguage = TranscriptionLanguageMode.followStoredValue
+
+    /// Bumped whenever the Layout picker writes, to re-evaluate the body.
+    ///
+    /// WHY not @AppStorage like every other preference here: since #272 the layout is
+    /// stored per keyboard language (`KeyboardLayoutPreference`), so there is no single
+    /// key for @AppStorage to observe — the value the picker shows depends on the
+    /// language selected in the row above it.
+    @State private var layoutRevision = 0
+
+    @AppStorage(SharedKeys.hapticsEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var hapticsEnabled = true
+
+    /// Persistent digit row above the letter rows (#331). Off by default: it makes the
+    /// keyboard a fifth taller, and nobody's keyboard may change shape on update.
+    /// Portrait only — the keyboard reads this through `NumberRowPreference` and never draws
+    /// the row in landscape, where it would take 72% of the screen.
+    @AppStorage(SharedKeys.numberRowEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var numberRowEnabled = false
+
+    @AppStorage(SharedKeys.activeModel, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var activeModel = "openai_whisper-small"
+
+    /// WHY default true: Most users expect autocorrect to be active by default.
+    /// Power users who find it annoying can toggle it off here.
+    @AppStorage(SharedKeys.autocorrectEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var autocorrectEnabled = true
+
+    @AppStorage(SharedKeys.liveActivityEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var liveActivityEnabled = true
+
+    /// The inactivity timeout (#380). `@AppStorage` stores an enum with a `String` raw
+    /// value as that string, and reads an unknown one back as the default, which is the
+    /// same fallback `WarmEngineTimeout.option()` applies on the engine's side.
+    @AppStorage(SharedKeys.warmEngineTimeout, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var warmEngineTimeout: WarmEngineTimeoutOption = .defaultOption
+
+    /// Post-STT polish toggle (issue #141). Off by default — opt-in measurement at round 1.
+    @AppStorage(SharedKeys.polishEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var polishEnabled = true  // Mirrors AppLaunchDefaults (on in Ouispr)
+
+    #if DEBUG
+    /// Debug-only: logs autocorrect decisions with user text to the debug log.
+    /// This toggle only exists in DEBUG builds — the Release binary doesn't contain
+    /// either this @AppStorage or the AutocorrectDebugLog code that reads it.
+    @AppStorage(SharedKeys.autocorrectDebugLogging, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var autocorrectDebugLogging = false
+
+    /// Debug-only: the keyboard never opens the voice note reader by itself; a tap on
+    /// ☰ still does (#637 decision 3, #639). Stored inverted — "disabled" —
+    /// so the key's absence, which is every Release build and every fresh install, is
+    /// the default "auto-open". Read by the keyboard at each appearance.
+    @AppStorage(SharedKeys.debugVoiceNoteAutoOpenDisabled, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var voiceNoteAutoOpenDisabled = false
+    #endif
+
+    /// The keyboard language the pickers below operate on.
+    private var keyboardLanguage: SupportedLanguage {
+        SupportedLanguage(rawValue: language) ?? .french
+    }
+
+    /// The Layout picker's selection: the layout of whichever keyboard language is
+    /// currently selected above it (#272).
+    ///
+    /// The getter reads `layoutRevision` so a write re-renders the picker; the setter is
+    /// the only thing that records an explicit layout from this screen. Changing the
+    /// *language* runs neither — which is the whole point, the language no longer
+    /// overwrites the layout.
+    private var layoutSelection: Binding<LayoutType> {
+        let selectedLanguage = keyboardLanguage
+        return Binding(
+            get: {
+                _ = layoutRevision
+                return KeyboardLayoutPreference.layout(for: selectedLanguage)
+            },
+            set: { newLayout in
+                KeyboardLayoutPreference.setLayout(newLayout, for: selectedLanguage)
+                layoutRevision += 1
+            }
+        )
+    }
+
+    /// Whether the currently active model uses the Parakeet engine (CTC/TDT).
+    /// Parakeet auto-detects language — the language picker has no effect on it.
+    ///
+    /// Nemotron is NOT Parakeet here (#558), even though both run through FluidAudio: the
+    /// setting forces Nemotron's language, so the "only applies to Whisper models" caveat
+    /// this drives must not show while it is active.
+    private var isParakeetActive: Bool {
+        ModelInfo.forIdentifier(activeModel)?.engine == .parakeet
+    }
+
+    /// Whether Auto-detect's "any language Whisper supports" sentence describes the active
+    /// engine. Only Whisper's, or no model at all, which is how the footer read before #558.
+    /// Parakeet already has its caveat, and Nemotron's auto-detect is not Whisper's.
+    private var describesWhisperAutoDetect: Bool {
+        switch ModelInfo.forIdentifier(activeModel)?.engine {
+        case .whisperKit, nil:
+            return true
+        case .parakeet, .nemotron:
+            return false
+        }
+    }
+
+    /// Tracks log export async operation for spinner display.
+    @State private var isExporting = false
+    @State private var exportURL: URL?
+
+    /// Hidden polish debug screen (#141). Reached via long-press 3s on the Version row.
+    @State private var showPolishDebug = false
+
+    /// Confirmation dialog for resetting the learned-words dictionary (#222).
+    @State private var showResetDictionaryConfirmation = false
+
+    /// Confirmation dialog for emptying the transcription history (#70).
+    @State private var showClearHistoryConfirmation = false
+
+    /// Drives the Ouispr Pro hub's cover, opened by the one Ouispr Pro row (#216).
+    @State private var showPaywall = false
+
+    /// Whether the Ouispr Pro row renders at all (#236, #577, #216).
+    ///
+    /// `paywallVisible` decides what may be **sold**; this decides whether a user
+    /// can **manage** what they already have. The two coincide in Release and part
+    /// company in Debug, because `PremiumFlags.debugProEntitlementForced` (#460)
+    /// grants the entitlement without opening the paywall.
+    ///
+    /// WHY that split has to exist: `SmartModeListView` is the only screen in the
+    /// app that pins or reorders a Smart Mode, and since #216 it hangs off the hub
+    /// this row opens. With the fan capped at `SmartModeCatalogue.maximumPinnedModes`
+    /// and a seed that predates half the catalogue, a forced entitlement without this
+    /// exception grants a fan nobody can arrange — which is #460 blocking the work it
+    /// exists to protect, one screen further in. Under the force the hub sells
+    /// nothing (`ProHubBottomBlock.entitledWithoutPurchase`), so opening the row does
+    /// not put anything on sale while the paywall is hidden.
+    ///
+    /// WHY it is not just `proStatus.isProActive`: that would make the row appear
+    /// in Release for any future subscriber whose purchase predates the paywall
+    /// flip, which is the state #236 exists to forbid. The exception is compiled out
+    /// entirely, so Release has exactly one gate.
+    private var proManagementVisible: Bool {
+        #if DEBUG
+        // Read the revision so flipping the switch redraws this gate, the same
+        // reason the binding below reads it.
+        _ = proEntitlementRevision
+        return PremiumFlags.paywallVisible || PremiumFlags.debugProEntitlementForced
+        #else
+        return PremiumFlags.paywallVisible
+        #endif
+    }
+
+    #if DEBUG
+    /// Redraw trigger for the forced-entitlement switch below, the same shape
+    /// `layoutRevision` uses above and for the same reason.
+    @State private var proEntitlementRevision = 0
+
+    /// The Developer section's forced-entitlement switch (#460).
+    ///
+    /// A `Binding` onto `PremiumFlags` rather than an `@AppStorage` on the same key:
+    /// #460 asks for **one** source of truth for entitlement, and a second property
+    /// wrapper reading the key directly would be a parallel force path — one this
+    /// screen could then diverge from without the compiler noticing.
+    ///
+    /// The setter also refreshes `proStatus` (#460 review). `proStatus.isProActive` is
+    /// a published cache of the same answer this switch changes, and every Pro row in
+    /// the app redraws off it — without the refresh the switch changed what
+    /// `FeatureGate` and the keyboard believed while every observing view kept
+    /// rendering the old answer until the next launch. `refreshFromAppGroup` and not
+    /// `setProActive`, deliberately: a forced entitlement must never be written into
+    /// `SharedKeys.proActive`, where it would outlive the switch.
+    private var proEntitlementForced: Binding<Bool> {
+        Binding(
+            get: {
+                _ = proEntitlementRevision
+                return PremiumFlags.debugProEntitlementForced
+            },
+            set: { forced in
+                PremiumFlags.debugProEntitlementForced = forced
+                proStatus.refreshFromAppGroup()
+                proEntitlementRevision += 1
+            }
+        )
+    }
+    #endif
+
+    // MARK: - Body
+
+    var body: some View {
+        List {
+            // Section 0: Ouispr Pro — always first, and since #216 the only Pro
+            // entry in Settings: the hub it opens owns the feature switches and
+            // their screens, which a "Pro Features" section used to hold here.
+            // Gated behind PremiumFlags.paywallVisible until the first Pro
+            // feature ships and ASC setup is done (#236, #79, #215), with the
+            // DEBUG exception `proManagementVisible` documents (#577).
+            if proManagementVisible {
+                Section {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "crown.fill")
+                                .foregroundColor(.ouisprAccent)
+                            Text("Ouispr Pro")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            // The trial's badge before the checkmark (#593): a checkmark
+                            // alone reads as a subscription, and the user on trial is
+                            // owed the date it stops.
+                            if let daysLeft = proStatus.trialBadgeDaysLeft {
+                                ProTrialBadge(daysLeft: daysLeft)
+                            } else if proStatus.isProActive {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.ouisprSuccess)
+                                    .accessibilityLabel("Pro active")
+                            }
+                            // A Button in a List draws no disclosure indicator,
+                            // and this row still leads somewhere. Matching the
+                            // system one by hand keeps the section reading like
+                            // the rows around it.
+                            listDisclosureIndicator
+                        }
+                    }
+                }
+            }
+
+            // Section 1: Transcription
+            Section {
+                // STT language, decoupled from the keyboard language (#226).
+                // "Follow keyboard language" is the default and preserves the
+                // historical coupled behavior. "Auto-detect" lets Whisper pick
+                // the language itself, unlocking languages without a Ouispr
+                // keyboard (Chinese, Italian, …). Explicit entries stay limited
+                // to the four tested languages by product decision — the long
+                // tail goes through Auto-detect only.
+                Picker("Transcription language", selection: $transcriptionLanguage) {
+                    Text("Follow keyboard language")
+                        .tag(TranscriptionLanguageMode.followStoredValue)
+                    Text("Auto-detect")
+                        .tag(TranscriptionLanguageMode.autoStoredValue)
+                    ForEach(SupportedLanguage.allCases, id: \.rawValue) { lang in
+                        Text(lang.displayName).tag(lang.rawValue)
+                    }
+                }
+                if isParakeetActive {
+                    Text("Parakeet automatically detects the spoken language. This setting only applies to Whisper models.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if PolishAvailability.isToggleVisible {
+                    Toggle("Polish transcription", isOn: $polishEnabled)
+                    polishStateFooter
+                }
+
+                // Visible for a subscriber, and for anyone who still has saved
+                // transcriptions after an entitlement went away (#70). See
+                // `HistoryAvailability.clearRowIsVisible`.
+                if HistoryAvailability.clearRowIsVisible(
+                    isEntitled: historyIsEntitled, hasSavedRecords: !history.isEmpty
+                ) {
+                    clearHistoryRow
+                }
+            } header: {
+                Text("Transcription")
+            } footer: {
+                // Explain Auto-detect behavior (#226) — since #239 polish runs
+                // in this mode with the language-agnostic prompt — plus a
+                // pointer to the per-model language details (#240).
+                // The Whisper-specific line is hidden while Parakeet is active
+                // (the caveat above already says the setting has no effect
+                // there), but the per-model language pointer stays useful for
+                // both engines.
+                if transcriptionLanguage == TranscriptionLanguageMode.autoStoredValue {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if describesWhisperAutoDetect {
+                            Text("Auto-detect lets you dictate in any language Whisper supports. Polish adapts to the language you speak.")
+                        }
+                        Text("Language support varies by model. Tap ⓘ on a model card in Models for details.")
+                    }
+                }
+            }
+
+            // Section 2: Clavier
+            // All toggles are always visible — there's only one keyboard type now.
+            Section {
+                // Keyboard language: drives layout, key labels, and
+                // autocorrect/prediction dictionaries. Moved here from the
+                // Transcription section in #226 — it no longer drives STT by
+                // itself (only when the transcription language is "Follow
+                // keyboard language").
+                Picker("Keyboard language", selection: $language) {
+                    // Iterate over SupportedLanguage so adding a new language
+                    // (German PR2, future onboardings) only requires the enum case.
+                    ForEach(SupportedLanguage.allCases, id: \.rawValue) { lang in
+                        Text(lang.displayName).tag(lang.rawValue)
+                    }
+                }
+                .onChange(of: language) { _, newLang in
+                    // The layout is NOT touched here anymore (#272): it belongs to the
+                    // language being selected, and overwriting it is what made "English
+                    // autocorrect on an AZERTY keyboard" unreachable. The Layout picker
+                    // below now shows the new language's own layout instead.
+                    //
+                    // Routing through activate() keeps the legacy mirror in step — the
+                    // @AppStorage write above has already stored the language, so this
+                    // only adds the mirror.
+                    if let lang = SupportedLanguage(rawValue: newLang) {
+                        SupportedLanguage.activate(lang)
+                    }
+                }
+
+                DefaultLayerPicker()
+
+                Picker("Layout", selection: layoutSelection) {
+                    // Iterate over LayoutType so adding a layout (QWERTZ in #151,
+                    // any future one) only requires the enum case — the entries used
+                    // to be hardcoded here and in the keyboard panel separately.
+                    ForEach(LayoutType.allCases, id: \.self) { layout in
+                        Text(layout.displayName).tag(layout)
+                    }
+                }
+
+                // Sits under the Layout picker because it changes the same thing: the shape
+                // of the key grid. It applies to every layout and every keyboard language —
+                // a number row is a hardware habit, not a language one (#331).
+                Toggle("Number row", isOn: $numberRowEnabled)
+
+                Toggle("Haptic feedback", isOn: $hapticsEnabled)
+
+                NavigationLink("Sounds") {
+                    SoundSettingsView()
+                }
+
+                Toggle("Autocorrect", isOn: $autocorrectEnabled)
+
+                // Reset the learned-words dictionary (#222). Words learned by
+                // the keyboard bypass autocorrect forever, so users need a way
+                // to recover from accidental learning (e.g. typos recorded
+                // before the search-field learning gate existed).
+                Button("Reset learned words", role: .destructive) {
+                    // Sync from App Group first: words learned by the keyboard
+                    // process since app launch aren't in this process's cache.
+                    UserDictionary.shared.reload()
+                    showResetDictionaryConfirmation = true
+                }
+                .confirmationDialog(
+                    "Reset learned words?",
+                    isPresented: $showResetDictionaryConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Forget \(UserDictionary.shared.count) learned words", role: .destructive) {
+                        UserDictionary.shared.resetAll()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Words the keyboard learned from your typing will be forgotten and autocorrect will apply to them again.")
+                }
+
+                Toggle("Live Activity", isOn: $liveActivityEnabled)
+                    .onChange(of: liveActivityEnabled) { _, enabled in
+                        if !enabled {
+                            LiveActivityManager.shared.stopStandbyActivity()
+                        }
+                    }
+
+                // Beside the Live Activity toggle because it decides how long the standby
+                // pill lasts (#380). Applied at once: a warm engine re-arms on the new value.
+                Picker("Inactivity timeout", selection: $warmEngineTimeout) {
+                    ForEach(WarmEngineTimeoutOption.allCases, id: \.self) { option in
+                        Text(warmEngineTimeoutLabel(for: option)).tag(option)
+                    }
+                }
+                .onChange(of: warmEngineTimeout) { _, _ in
+                    DictationCoordinator.shared.warmEngineTimeoutDidChange()
+                }
+            } header: {
+                Text("Keyboard")
+            } footer: {
+                // Only shown once the row is on: the keyboard drops it in landscape by
+                // design (#331) and on iPad by design (#336), and without a word here either
+                // one reads as a bug to the person who just turned it on.
+                //
+                // WHY one sentence covering both rather than a device-aware one, and why the
+                // toggle stays visible on an iPad where it now does nothing: this target has
+                // no device detection at all — `DeviceContext` and DeviceKit are linked to the
+                // keyboard, not here, and `UIDevice.userInterfaceIdiom` reports `.phone` in
+                // compatibility mode, which is the only way an iPad reaches this app. A second
+                // copy of device detection in a second target, for a device class Ouispr does
+                // not target, costs more than a sentence that is simply true on both.
+                if numberRowEnabled {
+                    Text("The number row is shown on iPhone in portrait only.")
+                }
+                if !liveActivityEnabled {
+                    Text("Dynamic Island and Lock Screen notification are disabled.")
+                }
+                // No exact timing promised: iOS can end a background app earlier, and
+                // Unlimited means exactly that, not "forever".
+                Text("The inactivity timeout is how long Ouispr stays ready after your last dictation. A shorter one saves battery and ends the Dynamic Island sooner. A longer one starts your next keyboard dictation faster. Unlimited lasts until iOS ends it.")
+            }
+
+            #if DEBUG
+            // Section: Developer (visible ONLY in Debug builds — not in Release/TestFlight/App Store).
+            // WHY #if DEBUG: Code inside is compile-time excluded from production builds.
+            // Impossible to accidentally ship a toggle that logs user text.
+            Section {
+                Toggle("Autocorrect debug logs", isOn: $autocorrectDebugLogging)
+            } header: {
+                Text("Developer")
+            } footer: {
+                if autocorrectDebugLogging {
+                    Text("Warning: logs contain typed words and corrections. Debug builds only.")
+                        .foregroundColor(.orange)
+                } else {
+                    Text("Logs autocorrect decisions for debugging. Off by default.")
+                }
+            }
+
+            // The way back into a surface #460 hides from everyone, the maintainer
+            // included. Its own section rather than a row beside the autocorrect log:
+            // that one is about what gets written down, this one changes what the app
+            // and the keyboard both believe about the user.
+            Section {
+                Toggle("Force Pro entitlement", isOn: proEntitlementForced)
+            } footer: {
+                if proEntitlementForced.wrappedValue {
+                    Text("Smart Modes and every other Pro feature behave as if subscribed, and the Ouispr Pro row above opens their settings. Nothing is for sale. Debug builds only.")
+                        .foregroundColor(.orange)
+                } else {
+                    Text("Grants Pro without a purchase, so hidden Pro features can be tested on device. Off by default.")
+                }
+            }
+
+            // The reverse trial's states, reachable on a device without waiting two
+            // weeks or losing the Keychain record for good (#593).
+            ProTrialDebugSection()
+
+            // #637 decision 3: one build, both behaviours, for the device verdict.
+            // Deleted with the losing branch once the verdict is in.
+            Section {
+                Toggle("Keyboard opens voice notes by itself", isOn: Binding(
+                    get: { !voiceNoteAutoOpenDisabled },
+                    set: { voiceNoteAutoOpenDisabled = !$0 }
+                ))
+            } footer: {
+                if voiceNoteAutoOpenDisabled {
+                    Text("Tap only: a waiting voice note opens from a tap on the keyboard's menu button. Debug builds only.")
+                        .foregroundColor(.orange)
+                } else {
+                    Text("The keyboard opens a new voice note transcript the first time it appears. A tap on the menu button works either way.")
+                }
+            }
+            #endif
+
+            // Section 4: A propos
+            Section("About") {
+                LabeledContent("Version", value: appVersion)
+                    .contentShape(Rectangle())
+                    // Five quick taps reveals the polish debug ring. Replaces
+                    // the previous 3-second long-press — taps are easier to
+                    // perform on the device than holding still on a List row,
+                    // and the secret-gesture posture stays the same.
+                    .onTapGesture(count: 5) {
+                        showPolishDebug = true
+                    }
+
+                // WHY Button instead of Link:
+                // Link doesn't respond to ButtonStyle and gets no press highlight
+                // in a List with .scrollContentBackground(.hidden). Using Button
+                // with UIApplication.shared.open gives native row press feedback.
+                Button {
+                    // Force unwrap is safe: compile-time constant URL that cannot be malformed.
+                    // swiftlint:disable:next force_unwrapping
+                    UIApplication.shared.open(URL(string: "https://github.com/Naosou-3355/Ouispr")!)
+                } label: {
+                    HStack {
+                        Text("GitHub")
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                NavigationLink("Licenses") {
+                    LicensesView()
+                }
+
+                NavigationLink("Diagnostic") {
+                    diagnosticView
+                }
+
+                NavigationLink("Debug Logs") {
+                    DebugLogView()
+                }
+
+                Button {
+                    exportLogs()
+                } label: {
+                    HStack {
+                        Text("Export logs")
+                        Spacer()
+                        if isExporting {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .disabled(isExporting)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.ouisprBackground.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationDestination(isPresented: $showPolishDebug) {
+            PolishDebugView()
+        }
+        .paywallCover(isPresented: $showPaywall)
+        .sheet(isPresented: Binding(
+            get: { exportURL != nil },
+            set: { isPresented in
+                if !isPresented {
+                    exportURL = nil
+                }
+            }
+        )) {
+            if let exportURL {
+                ShareSheet(items: [exportURL])
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    /// Whether the user is entitled to the history right now.
+    ///
+    /// Reads `proStatus.isProActive` so the row reacts: `FeatureGate` goes to the
+    /// App Group, which publishes nothing on its own.
+    private var historyIsEntitled: Bool {
+        _ = proStatus.isProActive
+        return HistoryAvailability.isEntitled
+    }
+
+    /// Empties the transcription history (#70, brief decision 3).
+    ///
+    /// WHY this row exists at all: the history is a local plaintext record of
+    /// everything the user has ever dictated. A store like that needs a visible
+    /// switch that removes it, both for the user and for what Ouispr declares at
+    /// review time. Per-item delete stays where the issue put it, on the cards.
+    ///
+    /// WHY the count sits on the row and not in the confirmation sentence: a count
+    /// inside a sentence has to agree with it in both languages, and "1
+    /// transcriptions" is the bug that always ships. As a trailing detail it is a
+    /// number next to a label, which is also how iOS writes it.
+    private var clearHistoryRow: some View {
+        Button(role: .destructive) {
+            showClearHistoryConfirmation = true
+        } label: {
+            HStack {
+                Text("Clear history")
+                Spacer()
+                // `format:` rather than an interpolated literal: the latter would put
+                // a "%lld" key in the string catalogue for a number that has nothing
+                // to translate, and this way the digits group per the user's locale.
+                Text(history.count, format: .number)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .disabled(history.isEmpty)
+        .confirmationDialog(
+            "Clear history?",
+            isPresented: $showClearHistoryConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete all", role: .destructive) {
+                // Shared voice notes among them leave the keyboard too (#639).
+                VoiceNoteProcessor.shared.withdrawKeyboardDeliveries(history.records.map(\.id), reason: "historyCleared")
+                history.clear()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every transcription saved on this device will be deleted. This cannot be undone.")
+        }
+    }
+
+    /// The chevron `NavigationLink` draws on a List row, for rows that open a
+    /// cover instead and therefore have to draw it themselves.
+    private var listDisclosureIndicator: some View {
+        Image(systemName: "chevron.forward")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .accessibilityHidden(true)
+    }
+
+    /// Export logs via iOS share sheet.
+    ///
+    /// WHY write to a temp file instead of sharing raw text:
+    /// UIActivityViewController with a file URL shows the file name ("ouispr-logs.txt")
+    /// in the share sheet and lets the user save, AirDrop, or attach it to email/GitHub.
+    /// Raw text sharing doesn't give a meaningful filename.
+    /// WHY async with isExporting flag:
+    /// Log gathering reads from disk and can take a moment on large log files.
+    /// The spinner gives visual feedback that something is happening. The share
+    /// sheet presentation must happen on the main thread (UIKit requirement).
+    private func exportLogs() {
+        guard !isExporting else { return }
+        isExporting = true
+        Task {
+            let start = CFAbsoluteTimeGetCurrent()
+            let content = PersistentLog.exportContent()
+            let duration = CFAbsoluteTimeGetCurrent() - start
+            PersistentLog.log(.logExportCompleted(durationMs: Int(duration * 1000), sizeBytes: content.utf8.count))
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ouispr-logs.txt")
+            try? content.write(to: tempURL, atomically: true, encoding: .utf8)
+
+            await MainActor.run {
+                isExporting = false
+                exportURL = tempURL
+            }
+        }
+    }
+
+    /// Footer row under the polish toggle — surfaces the specific reason
+    /// Apple Foundation Models is or isn't usable. When the state is `.available`
+    /// no footer is shown (the toggle alone is enough).
+    @ViewBuilder
+    private var polishStateFooter: some View {
+        let state = PolishAvailability.state
+        if state != .available {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(polishStateMessage(for: state))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if PolishAvailability.canOpenSystemSettings(for: state) {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Text("Open iPhone Settings")
+                            .font(.caption.bold())
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    /// User-facing explanation per availability state. Strings live in this
+    /// view so Localizable.xcstrings can auto-detect them.
+    ///
+    /// WHY `LocalizedStringKey` (#792): `Text` shows a `String` verbatim, so these
+    /// sentences stayed English on a French iPhone. A key is looked up in the catalog,
+    /// and the interpolated `reason` below becomes its `%@`.
+    private func polishStateMessage(for state: PolishAvailabilityState) -> LocalizedStringKey {
+        switch state {
+        case .available:
+            return ""
+        case .appleIntelligenceNotEnabled:
+            return "Apple Intelligence is required for polish. Enable it in iPhone Settings → Apple Intelligence & Siri. Apple requires Siri and your iPhone to use the same language — if Siri is in English and your iPhone is in French (or vice versa), Apple Intelligence stays off."
+        case .modelNotReady:
+            return "The Apple Intelligence model is downloading on your device. Try again in a few minutes."
+        case .deviceNotEligible:
+            return "Apple Intelligence isn't supported on this device. Polish requires an iPhone 15 Pro / 15 Pro Max or newer."
+        case .osTooOld:
+            return "Polish requires iOS 26 or later."
+        case .sdkMissing:
+            return "Polish isn't available in this build of Ouispr."
+        case .other(let reason):
+            return "Apple Intelligence is unavailable (\(reason))."
+        }
+    }
+
+    /// Picker label per inactivity timeout preset (#380). In the view, as a
+    /// `LocalizedStringKey`, so the catalog looks each one up.
+    private func warmEngineTimeoutLabel(for option: WarmEngineTimeoutOption) -> LocalizedStringKey {
+        switch option {
+        case .immediately: return "Immediately"
+        case .oneMinute: return "1 min"
+        case .fiveMinutes: return "5 min"
+        case .tenMinutes: return "10 min"
+        case .thirtyMinutes: return "30 min"
+        case .oneHour: return "1 hour"
+        case .unlimited: return "Unlimited"
+        }
+    }
+
+    /// App version string from Info.plist — marketing version + build number.
+    ///
+    /// Format: "1.6.0 (10)" — lets testers report bugs against a specific build,
+    /// since TestFlight ships multiple builds under the same marketing version.
+    private var appVersion: String {
+        let marketing = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(marketing) (\(build))"
+    }
+
+    /// Diagnostic detail view showing App Group health.
+    ///
+    /// WHY inline computation:
+    /// DiagnosticDetailView requires a DiagnosticResult, which we compute
+    /// on demand by running the diagnostic check. This is cheap (reads/writes
+    /// a single UserDefaults key) and always shows fresh results.
+    private var diagnosticView: some View {
+        DiagnosticDetailView(result: AppGroupDiagnostic.run())
+            .navigationTitle("Diagnostic")
+    }
+}
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}

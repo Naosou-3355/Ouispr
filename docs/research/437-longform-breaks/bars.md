@@ -1,7 +1,7 @@
 # Long-form paragraph breaks — bars and plan (#437)
 
 **Issue:** [#437](https://github.com/getdictus/dictus-ios/issues/437)
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
 paired dictations of 2026-08-27, `raw` verbatim from the device export.
 **Date:** 2026-09-11
 

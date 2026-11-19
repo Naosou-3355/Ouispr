@@ -1,6 +1,6 @@
 ---
 status: investigating
-trigger: "Cross-process transcription stub text is not received by the keyboard after dictation completes in DictusApp"
+trigger: "Cross-process transcription stub text is not received by the keyboard after dictation completes in OuisprApp"
 created: 2026-03-05T00:00:00Z
 updated: 2026-03-05T00:00:00Z
 ---
@@ -14,10 +14,10 @@ next_action: Report findings
 
 ## Symptoms
 
-expected: After dictation completes in DictusApp (stub reaches "ready" state), switching back to the keyboard should show the stub transcription text inserted into the text field.
+expected: After dictation completes in OuisprApp (stub reaches "ready" state), switching back to the keyboard should show the stub transcription text inserted into the text field.
 actual: Status bar shows "transcription ready" with spinner but text not inserted into text field.
 errors: None reported (no crash)
-reproduction: Trigger dictation from keyboard, let stub complete in DictusApp, switch back to keyboard
+reproduction: Trigger dictation from keyboard, let stub complete in OuisprApp, switch back to keyboard
 started: Phase 1 implementation
 
 ## Eliminated

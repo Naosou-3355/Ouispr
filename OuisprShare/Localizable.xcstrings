@@ -1,0 +1,208 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        }
+      }
+    },
+    "Ouispr cannot transcribe this" : {
+      "comment" : "Share extension: the note was refused; the reason follows (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouispr ne peut pas transcrire ce fichier"
+          }
+        }
+      }
+    },
+    "Ouispr could not receive this file." : {
+      "comment" : "Share extension: the file could not be read or copied (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouispr n’a pas pu recevoir ce fichier."
+          }
+        }
+      }
+    },
+    "Follow it in the Dynamic Island or on the Lock Screen, and tap it when it is done." : {
+      "comment" : "Share extension, warm path with a Live Activity (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suivez-la dans la Dynamic Island ou sur l’écran verrouillé, et touchez-la quand elle est terminée."
+          }
+        }
+      }
+    },
+    "OK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Open Ouispr when you want to read it." : {
+      "comment" : "Share extension, warm path without a Live Activity (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez Ouispr quand vous voulez la lire."
+          }
+        }
+      }
+    },
+    "Open Ouispr, your voice note is waiting" : {
+      "comment" : "Share extension, cold path: the app is not running and cannot be opened from here (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez Ouispr, votre message vocal vous attend"
+          }
+        }
+      }
+    },
+    "Open Ouispr, your voice notes are waiting" : {
+      "comment" : "Share extension, cold path, several notes (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez Ouispr, vos messages vocaux vous attendent"
+          }
+        }
+      }
+    },
+    "Sending to Ouispr…" : {
+      "comment" : "Share extension: copying the voice note (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoi vers Ouispr…"
+          }
+        }
+      }
+    },
+    "The transcription starts as soon as you open the app." : {
+      "comment" : "Share extension, cold path (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcription démarre dès que vous ouvrez l’app."
+          }
+        }
+      }
+    },
+    "This file is not an audio format Ouispr can read." : {
+      "comment" : "Share extension: the shared file is not a recognised audio container (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce fichier n’est pas un format audio que Ouispr sait lire."
+          }
+        }
+      }
+    },
+    "This voice note is longer than 10 minutes, the longest Ouispr transcribes." : {
+      "comment" : "Share extension: over the 10-minute cap (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message vocal dépasse 10 minutes, la durée maximale que Ouispr transcrit."
+          }
+        }
+      }
+    },
+    "Transcribing voice notes is not available in this version of Ouispr." : {
+      "comment" : "Share extension: no entitlement, and the paywall is hidden so no subscription may be named (#620, #236).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcription des messages vocaux n’est pas disponible dans cette version de Ouispr."
+          }
+        }
+      }
+    },
+    "Transcribing voice notes is part of Ouispr Pro. Open Ouispr to find out more." : {
+      "comment" : "Share extension: the user has no Pro entitlement and the paywall is visible (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcription des messages vocaux fait partie de Ouispr Pro. Ouvrez Ouispr pour en savoir plus."
+          }
+        }
+      }
+    },
+    "Transcribing your voice note" : {
+      "comment" : "Share extension, warm path (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcription de votre message vocal"
+          }
+        }
+      }
+    },
+    "Transcribing your voice notes" : {
+      "comment" : "Share extension, warm path, several notes (#620).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcription de vos messages vocaux"
+          }
+        }
+      }
+    },
+    "Voice notes are switched off. Turn them back on in Ouispr, under Ouispr Pro." : {
+      "comment" : "Share extension: a Pro user switched voice notes off in the Ouispr Pro hub (#216).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les messages vocaux sont désactivés. Réactivez-les dans Ouispr, rubrique Ouispr Pro."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

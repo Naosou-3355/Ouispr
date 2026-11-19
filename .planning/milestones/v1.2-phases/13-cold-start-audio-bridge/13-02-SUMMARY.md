@@ -21,14 +21,14 @@ tech-stack:
 
 key-files:
   created:
-    - "DictusApp/Views/SwipeBackOverlayView.swift"
+    - "OuisprApp/Views/SwipeBackOverlayView.swift"
   modified:
-    - "DictusApp/Views/MainTabView.swift"
-    - "Dictus.xcodeproj/project.pbxproj"
+    - "OuisprApp/Views/MainTabView.swift"
+    - "Ouispr.xcodeproj/project.pbxproj"
 
 key-decisions:
   - "Pure SwiftUI animation (no Lottie) -- locked decision from CONTEXT.md, keeps dependencies minimal"
-  - "Color(hex: UInt) used for brand gradient -- consistent with existing DictusColors pattern"
+  - "Color(hex: UInt) used for brand gradient -- consistent with existing OuisprColors pattern"
 
 patterns-established:
   - "Cold start overlay pattern: full-screen ZStack replacement with brand gradient, not a sheet or overlay on normal UI"
@@ -66,12 +66,12 @@ Each task was committed atomically:
 2. **Task 2: Wire SwipeBackOverlayView into MainTabView** - `585fd00` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/SwipeBackOverlayView.swift` - Full-screen branded overlay with SwipeAnimationView subview, bilingual text, brand gradient
-- `DictusApp/Views/MainTabView.swift` - Replaced cold start placeholder with SwipeBackOverlayView()
-- `Dictus.xcodeproj/project.pbxproj` - Added SwipeBackOverlayView.swift to DictusApp target
+- `OuisprApp/Views/SwipeBackOverlayView.swift` - Full-screen branded overlay with SwipeAnimationView subview, bilingual text, brand gradient
+- `OuisprApp/Views/MainTabView.swift` - Replaced cold start placeholder with SwipeBackOverlayView()
+- `Ouispr.xcodeproj/project.pbxproj` - Added SwipeBackOverlayView.swift to OuisprApp target
 
 ## Decisions Made
-- Used Color(hex: UInt) initializer from DictusColors.swift rather than raw RGB values -- maintains consistency with existing brand color system
+- Used Color(hex: UInt) initializer from OuisprColors.swift rather than raw RGB values -- maintains consistency with existing brand color system
 - Pure SwiftUI animation with withAnimation + repeatForever (no Lottie) -- locked decision from user in CONTEXT.md
 - SwipeAnimationView uses chevron trail behind moving circle for directional reinforcement -- cleaner than opacity fade
 
@@ -83,14 +83,14 @@ Each task was committed atomically:
 - **Found during:** Task 2 (Wire SwipeBackOverlayView into MainTabView)
 - **Issue:** Build failed with "cannot find 'SwipeBackOverlayView' in scope" because the project uses explicit file references in pbxproj, not folder references
 - **Fix:** Added PBXBuildFile, PBXFileReference, PBXGroup, and PBXSourcesBuildPhase entries for SwipeBackOverlayView.swift
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** xcodebuild build succeeded
 - **Committed in:** 585fd00 (Task 2 commit)
 
 ---
 
 **Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** Standard pbxproj wiring required for all new DictusApp files. No scope creep.
+**Impact on plan:** Standard pbxproj wiring required for all new OuisprApp files. No scope creep.
 
 ## Issues Encountered
 None beyond the pbxproj addition documented above.

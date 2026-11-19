@@ -276,7 +276,7 @@ copying worse by a factor of nine.
 ## 8. What is run, and what is committed
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness fidelity Sources/polish-harness/fixtures/device-structured-fr.json \
   --mode structured --runs 3 \
   --arm ../docs/research/570-structured-fidelity/arms/V1-rule7-property.txt \

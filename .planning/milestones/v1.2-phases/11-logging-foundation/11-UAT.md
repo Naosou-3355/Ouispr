@@ -13,7 +13,7 @@ updated: 2026-03-11T14:40:00Z
 ## Tests
 
 ### 1. Cold Start Smoke Test
-expected: Kill any running Dictus app. Launch fresh. App boots without crashes, main screen loads, previously downloaded model still listed.
+expected: Kill any running Ouispr app. Launch fresh. App boots without crashes, main screen loads, previously downloaded model still listed.
 result: issue
 reported: "app crashed after build, reinstalled app and relaunched onboarding, then app works fine"
 severity: minor
@@ -35,7 +35,7 @@ expected: Start a dictation from the keyboard, speak, then stop. Open Debug Logs
 result: pass
 
 ### 6. Keyboard Events in Logs
-expected: Open Dictus keyboard in any app. Open Debug Logs in DictusApp. You should see log entries for keyboard appear/disappear events.
+expected: Open Ouispr keyboard in any app. Open Debug Logs in OuisprApp. You should see log entries for keyboard appear/disappear events.
 result: pass
 
 ## Summary

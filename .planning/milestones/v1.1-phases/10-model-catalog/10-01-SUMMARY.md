@@ -20,12 +20,12 @@ tech-stack:
 
 key-files:
   created:
-    - DictusCore/Sources/DictusCore/SpeechEngine.swift
+    - OuisprCore/Sources/OuisprCore/SpeechEngine.swift
   modified:
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift
-    - DictusApp/Models/ModelManager.swift
-    - DictusApp/DictationCoordinator.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift
+    - OuisprApp/Models/ModelManager.swift
+    - OuisprApp/DictationCoordinator.swift
 
 key-decisions:
   - "SpeechEngine enum with raw values WK/PK for Codable persistence"
@@ -73,13 +73,13 @@ Each task was committed atomically:
 3. **Task 3: Add 3 new WhisperKit model candidates** - `bab4428` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/SpeechEngine.swift` - New enum for speech engine identification
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Extended with engine, gauges, visibility, 3 new models
-- `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` - Updated for 7-model catalog
-- `DictusCore/Sources/DictusCore/SmartModelRouter.swift` - Deleted (dead code)
-- `DictusCore/Tests/DictusCoreTests/SmartModelRouterTests.swift` - Deleted (dead code)
-- `DictusApp/Models/ModelManager.swift` - Uses allIncludingDeprecated for state init
-- `DictusApp/DictationCoordinator.swift` - Fallback changed to openai_whisper-small
+- `OuisprCore/Sources/OuisprCore/SpeechEngine.swift` - New enum for speech engine identification
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Extended with engine, gauges, visibility, 3 new models
+- `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` - Updated for 7-model catalog
+- `OuisprCore/Sources/OuisprCore/SmartModelRouter.swift` - Deleted (dead code)
+- `OuisprCore/Tests/OuisprCoreTests/SmartModelRouterTests.swift` - Deleted (dead code)
+- `OuisprApp/Models/ModelManager.swift` - Uses allIncludingDeprecated for state init
+- `OuisprApp/DictationCoordinator.swift` - Fallback changed to openai_whisper-small
 
 ## Decisions Made
 - SpeechEngine enum uses raw values "WK"/"PK" for Codable serialization
@@ -94,7 +94,7 @@ None - plan executed as written. Task 3 was a checkpoint:human-verify that was r
 
 ## Issues Encountered
 
-- DictusCore `swift test` fails on macOS due to pre-existing SwiftUI availability annotations in Design/ files (not related to this plan's changes). Tests verified correct via code review. This is a known pre-existing issue.
+- OuisprCore `swift test` fails on macOS due to pre-existing SwiftUI availability annotations in Design/ files (not related to this plan's changes). Tests verified correct via code review. This is a known pre-existing issue.
 
 ## User Setup Required
 

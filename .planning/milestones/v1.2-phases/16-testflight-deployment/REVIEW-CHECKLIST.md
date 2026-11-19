@@ -1,18 +1,18 @@
-# App Store Review Checklist — Dictus v1.2
+# App Store Review Checklist — Ouispr v1.2
 
 ## Microphone (NSMicrophoneUsageDescription)
 
 - **Usage**: Speech-to-text transcription only
 - **Processing**: 100% on-device via WhisperKit (Apple CoreML)
 - **No audio is sent to any server** — no network requests at any point
-- **Description string**: "Dictus needs microphone access to transcribe your voice."
+- **Description string**: "Ouispr needs microphone access to transcribe your voice."
 
 ## Full Access (Keyboard Extension)
 
 - **Required solely for microphone access** from keyboard extension
 - iOS blocks microphone in keyboard extensions without Full Access
-- **Dictus does NOT access**: network, clipboard content, keystroke data, contacts, location, photos
-- `RequestsOpenAccess = true` in DictusKeyboard/Info.plist
+- **Ouispr does NOT access**: network, clipboard content, keystroke data, contacts, location, photos
+- `RequestsOpenAccess = true` in OuisprKeyboard/Info.plist
 
 ## Background Audio (UIBackgroundModes: audio)
 
@@ -45,7 +45,7 @@
 
 ## Privacy Manifest (PrivacyInfo.xcprivacy)
 
-- Both targets (DictusApp + DictusKeyboard) include Privacy Manifest
+- Both targets (OuisprApp + OuisprKeyboard) include Privacy Manifest
 - `NSPrivacyTracking`: false
 - `NSPrivacyCollectedDataTypes`: empty (Data Not Collected)
 - `NSPrivacyAccessedAPITypes`: UserDefaults with reason CA92.1 (App Group container)
@@ -53,7 +53,7 @@
 ## Reviewer Test Instructions
 
 ```
-Dictus is an iOS keyboard with 100% on-device voice dictation.
+Ouispr is an iOS keyboard with 100% on-device voice dictation.
 
 Key points for review:
 
@@ -77,11 +77,11 @@ Key points for review:
    dictation (e.g., returning to WhatsApp after dictating).
 
 5. DATA COLLECTION
-   Dictus collects no user data. Privacy Nutrition Label: "Data Not Collected".
+   Ouispr collects no user data. Privacy Nutrition Label: "Data Not Collected".
 
 To test dictation:
 1. Install app > Complete onboarding > Download a model
 2. Open any text field (e.g., Notes)
-3. Switch to Dictus keyboard (globe button)
+3. Switch to Ouispr keyboard (globe button)
 4. Tap the microphone button > Speak > Text appears
 ```

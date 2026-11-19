@@ -24,15 +24,15 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/Audio/SpeechModelProtocol.swift
-    - DictusApp/Audio/ParakeetEngine.swift
+    - OuisprApp/Audio/SpeechModelProtocol.swift
+    - OuisprApp/Audio/ParakeetEngine.swift
   modified:
-    - DictusApp/Audio/TranscriptionService.swift
-    - DictusApp/Models/ModelManager.swift
-    - DictusApp/DictationCoordinator.swift
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - Dictus.xcodeproj/project.pbxproj
-    - DictusCore/Package.swift
+    - OuisprApp/Audio/TranscriptionService.swift
+    - OuisprApp/Models/ModelManager.swift
+    - OuisprApp/DictationCoordinator.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - Ouispr.xcodeproj/project.pbxproj
+    - OuisprCore/Package.swift
     - CLAUDE.md
 
 key-decisions:
@@ -71,7 +71,7 @@ completed: 2026-03-10
 - TranscriptionService routes to correct engine based on active model's SpeechEngine type
 - Parakeet v3 appears in model catalog for download alongside WhisperKit models
 - Deployment target raised to iOS 17 for all targets, enabling direct FluidAudio import
-- FluidAudio properly linked to DictusApp target (SPM dependency + framework)
+- FluidAudio properly linked to OuisprApp target (SPM dependency + framework)
 
 ## Task Commits
 
@@ -82,14 +82,14 @@ Each task was committed atomically:
 3. **Task 3: Ship Parakeet — raise iOS 17, remove conditional compilation** - `0908dea` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Audio/SpeechModelProtocol.swift` - Protocol abstraction + WhisperKitEngine conformance
-- `DictusApp/Audio/ParakeetEngine.swift` - FluidAudio-based Parakeet v3 engine
-- `DictusApp/Audio/TranscriptionService.swift` - Multi-engine routing via activeEngine
-- `DictusApp/Models/ModelManager.swift` - Parakeet download support via FluidAudio
-- `DictusApp/DictationCoordinator.swift` - Engine-aware initialization (ensureEngineReady)
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Parakeet v3 catalog entry + SpeechEngine enum
-- `Dictus.xcodeproj/project.pbxproj` - iOS 17 targets, FluidAudio SPM + framework link
-- `DictusCore/Package.swift` - iOS 17 platform
+- `OuisprApp/Audio/SpeechModelProtocol.swift` - Protocol abstraction + WhisperKitEngine conformance
+- `OuisprApp/Audio/ParakeetEngine.swift` - FluidAudio-based Parakeet v3 engine
+- `OuisprApp/Audio/TranscriptionService.swift` - Multi-engine routing via activeEngine
+- `OuisprApp/Models/ModelManager.swift` - Parakeet download support via FluidAudio
+- `OuisprApp/DictationCoordinator.swift` - Engine-aware initialization (ensureEngineReady)
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Parakeet v3 catalog entry + SpeechEngine enum
+- `Ouispr.xcodeproj/project.pbxproj` - iOS 17 targets, FluidAudio SPM + framework link
+- `OuisprCore/Package.swift` - iOS 17 platform
 - `CLAUDE.md` - Updated stack (iOS 17, FluidAudio)
 
 ## Decisions Made
@@ -101,19 +101,19 @@ Each task was committed atomically:
 
 ### Auto-fixed Issues
 
-**1. [Rule 3 - Blocking] FluidAudio not linked to DictusApp framework build phase**
+**1. [Rule 3 - Blocking] FluidAudio not linked to OuisprApp framework build phase**
 - **Found during:** Task 3 (shipping Parakeet)
-- **Issue:** FluidAudio had an XCRemoteSwiftPackageReference but was missing from DictusApp's packageProductDependencies, XCSwiftPackageProductDependency section, and PBXFrameworksBuildPhase
+- **Issue:** FluidAudio had an XCRemoteSwiftPackageReference but was missing from OuisprApp's packageProductDependencies, XCSwiftPackageProductDependency section, and PBXFrameworksBuildPhase
 - **Fix:** Added PBXBuildFile, XCSwiftPackageProductDependency, and framework build phase entries
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** xcodebuild build succeeded
 - **Committed in:** 0908dea (Task 3 commit)
 
-**2. [Rule 1 - Bug] Stale if #available(iOS 14.0, *) guards on DictusLogger in ModelManager**
+**2. [Rule 1 - Bug] Stale if #available(iOS 14.0, *) guards on OuisprLogger in ModelManager**
 - **Found during:** Task 3
 - **Issue:** Logger calls wrapped in iOS 14 availability checks were redundant with iOS 17 minimum
-- **Fix:** Removed all `if #available(iOS 14.0, *)` guards around DictusLogger calls in ModelManager
-- **Files modified:** DictusApp/Models/ModelManager.swift
+- **Fix:** Removed all `if #available(iOS 14.0, *)` guards around OuisprLogger calls in ModelManager
+- **Files modified:** OuisprApp/Models/ModelManager.swift
 - **Committed in:** 0908dea (Task 3 commit)
 
 ---

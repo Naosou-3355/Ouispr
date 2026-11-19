@@ -26,20 +26,20 @@ key-files:
   created:
     - .planning/phases/22-public-testflight/22-SUBMISSION-PREP.md
   modified:
-    - DictusApp/PrivacyInfo.xcprivacy
-    - DictusKeyboard/PrivacyInfo.xcprivacy
-    - DictusApp/Info.plist
-    - DictusKeyboard/Info.plist
-    - DictusWidgets/Info.plist
+    - OuisprApp/PrivacyInfo.xcprivacy
+    - OuisprKeyboard/PrivacyInfo.xcprivacy
+    - OuisprApp/Info.plist
+    - OuisprKeyboard/Info.plist
+    - OuisprWidgets/Info.plist
     - README.md
 
 key-decisions:
-  - "FileTimestamp C617.1 for PersistentLog attributesOfItem, ActiveKeyboards 3EC4.1 for activeInputModes (DictusApp only)"
+  - "FileTimestamp C617.1 for PersistentLog attributesOfItem, ActiveKeyboards 3EC4.1 for activeInputModes (OuisprApp only)"
   - "Tester limit set to 250 for initial public beta"
   - "GitHub Release tagged v1.3.0-beta as pre-release"
 
 patterns-established:
-  - "Per-target privacy manifests: DictusApp gets all APIs, DictusKeyboard only APIs it actually uses"
+  - "Per-target privacy manifests: OuisprApp gets all APIs, OuisprKeyboard only APIs it actually uses"
 
 requirements-completed: [TF-01, TF-02, TF-03, TF-04]
 
@@ -62,7 +62,7 @@ completed: 2026-04-07
 
 ## Accomplishments
 - Privacy manifests declare all required-reason APIs (UserDefaults CA92.1, FileTimestamp C617.1, ActiveKeyboards 3EC4.1) eliminating ITMS-91053 rejection risk
-- Version 1.3 build 5 set across all 3 targets (DictusApp, DictusKeyboard, DictusWidgets)
+- Version 1.3 build 5 set across all 3 targets (OuisprApp, OuisprKeyboard, OuisprWidgets)
 - Submission prep document created with Full Access justification, bilingual descriptions, and step-by-step Xcode Archive instructions
 - Public TestFlight link live: https://testflight.apple.com/join/b55atKYX
 - README updated with TestFlight install instructions and dual feedback channels (TestFlight + GitHub Issues)
@@ -77,17 +77,17 @@ Each task was committed atomically:
 3. **Task 3: Update README and create GitHub Release** - `3b77614` (feat)
 
 ## Files Created/Modified
-- `DictusApp/PrivacyInfo.xcprivacy` - Added FileTimestamp C617.1 and ActiveKeyboards 3EC4.1
-- `DictusKeyboard/PrivacyInfo.xcprivacy` - Added FileTimestamp C617.1
-- `DictusApp/Info.plist` - Version 1.3 build 5
-- `DictusKeyboard/Info.plist` - Version 1.3 build 5
-- `DictusWidgets/Info.plist` - Version 1.3 build 5
+- `OuisprApp/PrivacyInfo.xcprivacy` - Added FileTimestamp C617.1 and ActiveKeyboards 3EC4.1
+- `OuisprKeyboard/PrivacyInfo.xcprivacy` - Added FileTimestamp C617.1
+- `OuisprApp/Info.plist` - Version 1.3 build 5
+- `OuisprKeyboard/Info.plist` - Version 1.3 build 5
+- `OuisprWidgets/Info.plist` - Version 1.3 build 5
 - `README.md` - TestFlight section with public link and install instructions
 - `.planning/phases/22-public-testflight/22-SUBMISSION-PREP.md` - Submission prep with justification texts
 
 ## Decisions Made
-- FileTimestamp (C617.1) added to both targets since PersistentLog runs via DictusCore in both
-- ActiveKeyboards (3EC4.1) added only to DictusApp since UITextInputMode.activeInputModes is used only in KeyboardSetupPage
+- FileTimestamp (C617.1) added to both targets since PersistentLog runs via OuisprCore in both
+- ActiveKeyboards (3EC4.1) added only to OuisprApp since UITextInputMode.activeInputModes is used only in KeyboardSetupPage
 - Tester limit set to 250 (within 100-500 range from context decisions)
 
 ## Deviations from Plan
@@ -102,7 +102,7 @@ None
 Build was archived and uploaded to App Store Connect by Pierre. Public Beta group created with public link (tester limit: 250). Beta App Review approved.
 
 ## Next Phase Readiness
-- Dictus v1.3 public beta is live and installable via TestFlight
+- Ouispr v1.3 public beta is live and installable via TestFlight
 - GitHub Release v1.3.0-beta available for social media announcement
 - Phase 22 (Public TestFlight) is fully complete
 - Development continues on develop branch for v1.4 milestone

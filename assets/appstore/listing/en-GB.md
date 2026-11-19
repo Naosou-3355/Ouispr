@@ -10,7 +10,7 @@ Limits checked with `python3` (characters; keywords counted in UTF-8 bytes): see
 
 ## Name
 
-`Dictus: AI Voice Keyboard` (unchanged, 25/30)
+`Ouispr: AI Voice Keyboard` (unchanged, 25/30)
 
 ## Subtitle
 
@@ -27,7 +27,7 @@ Why this one:
 
 Can change at any time without a submission. For launch week (163/170):
 
-> New in 2.0: Dictus Pro. Translate as you speak and read voice messages from your chats right in your keyboard. Free for 14 days on iPhones with Apple Intelligence.
+> New in 2.0: Ouispr Pro. Translate as you speak and read voice messages from your chats right in your keyboard. Free for 14 days on iPhones with Apple Intelligence.
 
 "On iPhones with Apple Intelligence" is not decoration: the trial never starts on a device that cannot run Smart Modes (#593 decision 2), so a bare "free for 14 days" would be untrue there.
 
@@ -49,11 +49,11 @@ What changed and why:
 The sections follow the V3 slide order and headlines.
 
 ```
-Dictus is a voice keyboard that types what you say. Tap the mic, speak, and your words appear in any app. Speech recognition runs on your iPhone, even with no connection.
+Ouispr is a voice keyboard that types what you say. Tap the mic, speak, and your words appear in any app. Speech recognition runs on your iPhone, even with no connection.
 
 DICTATE IN ANY APP
 
-Messages, mail, notes, reminders: wherever you can type, Dictus is one tap away. Speak naturally and your words appear where your cursor is.
+Messages, mail, notes, reminders: wherever you can type, Ouispr is one tap away. Speak naturally and your words appear where your cursor is.
 
 TRANSLATE AS YOU SPEAK (PRO)
 
@@ -68,32 +68,32 @@ Smart Modes run on your iPhone with Apple Intelligence (iPhone 15 Pro or later, 
 
 READ VOICE NOTES IN YOUR KEYBOARD (PRO)
 
-Got a voice message you cannot listen to right now? Share it to Dictus from your chat app. It is transcribed on your iPhone, and the transcript waits in your keyboard when you go back to the conversation. Read it, then insert it with one tap if you want to quote it.
+Got a voice message you cannot listen to right now? Share it to Ouispr from your chat app. It is transcribed on your iPhone, and the transcript waits in your keyboard when you go back to the conversation. Read it, then insert it with one tap if you want to quote it.
 
 A REAL KEYBOARD IN YOUR LANGUAGE
 
-Dictus is a complete keyboard, not just a mic button. AZERTY, QWERTY and QWERTZ layouts, with autocorrect and suggestions in French, English, German and Spanish. Type when you want, talk when you do not.
+Ouispr is a complete keyboard, not just a mic button. AZERTY, QWERTY and QWERTZ layouts, with autocorrect and suggestions in French, English, German and Spanish. Type when you want, talk when you do not.
 
 YOUR VOICE NEVER LEAVES YOUR IPHONE
 
 Speech recognition happens on your device. No account, no tracking, no analytics. Dictate on a plane, in the underground, anywhere. The models live on your iPhone: download one once, then use it offline, from compact and fast to most accurate.
 
-Dictus is open source (MIT licence). Anyone can read the code and check these privacy claims: github.com/getdictus/dictus-ios
+Ouispr is open source (MIT licence). Anyone can read the code and check these privacy claims: github.com/getdictus/dictus-ios
 
 DICTATE IN 40+ LANGUAGES
 
 Dictation works in more than 40 languages at good or fair quality, and close to 100 with the Whisper models, where quality varies by language. Parakeet, the default model, transcribes 25 European languages and detects which one you are speaking. Every model tells you which languages it handles well before you download it.
 
-DICTUS PRO
+OUISPR PRO
 
 Pro adds Smart Modes, voice notes in your keyboard, a history of your dictations, and your own vocabulary for names and technical terms.
 
-Try Pro free for 14 days. The trial needs no payment and does not renew: when the 14 days end, Dictus goes back to the free version and offers to keep Pro, monthly, yearly or as a one-time lifetime purchase. Your history and vocabulary are kept. The trial is offered on iPhones that can run Smart Modes. Dictation and the keyboard stay free.
+Try Pro free for 14 days. The trial needs no payment and does not renew: when the 14 days end, Ouispr goes back to the free version and offers to keep Pro, monthly, yearly or as a one-time lifetime purchase. Your history and vocabulary are kept. The trial is offered on iPhones that can run Smart Modes. Dictation and the keyboard stay free.
 
 To keep Pro, choose a monthly or yearly auto-renewable subscription, or the one-time lifetime purchase, which is not a subscription. The price and period of each plan are shown in the app and on the App Store for your country. Payment is charged to your Apple Account when you confirm the purchase. A subscription renews automatically for the same period unless auto-renewal is turned off at least 24 hours before the end of the current period; your account is charged for the renewal within the 24 hours before that end. Manage or cancel your subscription in your Apple Account settings.
 
 Terms of use: https://getdictus.com/en/terms
-Dictus collects no data. Privacy policy: https://getdictus.com/en/privacy
+Ouispr collects no data. Privacy policy: https://getdictus.com/en/privacy
 ```
 
 ### Facts to re-check before staging

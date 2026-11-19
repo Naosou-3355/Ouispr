@@ -18,17 +18,17 @@ created: 2026-03-07
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (via Swift Package Manager) |
-| **Config file** | DictusCore/Package.swift |
-| **Quick run command** | `cd DictusCore && swift test --filter DictusCoreTests` |
-| **Full suite command** | `cd DictusCore && swift test` |
+| **Config file** | OuisprCore/Package.swift |
+| **Quick run command** | `cd OuisprCore && swift test --filter OuisprCoreTests` |
+| **Full suite command** | `cd OuisprCore && swift test` |
 | **Estimated runtime** | ~15 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cd DictusCore && swift test`
-- **After every plan wave:** Run `cd DictusCore && swift test` + Xcode build both targets
+- **After every task commit:** Run `cd OuisprCore && swift test`
+- **After every plan wave:** Run `cd OuisprCore && swift test` + Xcode build both targets
 - **Before `/gsd:verify-work`:** Full suite must be green + device verification of all 5 success criteria
 - **Max feedback latency:** 15 seconds
 

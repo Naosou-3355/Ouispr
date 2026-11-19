@@ -8,7 +8,7 @@ human_verification:
   - test: "Type every key on the AZERTY keyboard in a Simulator text field"
     expected: "Every key produces its correct character with no dead zones anywhere on the grid"
     why_human: "UICollectionView touch routing to correct key cell requires live Simulator interaction -- cannot verify dead zone absence from static code"
-  - test: "Switch to QWERTY in DictusApp settings, open keyboard, verify layout"
+  - test: "Switch to QWERTY in OuisprApp settings, open keyboard, verify layout"
     expected: "Top row is q w e r t y u i o p; row 2 is centred a s d f g h j k l; layer switching still works"
     why_human: "Layout switch reads LayoutType.active at keyboard-open time; requires live runtime verification"
   - test: "Single-tap shift then type one letter; double-tap shift quickly"
@@ -58,36 +58,36 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusKeyboard/Vendored/Views/KeyboardView.swift` | UICollectionView keyboard with direct touch | VERIFIED | Contains `collectionView.isUserInteractionEnabled = false`, `GiellaKeyboardView` class, `touchesBegan` with `HapticFeedback.keyTapped()` |
-| `DictusKeyboard/Vendored/Views/KeyView.swift` | Key cell rendering | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Views/KeyOverlayView.swift` | Key popup Bezier path | VERIFIED | Present on disk, referenced in KeyboardView.swift |
-| `DictusKeyboard/Vendored/Models/KeyDefinition.swift` | Key type enum | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Models/KeyboardDefinition.swift` | Layout structure | VERIFIED | Present on disk, programmatic init added |
-| `DictusKeyboard/Vendored/Models/Theme.swift` | iOS 26 Liquid Glass theming | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Models/DeviceContext.swift` | DeviceKit-based device detection | VERIFIED | Contains `import DeviceKit` (line 5) |
-| `DictusKeyboard/Vendored/Models/KeyboardHeightProvider.swift` | Per-device height lookup | VERIFIED | Present, referenced in KeyboardViewController line 231 |
-| `DictusKeyboard/Vendored/Models/InputContext.swift` | Word extraction | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Models/SystemKeys.swift` | Bottom row generation | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Controllers/LongPressController.swift` | Long-press overlay | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Controllers/DeadKeyHandler.swift` | Dead key transformations | VERIFIED | Present on disk |
-| `DictusKeyboard/Vendored/Controllers/Audio.swift` | 3-category sound playback | VERIFIED | Present as GiellaAudio, Sentry dependency removed |
-| `DictusKeyboard/Vendored/GiellaUtils.swift` | Shared UIKit extensions | VERIFIED | Present on disk |
-| `DictusKeyboard/FrenchKeyboardLayouts.swift` | AZERTY + QWERTY + numbers + symbols | VERIFIED | Contains `func azerty()`, `func qwerty()`, `func current()`, `LayoutType.active` dispatch; AZERTY row 1: a z e r t y u i o p; QWERTY row 1: q w e r t y u i o p; numbers row 1: 1-0; symbols row 1: [ ] { } # % ^ * + =; bottom row: 3 keys, no emoji |
-| `DictusKeyboard/LegacyCompat.swift` | Migration compatibility stubs | VERIFIED | Present on disk |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | Delegate bridge for key events | VERIFIED | Contains `class DictusKeyboardBridge`, `GiellaKeyboardViewDelegate`, `GiellaKeyboardViewKeyboardKeyDelegate`; `weak var controller: UIInputViewController?`; `textDocumentProxy.insertText` (7 usages); `textDocumentProxy.deleteBackward`; `HapticFeedback.keyTapped` in touchesBegan; `AudioServicesPlaySystemSound(1104/1155/1156)`; `handleAutoFullStop() -> Bool`; `updateCapitalization()`; `lastShiftTapTime`; `isManualShift`; `doubleTapThreshold = 0.3` |
-| `DictusKeyboard/KeyboardViewController.swift` | UIKit keyboard + SwiftUI toolbar host | VERIFIED | Contains `private var giellaKeyboard: GiellaKeyboardView?`; `private var bridge: DictusKeyboardBridge?`; `FrenchKeyboardLayouts.current()`; `addSubview(hosting.view)` + `addSubview(keyboard)`; Auto Layout constraints (topAnchor, bottomAnchor); `KeyboardHeightProvider.height(for:traitCollection:)`; `bridge?.updateCapitalization()` in both `viewWillAppear` (line 165) and `textDidChange` (line 280) |
-| `DictusKeyboard/KeyboardRootView.swift` | SwiftUI toolbar + overlay only | VERIFIED | Comment at line 18 confirms architecture change; body contains `ToolbarView` and `RecordingOverlay`; explicit comment "No KeyboardView here -- it's UIKit, added directly by KeyboardViewController" (line 94) |
+| `OuisprKeyboard/Vendored/Views/KeyboardView.swift` | UICollectionView keyboard with direct touch | VERIFIED | Contains `collectionView.isUserInteractionEnabled = false`, `GiellaKeyboardView` class, `touchesBegan` with `HapticFeedback.keyTapped()` |
+| `OuisprKeyboard/Vendored/Views/KeyView.swift` | Key cell rendering | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Views/KeyOverlayView.swift` | Key popup Bezier path | VERIFIED | Present on disk, referenced in KeyboardView.swift |
+| `OuisprKeyboard/Vendored/Models/KeyDefinition.swift` | Key type enum | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Models/KeyboardDefinition.swift` | Layout structure | VERIFIED | Present on disk, programmatic init added |
+| `OuisprKeyboard/Vendored/Models/Theme.swift` | iOS 26 Liquid Glass theming | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Models/DeviceContext.swift` | DeviceKit-based device detection | VERIFIED | Contains `import DeviceKit` (line 5) |
+| `OuisprKeyboard/Vendored/Models/KeyboardHeightProvider.swift` | Per-device height lookup | VERIFIED | Present, referenced in KeyboardViewController line 231 |
+| `OuisprKeyboard/Vendored/Models/InputContext.swift` | Word extraction | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Models/SystemKeys.swift` | Bottom row generation | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Controllers/LongPressController.swift` | Long-press overlay | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Controllers/DeadKeyHandler.swift` | Dead key transformations | VERIFIED | Present on disk |
+| `OuisprKeyboard/Vendored/Controllers/Audio.swift` | 3-category sound playback | VERIFIED | Present as GiellaAudio, Sentry dependency removed |
+| `OuisprKeyboard/Vendored/GiellaUtils.swift` | Shared UIKit extensions | VERIFIED | Present on disk |
+| `OuisprKeyboard/FrenchKeyboardLayouts.swift` | AZERTY + QWERTY + numbers + symbols | VERIFIED | Contains `func azerty()`, `func qwerty()`, `func current()`, `LayoutType.active` dispatch; AZERTY row 1: a z e r t y u i o p; QWERTY row 1: q w e r t y u i o p; numbers row 1: 1-0; symbols row 1: [ ] { } # % ^ * + =; bottom row: 3 keys, no emoji |
+| `OuisprKeyboard/LegacyCompat.swift` | Migration compatibility stubs | VERIFIED | Present on disk |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | Delegate bridge for key events | VERIFIED | Contains `class OuisprKeyboardBridge`, `GiellaKeyboardViewDelegate`, `GiellaKeyboardViewKeyboardKeyDelegate`; `weak var controller: UIInputViewController?`; `textDocumentProxy.insertText` (7 usages); `textDocumentProxy.deleteBackward`; `HapticFeedback.keyTapped` in touchesBegan; `AudioServicesPlaySystemSound(1104/1155/1156)`; `handleAutoFullStop() -> Bool`; `updateCapitalization()`; `lastShiftTapTime`; `isManualShift`; `doubleTapThreshold = 0.3` |
+| `OuisprKeyboard/KeyboardViewController.swift` | UIKit keyboard + SwiftUI toolbar host | VERIFIED | Contains `private var giellaKeyboard: GiellaKeyboardView?`; `private var bridge: OuisprKeyboardBridge?`; `FrenchKeyboardLayouts.current()`; `addSubview(hosting.view)` + `addSubview(keyboard)`; Auto Layout constraints (topAnchor, bottomAnchor); `KeyboardHeightProvider.height(for:traitCollection:)`; `bridge?.updateCapitalization()` in both `viewWillAppear` (line 165) and `textDidChange` (line 280) |
+| `OuisprKeyboard/KeyboardRootView.swift` | SwiftUI toolbar + overlay only | VERIFIED | Comment at line 18 confirms architecture change; body contains `ToolbarView` and `RecordingOverlay`; explicit comment "No KeyboardView here -- it's UIKit, added directly by KeyboardViewController" (line 94) |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
 | `DeviceContext.swift` | DeviceKit SPM | `import DeviceKit` | WIRED | Line 5 of DeviceContext.swift; SPM reference `XCRemoteSwiftPackageReference "DeviceKit"` in project.pbxproj |
-| `DictusKeyboardBridge.swift` | `textDocumentProxy` | `controller?.textDocumentProxy.insertText` | WIRED | 7 usages of `textDocumentProxy` confirmed |
-| `DictusKeyboardBridge.swift` | HapticFeedback | `HapticFeedback.keyTapped()` in `touchesBegan` | WIRED | Moved to GiellaKeyboardView.touchesBegan (line 463) for touchDown timing |
+| `OuisprKeyboardBridge.swift` | `textDocumentProxy` | `controller?.textDocumentProxy.insertText` | WIRED | 7 usages of `textDocumentProxy` confirmed |
+| `OuisprKeyboardBridge.swift` | HapticFeedback | `HapticFeedback.keyTapped()` in `touchesBegan` | WIRED | Moved to GiellaKeyboardView.touchesBegan (line 463) for touchDown timing |
 | `KeyboardViewController.swift` | GiellaKeyboardView | `GiellaKeyboardView` as direct subview | WIRED | Lines 68, 98-99: keyboard created with `FrenchKeyboardLayouts.current()`, added via `kbInputView.addSubview(keyboard)` |
-| `DictusKeyboardBridge.swift` | GiellaKeyboardView page | `kbView.page = .shifted/.normal/.capslock/.symbols1/.symbols2` | WIRED | 11 page assignments confirmed; `updateCapitalization()` triggered after all text mutations |
-| `DictusKeyboardBridge.swift` | `textDocumentProxy.autocapitalizationType` | reads proxy autocap setting in `updateCapitalization()` | WIRED | Line 338: `proxy.autocapitalizationType ?? .sentences` |
+| `OuisprKeyboardBridge.swift` | GiellaKeyboardView page | `kbView.page = .shifted/.normal/.capslock/.symbols1/.symbols2` | WIRED | 11 page assignments confirmed; `updateCapitalization()` triggered after all text mutations |
+| `OuisprKeyboardBridge.swift` | `textDocumentProxy.autocapitalizationType` | reads proxy autocap setting in `updateCapitalization()` | WIRED | Line 338: `proxy.autocapitalizationType ?? .sentences` |
 
 ### Requirements Coverage
 
@@ -95,7 +95,7 @@ human_verification:
 |-------------|-------------|-------------|--------|----------|
 | KBD-01 | 18-01, 18-02 | UICollectionView AZERTY keyboard, zero dead zones | WIRED (human confirm) | GiellaKeyboardView with `isUserInteractionEnabled = false`, direct touch-to-cell mapping |
 | KBD-02 | 18-01 | QWERTY layout switch | WIRED (human confirm) | `FrenchKeyboardLayouts.qwerty()` + `LayoutType.active` dispatch |
-| KBD-03 | 18-02, 18-03 | Shift toggle + caps lock double-tap | WIRED (human confirm) | Full shift state machine in DictusKeyboardBridge with 300ms threshold |
+| KBD-03 | 18-02, 18-03 | Shift toggle + caps lock double-tap | WIRED (human confirm) | Full shift state machine in OuisprKeyboardBridge with 300ms threshold |
 | KBD-04 | 18-01, 18-02 | Letters/numbers/symbols layer switching | WIRED (human confirm) | `.symbols`, `.shiftSymbols` key types + page assignments in bridge |
 | KBD-06 | 18-02 | Space, return, delete + globe key | WIRED | `insertText(" ")`, `insertText("\n")`, `deleteBackward()` wired; globe key handled via `GiellaKeyboardViewDelegate` |
 | KBD-07 | 18-03 | Autocapitalization after sentence-ending punctuation | WIRED (human confirm) | `updateCapitalization()` checks `.sentences` autocap type with documentContextBeforeInput lookback |
@@ -110,8 +110,8 @@ No orphaned requirements found -- all 10 requirement IDs (KBD-01 through FEEL-03
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `DictusKeyboard/Vendored/Models/KeyboardHeightProvider.swift` | 3, 87 | `// Stripped: import Sentry` (comment only) | Info | No impact -- comment documenting what was removed, not actual import |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | (multiple) | Sound always plays -- no AppGroup `soundEnabled` gate | Warning | Plan 18-02 specified checking `SharedKeys.soundEnabled`; implementation omits this. FEEL-02 requirement says "respecting silent switch" not "respecting in-app toggle", so requirement is met. App-level sound toggle is non-functional until addressed. |
+| `OuisprKeyboard/Vendored/Models/KeyboardHeightProvider.swift` | 3, 87 | `// Stripped: import Sentry` (comment only) | Info | No impact -- comment documenting what was removed, not actual import |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | (multiple) | Sound always plays -- no AppGroup `soundEnabled` gate | Warning | Plan 18-02 specified checking `SharedKeys.soundEnabled`; implementation omits this. FEEL-02 requirement says "respecting silent switch" not "respecting in-app toggle", so requirement is met. App-level sound toggle is non-functional until addressed. |
 
 No TODO/FIXME blocking patterns, no placeholder return values, no stub implementations in phase-critical files.
 
@@ -121,13 +121,13 @@ All 7 success criteria have correct implementation evidence but require live key
 
 #### 1. AZERTY Zero Dead Zones (KBD-01)
 
-**Test:** Build on iPhone 17 Pro Simulator (iPhone 16 Pro unavailable in Xcode 26.2). Open Notes. Switch to Dictus keyboard. Tap every key on all rows including edge keys.
+**Test:** Build on iPhone 17 Pro Simulator (iPhone 16 Pro unavailable in Xcode 26.2). Open Notes. Switch to Ouispr keyboard. Tap every key on all rows including edge keys.
 **Expected:** Every tap produces the correct character. No gaps between keys where taps produce nothing.
 **Why human:** Dead zone detection requires physical tapping at key boundaries -- static analysis cannot prove touch routing at edge coordinates.
 
 #### 2. QWERTY Layout Switch (KBD-02)
 
-**Test:** In DictusApp settings, switch layout to QWERTY. Return to a text field and open Dictus keyboard.
+**Test:** In OuisprApp settings, switch layout to QWERTY. Return to a text field and open Ouispr keyboard.
 **Expected:** Top row shows q w e r t y u i o p. Row 2 shows centred a s d f g h j k l. All keys work with zero dead zones.
 **Why human:** Layout switch reads LayoutType.active at keyboard open time; requires runtime confirmation.
 

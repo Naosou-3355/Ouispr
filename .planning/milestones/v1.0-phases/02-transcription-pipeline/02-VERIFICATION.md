@@ -27,7 +27,7 @@ human_verification:
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | User speaks French into the main app and receives transcription text | VERIFIED | TranscriptionService.swift uses `language: "fr"`, `temperature: 0.0`, joins segments, returns cleaned text. DictationCoordinator orchestrates full record->transcribe->write pipeline. |
-| 2 | Recording starts via dictus://dictate URL scheme | VERIFIED | DictationCoordinator.startDictation() checks modelReady, requests mic permission, initializes WhisperKit, calls audioRecorder.startRecording(). Double-start guard present. |
+| 2 | Recording starts via ouispr://dictate URL scheme | VERIFIED | DictationCoordinator.startDictation() checks modelReady, requests mic permission, initializes WhisperKit, calls audioRecorder.startRecording(). Double-start guard present. |
 | 3 | User taps stop button -- waveform + elapsed time visible during recording | VERIFIED | RecordingView.swift has WaveformView (HStack of RoundedRectangles from bufferEnergy), formattedTime from bufferSeconds, stop button calling coordinator.stopDictation(). |
 | 4 | Transcription includes automatic punctuation from Whisper | VERIFIED | DecodingOptions has `task: .transcribe`, `language: "fr"` with no post-processing that strips punctuation. Whisper natively produces punctuation. |
 | 5 | After transcription completes, result is written to App Group and keyboard is notified | VERIFIED | DictationCoordinator.stopDictation() writes to SharedKeys.lastTranscription, SharedKeys.lastTranscriptionTimestamp, SharedKeys.dictationStatus, then posts DarwinNotificationName.statusChanged and .transcriptionReady. All writes before notifications (race condition fix). |
@@ -46,19 +46,19 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusApp/Audio/AudioRecorder.swift` | WhisperKit AudioProcessor wrapper with energy levels | VERIFIED | 119 lines, uses whisperKit.audioProcessor.startRecordingLive, publishes bufferEnergy and bufferSeconds |
-| `DictusApp/Audio/TranscriptionService.swift` | WhisperKit transcription with French language | VERIFIED | 135 lines, DecodingOptions with language:"fr", imports DictusCore, applies FillerWordFilter.clean() |
-| `DictusApp/Views/RecordingView.swift` | Waveform + stop button + elapsed time UI | VERIFIED | 185 lines, WaveformView struct, stop.circle.fill button, formattedTime, transcribing/ready/failed states |
-| `DictusApp/DictationCoordinator.swift` | Real recording + transcription pipeline | VERIFIED | 295 lines, no stubs, full pipeline with SmartModelRouter integration and error handling |
-| `DictusCore/Sources/DictusCore/FillerWordFilter.swift` | Regex-based filler word removal | VERIFIED | 52 lines, 8 filler words, lookahead/lookbehind regex, cleanup post-processing |
-| `DictusCore/Sources/DictusCore/SmartModelRouter.swift` | Duration-based model selection | VERIFIED | 60 lines, 5.0s threshold, fastModels/accurateModels arrays, single-model fallback |
-| `DictusCore/Sources/DictusCore/ModelInfo.swift` | Model metadata for WhisperKit variants | VERIFIED | 69 lines, 4 models (large-v3-turbo removed for ANE), Identifiable, forIdentifier lookup |
-| `DictusApp/Models/ModelManager.swift` | Download, select, delete, state tracking | VERIFIED | 318 lines, full lifecycle with App Group persistence, serial prewarming, cleanup for failed models |
-| `DictusApp/Views/ModelManagerView.swift` | Model list UI with controls | VERIFIED | 245 lines, ModelRow with all 5 states, delete confirmation alert, error alert, swipe + explicit delete |
-| `DictusCore/Tests/DictusCoreTests/FillerWordFilterTests.swift` | Unit tests for filler removal | VERIFIED | File exists in test directory |
-| `DictusCore/Tests/DictusCoreTests/SmartModelRouterTests.swift` | Unit tests for model routing | VERIFIED | File exists in test directory |
-| `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` | Unit tests for model metadata | VERIFIED | File exists in test directory |
-| `DictusCore/Sources/DictusCore/SharedKeys.swift` | Extended with model keys | VERIFIED | activeModel, modelReady, downloadedModels keys present |
+| `OuisprApp/Audio/AudioRecorder.swift` | WhisperKit AudioProcessor wrapper with energy levels | VERIFIED | 119 lines, uses whisperKit.audioProcessor.startRecordingLive, publishes bufferEnergy and bufferSeconds |
+| `OuisprApp/Audio/TranscriptionService.swift` | WhisperKit transcription with French language | VERIFIED | 135 lines, DecodingOptions with language:"fr", imports OuisprCore, applies FillerWordFilter.clean() |
+| `OuisprApp/Views/RecordingView.swift` | Waveform + stop button + elapsed time UI | VERIFIED | 185 lines, WaveformView struct, stop.circle.fill button, formattedTime, transcribing/ready/failed states |
+| `OuisprApp/DictationCoordinator.swift` | Real recording + transcription pipeline | VERIFIED | 295 lines, no stubs, full pipeline with SmartModelRouter integration and error handling |
+| `OuisprCore/Sources/OuisprCore/FillerWordFilter.swift` | Regex-based filler word removal | VERIFIED | 52 lines, 8 filler words, lookahead/lookbehind regex, cleanup post-processing |
+| `OuisprCore/Sources/OuisprCore/SmartModelRouter.swift` | Duration-based model selection | VERIFIED | 60 lines, 5.0s threshold, fastModels/accurateModels arrays, single-model fallback |
+| `OuisprCore/Sources/OuisprCore/ModelInfo.swift` | Model metadata for WhisperKit variants | VERIFIED | 69 lines, 4 models (large-v3-turbo removed for ANE), Identifiable, forIdentifier lookup |
+| `OuisprApp/Models/ModelManager.swift` | Download, select, delete, state tracking | VERIFIED | 318 lines, full lifecycle with App Group persistence, serial prewarming, cleanup for failed models |
+| `OuisprApp/Views/ModelManagerView.swift` | Model list UI with controls | VERIFIED | 245 lines, ModelRow with all 5 states, delete confirmation alert, error alert, swipe + explicit delete |
+| `OuisprCore/Tests/OuisprCoreTests/FillerWordFilterTests.swift` | Unit tests for filler removal | VERIFIED | File exists in test directory |
+| `OuisprCore/Tests/OuisprCoreTests/SmartModelRouterTests.swift` | Unit tests for model routing | VERIFIED | File exists in test directory |
+| `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` | Unit tests for model metadata | VERIFIED | File exists in test directory |
+| `OuisprCore/Sources/OuisprCore/SharedKeys.swift` | Extended with model keys | VERIFIED | activeModel, modelReady, downloadedModels keys present |
 
 ### Key Link Verification
 

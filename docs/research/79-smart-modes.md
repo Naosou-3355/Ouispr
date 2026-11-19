@@ -39,7 +39,7 @@ same gates (`PolishGatePolicy`), the same deterministic pre/post-passes, and the
 contract judging the output. The only thing absent is audio: the polish input is text.
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness show Sources/polish-harness/fixtures/notes-fr.json     --mode notes        --runs 5
 swift run polish-harness show Sources/polish-harness/fixtures/translate-en.json --mode translate.en --runs 5
 swift run polish-harness ab   Sources/polish-harness/fixtures/notes-fr.json     --mode-b notes

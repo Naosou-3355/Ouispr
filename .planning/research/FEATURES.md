@@ -21,7 +21,7 @@ Features users expect from a keyboard with text prediction. Missing = product fe
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
 | Next-word prediction | Predicts what user types AFTER completing current word | High | Custom n-gram model (2-3MB). KenLM rejected (too heavy). |
-| Cold start auto-return | After mic opens DictusApp, return to messaging app | High | Limited to ~20 known apps. No universal API exists. |
+| Cold start auto-return | After mic opens OuisprApp, return to messaging app | High | Limited to ~20 known apps. No universal API exists. |
 | Offline-only prediction | All prediction data on-device, no cloud | Low | Already the architecture. Bundled data files. |
 
 ## Anti-Features

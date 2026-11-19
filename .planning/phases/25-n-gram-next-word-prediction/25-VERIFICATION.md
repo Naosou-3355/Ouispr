@@ -42,9 +42,9 @@ human_verification:
 |---|-------|--------|----------|
 | 1 | French and English n-gram binary files exist with valid NGRM magic and bigram/trigram data | VERIFIED | fr_ngrams.dict: magic=NGRM, 1589 bigrams, 1337 trigrams, 57KB; en_ngrams.dict: magic=NGRM, 1529 bigrams, 1651 trigrams, 56KB |
 | 2 | Both binary files fit within memory budget under 15 MiB each | VERIFIED | Both files are 0.057 MiB each — well within budget |
-| 3 | C++ NgramEngine can load an n-gram binary via mmap and return top-3 next words | VERIFIED | dictus_ngram.cpp 432 lines; mmap+munmap present; findEntry+parseResults+predictAfterWord fully implemented with real binary search logic |
+| 3 | C++ NgramEngine can load an n-gram binary via mmap and return top-3 next words | VERIFIED | ouispr_ngram.cpp 432 lines; mmap+munmap present; findEntry+parseResults+predictAfterWord fully implemented with real binary search logic |
 | 4 | User completes a word and presses space — suggestion bar shows 3 predicted next words | UNCERTAIN | All wiring is present (handleSpace calls updatePredictions, updatePredictions calls engine.predictNextWords, bridge.predict(afterWord:) calls C++ engine). Runtime behavior needs human verification on device. |
-| 5 | Prediction tap inserts word with trailing space and chains to new predictions | UNCERTAIN | handlePredictionTap in DictusKeyboardBridge.swift exists and calls updatePredictions after insertText. KeyboardRootView handles .predictions mode and calls bridge?.handlePredictionTap. Runtime chaining needs device verification. |
+| 5 | Prediction tap inserts word with trailing space and chains to new predictions | UNCERTAIN | handlePredictionTap in OuisprKeyboardBridge.swift exists and calls updatePredictions after insertText. KeyboardRootView handles .predictions mode and calls bridge?.handlePredictionTap. Runtime chaining needs device verification. |
 | 6 | While typing characters, bar switches back to completions/corrections | UNCERTAIN | State machine code is present. Needs device test to confirm no race condition remains. |
 | 7 | Prediction tap bypasses autocorrect | VERIFIED | handlePredictionTap inserts directly via proxy.insertText (not via handleSpace which triggers autocorrect logic) |
 | 8 | Fallback to top frequent words when no n-gram match | VERIFIED | TextPredictionEngine.predictNextWords calls frequencyDict.topWords(count: 3) when engine returns empty |
@@ -59,31 +59,31 @@ human_verification:
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
 | `tools/ngram_builder.py` | Python pipeline for NGRM binary generation | VERIFIED | 656 lines, contains fnv1a_32(), NGRM magic bytes, full CLI |
-| `DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram_format.h` | NGRM binary format constants and header struct | VERIFIED | Contains NGRM_MAGIC, struct NgramHeader, namespace dictus |
-| `DictusKeyboard/Vendored/AOSPTrie/include/dictus_ngram.h` | C++ NgramEngine API | VERIFIED | Contains class NgramEngine, predictAfterWord, predictAfterWords, bigramScore, namespace dictus |
-| `DictusKeyboard/Vendored/AOSPTrie/src/dictus_ngram.cpp` | mmap loading, binary search, Stupid Backoff scoring | VERIFIED | 432 lines, mmap+munmap, 0x811c9dc5 FNV-1a init, 0x01000193 prime, NGRM magic validation, real binary search via findEntry+parseResults |
-| `DictusKeyboard/Resources/fr_ngrams.dict` | French bigram+trigram binary data | VERIFIED | Valid NGRM format, 1589 bigrams, 1337 trigrams, 0.057 MiB |
-| `DictusKeyboard/Resources/en_ngrams.dict` | English bigram+trigram binary data | VERIFIED | Valid NGRM format, 1529 bigrams, 1651 trigrams, 0.056 MiB |
-| `DictusKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h` | ObjC bridge with n-gram methods | VERIFIED | Contains loadNgramsAtPath:, predictAfterWord:, predictAfterWord1:word2:, bigramScoreForWord: |
-| `DictusKeyboard/TextPrediction/AOSPTrieEngine.swift` | Swift wrapper with predictNextWords() | VERIFIED | Contains func predictNextWords(, func loadNgrams(, func bigramScore( |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | SuggestionMode.predictions + updatePredictions() | VERIFIED | Contains case predictions, func updatePredictions(context:, func extractLastWords(from:, engine.predictNextWords call |
-| `DictusKeyboard/DictusKeyboardBridge.swift` | handleSpace triggers predictions, handlePredictionTap | VERIFIED | updatePredictions called 4 times (handleSpace, post-autocorrect, handlePredictionTap), func handlePredictionTap present |
-| `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` | spellCheck with n-gram context boosting | VERIFIED | func spellCheck(_:previousWord:) present, bigramScore called for reranking, ngramsLoaded guard present |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | previousWord context passing | VERIFIED | extractPreviousWord() helper present, previousWord passed to engine.spellCheck in both update() and updateAsync() |
+| `OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram_format.h` | NGRM binary format constants and header struct | VERIFIED | Contains NGRM_MAGIC, struct NgramHeader, namespace ouispr |
+| `OuisprKeyboard/Vendored/AOSPTrie/include/ouispr_ngram.h` | C++ NgramEngine API | VERIFIED | Contains class NgramEngine, predictAfterWord, predictAfterWords, bigramScore, namespace ouispr |
+| `OuisprKeyboard/Vendored/AOSPTrie/src/ouispr_ngram.cpp` | mmap loading, binary search, Stupid Backoff scoring | VERIFIED | 432 lines, mmap+munmap, 0x811c9dc5 FNV-1a init, 0x01000193 prime, NGRM magic validation, real binary search via findEntry+parseResults |
+| `OuisprKeyboard/Resources/fr_ngrams.dict` | French bigram+trigram binary data | VERIFIED | Valid NGRM format, 1589 bigrams, 1337 trigrams, 0.057 MiB |
+| `OuisprKeyboard/Resources/en_ngrams.dict` | English bigram+trigram binary data | VERIFIED | Valid NGRM format, 1529 bigrams, 1651 trigrams, 0.056 MiB |
+| `OuisprKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h` | ObjC bridge with n-gram methods | VERIFIED | Contains loadNgramsAtPath:, predictAfterWord:, predictAfterWord1:word2:, bigramScoreForWord: |
+| `OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift` | Swift wrapper with predictNextWords() | VERIFIED | Contains func predictNextWords(, func loadNgrams(, func bigramScore( |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | SuggestionMode.predictions + updatePredictions() | VERIFIED | Contains case predictions, func updatePredictions(context:, func extractLastWords(from:, engine.predictNextWords call |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | handleSpace triggers predictions, handlePredictionTap | VERIFIED | updatePredictions called 4 times (handleSpace, post-autocorrect, handlePredictionTap), func handlePredictionTap present |
+| `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` | spellCheck with n-gram context boosting | VERIFIED | func spellCheck(_:previousWord:) present, bigramScore called for reranking, ngramsLoaded guard present |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | previousWord context passing | VERIFIED | extractPreviousWord() helper present, previousWord passed to engine.spellCheck in both update() and updateAsync() |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| tools/ngram_builder.py | dictus_ngram_format.h | shared NGRM magic | WIRED | ngram_builder.py contains NGRM 14 times; format.h defines NGRM_MAGIC; FNV-1a constants match (0x811c9dc5) |
-| dictus_ngram.cpp | fr/en_ngrams.dict | mmap loading | WIRED | mmap present with PROT_READ, NGRM magic validation, binary search on loaded data |
-| DictusKeyboardBridge.swift | SuggestionState.updatePredictions | handleSpace calls updatePredictions | WIRED | 4 call sites confirmed |
+| tools/ngram_builder.py | ouispr_ngram_format.h | shared NGRM magic | WIRED | ngram_builder.py contains NGRM 14 times; format.h defines NGRM_MAGIC; FNV-1a constants match (0x811c9dc5) |
+| ouispr_ngram.cpp | fr/en_ngrams.dict | mmap loading | WIRED | mmap present with PROT_READ, NGRM magic validation, binary search on loaded data |
+| OuisprKeyboardBridge.swift | SuggestionState.updatePredictions | handleSpace calls updatePredictions | WIRED | 4 call sites confirmed |
 | SuggestionState.swift | AOSPTrieEngine.predictNextWords | updatePredictions calls engine.predictNextWords | WIRED | Line 288 in SuggestionState.swift |
 | AOSPTrieEngine.swift | AOSPTrieBridge.predict | predictNextWords calls bridge.predict(afterWord:) | WIRED | 2 call sites in AOSPTrieEngine.swift |
-| KeyboardRootView.swift | DictusKeyboardBridge.handlePredictionTap | .predictions mode branch | WIRED | Line 250-251 in KeyboardRootView.swift |
+| KeyboardRootView.swift | OuisprKeyboardBridge.handlePredictionTap | .predictions mode branch | WIRED | Line 250-251 in KeyboardRootView.swift |
 | SuggestionState.swift | TextPredictionEngine.spellCheck | passes previousWord context | WIRED | Lines 119+124 (update), 186+192 (updateAsync) |
 | TextPredictionEngine.swift | AOSPTrieEngine.bigramScore | queries bigram score for correction reranking | WIRED | 3 call sites in TextPredictionEngine.swift |
-| Dictus.xcodeproj/project.pbxproj | dictus_ngram.cpp / fr_ngrams.dict / en_ngrams.dict | compile sources + bundle resources | WIRED | 4 references each in project.pbxproj |
+| Ouispr.xcodeproj/project.pbxproj | ouispr_ngram.cpp / fr_ngrams.dict / en_ngrams.dict | compile sources + bundle resources | WIRED | 4 references each in project.pbxproj |
 
 ### Requirements Coverage
 
@@ -100,7 +100,7 @@ All three requirement IDs declared across plans (25-01: PRED-04, PRED-06; 25-02:
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
 | AOSPTrieEngine.swift | 186, 201 | `return []` | Info | Legitimate guard clauses when bridge not loaded — not stubs |
-| dictus_ngram.cpp | ~251 | `return {}` | Info | Legitimate early-exit guard when engine not loaded — real implementation follows |
+| ouispr_ngram.cpp | ~251 | `return {}` | Info | Legitimate early-exit guard when engine not loaded — real implementation follows |
 
 No blockers. No stub implementations detected. All early returns are proper guard clauses with real logic following them.
 

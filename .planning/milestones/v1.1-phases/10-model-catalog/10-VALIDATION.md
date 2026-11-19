@@ -17,18 +17,18 @@ created: 2026-03-10
 
 | Property | Value |
 |----------|-------|
-| **Framework** | XCTest (already configured in DictusCore) |
-| **Config file** | DictusCore/Package.swift (test target exists) |
-| **Quick run command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter ModelInfoTests` |
-| **Full suite command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| **Framework** | XCTest (already configured in OuisprCore) |
+| **Config file** | OuisprCore/Package.swift (test target exists) |
+| **Quick run command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter ModelInfoTests` |
+| **Full suite command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 | **Estimated runtime** | ~15 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test --filter ModelInfoTests`
-- **After every plan wave:** Run `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test`
+- **After every task commit:** Run `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test --filter ModelInfoTests`
+- **After every plan wave:** Run `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 15 seconds
 

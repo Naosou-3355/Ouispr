@@ -18,17 +18,17 @@ created: 2026-03-06
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (via Swift Package Manager) |
-| **Config file** | `DictusCore/Package.swift` |
-| **Quick run command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
-| **Full suite command** | `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test` |
+| **Config file** | `OuisprCore/Package.swift` |
+| **Quick run command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
+| **Full suite command** | `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test` |
 | **Estimated runtime** | ~5 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test`
-- **After every plan wave:** Run full test suite + Xcode build verification for both targets (`xcodebuild -scheme DictusApp build` and `xcodebuild -scheme DictusKeyboard build`)
+- **After every task commit:** Run `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test`
+- **After every plan wave:** Run full test suite + Xcode build verification for both targets (`xcodebuild -scheme OuisprApp build` and `xcodebuild -scheme OuisprKeyboard build`)
 - **Before `/gsd:verify-work`:** Full suite must be green + manual visual verification on device
 - **Max feedback latency:** 10 seconds
 
@@ -38,14 +38,14 @@ created: 2026-03-06
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | APP-01 | unit | `cd DictusCore && swift test --filter SharedKeys` | Partial | pending |
+| 04-01-01 | 01 | 1 | APP-01 | unit | `cd OuisprCore && swift test --filter SharedKeys` | Partial | pending |
 | 04-01-02 | 01 | 1 | APP-01 | manual | N/A (onboarding UI flow) | N/A | pending |
 | 04-01-03 | 01 | 1 | APP-01 | manual | N/A (permission dialog) | N/A | pending |
 | 04-01-04 | 01 | 1 | APP-01 | manual | N/A (keyboard setup UX) | N/A | pending |
 | 04-01-05 | 01 | 1 | APP-01 | manual | N/A (model download + test) | N/A | pending |
-| 04-02-01 | 02 | 1 | APP-03 | unit | `cd DictusCore && swift test --filter SharedKeys` | Partial | pending |
+| 04-02-01 | 02 | 1 | APP-03 | unit | `cd OuisprCore && swift test --filter SharedKeys` | Partial | pending |
 | 04-02-02 | 02 | 1 | APP-03 | manual | N/A (settings UI) | N/A | pending |
-| 04-03-01 | 03 | 2 | DSN-01, KBD-06 | build | `xcodebuild -scheme DictusApp build` | N/A | pending |
+| 04-03-01 | 03 | 2 | DSN-01, KBD-06 | build | `xcodebuild -scheme OuisprApp build` | N/A | pending |
 | 04-03-02 | 03 | 2 | DSN-02 | manual | N/A (animation visual) | N/A | pending |
 | 04-03-03 | 03 | 2 | DSN-03 | manual | N/A (light/dark mode) | N/A | pending |
 | 04-03-04 | 03 | 2 | DSN-04 | manual | N/A (Dynamic Type) | N/A | pending |
@@ -56,8 +56,8 @@ created: 2026-03-06
 
 ## Wave 0 Requirements
 
-- [ ] `DictusCore/Tests/DictusCoreTests/SharedKeysExtensionTests.swift` — stubs for new keys (language, hapticsEnabled, hasCompletedOnboarding)
-- [ ] Xcode build verification for DictusApp + DictusKeyboard targets after glass modifier changes
+- [ ] `OuisprCore/Tests/OuisprCoreTests/SharedKeysExtensionTests.swift` — stubs for new keys (language, hapticsEnabled, hasCompletedOnboarding)
+- [ ] Xcode build verification for OuisprApp + OuisprKeyboard targets after glass modifier changes
 
 *Most Phase 4 requirements are UI/visual and require manual verification on device. Automated testing is limited to data layer changes in SharedKeys.*
 

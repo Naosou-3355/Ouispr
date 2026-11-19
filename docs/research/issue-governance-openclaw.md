@@ -1,6 +1,6 @@
 # OpenClaw public issue governance and agent workflow
 
-> Research note only. The canonical Dictus policy is [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md); recommendations in this note are inputs to that synthesis, not repository rules.
+> Research note only. The canonical Ouispr policy is [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md); recommendations in this note are inputs to that synthesis, not repository rules.
 
 **Research date:** 2026-09-20
 **Repository:** `openclaw/openclaw`
@@ -10,7 +10,7 @@
 
 This note uses only first-party OpenClaw GitHub sources: repository documentation, issue forms, labels, public issues, organization projects, milestones, workflows, rulesets, agent skills, and maintainer guidance. File citations are pinned to the inspected commit. Live GitHub surfaces are described as a 2026-09-20 snapshot.
 
-The sections titled **Observed practice** report what the sources explicitly show. Sections titled **Inference for Dictus** are recommendations derived from those observations, not claims about OpenClaw policy.
+The sections titled **Observed practice** report what the sources explicitly show. Sections titled **Inference for Ouispr** are recommendations derived from those observations, not claims about OpenClaw policy.
 
 ## Executive summary
 
@@ -21,7 +21,7 @@ OpenClaw treats issue governance as a layered control system rather than a singl
 3. Deterministic automation handles mechanical policy; an AI reviewer analyzes issues and PRs; deterministic code owns mutations; maintainers retain product, security, merge, and release authority.[6] [7] [22]
 4. Agent-authored changes are explicitly accepted, but they use the same issue linkage, proof, CI, review, and human judgment as human-authored changes.[1] [4]
 5. Roadmap intent is communicated through broad focus areas, labels, and release machinery rather than repository milestones: the repository has no milestones, and the two public organization projects are for the Windows Companion App and ClawHub rather than the core backlog.[1] [11] [12]
-6. The strongest reusable pattern for Dictus is not OpenClaw's full label count or automation footprint. It is the separation of **evidence**, **machine recommendation**, **deterministic action**, and **human authority**.
+6. The strongest reusable pattern for Ouispr is not OpenClaw's full label count or automation footprint. It is the separation of **evidence**, **machine recommendation**, **deterministic action**, and **human authority**.
 
 ## 1. Issue intake and routing
 
@@ -35,11 +35,11 @@ OpenClaw treats issue governance as a layered control system rather than a singl
 - Contribution guidance makes a deliberate asymmetry: bugs and very small fixes may go directly to a PR, while agent-authored or otherwise non-trivial work should create or reuse an issue first. New features and architecture changes should start with an issue or discussion because many proposals are declined or redirected to plugins.[1]
 - Reporters are told not to guess whom to tag. Issue forms, labels, automation, and `CODEOWNERS` should route work; direct maintainer mentions are reserved for an owned-path decision.[1]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Adopt a small, enforced intake contract:
 
-- **Bug:** observed summary, shortest repro, expected/actual, Dictus build, iOS/device, keyboard/app surface, model/backend, impact, redacted evidence.
+- **Bug:** observed summary, shortest repro, expected/actual, Ouispr build, iOS/device, keyboard/app surface, model/backend, impact, redacted evidence.
 - **Feature:** problem, affected user, proposed behavior, alternatives, impact, implementation intent.
 - **Support:** route away from GitHub unless it reveals a reproducible defect or documentation gap.
 - **Security/privacy:** private reporting path, never a public issue.
@@ -75,13 +75,13 @@ Maintainer triage instructions impose ownership safeguards:
 - Product rejection and out-of-scope decisions remain maintainer judgment.
 - For a fixed or superseded issue, verify that current `main` supplies equivalent or better behavior before closing it.[5]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Do **not** copy 366 labels. Reuse the axes with a much smaller vocabulary:
 
 - **Type:** `bug`, `enhancement`, `docs`.
 - **Priority:** `P0` through `P3`, with written semantics.
-- **Workflow:** retain Dictus's states `needs-triage`, `needs-info`, `needs-decision`, `ready-for-agent`, `ready-for-human`, and `wontfix`.
+- **Workflow:** retain Ouispr's states `needs-triage`, `needs-info`, `needs-decision`, `ready-for-agent`, `ready-for-human`, and `wontfix`.
 - **Evidence:** add at most `reproduced` and `needs-device-proof` if those distinctions repeatedly matter.
 - **Surface:** use only stable product boundaries such as `app`, `keyboard-extension`, `speech-model`, and `release`.
 
@@ -106,14 +106,14 @@ Priority should reflect user harm and blast radius, not reporter urgency or impl
 - Release execution is deliberately separate from ordinary issue priority. Full Release Validation binds exact Validation and Tooling SHAs, distinguishes beta/stable/full profiles, records child evidence, and rejects mismatched source identity. Publishing is a separate mutating workflow with protected release refs and environment approval.[13]
 - The release-maintainer instructions require explicit approval for version changes and irreversible publication, distinguish prepare authority from publish authority, prohibit weakening gates to manufacture success, and make the active release - not unrelated work - the work queue.[24]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Use two planning layers:
 
 1. **Backlog priority** on issues (`P0`-`P3`).
 2. **Release target** as a small, explicit field or milestone for the next TestFlight/App Store train.
 
-OpenClaw's absence of core milestones is an observed choice, not evidence that milestones are bad. Dictus is smaller and can benefit from one active release milestone if it stays curated. Keep broad product direction in a short roadmap document, and keep a release milestone narrowly limited to committed scope.
+OpenClaw's absence of core milestones is an observed choice, not evidence that milestones are bad. Ouispr is smaller and can benefit from one active release milestone if it stays curated. Keep broad product direction in a short roadmap document, and keep a release milestone narrowly limited to committed scope.
 
 Separate “important” from “ships in this release.” A P1 may miss the train if proof is incomplete; a P2 may be required because it unblocks submission or migration.
 
@@ -155,7 +155,7 @@ Stale handling is not a single indiscriminate timer:
 
 Duplicate cleanup also shows a safety pattern: the “duplicate after merge” workflow is manual-dispatch, names the already-landed PR and candidate duplicates, and defaults to dry-run until `apply` is explicitly true.[23]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Implement automation in this order:
 
@@ -166,7 +166,7 @@ Implement automation in this order:
 
 Do not let an LLM directly own labels, closure, or merge credentials. Let it produce a structured recommendation; validate the schema and current SHA/state; let trusted code apply only allowed actions.
 
-For Dictus, stale automation should be modest:
+For Ouispr, stale automation should be modest:
 
 - Never close a confirmed bug only because discussion stopped.
 - `needs-info` may close after a warning if the reporter does not respond.
@@ -193,9 +193,9 @@ The `autoreview` helper adds useful safeguards: explicit Git scope, isolated rev
 
 Repository-level agent instructions reinforce the same pattern: reproduce through the actual entry point when feasible, identify the single owner of behavior, remove competing paths, prove the intended flow, preserve unrelated work, and never treat a pre-existing red test as noise.[17]
 
-### Inference for Dictus
+### Inference for Ouispr
 
-A reusable Dictus issue-to-agent contract could be:
+A reusable Ouispr issue-to-agent contract could be:
 
 ```text
 needs-triage
@@ -234,7 +234,7 @@ OpenClaw separates ordinary PR evidence from release authorization:
 - Required failures cannot be waived by success elsewhere. Deferred or omitted checks are not “passed.” Exact-source successful evidence should be reused rather than rerun merely for ceremony.[25]
 - A Codex-based release-validation skill may analyze a published tag, but it writes a schema-validated artifact first; a separate trusted publisher downloads and validates that artifact before creating or updating the campaign issue.[19]
 
-### Inference for Dictus
+### Inference for Ouispr
 
 Use a small evidence matrix keyed to change surface:
 
@@ -250,9 +250,9 @@ Use a small evidence matrix keyed to change surface:
 
 Record skipped checks as gaps, not as success. Bind agent review and release evidence to the exact commit being merged or shipped.
 
-## 7. Recommended minimal Dictus model
+## 7. Recommended minimal Ouispr model
 
-### Inference for Dictus
+### Inference for Ouispr
 
 The smallest useful adaptation is:
 
@@ -264,11 +264,11 @@ The smallest useful adaptation is:
 6. **One agent execution contract:** only `ready-for-agent`, unassigned or explicitly delegated, issue-linked PR, current body/evidence, exact-head review.
 7. **One human merge/release gate:** machine review is advisory; humans own expected behavior, exception decisions, merge, and publishing.
 8. **One stale policy:** close abandoned `needs-info`; never inactivity-close confirmed bugs or `ready-for-human` work.
-9. **One release milestone at a time:** unlike OpenClaw's public core tracker, Dictus can use a milestone because the smaller team benefits from explicit near-term scope.
+9. **One release milestone at a time:** unlike OpenClaw's public core tracker, Ouispr can use a milestone because the smaller team benefits from explicit near-term scope.
 
 ## 8. What not to copy
 
-### Inference for Dictus
+### Inference for Ouispr
 
 - Do not copy OpenClaw's label volume. Its taxonomy reflects a very large, multi-platform repository and extensive automation.
 - Do not introduce ratings, playful status names, or many overlapping readiness labels until a real queue-management problem requires them.
@@ -283,7 +283,7 @@ OpenClaw's reusable governance pattern is a chain of custody:
 
 > structured evidence at intake → explicit issue state → bounded agent analysis → deterministic mutation → exact-head validation → human merge/release authority
 
-For Dictus, the value lies in preserving those boundaries with a small label set and a simple workflow, not reproducing OpenClaw's scale.
+For Ouispr, the value lies in preserving those boundaries with a small label set and a simple workflow, not reproducing OpenClaw's scale.
 
 ## Sources
 

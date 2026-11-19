@@ -4,7 +4,7 @@
 # One command, run on the maintainer's Mac, that proves the plumbing still works after a
 # change: the app builds, installs, launches and stays alive; onboarding navigates; the
 # keyboard registers, takes Full Access and renders in a host app; its mic hands off to
-# DictusApp; and the app answers with the expected no-model failure instead of crashing
+# OuisprApp; and the app answers with the expected no-model failure instead of crashing
 # or hanging. It proves nothing about transcription, capture, performance or UX — see
 # docs/agents/simulator-smoke-test.md for the full list of what it must not claim.
 #
@@ -12,29 +12,29 @@
 # fails. It never brings a window to the front (docs/agents/simulator.md).
 #
 # What it does:
-#   1. Create (once) and erase (every run) its own simulator, `Dictus Smoke`, then write
+#   1. Create (once) and erase (every run) its own simulator, `Ouispr Smoke`, then write
 #      the device language and keyboard list, boot it and wait for `bootstatus`.
-#   2. Resolve packages and build DictusApp, signed ad hoc (no CI signing flags).
-#   3. Install and launch DictusApp.
+#   2. Resolve packages and build OuisprApp, signed ad hoc (no CI signing flags).
+#   3. Install and launch OuisprApp.
 #   4. Check the launched pid is still alive after the UI settles.
 #   5. Navigate onboarding: Get started -> language step -> Back -> intro.
 #   6. Grant Full Access in Settings.
 #   7. Mark onboarding finished, focus Safari's address field, long-press the globe,
-#      choose Dictus.
-#   8. Tap the Dictus mic, with no model installed.
+#      choose Ouispr.
+#   8. Tap the Ouispr mic, with no model installed.
 #   9. Assert the keyboard -> app -> keyboard chain in the App Group log.
 #  10. Save screenshots, the filtered log and a report outside the repository.
-#  11. Uninstall Dictus and shut down the device it booted.
+#  11. Uninstall Ouispr and shut down the device it booted.
 #
 # Usage:
 #   scripts/simulator-smoke-test.sh
 #
 # Environment (all optional):
-#   DICTUS_SMOKE_OUT          artifact root, default $TMPDIR/dictus-smoke (refused inside the repo)
-#   DICTUS_SMOKE_DEVICE_NAME  default "Dictus Smoke"; the device is erased every run, so it
+#   OUISPR_SMOKE_OUT          artifact root, default $TMPDIR/ouispr-smoke (refused inside the repo)
+#   OUISPR_SMOKE_DEVICE_NAME  default "Ouispr Smoke"; the device is erased every run, so it
 #                             must be one this script owns
-#   DICTUS_SMOKE_DEVICE_TYPE  default com.apple.CoreSimulator.SimDeviceType.iPhone-17
-#   DICTUS_SMOKE_RUNTIME      default com.apple.CoreSimulator.SimRuntime.iOS-26-5
+#   OUISPR_SMOKE_DEVICE_TYPE  default com.apple.CoreSimulator.SimDeviceType.iPhone-17
+#   OUISPR_SMOKE_RUNTIME      default com.apple.CoreSimulator.SimRuntime.iOS-26-5
 #
 # Requires: Xcode 26.4.1 or newer, axe (brew install cameroncooke/axe/axe), python3.
 set -euo pipefail
@@ -42,17 +42,17 @@ set -euo pipefail
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$REPO_ROOT"
 
-DEVICE_NAME="${DICTUS_SMOKE_DEVICE_NAME:-Dictus Smoke}"
-DEVICE_TYPE="${DICTUS_SMOKE_DEVICE_TYPE:-com.apple.CoreSimulator.SimDeviceType.iPhone-17}"
-RUNTIME="${DICTUS_SMOKE_RUNTIME:-com.apple.CoreSimulator.SimRuntime.iOS-26-5}"
-OUT_ROOT="${DICTUS_SMOKE_OUT:-${TMPDIR:-/tmp}/dictus-smoke}"
+DEVICE_NAME="${OUISPR_SMOKE_DEVICE_NAME:-Ouispr Smoke}"
+DEVICE_TYPE="${OUISPR_SMOKE_DEVICE_TYPE:-com.apple.CoreSimulator.SimDeviceType.iPhone-17}"
+RUNTIME="${OUISPR_SMOKE_RUNTIME:-com.apple.CoreSimulator.SimRuntime.iOS-26-5}"
+OUT_ROOT="${OUISPR_SMOKE_OUT:-${TMPDIR:-/tmp}/ouispr-smoke}"
 
 # The device is erased on every run, so a name must not be able to reach a simulator
 # someone else uses. Only names in this script's own namespace are accepted.
 case "$DEVICE_NAME" in
-  "Dictus Smoke"*) ;;
+  "Ouispr Smoke"*) ;;
   *)
-    echo "error: DICTUS_SMOKE_DEVICE_NAME must start with 'Dictus Smoke' (got '$DEVICE_NAME'): the device is erased on every run." >&2
+    echo "error: OUISPR_SMOKE_DEVICE_NAME must start with 'Ouispr Smoke' (got '$DEVICE_NAME'): the device is erased on every run." >&2
     exit 2
     ;;
 esac
@@ -61,7 +61,7 @@ APP_ID=com.pivi.dictus
 KEYBOARD_ID=com.pivi.dictus.keyboard
 APP_GROUP=group.solutions.pivi.dictus
 DERIVED_DATA=build/DerivedData
-APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/DictusApp.app"
+APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/OuisprApp.app"
 
 COMMIT=$(git rev-parse --short HEAD)
 if [ -n "$(git status --porcelain)" ]; then COMMIT="$COMMIT-dirty"; fi
@@ -71,7 +71,7 @@ mkdir -p "$OUT_ROOT"
 OUT_ROOT=$(cd "$OUT_ROOT" && pwd -P)
 case "$OUT_ROOT/" in
   "$(pwd -P)/"*)
-    echo "error: DICTUS_SMOKE_OUT ($OUT_ROOT) is inside the repository. Choose a path outside it." >&2
+    echo "error: OUISPR_SMOKE_OUT ($OUT_ROOT) is inside the repository. Choose a path outside it." >&2
     exit 2
     ;;
 esac
@@ -113,7 +113,7 @@ frontmost_app() {
 # Reports the frontmost Mac app, and says so plainly when it could not be read: without
 # Automation permission the "never in front" check has checked nothing, and a report
 # that stayed silent about it would read as a pass. Not a failure: what is under test is
-# Dictus, not this Mac's privacy settings.
+# Ouispr, not this Mac's privacy settings.
 report_frontmost() {
   local front
   front=$(frontmost_app)
@@ -127,7 +127,7 @@ report_frontmost() {
 # --- Cleanup: only what this run created ----------------------------------
 
 # Runs on every exit, pass or fail. `SMOKE PASS` is printed here and only here, after
-# the cleanup has succeeded: a run that leaves Dictus installed or the device booted has
+# the cleanup has succeeded: a run that leaves Ouispr installed or the device booted has
 # not finished, and its last word must not be a pass.
 cleanup() {
   local status=$? problems=""
@@ -142,8 +142,8 @@ cleanup() {
   fi
   if [ -n "$UDID" ]; then
     # Read the whole log before uninstalling: uninstall deletes the App Group container.
-    if [ -n "$GROUP_DIR" ] && [ -f "$GROUP_DIR/dictus_debug.log" ]; then
-      cp "$GROUP_DIR/dictus_debug.log" "$RUN_DIR/dictus_debug.full.log"
+    if [ -n "$GROUP_DIR" ] && [ -f "$GROUP_DIR/ouispr_debug.log" ]; then
+      cp "$GROUP_DIR/ouispr_debug.log" "$RUN_DIR/ouispr_debug.full.log"
     fi
     if [ $status -ne 0 ]; then
       xcrun simctl io "$UDID" screenshot "$RUN_DIR/failure.png" >/dev/null 2>&1 \
@@ -299,7 +299,7 @@ wait_log() {
 
 # =============================================================================
 
-say "Dictus simulator smoke test"
+say "Ouispr simulator smoke test"
 say "commit: $COMMIT ($(git rev-parse --abbrev-ref HEAD))"
 say "xcode: $(xcodebuild -version | tr '\n' ' ')"
 report_frontmost "at start"
@@ -333,7 +333,7 @@ xcrun simctl erase "$UDID" || fail "could not erase $UDID"
 # from the host to a booted device does not stick (simulator.md section 6).
 #
 # AppleKeyboardsExpanded is not optional. On an erased device iOS ignores AppleKeyboards
-# without it and rebuilds the list from the languages, without Dictus (measured
+# without it and rebuilds the list from the languages, without Ouispr (measured
 # 2026-10-14, iOS 26.5).
 PREFS="$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Preferences/.GlobalPreferences.plist"
 python3 - "$PREFS" "$KEYBOARD_ID" <<'PY' || fail "could not write the device preferences"
@@ -390,21 +390,21 @@ XCSTRINGS_STATE=checked
 # No patch step: FluidAudio 0.15.7 builds unpatched since #558. A checkout that resolved
 # FluidAudio 0.12 fails here; delete $DERIVED_DATA/SourcePackages and run again (CLAUDE.md).
 xcodebuild -resolvePackageDependencies \
-  -project Dictus.xcodeproj -scheme DictusApp \
+  -project Ouispr.xcodeproj -scheme OuisprApp \
   -derivedDataPath "$DERIVED_DATA" >"$RUN_DIR/resolve.log" 2>&1 \
   || fail "package resolution failed, see $RUN_DIR/resolve.log"
 
 # Without CI's CODE_SIGNING_ALLOWED=NO: an unsigned build has no App Group container on
 # the simulator, so the log this test reads would never be written (simulator.md section 2).
 xcodebuild build \
-  -project Dictus.xcodeproj -scheme DictusApp -configuration Debug \
+  -project Ouispr.xcodeproj -scheme OuisprApp -configuration Debug \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath "$DERIVED_DATA" >"$RUN_DIR/build.log" 2>&1 \
   || fail "build failed, see $RUN_DIR/build.log"
 
 # Xcode rewrites Localizable.xcstrings during the build; cleanup puts it back.
 
-[ -d "$APP_PATH/PlugIns/DictusKeyboard.appex" ] || fail "built app has no DictusKeyboard.appex"
+[ -d "$APP_PATH/PlugIns/OuisprKeyboard.appex" ] || fail "built app has no OuisprKeyboard.appex"
 
 # --- 3. Install and launch ---------------------------------------------------
 step "3 install and launch"
@@ -423,7 +423,7 @@ say "launched $APP_ID pid $APP_PID"
 GROUP_DIR=$(xcrun simctl get_app_container "$UDID" "$APP_ID" groups \
   | awk -F'\t' -v g="$APP_GROUP" '$1 == g { print $2 }')
 [ -n "$GROUP_DIR" ] || fail "no App Group container for $APP_GROUP"
-LOG_FILE="$GROUP_DIR/dictus_debug.log"
+LOG_FILE="$GROUP_DIR/ouispr_debug.log"
 
 # --- 4. Liveness -------------------------------------------------------------
 step "4 liveness"
@@ -431,7 +431,7 @@ step "4 liveness"
 # `simctl launch` exits 0 for a process that crashes a second later (simulator.md
 # section 3). Wait for the first screen, then check the pid itself.
 wait_for id onboarding.primary 30 >/dev/null || fail "the onboarding intro never appeared"
-ps -p "$APP_PID" >/dev/null || fail "DictusApp pid $APP_PID is gone after launch"
+ps -p "$APP_PID" >/dev/null || fail "OuisprApp pid $APP_PID is gone after launch"
 wait_log '<APP> appLaunched' 10 >/dev/null || fail "no '<APP> appLaunched' line in $LOG_FILE"
 say "pid $APP_PID alive, appLaunched logged"
 
@@ -442,7 +442,7 @@ step "5 navigation"
 # model download, which this test must never do.
 #
 # Screenshots of each screen go to the run directory: on 2026-10-15, on a heavily loaded
-# Mac, one run left this step for Siri's settings page ("◀ Dictus") without a log line
+# Mac, one run left this step for Siri's settings page ("◀ Ouispr") without a log line
 # saying how. The next occurrence should leave the screens behind it.
 sleep 2
 is_present id onboarding.back && fail "the intro already shows a back control"
@@ -462,7 +462,7 @@ while is_present id onboarding.back; do
   waited=$((waited + 1))
 done
 wait_for id onboarding.primary 10 >/dev/null || fail "the intro's Get started is missing after Back"
-ps -p "$APP_PID" >/dev/null || fail "DictusApp pid $APP_PID died during navigation"
+ps -p "$APP_PID" >/dev/null || fail "OuisprApp pid $APP_PID died during navigation"
 say "intro -> language -> intro"
 
 
@@ -486,7 +486,7 @@ tap_until id "$KEYBOARD_ID" id "Autoriser l’accès complet"
 # for its screen to settle and is checked by what it should have caused — the alert
 # appearing, then the alert going away. The keyboard's own `fullAccess=true` in step 7
 # remains the real proof.
-frame=$(stable_frame id "Autoriser l’accès complet") || fail "no Full Access row in the Dictus keyboard settings"
+frame=$(stable_frame id "Autoriser l’accès complet") || fail "no Full Access row in the Ouispr keyboard settings"
 read -r x y w h <<<"$frame"
 granted=no
 for _ in 1 2 3; do
@@ -509,9 +509,9 @@ done
 xcrun simctl io "$UDID" screenshot "$RUN_DIR/full-access.png" >/dev/null 2>&1 || true
 
 # --- 7. Keyboard in a host app -----------------------------------------------
-step "7 select the Dictus keyboard"
+step "7 select the Ouispr keyboard"
 
-# DictusApp is terminated on purpose, right before the host app opens: the mic tap below
+# OuisprApp is terminated on purpose, right before the host app opens: the mic tap below
 # then always takes the cold-start path (Darwin post unanswered, URL fallback, app
 # launched by the keyboard), instead of depending on whether iOS happened to keep a
 # backgrounded process running. Granting Full Access in step 6 already kills the app
@@ -529,20 +529,20 @@ while :; do
   if ! grep -q "UIKitApplication:$APP_ID\[" <<<"$SERVICES" && ! ps -p "$APP_PID" >/dev/null; then
     break
   fi
-  [ "$waited" -lt 10 ] || fail "DictusApp is still running after terminate: the hand-off would not be a cold start"
+  [ "$waited" -lt 10 ] || fail "OuisprApp is still running after terminate: the hand-off would not be a cold start"
   sleep 1
   waited=$((waited + 1))
 done
-say "DictusApp terminated: the mic tap will cold-start it"
+say "OuisprApp terminated: the mic tap will cold-start it"
 
 # Onboarding is marked finished before the tap (#827). Before it is, the keyboard only
-# opens Dictus on onboarding and asks for no dictation, so the chain below would never
+# opens Ouispr on onboarding and asks for no dictation, so the chain below would never
 # start. Steps 4-5 have already checked the onboarding screens; what follows is the
 # hand-off an onboarded user gets. Written while the app is not running, into the App
-# Group plist from inside the device, as `verify-dictus-ios`'s `launch.sh
+# Group plist from inside the device, as `verify-ouispr-ios`'s `launch.sh
 # --skip-onboarding` does.
 xcrun simctl spawn "$UDID" defaults write \
-  "$GROUP_DIR/Library/Preferences/$APP_GROUP.plist" dictus.hasCompletedOnboarding -bool YES \
+  "$GROUP_DIR/Library/Preferences/$APP_GROUP.plist" ouispr.hasCompletedOnboarding -bool YES \
   || fail "could not mark onboarding as finished"
 
 xcrun simctl launch "$UDID" com.apple.mobilesafari >/dev/null || fail "could not open Safari"
@@ -567,17 +567,17 @@ gy=$(center "$y" "$h")
 axe batch --udid "$UDID" \
   --step "touch -x $gx -y $gy --down" --step "sleep 1.8" --step "touch -x $gx -y $gy --up" >/dev/null \
   || fail "could not long-press the globe key"
-tap label "Dictus, multilingue"
+tap label "Ouispr, multilingue"
 
-wait_log '<KBD> .*fullAccess=true' 15 >/dev/null || fail "the Dictus keyboard never logged fullAccess=true"
+wait_log '<KBD> .*fullAccess=true' 15 >/dev/null || fail "the Ouispr keyboard never logged fullAccess=true"
 
 # --- 8. Mic tap --------------------------------------------------------------
 step "8 tap the mic"
 
-# The Dictus keyboard's own controls are not in the accessibility tree; its view is one
+# The Ouispr keyboard's own controls are not in the accessibility tree; its view is one
 # opaque remote element (`inputView`). The mic sits at the trailing end of its toolbar,
 # the top row of that element. The log lines below are what prove the tap landed.
-frame=$(stable_frame id inputView) || fail "no inputView: the Dictus keyboard is not on screen"
+frame=$(stable_frame id inputView) || fail "no inputView: the Ouispr keyboard is not on screen"
 read -r x y w h <<<"$frame"
 sleep 1
 xcrun simctl io "$UDID" screenshot "$RUN_DIR/keyboard.png" >/dev/null 2>&1 || fail "could not take the keyboard screenshot"
@@ -611,9 +611,9 @@ TAP_LINE=$(wait_log '<KBD> keyboardMicTapped' 15 "$LOG_FROM") \
 # still alive also satisfies (measured 2026-10-15 with the terminate removed: same pid,
 # no new appLaunched, `isColdStart=true`).
 LAUNCH_LINE=$(wait_log '<APP> appLaunched' 20 $((TAP_LINE + 1))) \
-  || fail "no '<APP> appLaunched' after the tap: the hand-off reached a DictusApp that was already running, not a cold start"
+  || fail "no '<APP> appLaunched' after the tap: the hand-off reached a OuisprApp that was already running, not a cold start"
 URL_LINE=$(wait_log '<APP> coldStartURLReceived isColdStart=true' 20 $((LAUNCH_LINE + 1))) \
-  || fail "no '<APP> coldStartURLReceived isColdStart=true' after the launch: DictusApp was not cold-started by the keyboard's URL"
+  || fail "no '<APP> coldStartURLReceived isColdStart=true' after the launch: OuisprApp was not cold-started by the keyboard's URL"
 APP_FAILED_LINE=$(wait_log '<APP> dictationFailed error=No model downloaded' 20 $((URL_LINE + 1))) \
   || fail "no '<APP> dictationFailed error=No model downloaded' after the hand-off"
 KBD_FAILED_LINE=$(wait_log '<KBD> statusChanged from=requested to=failed' 15 $((URL_LINE + 1))) \
@@ -621,18 +621,18 @@ KBD_FAILED_LINE=$(wait_log '<KBD> statusChanged from=requested to=failed' 15 $((
 say "chain at log lines: tap $TAP_LINE, app launch $LAUNCH_LINE, cold start $URL_LINE, app failure $APP_FAILED_LINE, keyboard failure $KBD_FAILED_LINE"
 
 # And nothing died on the way: the app is still running, and SpringBoard recorded no
-# crash of any Dictus process during the run.
+# crash of any Ouispr process during the run.
 SERVICES=$(xcrun simctl spawn "$UDID" launchctl list 2>/dev/null || true)
-grep -q "UIKitApplication:$APP_ID\[" <<<"$SERVICES" || fail "DictusApp is not running after the hand-off"
+grep -q "UIKitApplication:$APP_ID\[" <<<"$SERVICES" || fail "OuisprApp is not running after the hand-off"
 EXITS=$(xcrun simctl spawn "$UDID" log show --last 15m --style compact \
   --predicate 'process == "SpringBoard" AND eventMessage CONTAINS "Process exited"' 2>/dev/null || true)
 # SIGKILL is left out on purpose: it is how the system reclaims an extension it is done
 # with — the widget extension is killed that way after rendering, in every run (measured
 # 2026-10-14). A crash is the other signals: SIGSEGV, SIGABRT, SIGBUS, SIGTRAP, SIGILL.
-CRASHES=$(grep "pivi.dictus" <<<"$EXITS" | grep "domain:signal" | grep -v "SIGKILL" || true)
+CRASHES=$(grep "pivi.ouispr" <<<"$EXITS" | grep "domain:signal" | grep -v "SIGKILL" || true)
 if [ -n "$CRASHES" ]; then
   echo "$CRASHES" >"$RUN_DIR/process-exits.log"
-  fail "a Dictus process crashed during the run, see $RUN_DIR/process-exits.log"
+  fail "a Ouispr process crashed during the run, see $RUN_DIR/process-exits.log"
 fi
 
 # --- 10. Evidence -------------------------------------------------------------

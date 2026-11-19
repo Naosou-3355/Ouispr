@@ -25,10 +25,10 @@
  * French; slide 2's recording panel shot over Messages). The three keyboard captures of slide 5 are en-GB's, through the
  * template's fallback: each layout already shows its own language.
  */
-window.DICTUS_STRINGS = {
+window.OUISPR_STRINGS = {
   locale: "fr-FR",
   proBadge: "Pro",
-  wordmark: "dictus",
+  wordmark: "ouispr",
   // The hero's illustration per art iteration, when the locale has its own lettering.
   heroArt: { "v15-B": "art/v15-B/hero-fr-FR.png", "v16-B": "art/v16-B/hero-fr-FR.png" },
   slides: {

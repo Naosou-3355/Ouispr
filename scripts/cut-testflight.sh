@@ -22,7 +22,7 @@ set -eu
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$REPO_ROOT"
 
-PLISTS="DictusApp/Info.plist DictusKeyboard/Info.plist DictusWidgets/Info.plist DictusShare/Info.plist"
+PLISTS="OuisprApp/Info.plist OuisprKeyboard/Info.plist OuisprWidgets/Info.plist OuisprShare/Info.plist"
 PB=/usr/libexec/PlistBuddy
 NEW_VERSION="${1:-}"
 
@@ -44,7 +44,7 @@ if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/develop)" ]; then
 fi
 
 # --- Compute the new build number -------------------------------------------
-CUR_BUILD=$($PB -c "Print :CFBundleVersion" DictusApp/Info.plist)
+CUR_BUILD=$($PB -c "Print :CFBundleVersion" OuisprApp/Info.plist)
 case "$CUR_BUILD" in
   ''|*[!0-9]*) echo "error: current build number '$CUR_BUILD' is not an integer." >&2; exit 1 ;;
 esac
@@ -57,7 +57,7 @@ if git rev-parse -q --verify "refs/tags/build/$NEW_BUILD" >/dev/null; then
 fi
 
 # Marketing version: keep current unless an argument is given.
-CUR_VERSION=$($PB -c "Print :CFBundleShortVersionString" DictusApp/Info.plist)
+CUR_VERSION=$($PB -c "Print :CFBundleShortVersionString" OuisprApp/Info.plist)
 if [ -n "$NEW_VERSION" ]; then
   case "$NEW_VERSION" in
     [0-9]*.[0-9]*.[0-9]*|[0-9]*.[0-9]*) : ;;
@@ -89,5 +89,5 @@ git push origin develop "build/$NEW_BUILD"
 
 echo ""
 echo "✅ develop bumped to $VERSION (build $NEW_BUILD), tagged build/$NEW_BUILD, pushed."
-echo "   Next: Xcode → Product > Archive (scheme DictusApp, from develop) → upload to App Store Connect."
+echo "   Next: Xcode → Product > Archive (scheme OuisprApp, from develop) → upload to App Store Connect."
 echo "   To ship this build to the App Store later: scripts/promote-to-appstore.sh $NEW_BUILD"

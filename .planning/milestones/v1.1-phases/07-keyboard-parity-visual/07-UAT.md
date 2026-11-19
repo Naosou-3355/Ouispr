@@ -20,8 +20,8 @@ result: pass
 expected: Keyboard keys are 42pt tall on iPhone SE, 46pt on standard iPhones, 50pt on Plus/Max models
 result: pass
 
-### 3. Full Access banner opens Dictus app
-expected: Tapping the Full Access banner opens the Dictus app (via dictus:// URL) to guide setup
+### 3. Full Access banner opens Ouispr app
+expected: Tapping the Full Access banner opens the Ouispr app (via ouispr:// URL) to guide setup
 result: issue
 reported: "Ça ne marche toujours pas, il ne se passe rien du tout"
 severity: blocker
@@ -47,7 +47,7 @@ expected: When no speech is detected, waveform bars drop to minimum height (perf
 result: pass
 
 ### 9. Recording overlay pill buttons
-expected: Cancel and Validate buttons in recording overlay are pill-shaped with Liquid Glass appearance; Validate is green (dictusSuccess color)
+expected: Cancel and Validate buttons in recording overlay are pill-shaped with Liquid Glass appearance; Validate is green (ouisprSuccess color)
 result: pass
 
 ### 10. Spacebar trackpad mode activation
@@ -134,7 +134,7 @@ skipped: 0
 
 ## Gaps
 
-- truth: "Tapping the Full Access banner opens the Dictus app (via dictus:// URL) to guide setup"
+- truth: "Tapping the Full Access banner opens the Ouispr app (via ouispr:// URL) to guide setup"
   status: failed
   reason: "User reported: Ça ne marche toujours pas, il ne se passe rien du tout"
   severity: blocker

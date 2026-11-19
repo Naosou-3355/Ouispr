@@ -1,12 +1,12 @@
-# Architecture Audio — Dictus
+# Architecture Audio — Ouispr
 
-Guide technique du pipeline audio de Dictus : capture, transcription, et comment ajouter un nouveau moteur STT.
+Guide technique du pipeline audio de Ouispr : capture, transcription, et comment ajouter un nouveau moteur STT.
 
 ## Vue d'ensemble
 
 ```
 ┌─────────────────────┐     Darwin notif      ┌─────────────────────────┐
-│  DictusKeyboard     │ ──────────────────────>│  DictationCoordinator   │
+│  OuisprKeyboard     │ ──────────────────────>│  DictationCoordinator   │
 │  (extension clavier)│ <──────────────────────│  (orchestrateur)        │
 │                     │     App Group (status,  │                         │
 │                     │     waveform, result)   │  ┌───────────────────┐  │
@@ -31,14 +31,14 @@ Guide technique du pipeline audio de Dictus : capture, transcription, et comment
 
 | Fichier | Rôle | Dépendances |
 |---------|------|-------------|
-| `UnifiedAudioEngine.swift` | Capture audio (AVAudioEngine natif) | AVFoundation, DictusCore |
-| `TranscriptionService.swift` | Routage STT + post-processing | WhisperKit, DictusCore |
+| `UnifiedAudioEngine.swift` | Capture audio (AVAudioEngine natif) | AVFoundation, OuisprCore |
+| `TranscriptionService.swift` | Routage STT + post-processing | WhisperKit, OuisprCore |
 | `SpeechModelProtocol.swift` | Protocol + WhisperKitEngine adapter | WhisperKit |
 | `ParakeetEngine.swift` | Adapter Parakeet/FluidAudio | FluidAudio |
 
 ### UnifiedAudioEngine — La capture audio
 
-**Localisation** : `DictusApp/Audio/UnifiedAudioEngine.swift`
+**Localisation** : `OuisprApp/Audio/UnifiedAudioEngine.swift`
 
 Moteur audio unique basé sur `AVAudioEngine` natif d'Apple. Zéro dépendance vers WhisperKit ou tout autre SDK de transcription.
 
@@ -125,7 +125,7 @@ Les variables lues/écrites depuis l'audio thread sont marquées `nonisolated(un
 
 ### TranscriptionService — Le routeur STT
 
-**Localisation** : `DictusApp/Audio/TranscriptionService.swift`
+**Localisation** : `OuisprApp/Audio/TranscriptionService.swift`
 
 Reçoit un `[Float]` et le route vers le bon moteur de transcription.
 
@@ -147,7 +147,7 @@ Le moteur actif est injecté par `DictationCoordinator` via :
 
 ### SpeechModelProtocol — L'abstraction moteur
 
-**Localisation** : `DictusApp/Audio/SpeechModelProtocol.swift`
+**Localisation** : `OuisprApp/Audio/SpeechModelProtocol.swift`
 
 ```swift
 protocol SpeechModelProtocol {
@@ -164,7 +164,7 @@ Chaque moteur STT implémente ce protocol. Aujourd'hui :
 
 ### DictationCoordinator — L'orchestrateur
 
-**Localisation** : `DictusApp/DictationCoordinator.swift`
+**Localisation** : `OuisprApp/DictationCoordinator.swift`
 
 Coordonne le tout : réception des signaux clavier (Darwin notifications), gestion du cycle enregistrement/transcription, communication avec le clavier via App Group.
 
@@ -194,7 +194,7 @@ Pour intégrer un nouveau fournisseur (ex: Moonshine, Sherpa-ONNX, un modèle Co
 
 ### 1. Créer l'adapter
 
-Créer `DictusApp/Audio/NouveauMoteurEngine.swift` :
+Créer `OuisprApp/Audio/NouveauMoteurEngine.swift` :
 
 ```swift
 import Foundation
@@ -223,7 +223,7 @@ class NouveauMoteurEngine: SpeechModelProtocol {
 
 ### 2. Ajouter le type de moteur au catalogue
 
-Dans `DictusCore`, ajouter le nouveau type dans l'enum `STTEngine` :
+Dans `OuisprCore`, ajouter le nouveau type dans l'enum `STTEngine` :
 
 ```swift
 enum STTEngine: String, Codable {
@@ -298,9 +298,9 @@ private func ensureNouveauMoteurReady(modelName: String) async throws {
 
 ## Contraintes iOS à connaître
 
-| Contrainte | Impact | Solution dans Dictus |
+| Contrainte | Impact | Solution dans Ouispr |
 |------------|--------|---------------------|
-| Extension clavier : 50MB RAM max | Pas de modèle STT dans l'extension | L'enregistrement se fait dans DictusApp |
+| Extension clavier : 50MB RAM max | Pas de modèle STT dans l'extension | L'enregistrement se fait dans OuisprApp |
 | `setActive(true)` interdit en background | Session audio doit être configurée au foreground | `configureAudioSession()` appelé dans `init()` de DictationCoordinator |
 | iOS throttle `DispatchQueue.main.async` en background | Les updates SwiftUI sont retardées | Heartbeat + waveform écrits directement depuis l'audio thread |
 | `UIBackgroundModes:audio` nécessite un engine actif | L'app est killed si l'engine s'arrête | L'engine reste en idle entre les enregistrements |

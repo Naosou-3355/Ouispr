@@ -1,7 +1,7 @@
 # Long-form paragraph breaks — measured (#437)
 
 **Bars and plan:** `bars.md`, committed before the first candidate model call.
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
 paired dictations of 2026-08-27, `raw` verbatim from the device export.
 **Where:** Mac, macOS 26, Apple Intelligence on, `polish-harness`, 2026-09-11.
 **Raw captures:** `raw/`. **Arms:** `prompts/`, `framings/`. **Scorer:** `harness/score.py`.
@@ -185,7 +185,7 @@ future attempt is spending.
 **The issue closes on the second of its two declared outcomes.** The clause was
 written, eleven ways, measured over 312 candidate outputs on both prompt routes, and it does not
 hold the bars. Normal polish keeps its single block, and nothing in
-`DictusCore/Sources/DictusCore/Polish/` changes except a test that pins the ban so the
+`OuisprCore/Sources/OuisprCore/Polish/` changes except a test that pins the ban so the
 next round has to be deliberate rather than accidental.
 
 **What a future attempt should not repeat.** The system prompt is exhausted: `MAY`,

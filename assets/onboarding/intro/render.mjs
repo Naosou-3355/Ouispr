@@ -11,7 +11,7 @@
 // What it needs is in README.md: Node 20+, ffmpeg with libx265, network access for the first
 // `npm install`, and the anidoodle engine installed at ~/.claude/skills/anidoodle (or the path in
 // $ANIDOODLE). A locale's videos go to <locale>.lproj/ next to this file, its still frames into
-// DictusApp's asset catalog; everything else goes to .build/ next to this file, which git
+// OuisprApp's asset catalog; everything else goes to .build/ next to this file, which git
 // ignores; delete it for a clean render.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -46,9 +46,9 @@ const cap = (w) => w[0].toUpperCase() + w.slice(1);
 // from before #771, so an English render is the same film as before
 const filmName = (id, locale) => { const [s, t] = id.split("-"); return SCENES[s] + cap(t) + (locale === "en" ? "" : cap(locale)); };
 // the still frame of each scene in the asset catalog, taken at OnboardingIntroScene.stillFrameSeconds
-// (DictusCore): 4.5 s into A and B, 3.0 s into C, at 30 fps
+// (OuisprCore): 4.5 s into A and B, 3.0 s into C, at 30 fps
 const STILL_FRAME = { a: 135, b: 135, c: 90 };
-const CATALOG = resolve(HERE, "../../../DictusApp/Assets.xcassets");
+const CATALOG = resolve(HERE, "../../../OuisprApp/Assets.xcassets");
 
 // ---------------------------------------------------------------- 1. the engine, scaffolded into .build
 if (!existsSync(join(ENGINE, "tools/scaffold.mjs"))) die(`no anidoodle engine at ${ENGINE} (set ANIDOODLE to the skill's folder)`);
@@ -167,7 +167,7 @@ for (const locale of locales) for (const id of only) {
     }
   }
 
-  // the still frame in DictusApp's asset catalog (OnboardingIntroScene.stillImageName): the same
+  // the still frame in OuisprApp's asset catalog (OnboardingIntroScene.stillImageName): the same
   // decode of the frame the video starts on. English keeps the catalog's original file names,
   // another locale adds its code (intro-a-light-fr.png), listed with its "locale" in the image
   // set's Contents.json. A still whose pixels already match is left untouched, so a re-render

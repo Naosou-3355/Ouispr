@@ -19,7 +19,7 @@ created: 2026-03-12
 |----------|-------|
 | **Framework** | Manual testing on device/simulator (no unit test framework configured) |
 | **Config file** | none |
-| **Quick run command** | `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Quick run command** | `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Full suite command** | Xcode build + manual verification on device |
 | **Estimated runtime** | ~60 seconds (build) + manual verification |
 

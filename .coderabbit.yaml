@@ -14,7 +14,7 @@ reviews:
       - "develop"
   path_filters:
     # Generated / mechanical files: no review value, lots of noise.
-    - "!Dictus.xcodeproj/**"
+    - "!Ouispr.xcodeproj/**"
     - "!**/*.xcstrings"
     # Bench runs and captures from prompt campaigns: committed measurement data,
     # often hundreds of files, which would push a PR past the review file limit.
@@ -22,7 +22,7 @@ reviews:
     - "!docs/research/**/arms/**"
     - "!docs/research/**/*.json"
   path_instructions:
-    - path: "DictusKeyboard/**"
+    - path: "OuisprKeyboard/**"
       instructions: |
         This is an iOS keyboard extension with a hard ~50MB memory budget and no
         UIApplication.shared access. Flag anything that could grow resident
@@ -37,7 +37,7 @@ reviews:
         BOTH French and English in the xcstrings catalogs (flag hardcoded
         user-facing literals). Style (whitespace, line length, trailing commas)
         is enforced by SwiftLint in CI — do not comment on pure style.
-    - path: "DictusApp/**"
+    - path: "OuisprApp/**"
       instructions: |
         The app performs STT inference app-side (WhisperKit + FluidAudio/Parakeet)
         because the keyboard extension cannot. Audio session handling and

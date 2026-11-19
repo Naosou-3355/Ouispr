@@ -42,7 +42,7 @@ band, then `languageGuardrailPasses`). `transform` in turn is reached by:
 
 | Consumer | Path | Cost of a WRONG REJECTION | Cost of a WRONG ACCEPTANCE |
 |---|---|---|---|
-| Free polish, in DictusApp (`PolishService.polishTargeted` / `polishAutoDetected` ← `PolishCoordinator`) | every dictation with polish on | **Low.** `resolvedOutput` returns the deterministic floor — the user's own words with verbal punctuation applied, merely unpolished | Low. ADR 0003 output is close to the input by construction |
+| Free polish, in OuisprApp (`PolishService.polishTargeted` / `polishAutoDetected` ← `PolishCoordinator`) | every dictation with polish on | **Low.** `resolvedOutput` returns the deterministic floor — the user's own words with verbal punctuation applied, merely unpolished | Low. ADR 0003 output is close to the input by construction |
 | Free polish, in the keyboard extension (since #361) | every dictation | same as above | same as above |
 | A Smart Mode | every armed dictation | **High.** `resolvedOutput` returns `nil` and **nothing is inserted**. The user speaks, waits, and gets a red message | **High.** Invented content, or the wrong language, lands in a document they are about to send |
 | `polish-harness` | measurement only | none | none |
@@ -131,7 +131,7 @@ their dictation is not. Stating this before the numbers exist is the point.
 | | Bar | Threshold |
 |---|---|---|
 | **H1** | The rejection rate on `polish-harness`'s shipping fixtures does not rise, except on the outputs the checks are built to catch | absolute |
-| **H2** | `cd DictusCore && swift test` green, `swiftlint lint --strict` clean | absolute |
+| **H2** | `cd OuisprCore && swift test` green, `swiftlint lint --strict` clean | absolute |
 
 ## 5. The mechanisms, and the ordered changes
 
@@ -185,7 +185,7 @@ outputs replayed offline** through the two checks. Every raw output is committed
 model, so anyone can re-run it:
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness guardrail ../docs/research/413-414-guardrail/corpus.json \
                                    ../docs/research/413-414-guardrail/adversarial.json --sweep
 ```

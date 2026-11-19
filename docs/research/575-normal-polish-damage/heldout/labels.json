@@ -9,15 +9,15 @@
  },
  "heldout/auto/device-structured-fr/D6-issues-check#1": {
   "label": "refuse",
-  "reason": "the product name `dictus` became `dictées`: a different word, the meaning changes"
+  "reason": "the product name `ouispr` became `dictées`: a different word, the meaning changes"
  },
  "heldout/auto/device-structured-fr/D6-issues-check#2": {
   "label": "refuse",
-  "reason": "the product name `dictus` became `dictées`: a different word, the meaning changes"
+  "reason": "the product name `ouispr` became `dictées`: a different word, the meaning changes"
  },
  "heldout/auto/device-structured-fr/D6-issues-check#3": {
   "label": "refuse",
-  "reason": "the product name `dictus` became `dictées`: a different word, the meaning changes"
+  "reason": "the product name `ouispr` became `dictées`: a different word, the meaning changes"
  },
  "heldout/auto/device-structured-fr/D7-mod-rejects#1": {
   "label": "faithful",
@@ -69,11 +69,11 @@
  },
  "heldout/auto/summary-device-r1/R2-misrendered-product#1": {
   "label": "refuse",
-  "reason": "`hue dictus` (ASR for `issues Dictus`) became `instructions dictées` / `mises à jour`: the product name is lost"
+  "reason": "`hue ouispr` (ASR for `issues Ouispr`) became `instructions dictées` / `mises à jour`: the product name is lost"
  },
  "heldout/auto/summary-device-r1/R2-misrendered-product#2": {
   "label": "refuse",
-  "reason": "`hue dictus` (ASR for `issues Dictus`) became `instructions dictées` / `mises à jour`: the product name is lost"
+  "reason": "`hue ouispr` (ASR for `issues Ouispr`) became `instructions dictées` / `mises à jour`: the product name is lost"
  },
  "heldout/natural/device-structured-0918-fr/F6-structured-since#2": {
   "label": "refuse",
@@ -85,7 +85,7 @@
  },
  "heldout/natural/device-structured-fr/D6-issues-check#3": {
   "label": "refuse",
-  "reason": "the product name `dictus` became `dictées`: a different word, the meaning changes"
+  "reason": "the product name `ouispr` became `dictées`: a different word, the meaning changes"
  },
  "heldout/natural/device-structured-fr/D7-mod-rejects#1": {
   "label": "faithful",
@@ -137,6 +137,6 @@
  },
  "heldout/natural/summary-device-r1/R2-misrendered-product#3": {
   "label": "refuse",
-  "reason": "`hue dictus` (ASR for `issues Dictus`) became `instructions dictées` / `mises à jour`: the product name is lost"
+  "reason": "`hue ouispr` (ASR for `issues Ouispr`) became `instructions dictées` / `mises à jour`: the product name is lost"
  }
 }

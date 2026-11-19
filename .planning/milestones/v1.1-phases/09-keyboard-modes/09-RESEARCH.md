@@ -10,7 +10,7 @@ Phase 9 adds three switchable keyboard modes (Micro, Emoji+Micro, Clavier comple
 
 The project already has established patterns for every integration point: `@AppStorage` with App Group store for cross-process preferences (used by language, keyboardLayout, hapticsEnabled, autocorrectEnabled), `SharedKeys` enum for centralized key management, switch/case onboarding with programmatic-only advancement, and conditional rendering in KeyboardRootView.
 
-**Primary recommendation:** Define a `KeyboardMode` enum in DictusCore (like the existing `LayoutType`), add a `keyboardMode` SharedKey, then restructure `KeyboardRootView.body` to switch on the active mode. Build `KeyboardModePicker` as a reusable SwiftUI component for Settings and onboarding.
+**Primary recommendation:** Define a `KeyboardMode` enum in OuisprCore (like the existing `LayoutType`), add a `keyboardMode` SharedKey, then restructure `KeyboardRootView.body` to switch on the active mode. Build `KeyboardModePicker` as a reusable SwiftUI component for Settings and onboarding.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -26,7 +26,7 @@ The project already has established patterns for every integration point: `@AppS
 - Reusable KeyboardModePicker component shared between Settings and onboarding
 - Mode changed only from app Settings or onboarding -- no in-keyboard mode switching
 - Globe = advanceToNextInputMode (switch iOS keyboards), not mode switch
-- Mode persisted via App Group SharedKeys (new key: `dictus.keyboardMode`)
+- Mode persisted via App Group SharedKeys (new key: `ouispr.keyboardMode`)
 - Keyboard reads mode on each open (same pattern as AZERTY/QWERTY layout switch)
 - Same keyboard height for all modes to prevent layout jump
 - RecordingOverlay reused in all 3 modes
@@ -48,7 +48,7 @@ The project already has established patterns for every integration point: `@AppS
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| MODE-01 | Three keyboard modes available -- "Micro" (centered mic + globe), "Emoji + Micro" (emoji picker + mic in toolbar), "Clavier complet" (current full AZERTY) | KeyboardMode enum in DictusCore + conditional rendering in KeyboardRootView; all sub-views already exist |
+| MODE-01 | Three keyboard modes available -- "Micro" (centered mic + globe), "Emoji + Micro" (emoji picker + mic in toolbar), "Clavier complet" (current full AZERTY) | KeyboardMode enum in OuisprCore + conditional rendering in KeyboardRootView; all sub-views already exist |
 | MODE-02 | User selects preferred keyboard mode in the app's Settings screen | SettingsView already uses @AppStorage pattern; add segmented picker + conditional toggle visibility |
 | MODE-03 | Settings shows a non-interactive SwiftUI preview of each keyboard mode | Build MicroModePreview, EmojiModePreview, FullModePreview as simplified SwiftUI views inside KeyboardModePicker |
 | MODE-04 | Keyboard extension reads selected mode from App Group and renders the correct layout | Same pattern as LayoutType.active -- read from AppGroup.defaults on each keyboard appearance |
@@ -60,47 +60,47 @@ The project already has established patterns for every integration point: `@AppS
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 16+ | All UI rendering | Project standard, already used everywhere |
-| DictusCore (SPM) | local | Shared types + App Group | Existing shared framework between app and extension |
+| OuisprCore (SPM) | local | Shared types + App Group | Existing shared framework between app and extension |
 
 ### No New Dependencies
 
-This phase requires zero new libraries. All functionality is built with SwiftUI primitives and existing DictusCore infrastructure.
+This phase requires zero new libraries. All functionality is built with SwiftUI primitives and existing OuisprCore infrastructure.
 
 ## Architecture Patterns
 
 ### New Files to Create
 
 ```
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 ├── KeyboardMode.swift          # KeyboardMode enum (like LayoutType)
 
-DictusKeyboard/Views/
+OuisprKeyboard/Views/
 ├── MicroModeView.swift         # Giant mic + globe layout for keyboard
 ├── EmojiMicroModeView.swift    # Emoji picker + mic toolbar layout
 
-DictusApp/Views/
+OuisprApp/Views/
 ├── KeyboardModePicker.swift    # Reusable segmented picker + preview (Settings + onboarding)
 
-DictusApp/Onboarding/
+OuisprApp/Onboarding/
 ├── ModeSelectionPage.swift     # New onboarding step using KeyboardModePicker
 ```
 
 ### Files to Modify
 
 ```
-DictusCore/Sources/DictusCore/SharedKeys.swift     # Add keyboardMode key
-DictusKeyboard/KeyboardRootView.swift              # Switch on mode for conditional rendering
-DictusApp/Views/SettingsView.swift                 # Replace "Clavier" section with mode picker
-DictusApp/Onboarding/OnboardingView.swift          # Insert mode selection step (case 3)
+OuisprCore/Sources/OuisprCore/SharedKeys.swift     # Add keyboardMode key
+OuisprKeyboard/KeyboardRootView.swift              # Switch on mode for conditional rendering
+OuisprApp/Views/SettingsView.swift                 # Replace "Clavier" section with mode picker
+OuisprApp/Onboarding/OnboardingView.swift          # Insert mode selection step (case 3)
 ```
 
-### Pattern 1: KeyboardMode Enum in DictusCore
+### Pattern 1: KeyboardMode Enum in OuisprCore
 
 **What:** A String-backed enum with a static `active` property reading from App Group, mirroring the existing `LayoutType` pattern.
 **When to use:** Everywhere that needs to know the current keyboard mode.
 
 ```swift
-// DictusCore/Sources/DictusCore/KeyboardMode.swift
+// OuisprCore/Sources/OuisprCore/KeyboardMode.swift
 public enum KeyboardMode: String, CaseIterable, Codable {
     case micro       // Dictation-only: giant mic + globe
     case emojiMicro  // Emoji picker + mic in toolbar
@@ -177,7 +177,7 @@ var body: some View {
 **When to use:** When `currentMode == .micro`.
 
 ```swift
-// DictusKeyboard/Views/MicroModeView.swift
+// OuisprKeyboard/Views/MicroModeView.swift
 struct MicroModeView: View {
     let controller: UIInputViewController
     let dictationStatus: DictationStatus
@@ -222,7 +222,7 @@ struct MicroModeView: View {
 **When to use:** SettingsView and ModeSelectionPage.
 
 ```swift
-// DictusApp/Views/KeyboardModePicker.swift
+// OuisprApp/Views/KeyboardModePicker.swift
 struct KeyboardModePicker: View {
     @Binding var selectedMode: String  // Raw value of KeyboardMode
 
@@ -350,14 +350,14 @@ Section("Clavier") {
 ### Reading Mode in Keyboard Extension
 ```swift
 // Same pattern as LayoutType.active, already proven in this codebase
-// Source: DictusCore/Sources/DictusCore/KeyboardLayoutData.swift lines 17-24
+// Source: OuisprCore/Sources/OuisprCore/KeyboardLayoutData.swift lines 17-24
 let mode = KeyboardMode.active  // Reads from AppGroup.defaults
 ```
 
 ### @AppStorage for Mode in Settings
 ```swift
 // Same pattern used 4 times in SettingsView.swift already
-// Source: DictusApp/Views/SettingsView.swift lines 20-33
+// Source: OuisprApp/Views/SettingsView.swift lines 20-33
 @AppStorage(SharedKeys.keyboardMode, store: UserDefaults(suiteName: AppGroup.identifier))
 private var keyboardMode = KeyboardMode.full.rawValue
 ```
@@ -421,41 +421,41 @@ No external library changes or API evolution relevant to this phase. All pattern
 | Property | Value |
 |----------|-------|
 | Framework | Swift Testing / XCTest via SPM |
-| Config file | DictusCore/Package.swift (test target exists) |
-| Quick run command | `swift test --package-path DictusCore` |
-| Full suite command | `swift test --package-path DictusCore` |
+| Config file | OuisprCore/Package.swift (test target exists) |
+| Quick run command | `swift test --package-path OuisprCore` |
+| Full suite command | `swift test --package-path OuisprCore` |
 
 ### Phase Requirements to Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| MODE-01 | Three keyboard modes available | unit | `swift test --package-path DictusCore --filter KeyboardModeTests` | No -- Wave 0 |
+| MODE-01 | Three keyboard modes available | unit | `swift test --package-path OuisprCore --filter KeyboardModeTests` | No -- Wave 0 |
 | MODE-02 | User selects mode in Settings | manual-only | Xcode simulator | N/A (SwiftUI view) |
 | MODE-03 | Settings shows non-interactive preview | manual-only | Xcode simulator | N/A (SwiftUI view) |
-| MODE-04 | Extension reads mode from App Group | unit | `swift test --package-path DictusCore --filter KeyboardModeTests` | No -- Wave 0 |
+| MODE-04 | Extension reads mode from App Group | unit | `swift test --package-path OuisprCore --filter KeyboardModeTests` | No -- Wave 0 |
 
 **Manual-only justification for MODE-02, MODE-03:** These are pure SwiftUI view composition tasks. The underlying persistence is testable (MODE-04), but the visual layout requires Xcode simulator verification. The project does not have UI testing infrastructure (no XCUITest target).
 
 ### Sampling Rate
-- **Per task commit:** `swift test --package-path DictusCore`
-- **Per wave merge:** `swift test --package-path DictusCore`
+- **Per task commit:** `swift test --package-path OuisprCore`
+- **Per wave merge:** `swift test --package-path OuisprCore`
 - **Phase gate:** Full suite green before `/gsd:verify-work`
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/KeyboardModeTests.swift` -- covers MODE-01 (enum cases, displayName, rawValue) and MODE-04 (reading from UserDefaults)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/KeyboardModeTests.swift` -- covers MODE-01 (enum cases, displayName, rawValue) and MODE-04 (reading from UserDefaults)
 
 ## Sources
 
 ### Primary (HIGH confidence)
 - Project codebase analysis -- all files read directly:
-  - `DictusKeyboard/KeyboardRootView.swift` -- current conditional rendering pattern
-  - `DictusApp/Views/SettingsView.swift` -- @AppStorage pattern with App Group
-  - `DictusCore/Sources/DictusCore/SharedKeys.swift` -- centralized key management
-  - `DictusCore/Sources/DictusCore/KeyboardLayoutData.swift` -- LayoutType.active pattern (model for KeyboardMode)
-  - `DictusApp/Onboarding/OnboardingView.swift` -- switch/case step flow
-  - `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` -- mic button sizing
-  - `DictusKeyboard/Views/ToolbarView.swift` -- toolbar composition
-  - `DictusKeyboard/Views/EmojiPickerView.swift` -- emoji picker structure
-  - `DictusCore/Sources/DictusCore/AppGroup.swift` -- App Group access
+  - `OuisprKeyboard/KeyboardRootView.swift` -- current conditional rendering pattern
+  - `OuisprApp/Views/SettingsView.swift` -- @AppStorage pattern with App Group
+  - `OuisprCore/Sources/OuisprCore/SharedKeys.swift` -- centralized key management
+  - `OuisprCore/Sources/OuisprCore/KeyboardLayoutData.swift` -- LayoutType.active pattern (model for KeyboardMode)
+  - `OuisprApp/Onboarding/OnboardingView.swift` -- switch/case step flow
+  - `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` -- mic button sizing
+  - `OuisprKeyboard/Views/ToolbarView.swift` -- toolbar composition
+  - `OuisprKeyboard/Views/EmojiPickerView.swift` -- emoji picker structure
+  - `OuisprCore/Sources/OuisprCore/AppGroup.swift` -- App Group access
 
 ### Secondary (MEDIUM confidence)
 - None needed -- all patterns are already established in the codebase

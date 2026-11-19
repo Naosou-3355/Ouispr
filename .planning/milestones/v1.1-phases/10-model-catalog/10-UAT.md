@@ -63,11 +63,11 @@ skipped: 0
   test: 6
   root_cause: "Two issues: (1) Language preference never written to UserDefaults on fresh install — @AppStorage default 'fr' is in-memory only, never persisted, so scattered ?? 'fr' fallbacks are fragile. (2) distil-whisper_distil-large-v3_turbo is English-only (logitsDim=51864 triggers isModelMultilingual=false in WhisperKit, silently ignoring language parameter)."
   artifacts:
-    - path: "DictusApp/Views/SettingsView.swift"
+    - path: "OuisprApp/Views/SettingsView.swift"
       issue: "@AppStorage default 'fr' never written to UserDefaults — only written when user interacts with Picker"
-    - path: "DictusCore/Sources/DictusCore/ModelInfo.swift"
+    - path: "OuisprCore/Sources/OuisprCore/ModelInfo.swift"
       issue: "distil-large-v3_turbo listed as available without English-only warning"
-    - path: "DictusApp/Audio/TranscriptionService.swift"
+    - path: "OuisprApp/Audio/TranscriptionService.swift"
       issue: "Language read with ?? 'fr' fallback but key may not exist in UserDefaults"
   missing:
     - "Persist language default ('fr') in UserDefaults during app init or onboarding"
@@ -82,9 +82,9 @@ skipped: 0
   test: 6
   root_cause: "Two issues: (1) Wrong identifier — catalog has 'openai_whisper-large-v3-turbo' (hyphen) but WhisperKit repo uses 'openai_whisper-large-v3_turbo' (underscore). (2) distil-whisper_distil-large-v3_turbo is English-only (confirmed on HuggingFace) — must be removed from catalog since app targets French."
   artifacts:
-    - path: "DictusCore/Sources/DictusCore/ModelInfo.swift"
+    - path: "OuisprCore/Sources/OuisprCore/ModelInfo.swift"
       issue: "Line 159: identifier 'openai_whisper-large-v3-turbo' has hyphen instead of underscore"
-    - path: "DictusCore/Sources/DictusCore/ModelInfo.swift"
+    - path: "OuisprCore/Sources/OuisprCore/ModelInfo.swift"
       issue: "Lines 148-157: distil-large-v3_turbo is English-only, should not be in multilingual catalog"
   missing:
     - "Fix identifier to 'openai_whisper-large-v3_turbo'"

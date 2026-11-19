@@ -1,5 +1,5 @@
 {
-  "name": "dictus-appstore-screenshots",
+  "name": "ouispr-appstore-screenshots",
   "private": true,
   "description": "Exports the App Store screenshots from screenshots.html (issue #643).",
   "type": "module",

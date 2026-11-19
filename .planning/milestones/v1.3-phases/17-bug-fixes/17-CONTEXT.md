@@ -30,7 +30,7 @@ Requirements: FIX-01, FIX-02, plus a newly identified cold start overlay bug (FI
 - The share sheet behavior stays the same (temp file → UIActivityViewController)
 
 ### Overlay grise au cold start (FIX-03 — new, needs issue creation)
-- Scenario: cold start dictation → user does swipe-back to return to keyboard → recording overlay appears grayed out, waveform flat, non-responsive. DI shows REC correctly. Returning to DictusApp and coming back again unblocks it
+- Scenario: cold start dictation → user does swipe-back to return to keyboard → recording overlay appears grayed out, waveform flat, non-responsive. DI shows REC correctly. Returning to OuisprApp and coming back again unblocks it
 - Frequency: ~1 out of 3 cold starts. Hypothesis: timing-dependent — fast swipe-back may arrive before app has fully synced recording state to keyboard
 - Phase approach: (1) user performs targeted manual tests before fix work (fast vs slow swipe-back, wait in app vs immediate return), (2) reinforce logs around cold start audio bridge timing, (3) fix based on test results
 - The overlay should either show a valid recording state or a clear "connecting..." state — never a grayed-out dead state
@@ -55,19 +55,19 @@ Requirements: FIX-01, FIX-02, plus a newly identified cold start overlay bug (FI
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Dynamic Island state machine
-- `DictusApp/LiveActivityManager.swift` — Full state machine with phase transitions, watchdog target file
-- `DictusCore/Sources/DictusCore/DictusLiveActivityAttributes.swift` — ContentState.Phase enum shared with widget
-- `DictusWidgets/DictusLiveActivity.swift` — Widget rendering of DI states
-- `DictusApp/DictationCoordinator.swift` — Calls LiveActivityManager transitions, source of recording state changes
+- `OuisprApp/LiveActivityManager.swift` — Full state machine with phase transitions, watchdog target file
+- `OuisprCore/Sources/OuisprCore/OuisprLiveActivityAttributes.swift` — ContentState.Phase enum shared with widget
+- `OuisprWidgets/OuisprLiveActivity.swift` — Widget rendering of DI states
+- `OuisprApp/DictationCoordinator.swift` — Calls LiveActivityManager transitions, source of recording state changes
 
 ### Export logs
-- `DictusApp/Views/SettingsView.swift` — `exportLogs()` function, isExporting flag, share sheet
-- `DictusCore/Sources/DictusCore/PersistentLog.swift` — `exportContent()`, file I/O, NSFileCoordinator
+- `OuisprApp/Views/SettingsView.swift` — `exportLogs()` function, isExporting flag, share sheet
+- `OuisprCore/Sources/OuisprCore/PersistentLog.swift` — `exportContent()`, file I/O, NSFileCoordinator
 
 ### Cold start audio bridge
-- `DictusApp/Audio/UnifiedAudioEngine.swift` — Audio engine lifecycle, cold start handling
-- `DictusApp/DictationCoordinator.swift` — Recording state management, keyboard↔app sync
-- `DictusApp/Views/SwipeBackOverlayView.swift` — Swipe-back UX during cold start
+- `OuisprApp/Audio/UnifiedAudioEngine.swift` — Audio engine lifecycle, cold start handling
+- `OuisprApp/DictationCoordinator.swift` — Recording state management, keyboard↔app sync
+- `OuisprApp/Views/SwipeBackOverlayView.swift` — Swipe-back UX during cold start
 
 ### GitHub issues
 - Issue #60 — Dynamic Island stuck on REC
@@ -92,8 +92,8 @@ Requirements: FIX-01, FIX-02, plus a newly identified cold start overlay bug (FI
 
 ### Integration Points
 - `DictationCoordinator` calls `LiveActivityManager.transitionToRecording()` / `endWithResult()` / `endWithFailure()` — watchdog hooks in here
-- `PersistentLog.exportContent()` called from `SettingsView.exportLogs()` — optimization happens in DictusCore
-- Cold start flow: keyboard → Darwin notification → DictusApp activates → audio bridge → swipe-back → keyboard overlay resumes
+- `PersistentLog.exportContent()` called from `SettingsView.exportLogs()` — optimization happens in OuisprCore
+- Cold start flow: keyboard → Darwin notification → OuisprApp activates → audio bridge → swipe-back → keyboard overlay resumes
 
 </code_context>
 

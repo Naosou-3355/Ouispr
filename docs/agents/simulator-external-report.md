@@ -17,7 +17,7 @@ survey of the ecosystem is useful. **It is not the authority on this machine —
 - Section 13: `type_text` is not a test of a keyboard extension. Correct, and it
   matters more here than in most projects.
 - Section 14: UI automation can drive Settings.app. Confirmed — that is exactly
-  how the Dictus keyboard was enabled.
+  how the Ouispr keyboard was enabled.
 
 ## What did not hold
 

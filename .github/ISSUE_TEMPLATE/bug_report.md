@@ -27,7 +27,7 @@ What actually happened.
 
 - **iPhone model**: (e.g., iPhone 15 Pro)
 - **iOS version**: (e.g., 18.3)
-- **Dictus version**: (e.g., 1.0.0)
+- **Ouispr version**: (e.g., 1.0.0)
 - **Active model**: (e.g., whisper-small)
 
 ## Debug Logs
@@ -35,7 +35,7 @@ What actually happened.
 <details>
 <summary>Expand to see debug logs</summary>
 
-To export logs: open Dictus app > **Settings > Export Debug Logs > Share**.
+To export logs: open Ouispr app > **Settings > Export Debug Logs > Share**.
 
 Paste the log output here:
 

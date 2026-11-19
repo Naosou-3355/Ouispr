@@ -18,9 +18,9 @@ created: 2026-04-15
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (Xcode 15+, Swift Package Manager) |
-| **Config file** | Dictus.xcodeproj (DictusCoreTests target) |
-| **Quick run command** | `xcodebuild test -project Dictus.xcodeproj -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests/InsertionClassifierTests` |
-| **Full suite command** | `xcodebuild test -project Dictus.xcodeproj -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Config file** | Ouispr.xcodeproj (OuisprCoreTests target) |
+| **Quick run command** | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests/InsertionClassifierTests` |
+| **Full suite command** | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Estimated runtime** | ~30 seconds (unit tests only; integration is manual 50-run protocol) |
 
 ---
@@ -28,7 +28,7 @@ created: 2026-04-15
 ## Sampling Rate
 
 - **After every task commit:** Run quick command (relevant test class only)
-- **After every plan wave:** Run full DictusCore test suite
+- **After every plan wave:** Run full OuisprCore test suite
 - **Before `/gsd:verify-work`:** Full suite must be green AND manual 50-run protocol executed on real device
 - **Max feedback latency:** 60 seconds (unit); manual verification gated by real-device session
 
@@ -48,9 +48,9 @@ created: 2026-04-15
 
 ## Wave 0 Requirements
 
-- [ ] `DictusCoreTests/InsertionClassifierTests.swift` — unit tests for delta classifier (success / empty-delta / partial / proxy-dead)
-- [ ] `DictusCoreTests/LiveActivityStateMachineTests.swift` — extend existing file with new transition edge test (.standby → .failed and/or .ready → .failed)
-- [ ] `DictusCoreTests/LogPrivacyTests.swift` — extend `allEvents` fixture to include new `.keyboardInsertProbe`, `.keyboardInsertRetry`, `.keyboardInsertFailed` cases; verify privacy predicate rejects raw strings
+- [ ] `OuisprCoreTests/InsertionClassifierTests.swift` — unit tests for delta classifier (success / empty-delta / partial / proxy-dead)
+- [ ] `OuisprCoreTests/LiveActivityStateMachineTests.swift` — extend existing file with new transition edge test (.standby → .failed and/or .ready → .failed)
+- [ ] `OuisprCoreTests/LogPrivacyTests.swift` — extend `allEvents` fixture to include new `.keyboardInsertProbe`, `.keyboardInsertRetry`, `.keyboardInsertFailed` cases; verify privacy predicate rejects raw strings
 
 *Framework already present — no install needed.*
 

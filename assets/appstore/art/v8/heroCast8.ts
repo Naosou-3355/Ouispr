@@ -3,7 +3,7 @@ import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 import * as V5 from "./heroShapes";
 
-// DICTUS HERO V8 · the woman with curves, chosen by Pierre (V7 is art/v7/heroCast.ts). Fixes: the
+// OUISPR HERO V8 · the woman with curves, chosen by Pierre (V7 is art/v7/heroCast.ts). Fixes: the
 // waving hand mirrored (thumb on the head side), a clearly hourglass silhouette, the phone arm
 // hanging from a real shoulder (no puffed ball), a shorter neck and torso.
 //
@@ -293,7 +293,7 @@ const curves: Cast = {
     g.pen(smooth([[582, 584], [628, 572], [676, 570]], false, 6), { w: 7, color: "#C9645A", seed: 90, wobble: 0.3, boil: 0, taper: 0.9, opacity: 0.85, retrace: false });
     g.pen(smooth([[594, 640], [628, 646], [658, 630]], false, 6), { w: 6, color: "#C9645A", seed: 91, wobble: 0.3, boil: 0, taper: 0.9, opacity: 0.75, retrace: false });
     outline(g, mouth, 4, 92);
-    // a small earring in the Dictus accent
+    // a small earring in the Ouispr accent
     fillShape(g, circle([436, 560], 9, 14), ACCENT); outline(g, circle([436, 560], 9, 14), 2.5, 93);
   },
 };
@@ -302,4 +302,4 @@ const film = (id: string, title: string, c: Cast): Film => ({
   meta: { title, W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id, start: 0, end: 1, draw: draw(c) }],
 });
-export const heroCurves8 = film("heroCurves8", "Dictus hero V8 · woman, curves", curves);
+export const heroCurves8 = film("heroCurves8", "Ouispr hero V8 · woman, curves", curves);

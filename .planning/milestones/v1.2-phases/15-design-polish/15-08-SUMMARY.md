@@ -19,8 +19,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Onboarding/KeyboardSetupPage.swift
-    - DictusCore/Sources/DictusCore/LogEvent.swift
+    - OuisprApp/Onboarding/KeyboardSetupPage.swift
+    - OuisprCore/Sources/OuisprCore/LogEvent.swift
 
 key-decisions:
   - "Used structured LogEvent cases instead of deprecated freeform PersistentLog.log() -- consistent with project logging pattern"
@@ -62,8 +62,8 @@ Each task was committed atomically:
 **Plan metadata:** pending (docs: complete plan)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/KeyboardSetupPage.swift` - Resilient keyboard detection with logging and retry
-- `DictusCore/Sources/DictusCore/LogEvent.swift` - 6 new onboarding LogEvent cases
+- `OuisprApp/Onboarding/KeyboardSetupPage.swift` - Resilient keyboard detection with logging and retry
+- `OuisprCore/Sources/OuisprCore/LogEvent.swift` - 6 new onboarding LogEvent cases
 
 ## Decisions Made
 - Used structured LogEvent cases (onboardingScenePhaseChanged, onboardingKeyboardCheckStarted, etc.) instead of the deprecated freeform PersistentLog.log() API -- consistent with project's privacy-by-construction logging pattern
@@ -77,7 +77,7 @@ Each task was committed atomically:
 - **Found during:** Task 1
 - **Issue:** Plan referenced `PersistentLog.log(_ message: String, level: LogLevel, subsystem: String)` which does not exist. Actual API uses structured `LogEvent` enum or deprecated freeform `.log(_ message:)`
 - **Fix:** Added 6 new LogEvent cases for onboarding and used structured `.log(_ event:)` API throughout
-- **Files modified:** DictusCore/Sources/DictusCore/LogEvent.swift
+- **Files modified:** OuisprCore/Sources/OuisprCore/LogEvent.swift
 - **Verification:** Build succeeds with no warnings
 - **Committed in:** 1e923cc (Task 1 commit)
 

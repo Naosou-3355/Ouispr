@@ -2,7 +2,7 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 
-// DICTUS HERO V9-B · "hands full". One action: she walks and talks. A coffee in one hand, a tote
+// OUISPR HERO V9-B · "hands full". One action: she walks and talks. A coffee in one hand, a tote
 // in the other, so she cannot type; her phone hangs on a cord at her chest, recording. Her words
 // leave her mouth as a hand-lettered ribbon ("THANKS FOR THE NOTES", the first line of slide 2's
 // email to Sam), which frays into the three voice strokes and slips under slide 2's recording
@@ -344,7 +344,7 @@ const draw = (ctx: Ctx, _frame: number, env: Env) => {
     const body = rot(softBox(ph.cx, ph.cy, ph.w, ph.h, 6, 40)), screen = rot(softBox(ph.cx, ph.cy, ph.w - 14, ph.h - 14, 6, 40));
     fillShape(g, body, INK); fillShape(g, screen, "#EEF3FF");
     fillShape(g, rot(softBox(ph.cx, ph.cy - ph.h / 2 + 18, 30, 9, 2, 16)), INK);
-    // the recording: Dictus's waveform across the screen, its blue at the centre
+    // the recording: Ouispr's waveform across the screen, its blue at the centre
     [12, 26, 46, 64, 46, 30, 16].forEach((h, k) => fillShape(g, rot(softBox(ph.cx - 30 + k * 10, ph.cy + 10, 6, h, 6, 12)), k > 1 && k < 5 ? ACCENT : HIGH));
     outline(g, body, 3.5, 124);
   });
@@ -400,6 +400,6 @@ const draw = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroWalk9: Film = {
-  meta: { title: "Dictus hero V9-B · hands full", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: "Ouispr hero V9-B · hands full", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id: "heroWalk9", start: 0, end: 1, draw }],
 };

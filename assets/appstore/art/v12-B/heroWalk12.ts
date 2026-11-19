@@ -2,7 +2,7 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 
-// DICTUS HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
+// OUISPR HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
 // left to right into slide 2's phone. Round 4: the stride reads unmistakably rightward (the front
 // foot far out on the right, heel down and toes high; the back foot on the left, heel lifted, toes
 // bent flat on the slabs); the voice is three uneven marker strokes on ONE soft S-curve, no straight
@@ -421,5 +421,5 @@ const film = (id: string, title: string, end: P): Film => ({
   meta: { title, W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id, start: 0, end: 1, draw: drawFor(end) }],
 });
-export const heroWalk12Turned = film("heroWalk12Turned", "Dictus hero V12-B · slide 2 turned", PANEL_TURNED);
-export const heroWalk12Flat = film("heroWalk12Flat", "Dictus hero V12-B · slide 2 flat", PANEL_FLAT);
+export const heroWalk12Turned = film("heroWalk12Turned", "Ouispr hero V12-B · slide 2 turned", PANEL_TURNED);
+export const heroWalk12Flat = film("heroWalk12Flat", "Ouispr hero V12-B · slide 2 flat", PANEL_FLAT);

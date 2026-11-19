@@ -1,6 +1,6 @@
 # The five fixtures, raw and polished
 
-Source: `dictus-polish-debug-20260912-001017.json`, events 209 to 213. Parakeet
+Source: `ouispr-polish-debug-20260912-001017.json`, events 209 to 213. Parakeet
 `parakeet-tdt-0.6b-v3`, Normal polish, French, 2026-09-11 between 21:59 and 22:06 UTC.
 Fixture A was dictated twice; the first attempt was cut short and is event 208.
 
@@ -42,11 +42,11 @@ confirmed by the speaker. Transcription, not paragraphing.
 
 **Raw** — Parakeet switches to English mid-dictation.
 
-> Dans le cas où on n'arriverait vraiment pas à gérer ça de manière efficace, il faudra quand même qu'on réfléchisse à se soit laisser le mode normal comme ça. Et dans tous les cas, je pense que là où on peut essayer de se rattraper, c'est sur les sport modes. Parce que comme tu l'as dit, on peut... Enfin, on va pouvoir. And we'll unless the LLM, just enjoying the coherence of text. But that would permettrait peut-être de faire des trucs un petit peu plus poussés qui donneront quand même envie aux utilisateurs de payer en fait pour les smart modes parce que tout l'enjeu est là. Sans smart mode, il n'y a aucun intérêt d'acheter Dictus Pro.
+> Dans le cas où on n'arriverait vraiment pas à gérer ça de manière efficace, il faudra quand même qu'on réfléchisse à se soit laisser le mode normal comme ça. Et dans tous les cas, je pense que là où on peut essayer de se rattraper, c'est sur les sport modes. Parce que comme tu l'as dit, on peut... Enfin, on va pouvoir. And we'll unless the LLM, just enjoying the coherence of text. But that would permettrait peut-être de faire des trucs un petit peu plus poussés qui donneront quand même envie aux utilisateurs de payer en fait pour les smart modes parce que tout l'enjeu est là. Sans smart mode, il n'y a aucun intérêt d'acheter Ouispr Pro.
 
 **Polished**
 
-> Dans le cas où on n'arriverait vraiment pas à gérer ça de manière efficace, il faudra quand même qu'on réfléchisse à se laisser le mode normal comme ça. Et dans tous les cas, je pense que là où on peut essayer de se rattraper, c'est sur les modes sportifs. Parce que comme tu l'as dit, on peut. Enfin, on va pouvoir. Et nous allons, sauf si le modèle, juste en profitant de la cohérence du texte. Mais cela permettrait peut-être de faire des trucs un peu plus poussés qui donneront quand même envie aux utilisateurs de payer en fait pour les modes intelligents parce que tout l'enjeu est là. Sans mode intelligent, il n'y a aucun intérêt d'acheter Dictus Pro.
+> Dans le cas où on n'arriverait vraiment pas à gérer ça de manière efficace, il faudra quand même qu'on réfléchisse à se laisser le mode normal comme ça. Et dans tous les cas, je pense que là où on peut essayer de se rattraper, c'est sur les modes sportifs. Parce que comme tu l'as dit, on peut. Enfin, on va pouvoir. Et nous allons, sauf si le modèle, juste en profitant de la cohérence du texte. Mais cela permettrait peut-être de faire des trucs un peu plus poussés qui donneront quand même envie aux utilisateurs de payer en fait pour les modes intelligents parce que tout l'enjeu est là. Sans mode intelligent, il n'y a aucun intérêt d'acheter Ouispr Pro.
 
 Two observations that belong to other issues, not to this one. The raw output mixes
 English into French, which is the #456 family. And the polish translates the product

@@ -53,15 +53,15 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Typing characters causes suggestion bar to show completions | VERIFIED | `suggestionState?.updateAsync(context:)` called in `handleInputKey` (DictusKeyboardBridge.swift:204) |
+| 1 | Typing characters causes suggestion bar to show completions | VERIFIED | `suggestionState?.updateAsync(context:)` called in `handleInputKey` (OuisprKeyboardBridge.swift:204) |
 | 2 | Typing a single vowel causes suggestion bar to show accent variants | VERIFIED | `SuggestionState.updateAsync` handles single-vowel accent mode; `mode: SuggestionMode` drives ToolbarView display |
 | 3 | Tapping a suggestion inserts it and adds a space (completion mode) | VERIFIED | `handleSuggestionTap` in KeyboardRootView.swift:228 calls `replaceCurrentWord` with `addSpace: true` in `.completions` mode |
 | 4 | Tapping an accent suggestion replaces the vowel without a space | VERIFIED | Same function with `addSpace: false` when `mode == .accents` |
-| 5 | Typing a misspelled word and pressing space auto-replaces with correction | VERIFIED | `handleSpace()` in DictusKeyboardBridge.swift:308 calls `state.performSpellCheck(state.currentWord)` and replaces on match |
+| 5 | Typing a misspelled word and pressing space auto-replaces with correction | VERIFIED | `handleSpace()` in OuisprKeyboardBridge.swift:308 calls `state.performSpellCheck(state.currentWord)` and replaces on match |
 | 6 | Pressing backspace immediately after autocorrect restores the original word | VERIFIED | `handleBackspace()` checks `suggestionState?.lastAutocorrect` and calls `proxy?.insertText(autocorrect.originalWord)` (line 225) |
 | 7 | Setting default layer to numbers causes keyboard to open on numbers page | VERIFIED | `viewWillAppear` reads `DefaultKeyboardLayer.active` and sets `giellaKeyboard?.page = .symbols1` (KeyboardViewController.swift:207-209) |
-| 8 | Tapping emoji button hides keyboard grid and shows emoji picker | VERIFIED | Bridge detects `character == "\u{1F600}"` → `handleEmojiToggle()` → `onEmojiToggle?()` → `toggleEmojiPicker()` → posts `.dictusToggleEmoji` → `showingEmoji.toggle()` in RootView |
-| 9 | Tapping ABC in emoji picker returns to the keyboard grid | VERIFIED | `onDismiss` closure in EmojiPickerView call sets `showingEmoji = false` and posts `.dictusToggleEmoji` (KeyboardRootView.swift:111-113) |
+| 8 | Tapping emoji button hides keyboard grid and shows emoji picker | VERIFIED | Bridge detects `character == "\u{1F600}"` → `handleEmojiToggle()` → `onEmojiToggle?()` → `toggleEmojiPicker()` → posts `.ouisprToggleEmoji` → `showingEmoji.toggle()` in RootView |
+| 9 | Tapping ABC in emoji picker returns to the keyboard grid | VERIFIED | `onDismiss` closure in EmojiPickerView call sets `showingEmoji = false` and posts `.ouisprToggleEmoji` (KeyboardRootView.swift:111-113) |
 | 10 | Toolbar with mic button stays visible during emoji browsing | VERIFIED | `showingEmoji` branch in body renders `ToolbarView` before `EmojiPickerView` (KeyboardRootView.swift:88-98) |
 | 11 | Tapping mic button during emoji browsing starts recording | VERIFIED | `onMicTap` in emoji branch sets `showingEmoji = false` then calls `state.startRecording()` (line 92-94) |
 | 12 | Recording overlay replaces keyboard area during dictation | VERIFIED | `showsOverlay` branch is first in body; `handleDictationStatusChange` expands `hostingHeightConstraint` to full height when recording |
@@ -77,11 +77,11 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusKeyboard/DictusKeyboardBridge.swift` | SuggestionState integration, autocorrect-on-space, undo-on-backspace | VERIFIED | Contains `weak var suggestionState: SuggestionState?`, `updateAsync` calls in 5 handlers, full autocorrect logic |
-| `DictusKeyboard/KeyboardViewController.swift` | SuggestionState ownership, bridge injection, default layer setting | VERIFIED | `private let suggestionState = SuggestionState()`, `keyBridge.suggestionState = suggestionState`, `DefaultKeyboardLayer.active` in `viewWillAppear` |
-| `DictusKeyboard/KeyboardRootView.swift` | ObservedObject for externally-created SuggestionState, 3-mode body, showingEmoji | VERIFIED | `@ObservedObject var suggestionState: SuggestionState`, `@State private var showingEmoji = false`, 3-branch body, `.onReceive` for toggle |
-| `DictusKeyboard/FrenchKeyboardLayouts.swift` | Emoji key in bottom row | VERIFIED | `lettersBottomRow` has 4 keys: `.symbols`, `.input(key: "\u{1F600}", alternate: nil)`, `.spacebar`, `.returnkey` |
-| `DictusKeyboard/KeyboardState.swift` | Post-transcription callback | VERIFIED | `var onTranscriptionInserted: (() -> Void)?` at line 46; called in both insert paths |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift` | SuggestionState integration, autocorrect-on-space, undo-on-backspace | VERIFIED | Contains `weak var suggestionState: SuggestionState?`, `updateAsync` calls in 5 handlers, full autocorrect logic |
+| `OuisprKeyboard/KeyboardViewController.swift` | SuggestionState ownership, bridge injection, default layer setting | VERIFIED | `private let suggestionState = SuggestionState()`, `keyBridge.suggestionState = suggestionState`, `DefaultKeyboardLayer.active` in `viewWillAppear` |
+| `OuisprKeyboard/KeyboardRootView.swift` | ObservedObject for externally-created SuggestionState, 3-mode body, showingEmoji | VERIFIED | `@ObservedObject var suggestionState: SuggestionState`, `@State private var showingEmoji = false`, 3-branch body, `.onReceive` for toggle |
+| `OuisprKeyboard/FrenchKeyboardLayouts.swift` | Emoji key in bottom row | VERIFIED | `lettersBottomRow` has 4 keys: `.symbols`, `.input(key: "\u{1F600}", alternate: nil)`, `.spacebar`, `.returnkey` |
+| `OuisprKeyboard/KeyboardState.swift` | Post-transcription callback | VERIFIED | `var onTranscriptionInserted: (() -> Void)?` at line 46; called in both insert paths |
 
 ---
 
@@ -89,8 +89,8 @@ human_verification:
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `KeyboardViewController.swift` | `DictusKeyboardBridge.swift` | `bridge.suggestionState = suggestionState` | WIRED | Line 82: `keyBridge.suggestionState = suggestionState` |
-| `DictusKeyboardBridge.swift` | `SuggestionState.swift` | `suggestionState?.updateAsync(context:)` | WIRED | Present in handleInputKey, handleBackspace, handleSpace, handleAdaptiveAccentKey, handleWordDelete |
+| `KeyboardViewController.swift` | `OuisprKeyboardBridge.swift` | `bridge.suggestionState = suggestionState` | WIRED | Line 82: `keyBridge.suggestionState = suggestionState` |
+| `OuisprKeyboardBridge.swift` | `SuggestionState.swift` | `suggestionState?.updateAsync(context:)` | WIRED | Present in handleInputKey, handleBackspace, handleSpace, handleAdaptiveAccentKey, handleWordDelete |
 | `KeyboardViewController.swift` | `KeyboardRootView.swift` | `KeyboardRootView(controller:controllerID:suggestionState:)` | WIRED | Line 90: `KeyboardRootView(controller: self, controllerID: controllerID, suggestionState: suggestionState)` |
 | `KeyboardState.swift` | `KeyboardViewController.swift` | `onTranscriptionInserted` closure | WIRED | `KeyboardState.shared.onTranscriptionInserted = { [weak self] in ... self.suggestionState.updateAsync(context: context) }` |
 | `KeyboardViewController.swift` | `SuggestionState.swift` | `suggestionState.updateAsync` after transcription | WIRED | Inside `onTranscriptionInserted` closure at line 164 |
@@ -121,8 +121,8 @@ human_verification:
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `DictusKeyboard/KeyboardViewController.swift` | 383 | Comment "Wired by Plan 02" (outdated) | Info | No functional impact; Plan 02 is complete and the comment is stale |
-| `DictusKeyboard/FrenchKeyboardLayouts.swift` | 114 | Comment "Row 4: 123 + space + return" on qwertyNormal (not updated) | Info | Stale comment; actual layout correctly uses `lettersBottomRow` which includes emoji key |
+| `OuisprKeyboard/KeyboardViewController.swift` | 383 | Comment "Wired by Plan 02" (outdated) | Info | No functional impact; Plan 02 is complete and the comment is stale |
+| `OuisprKeyboard/FrenchKeyboardLayouts.swift` | 114 | Comment "Row 4: 123 + space + return" on qwertyNormal (not updated) | Info | Stale comment; actual layout correctly uses `lettersBottomRow` which includes emoji key |
 
 No blocker or warning-level anti-patterns found.
 

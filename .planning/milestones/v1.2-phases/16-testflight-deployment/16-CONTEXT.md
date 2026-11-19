@@ -23,8 +23,8 @@ First beta build distributed to testers, with open-source repo ready for contrib
 
 ### Privacy & App Review
 - **Privacy policy**: Create `PRIVACY.md` in repo root — bilingual (French + English)
-- **Tone**: Detailed and transparent — explain why Full Access is required, what it enables (microphone only), and explicitly list what Dictus does NOT access (network, clipboard, keystroke data, etc.)
-- **Privacy Manifest**: Create `PrivacyInfo.xcprivacy` for both DictusApp and DictusKeyboard targets — declare required API usage (UserDefaults, AVAudioSession, file timestamps)
+- **Tone**: Detailed and transparent — explain why Full Access is required, what it enables (microphone only), and explicitly list what Ouispr does NOT access (network, clipboard, keystroke data, etc.)
+- **Privacy Manifest**: Create `PrivacyInfo.xcprivacy` for both OuisprApp and OuisprKeyboard targets — declare required API usage (UserDefaults, AVAudioSession, file timestamps)
 - **App Store Review**: Prepare justification for microphone permission and Full Access requirement. Verify all permission strings are clear and accurate
 - **Privacy policy URL**: Pierre is building a launch website — he'll provide the URL when ready. For now, PRIVACY.md serves as the source content
 
@@ -57,18 +57,18 @@ First beta build distributed to testers, with open-source repo ready for contrib
 ### Reusable Assets
 - `README.md`: Exists but outdated — needs full rewrite (currently mentions iOS 16, smart modes, filler words)
 - `DEVELOPMENT.md`: Exists — may need update for current build process
-- `assets/brand/dictus-brand-kit.html`: Contains SVG logos and brand colors for README
+- `assets/brand/ouispr-brand-kit.html`: Contains SVG logos and brand colors for README
 - `PersistentLog` system (Phase 11): Bug report template can reference log export feature
 
 ### Established Patterns
 - Bundle ID: `com.pivi.dictus` (app), `com.pivi.dictus.keyboard` (extension)
 - App Group: `group.com.pivi.dictus`
 - Current Team ID: `QN58279822` (personal team — will change)
-- Entitlements: `DictusApp/DictusApp.entitlements`, `DictusKeyboard/DictusKeyboard.entitlements`
+- Entitlements: `OuisprApp/OuisprApp.entitlements`, `OuisprKeyboard/OuisprKeyboard.entitlements`
 - Code signing: Automatic in Xcode (`CODE_SIGN_STYLE = Automatic`)
 
 ### Integration Points
-- `Dictus.xcodeproj/project.pbxproj` — Team ID update
+- `Ouispr.xcodeproj/project.pbxproj` — Team ID update
 - App Store Connect — new app listing, TestFlight configuration
 - GitHub repo settings — issue templates go in `.github/ISSUE_TEMPLATE/`
 
@@ -85,7 +85,7 @@ First beta build distributed to testers, with open-source repo ready for contrib
 <specifics>
 ## Specific Ideas
 
-- Pierre is building a launch website for Dictus (separate repo) — will have TestFlight link + GitHub link. The site is the primary distribution channel, not the README
+- Pierre is building a launch website for Ouispr (separate repo) — will have TestFlight link + GitHub link. The site is the primary distribution channel, not the README
 - Privacy policy content from PRIVACY.md will be reused on the launch website
 - Pierre's company is PV Solutions (pierre@pivi.solutions) — enrolled as Individual, pays with company
 - Bug report template should include a section for exported debug logs (leveraging the Phase 11 logging system)
@@ -96,7 +96,7 @@ First beta build distributed to testers, with open-source repo ready for contrib
 <deferred>
 ## Deferred Ideas
 
-- **Phase 15.1 (before Phase 16)**: Issues #30 (button alignment), #33 (app name "DictusApp" → "Dictus" + logo centering), #34 (swipe-back overlay improvements), #24 (sound feedback for recording start/stop)
+- **Phase 15.1 (before Phase 16)**: Issues #30 (button alignment), #33 (app name "OuisprApp" → "Ouispr" + logo centering), #34 (swipe-back overlay improvements), #24 (sound feedback for recording start/stop)
 - **Post-beta**: #29 (keyboard key spacing to match Apple), #31 (settings button shortcuts in keyboard)
 - **Fastlane/CI automation** (INFRA-F03) — manual archive/upload is fine for now
 - **Organisation enrollment** — can migrate from Individual later if needed

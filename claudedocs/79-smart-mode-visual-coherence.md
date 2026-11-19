@@ -4,7 +4,7 @@ Design proposal following device testing of the #79 long-press fan on an iPhone 
 2026-08-24. Two questions were raised: the purple armed-mode pill, and whether the fan should
 become a 2-column grid.
 
-Sources: `assets/brand/dictus-brand-kit.html`, issue #79, and the implementation on
+Sources: `assets/brand/ouispr-brand-kit.html`, issue #79, and the implementation on
 `feature/79-smart-modes-keyboard` (`SmartModeFanView.swift`, `ToolbarView.swift`,
 `AnimatedMicButton.swift`, `SmartModeFanLayout.swift`, `SmartModeCatalogue.swift`).
 Nothing here has been implemented.
@@ -30,7 +30,7 @@ problem in both screenshots is that the host app's text is legible *through* the
 ### What is on screen today
 
 `AnimatedMicButton` takes a `tint` and uses it as the pill's fill. `ToolbarView.micPill` passes
-`.dictusSmartMode` when a mode is armed. So the armed signal is 56 × 36 pt of `#8B5CF6` at full
+`.ouisprSmartMode` when a mode is armed. So the armed signal is 56 × 36 pt of `#8B5CF6` at full
 saturation — the largest filled surface anywhere in the keyboard, and permanent, because the
 mode is sticky.
 
@@ -47,7 +47,7 @@ The complaint is caused by exactly one of these four.
 
 ### Why the brand kit naming it is not the same as it belonging
 
-Occurrence count in `dictus-brand-kit.html`: `#6BA3FF` × 10, `#2563EB` × 10, `#0D2040` × 10,
+Occurrence count in `ouispr-brand-kit.html`: `#6BA3FF` × 10, `#2563EB` × 10, `#0D2040` × 10,
 `#071020` × 9, `#0F3460` × 7, `#3D7EFF` × 3, `#8B5CF6` × 3. All three purple occurrences are in
 the state-badge block and the state token table — a 6 pt dot and a table row. The kit assigns
 purple a *meaning*; it has never assigned it a *surface*. The observation that a full-strength
@@ -58,14 +58,14 @@ problem.
 
 Three reasons, in descending strength.
 
-**1. It collides with an existing state.** Dictus already renders a grey/faded mic and it means
+**1. It collides with an existing state.** Ouispr already renders a grey/faded mic and it means
 "you cannot dictate": `fullAccessBar` draws the pill at `.opacity(0.4)`, and
 `MicButtonDisabled.swift` exists for the same purpose. A grey resting mic is one visual step
 from the disabled mic, and the state it would name is the one 100% of users are in 100% of the
 time before they ever buy Pro. The default state must not look broken.
 
 **2. It demotes the only primary control in the bar.** Every other toolbar control is glass plus
-`dictusPillIconSecondary` — deliberately 50% strength, and `DictusColors.swift` says why:
+`ouisprPillIconSecondary` — deliberately 50% strength, and `OuisprColors.swift` says why:
 "Full-strength icons compete with the mic and the validate button, which are the primary actions
 in their respective bars." The mic is the exception that the rest of the bar is calibrated
 against. Removing its colour does not make it quieter; it removes the reference point that makes
@@ -87,7 +87,7 @@ to two.
 ### What to do instead
 
 `AnimatedMicButton` already draws a ring behind the pill — 66 × 46 pt, currently stroking
-`.dictusAccent` at an opacity breathing 0.3 → 0.6 over 2 s. Turn *that* purple when a mode is
+`.ouisprAccent` at an opacity breathing 0.3 → 0.6 over 2 s. Turn *that* purple when a mode is
 armed and leave the fill alone.
 
 This works for four reasons that are specific to this button, not general taste:
@@ -111,7 +111,7 @@ on the user being able to see and cancel a recording without ambiguity.
 
 ### The colour table
 
-Pill body 56 × 36 pt, ring 66 × 46 pt, glyph `mic.fill` 14 pt. `dictusGlass` fills the ring's
+Pill body 56 × 36 pt, ring 66 × 46 pt, glyph `mic.fill` 14 pt. `ouisprGlass` fills the ring's
 interior in every state (`.glassEffect(.regular)` on iOS 26, `.regularMaterial` below).
 
 | State | Pill fill | Ring stroke | Glyph | Motion |
@@ -224,11 +224,11 @@ behind "→ EN".
 
 The cause is structural. The keyboard container is translucent, and the keys are what normally
 give the eye an opaque surface to lock onto. The fan removes the keys and replaces them with
-text on nothing. Every other Dictus surface that sits over the host — the mic pill, the
+text on nothing. Every other Ouispr surface that sits over the host — the mic pill, the
 hamburger, the panel, the recording overlay — carries its own backing. The fan is the only one
 that does not.
 
-Fix: a blurred backdrop behind the fan area, `.dictusGlass(in: Rectangle())`, which is the
+Fix: a blurred backdrop behind the fan area, `.ouisprGlass(in: Rectangle())`, which is the
 repo's existing idiom and resolves to Liquid Glass on iOS 26 and `.regularMaterial` below. It
 adapts to light and dark for free and, unlike an opacity change, it *blurs* — which is what kills
 sharp host text rather than merely dimming it. This is also the change that most directly serves
@@ -244,7 +244,7 @@ RECOMMENDED — single column, with backdrop      (standard iPhone, 205 pt)
 │ ☰        ✦ Notes             ╭─────╮     │  52 pt  toolbar
 │                              ┃ ▓🎤▓ ┃     │
 └──────────────────────────────┴─────┴─────┘
-┌──────────────────────────────────────────┐  ← .dictusGlass(in: Rectangle())
+┌──────────────────────────────────────────┐  ← .ouisprGlass(in: Rectangle())
 │ ╭──────────────────────────────────────╮ │     blurs the host app away
 │ │           🎤  Normal                 │ │  51.2 pt   ← thumb lands here first
 │ ╰──────────────────────────────────────╯ │
@@ -322,7 +322,7 @@ pulse. The measured pass above assumes those values; a breathing purple ring doe
 should not ship.
 
 **The fan backdrop.** `.regularMaterial` / `.glassEffect(.regular)` are both appearance-adaptive
-by construction, which is the reason to prefer them over any fixed `dictusSurface` value: a
+by construction, which is the reason to prefer them over any fixed `ouisprSurface` value: a
 hand-picked fill would need a light and a dark variant and would still be wrong over a saturated
 host. The row labels stay `.primary` / `.secondary`, which are already adaptive.
 
@@ -441,19 +441,19 @@ By file. Nothing here has been implemented.
 
 | File | Change |
 |---|---|
-| `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` | Replace the `tint` parameter with `ringTint` (or add it and pin `tint` back to `.dictusAccent`); `buttonFillColor` stops consulting it. `ringEffect`'s `.idle/.ready/.failed` branch strokes `ringTint` — 3 pt and opaque when it is not the accent, 2 pt and breathing when it is. Same for the `.transcribing/.processing` branch at 0.8. `.recording` untouched. Add `accessibilityLabel` and an `accessibilityValue` parameter. Optionally, the transcribing fill fix (`#6BA3FF` @ 0.5 → `#3D7EFF`) — better as its own issue. |
-| `DictusKeyboard/Views/ToolbarView.swift` | `micPill` passes `ringTint:` instead of `tint:`, same ternary on `armedSmartModeName`. Passes the armed name through as the accessibility value. The centre-slot priority table, the fan gesture and `fanGestureDidOpen` are untouched. |
-| `DictusKeyboard/Views/SmartModeFanView.swift` | Add `.dictusGlass(in: Rectangle())` behind the `VStack`, inside the existing `.frame(maxWidth:maxHeight:alignment:.top)` and before `.allowsHitTesting(false)` so the backdrop cannot take a touch. Add the Differentiate-Without-Colour branch on the row's highlight. Row heights, the entry loop and the reason strip are untouched. |
-| `DictusKeyboard/Views/RecordingOverlay.swift` | None. |
-| `DictusCore/…/Polish/SmartModeFanLayout.swift` | None. |
-| `DictusCore/…/Polish/SmartModeCatalogue.swift` | Optionally `icon: "globe"` → `"character.bubble"` for translate rows: the fan's "→ EN" globe is the same glyph as the keyboard's own next-keyboard key, visible simultaneously in both screenshots. `character.bubble` is iOS 16+, so it clears the iOS 17 minimum; `translate` does not (iOS 18). `maximumPinnedModes` unchanged. |
-| `DictusCore/Sources/DictusCore/Design/DictusColors.swift` | None. No new token: the backdrop uses the adaptive material, and `dictusSmartMode` already exists. |
+| `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` | Replace the `tint` parameter with `ringTint` (or add it and pin `tint` back to `.ouisprAccent`); `buttonFillColor` stops consulting it. `ringEffect`'s `.idle/.ready/.failed` branch strokes `ringTint` — 3 pt and opaque when it is not the accent, 2 pt and breathing when it is. Same for the `.transcribing/.processing` branch at 0.8. `.recording` untouched. Add `accessibilityLabel` and an `accessibilityValue` parameter. Optionally, the transcribing fill fix (`#6BA3FF` @ 0.5 → `#3D7EFF`) — better as its own issue. |
+| `OuisprKeyboard/Views/ToolbarView.swift` | `micPill` passes `ringTint:` instead of `tint:`, same ternary on `armedSmartModeName`. Passes the armed name through as the accessibility value. The centre-slot priority table, the fan gesture and `fanGestureDidOpen` are untouched. |
+| `OuisprKeyboard/Views/SmartModeFanView.swift` | Add `.ouisprGlass(in: Rectangle())` behind the `VStack`, inside the existing `.frame(maxWidth:maxHeight:alignment:.top)` and before `.allowsHitTesting(false)` so the backdrop cannot take a touch. Add the Differentiate-Without-Colour branch on the row's highlight. Row heights, the entry loop and the reason strip are untouched. |
+| `OuisprKeyboard/Views/RecordingOverlay.swift` | None. |
+| `OuisprCore/…/Polish/SmartModeFanLayout.swift` | None. |
+| `OuisprCore/…/Polish/SmartModeCatalogue.swift` | Optionally `icon: "globe"` → `"character.bubble"` for translate rows: the fan's "→ EN" globe is the same glyph as the keyboard's own next-keyboard key, visible simultaneously in both screenshots. `character.bubble` is iOS 16+, so it clears the iOS 17 minimum; `translate` does not (iOS 18). `maximumPinnedModes` unchanged. |
+| `OuisprCore/Sources/OuisprCore/Design/OuisprColors.swift` | None. No new token: the backdrop uses the adaptive material, and `ouisprSmartMode` already exists. |
 
 **Localisation.** The only new user-facing string is the mic pill's accessibility label and
-value. DictusCore ships no string catalog, so both must be built in `DictusKeyboard` and passed
+value. OuisprCore ships no string catalog, so both must be built in `OuisprKeyboard` and passed
 in — the same rule `SmartModeFanView` follows for "Normal" and states in its own comment.
 
-**Test coverage.** None of this is testable in `DictusCore`'s suite: the changes are all in
+**Test coverage.** None of this is testable in `OuisprCore`'s suite: the changes are all in
 SwiftUI views, and `SmartModeFanLayout` — the one tested piece — does not move. Validation is a
 device pass on both appearances, per the keyboard device smoke gate.
 

@@ -1,5 +1,5 @@
 ───── eval seed.json pass 1
-    /Users/pierreviviere/dev/dictus-wt/439/DictusCore/Sources/polish-harness/README.md
+    /Users/pierreviviere/dev/ouispr-wt/439/OuisprCore/Sources/polish-harness/README.md
 Build of product 'polish-harness' complete! (0.19s)
 ✓ [1-normal]  (success, 2952ms)
 ✓ [2-bilingue]  (success, 2364ms)

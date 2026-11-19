@@ -9,7 +9,7 @@ All texts below are ready to copy-paste into App Store Connect.
 > Paste in: App Store Connect > TestFlight > Test Information > Full Access Justification
 
 ```
-Dictus is an on-device speech-to-text keyboard. Full Access is required to access the device microphone for voice dictation. All speech recognition runs locally on-device via Apple CoreML (WhisperKit). No keystroke data, audio, or transcription is transmitted off-device. The keyboard provides full typing functionality without Full Access; only the dictation feature requires it.
+Ouispr is an on-device speech-to-text keyboard. Full Access is required to access the device microphone for voice dictation. All speech recognition runs locally on-device via Apple CoreML (WhisperKit). No keystroke data, audio, or transcription is transmitted off-device. The keyboard provides full typing functionality without Full Access; only the dictation feature requires it.
 ```
 
 ---
@@ -19,7 +19,7 @@ Dictus is an on-device speech-to-text keyboard. Full Access is required to acces
 > Paste in: App Store Connect > TestFlight > Test Information > Beta App Description (French localization)
 
 ```
-Dictus est un clavier iOS gratuit et open source qui ajoute la dictee vocale a toutes vos applications. La reconnaissance vocale fonctionne entierement sur votre appareil grace a WhisperKit (Apple CoreML) -- pas de serveur, pas de compte, pas d'abonnement.
+Ouispr est un clavier iOS gratuit et open source qui ajoute la dictee vocale a toutes vos applications. La reconnaissance vocale fonctionne entierement sur votre appareil grace a WhisperKit (Apple CoreML) -- pas de serveur, pas de compte, pas d'abonnement.
 
 Fonctionnalites :
 - Clavier AZERTY / QWERTY complet
@@ -38,7 +38,7 @@ Version beta 1.3 : nouveau clavier UIKit avec zero zones mortes, feedback haptiq
 > Paste in: App Store Connect > TestFlight > Test Information > Beta App Description (English)
 
 ```
-Dictus is a free, open-source iOS keyboard that adds voice dictation to any app. Speech recognition runs entirely on-device via WhisperKit (Apple CoreML) -- no server, no account, no subscription.
+Ouispr is a free, open-source iOS keyboard that adds voice dictation to any app. Speech recognition runs entirely on-device via WhisperKit (Apple CoreML) -- no server, no account, no subscription.
 
 Features:
 - Full AZERTY / QWERTY keyboard layout
@@ -54,7 +54,7 @@ Beta 1.3: New UIKit keyboard with zero dead zones, haptic feedback, key sounds, 
 
 ## Xcode Archive + Upload Instructions
 
-1. In Xcode, select the **"DictusApp"** scheme
+1. In Xcode, select the **"OuisprApp"** scheme
 2. Set destination to **"Any iOS Device (arm64)"** (not a simulator)
 3. **Product > Archive** (Cmd+Shift+B won't work -- must use Archive)
 4. Wait for build to complete -- Organizer window opens automatically
@@ -64,7 +64,7 @@ Beta 1.3: New UIKit keyboard with zero dead zones, haptic feedback, key sounds, 
 8. Follow signing prompts (automatic signing should resolve)
 9. Wait for upload to complete
 10. Go to **App Store Connect** (appstoreconnect.apple.com)
-11. Navigate to **"My Apps" > "Dictus" > "TestFlight"**
+11. Navigate to **"My Apps" > "Ouispr" > "TestFlight"**
 12. Wait 5-15 minutes for the build to finish processing
 13. Under **"External Testing"**, click **(+)** to create a group named **"Public Beta"**
 14. Add the processed build to this group

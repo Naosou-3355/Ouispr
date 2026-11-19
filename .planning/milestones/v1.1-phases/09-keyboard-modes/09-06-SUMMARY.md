@@ -17,10 +17,10 @@ tech-stack:
 
 key-files:
   created: []
-  modified: [DictusKeyboard/Views/EmojiMicroModeView.swift]
+  modified: [OuisprKeyboard/Views/EmojiMicroModeView.swift]
 
 key-decisions:
-  - "Gear icon replaces globe -- iOS provides system globe, gear opens Dictus app settings matching ToolbarView pattern"
+  - "Gear icon replaces globe -- iOS provides system globe, gear opens Ouispr app settings matching ToolbarView pattern"
   - "ABC button wired to advanceToNextInputMode -- serves as keyboard switcher in emoji-only mode"
   - "totalHeight + 56 compensates for toolbar stealing vertical space from EmojiPickerView"
 
@@ -46,7 +46,7 @@ completed: 2026-03-10
 - **Files modified:** 1
 
 ## Accomplishments
-- Replaced globe button with gear icon linking to dictus:// for settings access
+- Replaced globe button with gear icon linking to ouispr:// for settings access
 - Wired onDismiss to advanceToNextInputMode so ABC button switches keyboards
 - Added .clipped() on both EmojiPickerView and outer container to prevent overflow
 - Expanded frame height by 56pt to give EmojiPickerView the space it was designed for
@@ -58,10 +58,10 @@ Each task was committed atomically:
 1. **Task 1: Fix EmojiMicroModeView layout, toolbar, and ABC wiring** - `88b31a7` (fix)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/EmojiMicroModeView.swift` - Fixed layout, icon, clipping, and ABC wiring
+- `OuisprKeyboard/Views/EmojiMicroModeView.swift` - Fixed layout, icon, clipping, and ABC wiring
 
 ## Decisions Made
-- Gear icon replaces globe -- iOS provides system globe, gear opens Dictus app settings matching ToolbarView pattern
+- Gear icon replaces globe -- iOS provides system globe, gear opens Ouispr app settings matching ToolbarView pattern
 - ABC button wired to advanceToNextInputMode -- serves as keyboard switcher in emoji-only mode
 - totalHeight + 56 compensates for toolbar stealing vertical space from EmojiPickerView
 

@@ -52,9 +52,9 @@ skipped: 1
   test: 3
   root_cause: "State transition ordering bug in ModelManager.downloadWhisperKitModel() — downloadProgress is removed before modelStates transitions to .prewarming. During this gap, ModelCardView's .downloading case renders a determinate progress bar reading downloadProgress[id] ?? 0 = 0."
   artifacts:
-    - path: "DictusApp/Models/ModelManager.swift"
+    - path: "OuisprApp/Models/ModelManager.swift"
       issue: "downloadProgress removed (line 155) before state set to .prewarming (line 163) — gap during prewarm-lock while-loop"
-    - path: "DictusApp/Views/ModelCardView.swift"
+    - path: "OuisprApp/Views/ModelCardView.swift"
       issue: "?? 0 fallback on line 131 masks missing progress data, shows bar at 0%"
   missing:
     - "Move modelStates[identifier] = .prewarming to immediately after downloadProgress.removeValue(forKey:)"

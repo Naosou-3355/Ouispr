@@ -16,7 +16,7 @@ Requirements: KBD-05, KBD-08, FEEL-04, FEEL-05, FEEL-06
 ## Implementation Decisions
 
 ### Accent character set (LOCKED)
-- Use existing `AccentedCharacters.mappings` from DictusCore AS-IS
+- Use existing `AccentedCharacters.mappings` from OuisprCore AS-IS
 - French-focused only: e(4), a(3), u(3), i(2), o(2), c(1), y(1), n(1)
 - Do NOT add international variants (ē, ė, ę, etc.) -- current set is sufficient
 - Populate `FrenchKeyboardLayouts.frenchLongPress` by mapping from `AccentedCharacters.mappings`
@@ -61,7 +61,7 @@ Requirements: KBD-05, KBD-08, FEEL-04, FEEL-05, FEEL-06
 ### Double-space period fix (quick fix)
 - Phase 18 UAT: double-space period insertion doesn't work
 - Pierre: "c'est pas tres grave" but include as quick fix since some users expect it
-- Logic exists in DictusKeyboardBridge (lines 296-311) -- likely a timing or state issue
+- Logic exists in OuisprKeyboardBridge (lines 296-311) -- likely a timing or state issue
 
 ### Responsiveness optimization (NEW -- incremental)
 - Pierre reports the keyboard feels "un tout petit peu moins rapide que le clavier Apple"
@@ -108,23 +108,23 @@ Requirements: KBD-05, KBD-08, FEEL-04, FEEL-05, FEEL-06
 - `.planning/phases/18-keyboard-base/18-UAT.md` -- 9/11 passed, 2 issues: edge key touchDown (test 10) and double-space period (test 7)
 
 ### Accent data
-- `DictusCore/Sources/DictusCore/AccentedCharacters.swift` -- French accent mappings, adaptive key logic, case handling
+- `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` -- French accent mappings, adaptive key logic, case handling
 
 ### Keyboard architecture (current)
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` -- UICollectionView keyboard, touch pipeline (touchesBegan/Moved/Ended), overlay system, long-press handling
-- `DictusKeyboard/Vendored/Controllers/LongPressController.swift` -- LongPressOverlayController (accent popup) + LongPressCursorMovementController
-- `DictusKeyboard/Vendored/Models/KeyDefinition.swift` -- KeyType enum, supportsRepeatTrigger, triggersOnTouchDown/Up
-- `DictusKeyboard/Vendored/Models/KeyboardDefinition.swift` -- longPress dictionary structure
-- `DictusKeyboard/DictusKeyboardBridge.swift` -- Delegate implementation, didTriggerKey, didSwipeKey, didMoveCursor
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` -- AZERTY/QWERTY definitions, empty frenchLongPress (to populate)
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` -- UICollectionView keyboard, touch pipeline (touchesBegan/Moved/Ended), overlay system, long-press handling
+- `OuisprKeyboard/Vendored/Controllers/LongPressController.swift` -- LongPressOverlayController (accent popup) + LongPressCursorMovementController
+- `OuisprKeyboard/Vendored/Models/KeyDefinition.swift` -- KeyType enum, supportsRepeatTrigger, triggersOnTouchDown/Up
+- `OuisprKeyboard/Vendored/Models/KeyboardDefinition.swift` -- longPress dictionary structure
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` -- Delegate implementation, didTriggerKey, didSwipeKey, didMoveCursor
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` -- AZERTY/QWERTY definitions, empty frenchLongPress (to populate)
 
 ### Previous implementations (reference for behavior, not for code reuse)
-- `DictusKeyboard/Views/SpecialKeyButton.swift` -- SwiftUI delete repeat (lines 79-155) and spacebar trackpad (lines 157-357) -- behavior reference only, UIKit reimplementation needed
-- `DictusKeyboard/Views/AccentPopup.swift` -- SwiftUI accent popup component (may or may not be reusable)
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` -- SwiftUI delete repeat (lines 79-155) and spacebar trackpad (lines 157-357) -- behavior reference only, UIKit reimplementation needed
+- `OuisprKeyboard/Views/AccentPopup.swift` -- SwiftUI accent popup component (may or may not be reusable)
 
 ### Feedback infrastructure
-- `DictusCore/Sources/DictusCore/HapticFeedback.swift` -- Pre-allocated generators, warmUp(), keyTapped()
-- `DictusKeyboard/TouchHandling/KeyTapSignposter.swift` -- OSSignposter instrumentation for latency measurement
+- `OuisprCore/Sources/OuisprCore/HapticFeedback.swift` -- Pre-allocated generators, warmUp(), keyTapped()
+- `OuisprKeyboard/TouchHandling/KeyTapSignposter.swift` -- OSSignposter instrumentation for latency measurement
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` -- KBD-05, KBD-08, FEEL-04, FEEL-05, FEEL-06
@@ -135,16 +135,16 @@ Requirements: KBD-05, KBD-08, FEEL-04, FEEL-05, FEEL-06
 ## Existing Code Insights
 
 ### Reusable Assets
-- `AccentedCharacters` (DictusCore): Complete French accent mappings + adaptive key logic -- wire directly into frenchLongPress
+- `AccentedCharacters` (OuisprCore): Complete French accent mappings + adaptive key logic -- wire directly into frenchLongPress
 - `LongPressOverlayController` (Vendored): Full accent popup with drag-to-select -- just needs data
 - `LongPressCursorMovementController` (Vendored): Spacebar trackpad framework -- needs integration
 - `keyRepeatTimer` (KeyboardView): Timer infrastructure for key repeat -- backspace already flagged
-- `HapticFeedback` (DictusCore): Pre-allocated generators -- add viewDidLoad pre-warming
+- `HapticFeedback` (OuisprCore): Pre-allocated generators -- add viewDidLoad pre-warming
 - `KeyTapSignposter`: OSSignposter for latency measurement -- use for before/after optimization comparison
 
 ### Established Patterns
 - touchDown haptic (not touchUp) -- maintain this pattern
-- Delegate chain: KeyboardView -> DictusKeyboardBridge -> textDocumentProxy
+- Delegate chain: KeyboardView -> OuisprKeyboardBridge -> textDocumentProxy
 - ActiveKey + overlay system for popup display
 - UICollectionView with static constraints (no Auto Layout churn)
 

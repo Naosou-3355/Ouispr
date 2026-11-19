@@ -35,19 +35,19 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Models/KeyDefinition.swift
-    - DictusKeyboard/Models/KeyboardLayer.swift
-    - DictusKeyboard/Models/KeyboardLayout.swift
-    - DictusKeyboard/Views/KeyButton.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/Views/KeyRow.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/FullAccessBanner.swift
-    - DictusKeyboard/InputView.swift
+    - OuisprKeyboard/Models/KeyDefinition.swift
+    - OuisprKeyboard/Models/KeyboardLayer.swift
+    - OuisprKeyboard/Models/KeyboardLayout.swift
+    - OuisprKeyboard/Views/KeyButton.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/KeyRow.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/FullAccessBanner.swift
+    - OuisprKeyboard/InputView.swift
   modified:
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - Ouispr.xcodeproj/project.pbxproj
     - .gitignore
 
 key-decisions:
@@ -55,7 +55,7 @@ key-decisions:
   - "playInputClick() gated on hasFullAccess — no-op path avoids hang when Full Access is off"
   - "KeyMetrics as enum (not struct) — prevents instantiation, acts as pure namespace"
   - "KeyboardHeight computed from row count — avoids fixed 216pt magic number, adapts if rows change"
-  - ".gitignore Models/ changed to /Models/ — prevents DictusKeyboard/Models Swift source files from being ignored"
+  - ".gitignore Models/ changed to /Models/ — prevents OuisprKeyboard/Models Swift source files from being ignored"
   - "TranscriptionStub is a Phase 1 placeholder explicitly labelled for replacement in Phase 3"
 
 patterns-established:
@@ -91,7 +91,7 @@ completed: 2026-03-05
 - FullAccessBanner persistent degradation: typing always works, mic disabled, Settings deep-link shown
 - System click sound via `UIInputViewAudioFeedback` on `KeyboardInputView` UIView subclass
 - Full integration in `KeyboardRootView`: FullAccessBanner + StatusBar + TranscriptionStub + KeyboardView
-- All Plan 1.2 + 1.3 files registered in `Dictus.xcodeproj/project.pbxproj` with Views/Models subgroups
+- All Plan 1.2 + 1.3 files registered in `Ouispr.xcodeproj/project.pbxproj` with Views/Models subgroups
 
 ## Task Commits
 
@@ -107,25 +107,25 @@ Each task was committed atomically:
 8. **Xcode project registration** - `f7dc5cb` (chore)
 
 ## Files Created/Modified
-- `DictusKeyboard/Models/KeyDefinition.swift` — KeyType enum + KeyDefinition struct with widthMultiplier
-- `DictusKeyboard/Models/KeyboardLayer.swift` — KeyboardLayerType enum + KeyboardLayer struct
-- `DictusKeyboard/Models/KeyboardLayout.swift` — Full AZERTY lettersRows, numbersRows, symbolsRows
-- `DictusKeyboard/Views/KeyButton.swift` — Character key with DragGesture popup preview + KeyMetrics
-- `DictusKeyboard/Views/SpecialKeyButton.swift` — ShiftKey, ShiftState, DeleteKey, SpaceKey, ReturnKey, GlobeKey, LayerSwitchKey
-- `DictusKeyboard/Views/KeyRow.swift` — Single row renderer with proportional unitKeyWidth calculation
-- `DictusKeyboard/Views/KeyboardView.swift` — Main composition: layer state, shift state, textDocumentProxy routing, MicKey
-- `DictusKeyboard/Views/FullAccessBanner.swift` — Non-dismissible banner with Settings deep-link
-- `DictusKeyboard/InputView.swift` — KeyboardInputView: UIView + UIInputViewAudioFeedback
-- `DictusKeyboard/KeyboardRootView.swift` — Full integration replacing placeholder
-- `DictusKeyboard/KeyboardViewController.swift` — Added KeyboardInputView to view hierarchy
-- `Dictus.xcodeproj/project.pbxproj` — All Plan 1.2 + 1.3 files registered with Views/Models subgroups
+- `OuisprKeyboard/Models/KeyDefinition.swift` — KeyType enum + KeyDefinition struct with widthMultiplier
+- `OuisprKeyboard/Models/KeyboardLayer.swift` — KeyboardLayerType enum + KeyboardLayer struct
+- `OuisprKeyboard/Models/KeyboardLayout.swift` — Full AZERTY lettersRows, numbersRows, symbolsRows
+- `OuisprKeyboard/Views/KeyButton.swift` — Character key with DragGesture popup preview + KeyMetrics
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` — ShiftKey, ShiftState, DeleteKey, SpaceKey, ReturnKey, GlobeKey, LayerSwitchKey
+- `OuisprKeyboard/Views/KeyRow.swift` — Single row renderer with proportional unitKeyWidth calculation
+- `OuisprKeyboard/Views/KeyboardView.swift` — Main composition: layer state, shift state, textDocumentProxy routing, MicKey
+- `OuisprKeyboard/Views/FullAccessBanner.swift` — Non-dismissible banner with Settings deep-link
+- `OuisprKeyboard/InputView.swift` — KeyboardInputView: UIView + UIInputViewAudioFeedback
+- `OuisprKeyboard/KeyboardRootView.swift` — Full integration replacing placeholder
+- `OuisprKeyboard/KeyboardViewController.swift` — Added KeyboardInputView to view hierarchy
+- `Ouispr.xcodeproj/project.pbxproj` — All Plan 1.2 + 1.3 files registered with Views/Models subgroups
 - `.gitignore` — Fixed `Models/` to `/Models/` to avoid ignoring Swift source files
 
 ## Decisions Made
 - **MicKey uses `Link` not `Button`**: Only `Link` can trigger a URL scheme from a keyboard extension without `UIApplication.shared` (which is unavailable in extensions).
 - **`playInputClick()` gated on `hasFullAccess`**: The system click sound silently no-ops when Full Access is off, but gating avoids potential hangs on older devices.
 - **`Task.sleep` for delete repeat**: `Timer.scheduledTimer` is unreliable in keyboard extensions where the main RunLoop may not be in `.default` mode. Async `Task` with `@MainActor` is the correct pattern.
-- **`/Models/` in .gitignore**: The original `Models/` pattern matched `DictusKeyboard/Models/`. Changed to `/Models/` to scope the exclusion to the repo root (where downloaded Whisper model files would live).
+- **`/Models/` in .gitignore**: The original `Models/` pattern matched `OuisprKeyboard/Models/`. Changed to `/Models/` to scope the exclusion to the repo root (where downloaded Whisper model files would live).
 - **`TranscriptionStub` is a named placeholder**: Explicitly labelled for Phase 3 replacement, not a TODO to avoid.
 
 ## Deviations from Plan
@@ -133,12 +133,12 @@ None — plan executed exactly as written, with one necessary .gitignore fix dis
 
 ### Auto-fixed Issues
 
-**1. .gitignore scope bug — DictusKeyboard/Models/ ignored**
-- **Found during:** Task 1.3.1 (git add DictusKeyboard/Models/*.swift)
+**1. .gitignore scope bug — OuisprKeyboard/Models/ ignored**
+- **Found during:** Task 1.3.1 (git add OuisprKeyboard/Models/*.swift)
 - **Issue:** `.gitignore` had `Models/` which matched any `Models/` directory, including the Swift source directory
 - **Fix:** Changed to `/Models/` to scope to repo root only
 - **Files modified:** `.gitignore`
-- **Verification:** `git add DictusKeyboard/Models/*.swift` succeeded after fix
+- **Verification:** `git add OuisprKeyboard/Models/*.swift` succeeded after fix
 - **Committed in:** `6f8afd5` (part of Task 1.3.1 commit)
 
 ---

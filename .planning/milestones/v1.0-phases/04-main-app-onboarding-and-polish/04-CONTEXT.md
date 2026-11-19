@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-A new user installs Dictus, completes onboarding (permissions, keyboard setup, model download, test transcription), and dictates their first sentence. The main app is restructured with TabBar navigation. A Settings screen delivers all user preferences. Every screen in the app and keyboard extension uses iOS 26 Liquid Glass design with Material fallback on iOS 16-25. Mic button animations and recording waveform are redesigned to match the brand identity. No new transcription features, no new keyboard capabilities, no text prediction.
+A new user installs Ouispr, completes onboarding (permissions, keyboard setup, model download, test transcription), and dictates their first sentence. The main app is restructured with TabBar navigation. A Settings screen delivers all user preferences. Every screen in the app and keyboard extension uses iOS 26 Liquid Glass design with Material fallback on iOS 16-25. Mic button animations and recording waveform are redesigned to match the brand identity. No new transcription features, no new keyboard capabilities, no text prediction.
 
 </domain>
 
@@ -15,7 +15,7 @@ A new user installs Dictus, completes onboarding (permissions, keyboard setup, m
 
 ### Onboarding flow
 - 5-step fullscreen page sequence (swipeable), dark background (#0A1628), accent blue highlights
-- Step 1: Welcome page — animated logo (3 bars appearing), "dictus" wordmark, tagline "Dictation vocale, 100% offline", [Commencer] button
+- Step 1: Welcome page — animated logo (3 bars appearing), "ouispr" wordmark, tagline "Dictation vocale, 100% offline", [Commencer] button
 - Step 2: Microphone permission — explain why, trigger system permission dialog
 - Step 3: Add keyboard + Full Access — annotated screenshot of iOS Settings path with deep-link button to Settings. Auto-detect when user returns if keyboard was added. Show both keyboard addition and Full Access enablement on this step
 - Step 4: Download model — "small" model pre-selected as recommended (~500MB), [Telecharger] button with progress, "Voir tous les modeles" link to full ModelManager
@@ -29,7 +29,7 @@ A new user installs Dictus, completes onboarding (permissions, keyboard setup, m
 - Tab 2 (Models): Existing ModelManagerView (download, select, delete models)
 - Tab 3 (Settings): All user preferences (see Settings section below)
 - TabBar uses iOS 26 Liquid Glass styling with standard glass transitions between tabs
-- RecordingView (dictus://dictate) hides TabBar — fullscreen overlay, immersive recording experience
+- RecordingView (ouispr://dictate) hides TabBar — fullscreen overlay, immersive recording experience
 - No model selector in Settings — the Models tab is the single source of truth for model management
 - Diagnostic view moved from Home to Settings > A propos > Diagnostic
 
@@ -85,8 +85,8 @@ A new user installs Dictus, completes onboarding (permissions, keyboard setup, m
 - Recording waveform must be inspired by the logo's 3 asymmetric bars — the logo becomes alive during recording
 - TabBar must use Liquid Glass with transitions matching modern iOS 26 apps (GitHub, Slack reference)
 - Onboarding test transcription step is critical: validates setup + shows value + pre-loads model — three birds with one stone
-- Brand kit at `assets/brand/dictus-brand-kit.html` is the design source of truth for all colors, gradients, and visual tokens
-- Wordmark: "dictus" lowercase, weight 200, tracking -0.03em (DM Sans for brand, SF Pro Rounded for iOS UI)
+- Brand kit at `assets/brand/ouispr-brand-kit.html` is the design source of truth for all colors, gradients, and visual tokens
+- Wordmark: "ouispr" lowercase, weight 200, tracking -0.03em (DM Sans for brand, SF Pro Rounded for iOS UI)
 
 </specifics>
 
@@ -112,7 +112,7 @@ A new user installs Dictus, completes onboarding (permissions, keyboard setup, m
 - NavigationStack for in-tab navigation
 
 ### Integration Points
-- `DictusApp.swift`: Add TabView wrapping, keep `.onOpenURL` for dictus://dictate
+- `OuisprApp.swift`: Add TabView wrapping, keep `.onOpenURL` for ouispr://dictate
 - `ContentView.swift`: Replace with TabView containing Home/Models/Settings tabs
 - `SharedKeys`: Add `language`, `hapticsEnabled`, `fillerWordsEnabled`, `hasCompletedOnboarding` keys
 - `KeyboardView.swift` + `KeyButton.swift`: Glass styling pass

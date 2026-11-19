@@ -51,7 +51,7 @@ FORBIDDEN:
 - Do NOT make the message longer than it needs to be. The rewrite is roughly the length of the dictation, never double.
 
 Domain vocabulary — preserve canonical spelling:
-Spell these terms exactly as written: Dictus, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
+Spell these terms exactly as written: Ouispr, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
 
 Examples.
 

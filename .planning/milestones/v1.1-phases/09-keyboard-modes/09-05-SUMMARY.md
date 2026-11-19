@@ -17,7 +17,7 @@ tech-stack:
 
 key-files:
   created: []
-  modified: [DictusKeyboard/Views/MicroModeView.swift]
+  modified: [OuisprKeyboard/Views/MicroModeView.swift]
 
 key-decisions:
   - "secondarySystemBackground matches iOS system keyboard chrome"
@@ -58,7 +58,7 @@ Each task was committed atomically:
 1. **Task 1: Restructure MicroModeView with background, utility row, and fixed mic states** - `4c23a63` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/MicroModeView.swift` - Restructured from ZStack to VStack layout with system background, bottom utility HStack, and utilityButton helper
+- `OuisprKeyboard/Views/MicroModeView.swift` - Restructured from ZStack to VStack layout with system background, bottom utility HStack, and utilityButton helper
 
 ## Decisions Made
 - Used `Color(.secondarySystemBackground)` to match standard iOS keyboard chrome color

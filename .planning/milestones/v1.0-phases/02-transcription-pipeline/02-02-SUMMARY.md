@@ -7,7 +7,7 @@ tags: [whisperkit, filler-words, regex, model-routing, swift, tdd]
 # Dependency graph
 requires:
   - phase: 01-project-scaffold
-    provides: DictusCore SPM package with SharedKeys and test infrastructure
+    provides: OuisprCore SPM package with SharedKeys and test infrastructure
 provides:
   - FillerWordFilter — regex-based French + English filler word removal
   - SmartModelRouter — duration-based model selection (5s threshold)
@@ -18,18 +18,18 @@ affects: [02-03-transcription-integration, 03-keyboard-ux]
 # Tech tracking
 tech-stack:
   added: []
-  patterns: [TDD red-green, NSRegularExpression with lookahead/lookbehind, pure-logic DictusCore modules]
+  patterns: [TDD red-green, NSRegularExpression with lookahead/lookbehind, pure-logic OuisprCore modules]
 
 key-files:
   created:
-    - DictusCore/Sources/DictusCore/FillerWordFilter.swift
-    - DictusCore/Sources/DictusCore/SmartModelRouter.swift
-    - DictusCore/Sources/DictusCore/ModelInfo.swift
-    - DictusCore/Tests/DictusCoreTests/FillerWordFilterTests.swift
-    - DictusCore/Tests/DictusCoreTests/SmartModelRouterTests.swift
-    - DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift
+    - OuisprCore/Sources/OuisprCore/FillerWordFilter.swift
+    - OuisprCore/Sources/OuisprCore/SmartModelRouter.swift
+    - OuisprCore/Sources/OuisprCore/ModelInfo.swift
+    - OuisprCore/Tests/OuisprCoreTests/FillerWordFilterTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/SmartModelRouterTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift
   modified:
-    - DictusCore/Sources/DictusCore/SharedKeys.swift
+    - OuisprCore/Sources/OuisprCore/SharedKeys.swift
 
 key-decisions:
   - "Lookahead/lookbehind regex instead of \\b for French apostrophe safety"
@@ -37,7 +37,7 @@ key-decisions:
   - "Single-model fallback always returns the only downloaded model"
 
 patterns-established:
-  - "TDD in DictusCore: write failing XCTest first, then implement pure Swift logic"
+  - "TDD in OuisprCore: write failing XCTest first, then implement pure Swift logic"
   - "NSRegularExpression with lookahead/lookbehind for French text processing"
 
 requirements-completed: [STT-02, STT-04]
@@ -78,13 +78,13 @@ Each task was committed atomically:
 _TDD tasks: each has RED (test) then GREEN (feat) commit._
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/FillerWordFilter.swift` - Regex-based filler word removal with French apostrophe safety
-- `DictusCore/Sources/DictusCore/SmartModelRouter.swift` - Duration-based model selection with 5s threshold
-- `DictusCore/Sources/DictusCore/ModelInfo.swift` - Metadata for 5 WhisperKit models (identifier, size, accuracy, speed)
-- `DictusCore/Tests/DictusCoreTests/FillerWordFilterTests.swift` - 12 test cases for filler removal
-- `DictusCore/Tests/DictusCoreTests/SmartModelRouterTests.swift` - 8 test cases for model routing
-- `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` - 4 test cases for model metadata
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` - Added 3 model-related keys
+- `OuisprCore/Sources/OuisprCore/FillerWordFilter.swift` - Regex-based filler word removal with French apostrophe safety
+- `OuisprCore/Sources/OuisprCore/SmartModelRouter.swift` - Duration-based model selection with 5s threshold
+- `OuisprCore/Sources/OuisprCore/ModelInfo.swift` - Metadata for 5 WhisperKit models (identifier, size, accuracy, speed)
+- `OuisprCore/Tests/OuisprCoreTests/FillerWordFilterTests.swift` - 12 test cases for filler removal
+- `OuisprCore/Tests/OuisprCoreTests/SmartModelRouterTests.swift` - 8 test cases for model routing
+- `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` - 4 test cases for model metadata
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` - Added 3 model-related keys
 
 ## Decisions Made
 - Used lookahead/lookbehind regex (`(?<=\s|^)` and `(?=\s|$|[,.!?;:])`) instead of `\b` word boundaries because `\b` treats apostrophes as word boundaries, which would incorrectly match filler substrings in French contractions like "l'humain"
@@ -95,7 +95,7 @@ _TDD tasks: each has RED (test) then GREEN (feat) commit._
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- DictusApp full project build has a pre-existing error in untracked `DictusApp/Audio/AudioRecorder.swift` (ContiguousArray/Array type mismatch). This is not related to Plan 02-02 changes and does not affect DictusCore which builds and tests independently.
+- OuisprApp full project build has a pre-existing error in untracked `OuisprApp/Audio/AudioRecorder.swift` (ContiguousArray/Array type mismatch). This is not related to Plan 02-02 changes and does not affect OuisprCore which builds and tests independently.
 
 ## User Setup Required
 None - no external service configuration required.
@@ -105,7 +105,7 @@ None - no external service configuration required.
 - SmartModelRouter.selectModel() ready to route audio to correct model in Plan 2.3
 - ModelInfo.all provides UI-ready model list for model manager in Plan 2.3
 - SharedKeys has all keys needed for cross-process model state sharing
-- All 30 DictusCore tests pass (6 existing + 24 new)
+- All 30 OuisprCore tests pass (6 existing + 24 new)
 
 ---
 *Phase: 02-transcription-pipeline*

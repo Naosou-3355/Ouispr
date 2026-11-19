@@ -6,7 +6,7 @@ tags: [autocapitalization, double-space-period, shift-state-machine, caps-lock, 
 
 requires:
   - phase: 18-keyboard-base
-    provides: DictusKeyboardBridge delegate adapter and hybrid UIKit+SwiftUI keyboard architecture
+    provides: OuisprKeyboardBridge delegate adapter and hybrid UIKit+SwiftUI keyboard architecture
 provides:
   - Autocapitalization state machine respecting textDocumentProxy.autocapitalizationType
   - Double-space period insertion matching iOS native behavior
@@ -24,10 +24,10 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Vendored/Views/KeyboardView.swift
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Vendored/Views/KeyboardView.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
 
 key-decisions:
   - "Autocapitalization checks documentContextBeforeInput for sentence-ending punctuation (.!?) followed by space"
@@ -75,10 +75,10 @@ Each task was committed atomically:
    - `241e993` (fix) - QWERTY row 2 spacers for proper centering
 
 ## Files Created/Modified
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added updateCapitalization(), handleAutoFullStop() returning Bool, isManualShift tracking, lastShiftTapTime for capslock double-tap
-- `DictusKeyboard/KeyboardViewController.swift` - Added bridge?.updateCapitalization() in textDidChange and viewWillAppear
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` - Moved HapticFeedback.keyTapped() to touchesBegan, reduced iPhone heights from 262-272pt to 216-226pt
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - Added 0.5-unit spacers to QWERTY row 2 for proper key centering
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added updateCapitalization(), handleAutoFullStop() returning Bool, isManualShift tracking, lastShiftTapTime for capslock double-tap
+- `OuisprKeyboard/KeyboardViewController.swift` - Added bridge?.updateCapitalization() in textDidChange and viewWillAppear
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` - Moved HapticFeedback.keyTapped() to touchesBegan, reduced iPhone heights from 262-272pt to 216-226pt
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - Added 0.5-unit spacers to QWERTY row 2 for proper key centering
 
 ## Decisions Made
 - Moved haptic feedback from bridge delegate callback (touchUp timing) to GiellaKeyboardView.touchesBegan (touchDown timing) to match Apple keyboard feel -- user reported touchUp felt wrong
@@ -92,22 +92,22 @@ Each task was committed atomically:
 **1. [Rule 1 - Bug] Haptic feedback on touchUp instead of touchDown**
 - **Found during:** Task 2 (user verification)
 - **Issue:** User reported haptic feedback felt wrong -- it fired on key release (touchUp via delegate callback) instead of key press (touchDown)
-- **Fix:** Moved HapticFeedback.keyTapped() from DictusKeyboardBridge delegate method to GiellaKeyboardView.touchesBegan() for immediate touchDown feedback
-- **Files modified:** DictusKeyboard/Vendored/Views/KeyboardView.swift, DictusKeyboard/DictusKeyboardBridge.swift
+- **Fix:** Moved HapticFeedback.keyTapped() from OuisprKeyboardBridge delegate method to GiellaKeyboardView.touchesBegan() for immediate touchDown feedback
+- **Files modified:** OuisprKeyboard/Vendored/Views/KeyboardView.swift, OuisprKeyboard/OuisprKeyboardBridge.swift
 - **Committed in:** 7bd155d
 
 **2. [Rule 1 - Bug] Keyboard keys too tall compared to Apple keyboard**
 - **Found during:** Task 2 (user verification)
 - **Issue:** iPhone keyboard heights (262-272pt) were significantly taller than Apple's native keyboard
 - **Fix:** Reduced heights to 216-226pt range matching Apple keyboard proportions
-- **Files modified:** DictusKeyboard/Vendored/Views/KeyboardView.swift
+- **Files modified:** OuisprKeyboard/Vendored/Views/KeyboardView.swift
 - **Committed in:** 7bd155d
 
 **3. [Rule 1 - Bug] QWERTY row 2 keys oversized causing crash**
 - **Found during:** Task 2 (user verification)
 - **Issue:** QWERTY row 2 has 9 keys in a 10-unit grid, causing keys to stretch and eventually crash
 - **Fix:** Added 0.5-unit spacers on each side of QWERTY row 2 for correct centering
-- **Files modified:** DictusKeyboard/FrenchKeyboardLayouts.swift
+- **Files modified:** OuisprKeyboard/FrenchKeyboardLayouts.swift
 - **Committed in:** 241e993
 
 ---

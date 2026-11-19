@@ -1,13 +1,13 @@
 # Project Research Summary
 
-**Project:** Dictus v1.4
+**Project:** Ouispr v1.4
 **Domain:** iOS Keyboard Extension — Prediction Engine Upgrade + Stability
 **Researched:** 2026-04-01
 **Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-Dictus v1.4 is a focused incremental improvement to an existing production iOS keyboard extension. The core work is replacing the current UITextChecker-based spell correction with SymSpell (probabilistic, frequency-ranked), adding n-gram next-word prediction (a capability the current engine lacks entirely), fixing a known autocorrect state corruption bug (#67), and resolving open license compliance items (#63). The existing architecture — two-process model with DictusApp handling speech recognition and DictusKeyboard handling text input — is sound and requires no structural changes. All v1.4 work is additive within the existing keyboard extension.
+Ouispr v1.4 is a focused incremental improvement to an existing production iOS keyboard extension. The core work is replacing the current UITextChecker-based spell correction with SymSpell (probabilistic, frequency-ranked), adding n-gram next-word prediction (a capability the current engine lacks entirely), fixing a known autocorrect state corruption bug (#67), and resolving open license compliance items (#63). The existing architecture — two-process model with OuisprApp handling speech recognition and OuisprKeyboard handling text input — is sound and requires no structural changes. All v1.4 work is additive within the existing keyboard extension.
 
 The recommended implementation approach is strictly sequential by risk and dependency: fix the autocorrect bug first (independent, zero risk, validates the test harness), then integrate SymSpell (medium risk, must profile on device before proceeding), then build the n-gram data pipeline and predictor (medium risk, depends on corpus sourcing and binary format design), and finally wire next-word prediction into the suggestion bar UI. Cold start auto-return (#23) is explicitly deferred — Apple DTS confirmed in January 2026 that no public API exists for this, and the existing swipe-back overlay already works for 100% of apps.
 
@@ -17,16 +17,16 @@ The primary risk across all v1.4 work is memory pressure in the 50MB keyboard ex
 
 ### Recommended Stack
 
-The stack changes for v1.4 are minimal by design. One new SPM dependency is added: **SymSpellSwift** (github.com/gdetari/SymSpellSwift, v0.1.4, MIT). The n-gram component uses no external library — it is a custom pure-Swift binary trie with offline data preparation scripts. KenLM was evaluated and rejected: it is a C++ library with no Swift binding, requires CMake/Boost, and produces 50-500MB model files that are impossible in a 50MB keyboard extension. The existing stack (Swift 5.9+, SwiftUI, WhisperKit, FluidAudio, giellakbd-ios, DeviceKit, DictusCore) is unchanged.
+The stack changes for v1.4 are minimal by design. One new SPM dependency is added: **SymSpellSwift** (github.com/gdetari/SymSpellSwift, v0.1.4, MIT). The n-gram component uses no external library — it is a custom pure-Swift binary trie with offline data preparation scripts. KenLM was evaluated and rejected: it is a C++ library with no Swift binding, requires CMake/Boost, and produces 50-500MB model files that are impossible in a 50MB keyboard extension. The existing stack (Swift 5.9+, SwiftUI, WhisperKit, FluidAudio, giellakbd-ios, DeviceKit, OuisprCore) is unchanged.
 
-Two new bundled data files are required: a French frequency dictionary for SymSpell (~2-3MB TSV) sourced from Lexique 3.83 or OpenSubtitles, and a French trigram binary file (~5-10MB) built from French Wikipedia/OpenSubtitles with an offline Python/Swift CLI tool. English variants of both files are needed as well. These are not dependencies — they are build-time artifacts bundled in the DictusKeyboard target.
+Two new bundled data files are required: a French frequency dictionary for SymSpell (~2-3MB TSV) sourced from Lexique 3.83 or OpenSubtitles, and a French trigram binary file (~5-10MB) built from French Wikipedia/OpenSubtitles with an offline Python/Swift CLI tool. English variants of both files are needed as well. These are not dependencies — they are build-time artifacts bundled in the OuisprKeyboard target.
 
 **Core technologies:**
 - **SymSpellSwift 0.1.4** (SPM, recommend vendoring): spell correction via symmetric delete algorithm — replaces UITextChecker for corrections, frequency-ranked output, O(1) lookup, pure Swift, MIT license; vendor source (~500 lines) to enable direct bug fixes for French Unicode edge cases
 - **Custom NgramTrie** (no library): flat sorted binary array with binary search, memory-mapped at runtime — 16 bytes/entry vs ~80 bytes/entry for a Swift Dictionary; 500K trigrams = ~8MB flat vs ~40MB nested
 - **UITextChecker** (system, kept): word completions during partial typing — retained because it handles French morphology at zero memory cost; SymSpell is for spell correction only, not prefix completion
 - **Lexique 3.83 / OpenSubtitles French corpus** (data, offline build): gold-standard French word frequency source for SymSpell dictionary curation
-- **fr_symspell.txt + fr_trigram.bin** (bundled data files): runtime data added to DictusKeyboard target
+- **fr_symspell.txt + fr_trigram.bin** (bundled data files): runtime data added to OuisprKeyboard target
 
 ### Expected Features
 
@@ -48,7 +48,7 @@ Two new bundled data files are required: a French frequency dictionary for SymSp
 
 ### Architecture Approach
 
-The v1.4 architecture is an additive extension of the existing TextPrediction layer within DictusKeyboard. The two-process model and App Group communication are unchanged. Three new components are added inside DictusKeyboard/TextPrediction/: `SymSpellEngine` (wraps SymSpellSwift, handles spell correction), `NgramPredictor` (orchestrates trigram/bigram/unigram backoff), and `NgramTrie` (memory-mapped flat binary data structure). The existing `TextPredictionEngine` is modified as orchestrator to route between SymSpell (corrections) and UITextChecker (completions, kept). `SuggestionState` gains a new `.nextWord` mode for post-space predictions. The single-language loading pattern from FrequencyDictionary is extended to SymSpell and n-gram — load only one language at a time, swap on language change.
+The v1.4 architecture is an additive extension of the existing TextPrediction layer within OuisprKeyboard. The two-process model and App Group communication are unchanged. Three new components are added inside OuisprKeyboard/TextPrediction/: `SymSpellEngine` (wraps SymSpellSwift, handles spell correction), `NgramPredictor` (orchestrates trigram/bigram/unigram backoff), and `NgramTrie` (memory-mapped flat binary data structure). The existing `TextPredictionEngine` is modified as orchestrator to route between SymSpell (corrections) and UITextChecker (completions, kept). `SuggestionState` gains a new `.nextWord` mode for post-space predictions. The single-language loading pattern from FrequencyDictionary is extended to SymSpell and n-gram — load only one language at a time, swap on language change.
 
 **Major components:**
 1. **SymSpellEngine** — wraps SymSpellSwift, loads `{lang}_symspell.txt`, exposes `correct(_:)` with adaptive edit distance (1 for short words, 2 for longer)
@@ -66,9 +66,9 @@ The v1.4 architecture is an additive extension of the existing TextPrediction la
 
 3. **Cold start auto-return is impossible via public iOS API** — Apple DTS explicitly confirmed (January 2026), `_hostBundleID` is private and broken in iOS 26.4 beta, LSApplicationWorkspace causes App Store rejection. Do not re-research. Timebox any investigation to 2 hours maximum.
 
-4. **Autocorrect state race condition** — `lastAutocorrect` must be cleared synchronously on the main thread in `DictusKeyboardBridge.handleInputKey()`, not inside the async suggestion callback. A fast typist can trigger the autocorrect async callback AFTER the main-thread clear, re-setting the corrupt state. Fix bug #67 in isolation before touching the prediction engine.
+4. **Autocorrect state race condition** — `lastAutocorrect` must be cleared synchronously on the main thread in `OuisprKeyboardBridge.handleInputKey()`, not inside the async suggestion callback. A fast typist can trigger the autocorrect async callback AFTER the main-thread clear, re-setting the corrupt state. Fix bug #67 in isolation before touching the prediction engine.
 
-5. **SymSpellSwift library quality** — 16 commits, single author, no test suite, potential Unicode issues with French combining diacritical marks (NFC vs NFD). Vendor the source into DictusKeyboard/TextPrediction/SymSpell/ and write French-specific integration tests (e/é/è/ê, l'homme, aujourd'hui, peut-être).
+5. **SymSpellSwift library quality** — 16 commits, single author, no test suite, potential Unicode issues with French combining diacritical marks (NFC vs NFD). Vendor the source into OuisprKeyboard/TextPrediction/SymSpell/ and write French-specific integration tests (e/é/è/ê, l'homme, aujourd'hui, peut-être).
 
 ## Implications for Roadmap
 
@@ -104,7 +104,7 @@ Based on research, the build order is dependency-driven with clear risk gates be
 
 **Rationale:** The binary format and offline build tool must exist and be validated before any predictor code is written. Building the data structure first allows testing trie load, binary search correctness, and memory footprint in isolation. If corpus sourcing or memory usage is unacceptable, the approach can be adjusted before Phase 4 wires it into the live keyboard.
 
-**Delivers:** NgramTrie Swift data structure; offline build tool (CLI or Python script); validated fr_trigram.bin and en_trigram.bin bundled in DictusKeyboard target
+**Delivers:** NgramTrie Swift data structure; offline build tool (CLI or Python script); validated fr_trigram.bin and en_trigram.bin bundled in OuisprKeyboard target
 
 **Uses:** French Wikipedia/OpenSubtitles corpus; custom binary format (flat sorted array, 16 bytes/trigram entry, mmap)
 
@@ -161,7 +161,7 @@ Phases with standard patterns (skip research phase):
 |------|------------|-------|
 | Stack | MEDIUM | SymSpellSwift is verified but young (9 months, 16 commits). Custom n-gram is well-understood algorithmically but untested at this memory budget on iOS. KenLM rejection is HIGH confidence. |
 | Features | HIGH | Feature scope is tightly defined by existing GitHub issues (#63, #67, #68, #23). Table stakes are clear from current codebase. Anti-features are clearly justified. |
-| Architecture | HIGH | Based on direct codebase analysis of TextPredictionEngine, SuggestionState, DictusKeyboardBridge. Integration points are clear. Memory budget analysis based on algorithm documentation — needs empirical device validation. |
+| Architecture | HIGH | Based on direct codebase analysis of TextPredictionEngine, SuggestionState, OuisprKeyboardBridge. Integration points are clear. Memory budget analysis based on algorithm documentation — needs empirical device validation. |
 | Pitfalls | HIGH | Grounded in Apple DTS responses, codebase audits, SymSpell documentation, and documented issue analysis. Cold start impossibility confirmed by Apple DTS January 2026. Memory pressure pitfalls are well-documented in iOS extension community. |
 
 **Overall confidence:** MEDIUM-HIGH
@@ -176,7 +176,7 @@ Phases with standard patterns (skip research phase):
 ## Sources
 
 ### Primary (HIGH confidence)
-- Dictus codebase: TextPredictionEngine.swift, SuggestionState.swift, DictusKeyboardBridge.swift, FrequencyDictionary.swift, KnownAppSchemes.swift — direct code analysis
+- Ouispr codebase: TextPredictionEngine.swift, SuggestionState.swift, OuisprKeyboardBridge.swift, FrequencyDictionary.swift, KnownAppSchemes.swift — direct code analysis
 - [SymSpell algorithm (wolfgarbe)](https://github.com/wolfgarbe/SymSpell) — symmetric delete documentation, memory optimization, prefix length optimization
 - [SymSpellSwift (gdetari)](https://github.com/gdetari/SymSpellSwift) — Swift port v0.1.4, MIT license, source audited
 - [Apple DTS response on keyboard auto-return (January 2026)](https://developer.apple.com/forums/thread/118709) — "No API exists" confirmation

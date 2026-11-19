@@ -10,7 +10,7 @@ Register: **tú**, Apple's own Spanish convention. Spanish typography (¿ ¡), n
 
 ## Name
 
-**`Dictus: AI Voice Keyboard`** (25/30), the English name, kept as in fr-FR. Its words are indexed for this locale, so none of them is repeated below.
+**`Ouispr: AI Voice Keyboard`** (25/30), the English name, kept as in fr-FR. Its words are indexed for this locale, so none of them is repeated below.
 
 ## Subtitle
 
@@ -20,7 +20,7 @@ The English subtitle, word for word: «notas de voz» is WhatsApp's own Spanish 
 
 ## Promotional text
 
-> Novedad en la 2.0: Dictus Pro. Traduce mientras hablas y lee los audios de tus chats en el teclado. Gratis 14 días en iPhone con Apple Intelligence.
+> Novedad en la 2.0: Ouispr Pro. Traduce mientras hablas y lee los audios de tus chats en el teclado. Gratis 14 días en iPhone con Apple Intelligence.
 
 "Apple Intelligence" is load-bearing, as in English: the trial never starts on a device that cannot run Smart Modes (#593 decision 2).
 
@@ -29,7 +29,7 @@ The English subtitle, word for word: «notas de voz» is WhatsApp's own Spanish 
 **Proposed:** `teclado,dictar,texto,ia,transcripción,traducir,audio,sin conexión,whisper,código abierto,resumen`
 
 - **No ranking data was read.** Chosen from the product's vocabulary and the English set's reasoning; nothing from App Store Connect analytics, Apple Ads or an ASO tool was consulted.
-- Not repeated, because they are already indexed from the name or the subtitle: `dictus`, `ai`, `voice`, `keyboard`, `dictado`, `privado`, `notas`, `voz`.
+- Not repeated, because they are already indexed from the name or the subtitle: `ouispr`, `ai`, `voice`, `keyboard`, `dictado`, `privado`, `notas`, `voz`.
 - `teclado` and `ia`: the Spanish for the English name's `Keyboard` and `AI`, indexed nowhere else.
 - `dictar` (the verb, beside `dictado`: Apple does not document its stemming), `texto` + `voz` (subtitle) for "voz a texto", `transcripción`, `audio`.
 - `traducir` for Translate (Pro), `resumen` for Summary.
@@ -42,11 +42,11 @@ The English subtitle, word for word: «notas de voz» is WhatsApp's own Spanish 
 Follows the seven V15-B slides, in order and with their headlines. Smart Mode names stay in English because that is how the app shows them in this locale.
 
 ```
-Habla en vez de escribir. Dictus es un teclado que escribe lo que dices: toca el micrófono, habla y tus palabras aparecen en cualquier app. El reconocimiento de voz funciona en tu iPhone, incluso sin conexión.
+Habla en vez de escribir. Ouispr es un teclado que escribe lo que dices: toca el micrófono, habla y tus palabras aparecen en cualquier app. El reconocimiento de voz funciona en tu iPhone, incluso sin conexión.
 
 DICTA EN CUALQUIER APP
 
-Mensajes, correos, notas, recordatorios: donde puedas escribir, Dictus está a un toque. Habla con naturalidad y el texto aparece donde está tu cursor.
+Mensajes, correos, notas, recordatorios: donde puedas escribir, Ouispr está a un toque. Habla con naturalidad y el texto aparece donde está tu cursor.
 
 TRADUCE MIENTRAS HABLAS (PRO)
 
@@ -61,17 +61,17 @@ Los Smart Modes funcionan en tu iPhone con Apple Intelligence (iPhone 15 Pro o p
 
 LEE TUS AUDIOS EN EL TECLADO (PRO)
 
-¿Te ha llegado un audio que ahora no puedes escuchar? Compártelo con Dictus desde tu app de mensajería. Se transcribe en tu iPhone, y la transcripción te espera en el teclado cuando vuelves a la conversación. Léela e insértala con un toque si quieres citarla.
+¿Te ha llegado un audio que ahora no puedes escuchar? Compártelo con Ouispr desde tu app de mensajería. Se transcribe en tu iPhone, y la transcripción te espera en el teclado cuando vuelves a la conversación. Léela e insértala con un toque si quieres citarla.
 
 UN TECLADO DE VERDAD EN TU IDIOMA
 
-Dictus es un teclado completo, no solo un botón de micrófono. Distribuciones QWERTY, AZERTY y QWERTZ, con autocorrección y sugerencias en español, inglés, francés y alemán. Escribe cuando quieras y habla cuando lo prefieras.
+Ouispr es un teclado completo, no solo un botón de micrófono. Distribuciones QWERTY, AZERTY y QWERTZ, con autocorrección y sugerencias en español, inglés, francés y alemán. Escribe cuando quieras y habla cuando lo prefieras.
 
 TU VOZ NO SALE DE TU IPHONE
 
 El reconocimiento de voz se hace en el dispositivo. Sin cuenta, sin seguimiento, sin estadísticas de uso. Dicta en el avión, en el metro, en cualquier sitio. Los modelos viven en tu iPhone: descarga uno una vez y úsalo sin conexión, del más compacto y rápido al más preciso.
 
-Dictus es de código abierto (licencia MIT). Cualquiera puede leer el código y comprobar estos compromisos de privacidad: github.com/getdictus/dictus-ios
+Ouispr es de código abierto (licencia MIT). Cualquiera puede leer el código y comprobar estos compromisos de privacidad: github.com/getdictus/dictus-ios
 
 DICTA EN MÁS DE 40 IDIOMAS
 
@@ -79,16 +79,16 @@ El dictado funciona en más de 40 idiomas con una calidad buena o aceptable, y e
 
 La app en sí está disponible en inglés y francés; el dictado y el teclado funcionan en español.
 
-DICTUS PRO
+OUISPR PRO
 
 Pro añade los Smart Modes, los audios en el teclado, un historial de tus dictados y tu propio vocabulario para nombres y términos técnicos.
 
-Prueba Pro gratis durante 14 días. La prueba no requiere ningún pago y no se renueva: al cabo de 14 días, Dictus vuelve a la versión gratuita y te ofrece quedarte con Pro, con una suscripción mensual o anual, o con una compra única de por vida. Tu historial y tu vocabulario se conservan. La prueba se ofrece en los iPhone que pueden usar los Smart Modes. El dictado y el teclado siguen siendo gratis.
+Prueba Pro gratis durante 14 días. La prueba no requiere ningún pago y no se renueva: al cabo de 14 días, Ouispr vuelve a la versión gratuita y te ofrece quedarte con Pro, con una suscripción mensual o anual, o con una compra única de por vida. Tu historial y tu vocabulario se conservan. La prueba se ofrece en los iPhone que pueden usar los Smart Modes. El dictado y el teclado siguen siendo gratis.
 
 Para quedarte con Pro, elige una suscripción mensual o anual de renovación automática, o la compra única de por vida, que no es una suscripción. El precio y el periodo de cada opción se muestran en la app y en el App Store para tu país. El pago se carga en tu cuenta de Apple al confirmar la compra. La suscripción se renueva automáticamente por el mismo periodo salvo que desactives la renovación automática al menos 24 horas antes del final del periodo en curso; la renovación se cobra en las 24 horas anteriores a ese final. Gestiona o cancela tu suscripción en los ajustes de tu cuenta de Apple.
 
 Términos de uso: https://getdictus.com/en/terms
-Dictus no recopila ningún dato. Política de privacidad: https://getdictus.com/en/privacy
+Ouispr no recopila ningún dato. Política de privacidad: https://getdictus.com/en/privacy
 ```
 
 ## Length check

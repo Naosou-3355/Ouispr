@@ -22,7 +22,7 @@ The project is well-positioned. Code signing uses `Automatic` style, so switchin
 - **App Group**: Keep `group.com.pivi.dictus` unchanged
 - **Migration**: Only the `DEVELOPMENT_TEAM` value changes in project.pbxproj (from `QN58279822` to new Team ID)
 - **Privacy policy**: Create `PRIVACY.md` in repo root -- bilingual (French + English)
-- **Privacy Manifest**: Create `PrivacyInfo.xcprivacy` for both DictusApp and DictusKeyboard targets
+- **Privacy Manifest**: Create `PrivacyInfo.xcprivacy` for both OuisprApp and OuisprKeyboard targets
 - **README.md**: Full rewrite in English. Logo, app description, features, requirements (iOS 17+, iPhone 12+, Xcode 16+), build instructions, TestFlight link, license
 - **CONTRIBUTING.md**: Standard open-source format in English -- fork + PR, code conventions (from CLAUDE.md), no CLA
 - **Issue templates**: 3 types -- Bug report (with debug logs section), Feature request, Question/Help
@@ -76,10 +76,10 @@ This phase has no new library dependencies. It is a configuration + documentatio
 |------|---------|--------|
 | `project.pbxproj` MARKETING_VERSION | 1.0 | 1.2 |
 | `project.pbxproj` CURRENT_PROJECT_VERSION | 1 | 1 (or increment) |
-| `DictusApp/Info.plist` CFBundleShortVersionString | 1.0 | 1.2 |
-| `DictusApp/Info.plist` CFBundleVersion | 1 | 1 |
-| `DictusKeyboard/Info.plist` CFBundleShortVersionString | 1.0 | 1.2 |
-| `DictusKeyboard/Info.plist` CFBundleVersion | 1 | 1 |
+| `OuisprApp/Info.plist` CFBundleShortVersionString | 1.0 | 1.2 |
+| `OuisprApp/Info.plist` CFBundleVersion | 1 | 1 |
+| `OuisprKeyboard/Info.plist` CFBundleShortVersionString | 1.0 | 1.2 |
+| `OuisprKeyboard/Info.plist` CFBundleVersion | 1 | 1 |
 
 Note: If `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` are set in build settings (they are), the Info.plist values may use `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`. Check whether Info.plist uses hardcoded values or build setting variables. Current Info.plist has hardcoded `1.0` and `1`.
 
@@ -117,8 +117,8 @@ Wave 4: TestFlight Distribution + Final README Update
 
 Each target needs its own `PrivacyInfo.xcprivacy` file. Based on code analysis:
 
-**APIs used by Dictus:**
-- `UserDefaults` via `AppGroup.defaults` (extensively throughout DictusCore, DictusApp, DictusKeyboard)
+**APIs used by Ouispr:**
+- `UserDefaults` via `AppGroup.defaults` (extensively throughout OuisprCore, OuisprApp, OuisprKeyboard)
 
 **APIs NOT used (verified by grep):**
 - No `attributesOfItem`, `modificationDate`, `creationDate`, `resourceValues` -- no file timestamp APIs
@@ -171,16 +171,16 @@ The project uses `CODE_SIGN_STYLE = Automatic` for all targets. Migration steps:
 3. Xcode auto-generates provisioning profiles for both targets
 4. Verify App Group capability is present in both profiles (Signing & Capabilities tab)
 
-**No entitlements file changes needed** -- both `DictusApp.entitlements` and `DictusKeyboard.entitlements` already correctly declare `group.com.pivi.dictus`.
+**No entitlements file changes needed** -- both `OuisprApp.entitlements` and `OuisprKeyboard.entitlements` already correctly declare `group.com.pivi.dictus`.
 
 ### App Store Connect App Listing
 
 Required fields for creating the app:
 - Platform: iOS
-- Name: Dictus
+- Name: Ouispr
 - Primary language: French
 - Bundle ID: com.pivi.dictus (must match exactly)
-- SKU: dictus-ios (or similar unique string)
+- SKU: ouispr-ios (or similar unique string)
 - Privacy Policy URL: required for keyboard extensions with Full Access
 
 ### App Store Review Notes (for Beta App Review)
@@ -188,7 +188,7 @@ Required fields for creating the app:
 The current DEVELOPMENT.md review note is **outdated** -- it mentions smart modes and OpenAI API keys which no longer exist in the codebase. Updated note:
 
 ```
-Dictus is an iOS keyboard with 100% on-device voice dictation.
+Ouispr is an iOS keyboard with 100% on-device voice dictation.
 
 Key points for review:
 
@@ -212,12 +212,12 @@ Key points for review:
    dictation (e.g., returning to WhatsApp after dictating).
 
 5. DATA COLLECTION
-   Dictus collects no user data. Privacy Nutrition Label: "Data Not Collected".
+   Ouispr collects no user data. Privacy Nutrition Label: "Data Not Collected".
 
 To test dictation:
 1. Install app > Complete onboarding > Download a model
 2. Open any text field (e.g., Notes)
-3. Switch to Dictus keyboard (globe button)
+3. Switch to Ouispr keyboard (globe button)
 4. Tap the microphone button > Speak > Text appears
 ```
 
@@ -240,7 +240,7 @@ To test dictation:
 ### Pitfall 2: ITMS-91053 Missing Privacy Manifest
 **What goes wrong:** App Store Connect rejects the binary with "ITMS-91053: Missing API declaration" because PrivacyInfo.xcprivacy is missing or incomplete.
 **Why it happens:** Required since May 2024. UserDefaults is a required-reason API.
-**How to avoid:** Create PrivacyInfo.xcprivacy for BOTH targets (DictusApp AND DictusKeyboard). Both use UserDefaults via AppGroup.
+**How to avoid:** Create PrivacyInfo.xcprivacy for BOTH targets (OuisprApp AND OuisprKeyboard). Both use UserDefaults via AppGroup.
 **Warning signs:** Upload succeeds but email from Apple says "Invalid Binary" or processing shows warnings.
 
 ### Pitfall 3: Beta App Review Rejection for Missing Privacy Policy URL
@@ -272,10 +272,10 @@ To test dictation:
 
 The value appears exactly 4 times (2 targets x 2 configurations: Debug + Release):
 ```
-Line 690: DEVELOPMENT_TEAM = QN58279822;  (DictusApp Debug)
-Line 712: DEVELOPMENT_TEAM = QN58279822;  (DictusApp Release)
-Line 733: DEVELOPMENT_TEAM = QN58279822;  (DictusKeyboard Debug)
-Line 755: DEVELOPMENT_TEAM = QN58279822;  (DictusKeyboard Release)
+Line 690: DEVELOPMENT_TEAM = QN58279822;  (OuisprApp Debug)
+Line 712: DEVELOPMENT_TEAM = QN58279822;  (OuisprApp Release)
+Line 733: DEVELOPMENT_TEAM = QN58279822;  (OuisprKeyboard Debug)
+Line 755: DEVELOPMENT_TEAM = QN58279822;  (OuisprKeyboard Release)
 ```
 
 Simple find-and-replace: `QN58279822` -> `<NEW_TEAM_ID>`
@@ -308,12 +308,12 @@ assignees: ''
 ## Environment
 - iPhone model:
 - iOS version:
-- Dictus version:
+- Ouispr version:
 - Active model:
 
 ## Debug Logs
 <!--
-Export logs from Dictus:
+Export logs from Ouispr:
 Settings > Export Debug Logs > Share
 Paste the log content below or attach the file.
 -->
@@ -396,19 +396,19 @@ assignees: ''
    - Recommendation: Xcode aggregates Privacy Manifests from SPM dependencies automatically. If WhisperKit uses these APIs, they're covered. Check Xcode's privacy report after archiving (Organizer > Generate Privacy Report).
 
 3. **App Store Connect App Name Availability**
-   - What we know: The app will be listed as "Dictus"
-   - What's unclear: Whether "Dictus" is available as an App Store name (could be taken by another app)
-   - Recommendation: Pierre should check name availability when creating the app listing. Have "Dictus - Voice Keyboard" as fallback.
+   - What we know: The app will be listed as "Ouispr"
+   - What's unclear: Whether "Ouispr" is available as an App Store name (could be taken by another app)
+   - Recommendation: Pierre should check name availability when creating the app listing. Have "Ouispr - Voice Keyboard" as fallback.
 
 ## Validation Architecture
 
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | XCTest (Swift Package, DictusCore target) |
-| Config file | `DictusCore/Package.swift` |
-| Quick run command | `cd DictusCore && swift test` |
-| Full suite command | `cd DictusCore && swift test` |
+| Framework | XCTest (Swift Package, OuisprCore target) |
+| Config file | `OuisprCore/Package.swift` |
+| Quick run command | `cd OuisprCore && swift test` |
+| Full suite command | `cd OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -424,7 +424,7 @@ assignees: ''
 | TF-09 | TestFlight link in README | smoke | File content check | No -- Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** `cd /Users/pierreviviere/dev/dictus/DictusCore && swift test`
+- **Per task commit:** `cd /Users/pierreviviere/dev/ouispr/OuisprCore && swift test`
 - **Per wave merge:** Full suite + manual Xcode build verification
 - **Phase gate:** Successful archive + TestFlight distribution
 
@@ -432,7 +432,7 @@ assignees: ''
 Most TF requirements are manual (signing, upload, distribution) or documentation (README, CONTRIBUTING). Automated validation is limited to:
 - [ ] Verify PrivacyInfo.xcprivacy plist is valid XML
 - [ ] Verify all documentation files exist after creation
-- [ ] Existing DictusCore tests still pass after version bump
+- [ ] Existing OuisprCore tests still pass after version bump
 
 No new test files needed -- this phase is configuration + documentation, not code.
 
@@ -450,7 +450,7 @@ No new test files needed -- this phase is configuration + documentation, not cod
 - [Apple TestFlight documentation](https://developer.apple.com/testflight/) -- distribution process
 
 ### Tertiary (LOW confidence)
-- WebSearch results on keyboard extension rejection patterns -- general patterns, not Dictus-specific
+- WebSearch results on keyboard extension rejection patterns -- general patterns, not Ouispr-specific
 
 ## Metadata
 

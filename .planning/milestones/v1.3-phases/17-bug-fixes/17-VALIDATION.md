@@ -18,17 +18,17 @@ created: 2026-03-27
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (built-in, already configured) |
-| **Config file** | `DictusCore/Package.swift` (testTarget: DictusCoreTests) |
-| **Quick run command** | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet` |
-| **Full suite command** | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Config file** | `OuisprCore/Package.swift` (testTarget: OuisprCoreTests) |
+| **Quick run command** | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet` |
+| **Full suite command** | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet`
-- **After every plan wave:** Run `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+- **After every task commit:** Run `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet`
+- **After every plan wave:** Run `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
@@ -38,10 +38,10 @@ created: 2026-03-27
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 17-01-01 | 01 | 0 | FIX-01 | unit | `xcodebuild test ... -only-testing:DictusCoreTests/LiveActivityStateMachineTests` | ❌ W0 | ⬜ pending |
+| 17-01-01 | 01 | 0 | FIX-01 | unit | `xcodebuild test ... -only-testing:OuisprCoreTests/LiveActivityStateMachineTests` | ❌ W0 | ⬜ pending |
 | 17-01-02 | 01 | 0 | FIX-01 | unit | same as above | ❌ W0 | ⬜ pending |
 | 17-01-03 | 01 | 0 | FIX-01 | unit | same as above | ❌ W0 | ⬜ pending |
-| 17-02-01 | 02 | 1 | FIX-02 | unit | `xcodebuild test ... -only-testing:DictusCoreTests/PersistentLogTests` | ✅ | ⬜ pending |
+| 17-02-01 | 02 | 1 | FIX-02 | unit | `xcodebuild test ... -only-testing:OuisprCoreTests/PersistentLogTests` | ✅ | ⬜ pending |
 | 17-02-02 | 02 | 0 | FIX-02 | unit | same as above | ❌ W0 | ⬜ pending |
 | 17-02-03 | 02 | 0 | FIX-02 | unit | same as above | ❌ W0 | ⬜ pending |
 
@@ -51,9 +51,9 @@ created: 2026-03-27
 
 ## Wave 0 Requirements
 
-- [ ] `DictusCore/Sources/DictusCore/LiveActivityStateMachine.swift` — extracted testable state machine from LiveActivityManager
-- [ ] `DictusCore/Tests/DictusCoreTests/LiveActivityStateMachineTests.swift` — covers FIX-01 transition paths and watchdog
-- [ ] `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` — extend with retention + size-based trim tests for FIX-02
+- [ ] `OuisprCore/Sources/OuisprCore/LiveActivityStateMachine.swift` — extracted testable state machine from LiveActivityManager
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LiveActivityStateMachineTests.swift` — covers FIX-01 transition paths and watchdog
+- [ ] `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` — extend with retention + size-based trim tests for FIX-02
 - [ ] Fix `maxLines` discrepancy: code says 1000, existing test asserts 500 — reconcile before adding new tests
 
 *Existing infrastructure partially covers phase requirements. Wave 0 fills gaps.*

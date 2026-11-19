@@ -3,7 +3,7 @@ import type { Film } from "./film";
 import { blob, bounds, clipped, fillShape, inside, lerpP, mix, resample, smooth } from "./gallery";
 import * as S from "./heroShapes";
 
-// DICTUS HERO V5, style B · cut-paper collage (the medium of fox.ts, its paper kit reused below
+// OUISPR HERO V5, style B · cut-paper collage (the medium of fox.ts, its paper kit reused below
 // with the shadow tinted navy). Not one drawn line: every form is a piece of coloured paper.
 // TORN pieces show the white fibrous core along their edge (hair, jumper, the voice's paler
 // strip); SCISSOR-cut pieces are crisp (face, hands, phone, features). Each piece lifts off the
@@ -96,7 +96,7 @@ export const drawHeroPaper = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroPaper: Film = {
-  meta: { title: "Dictus hero V5 · cut-paper collage", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
+  meta: { title: "Ouispr hero V5 · cut-paper collage", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
   assets: { images: {} },
   shots: [{ id: "heroPaper", start: 0, end: 1, draw: drawHeroPaper }],
 };

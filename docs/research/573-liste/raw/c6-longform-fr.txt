@@ -189,13 +189,13 @@
   #1 1159→513 3920ms success recall=4/10 UNRECALLED=6 dispersed=1 PERSON-LOST=1 inversions=0/3 LIST=12
      UNRECALLED (whole 0.29, best 0.29): Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
      UNRECALLED (whole 0.00, best 0.00): c'est pas naturel.
-     UNRECALLED (whole 0.35, best 0.13): L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application dictus l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
+     UNRECALLED (whole 0.35, best 0.13): L'idée c'est vraiment de voir encore une fois comment se comporte type less vs mon application ouispr l'idée ça va être vraiment de repérer déjà la qualité de la transcription éventuellement et aussi de voir comment Type Laiss arrive à découper les différents paragraphes,
      UNRECALLED (whole 0.33, best 0.33): Et voilà, tout simplement l,
      UNRECALLED (whole 0.33, best 0.33): 'idée ça va être de voir tout ça.
      UNRECALLED (whole 0.33, best 0.33): Et ensuite, on va analyser tout ça.
      PERSONLOST: Comme ça, ça va nous permettre d'essayer de créer par la suite soit un mode différent,
        → - Essayer de créer un mode différent
-     engineOut: Sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment TypeLaiss découpe les paragraphes⏎- Voir comment TypeLaiss organise les éléments⏎- Voir si TypeLaiss met des listes⏎- Voir si TypeLaiss met des espaces entre les lignes⏎- Analyser tout cela⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer que le lancement d'un grand audio crée un gros pavé sur dictus
+     engineOut: Sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment TypeLaiss découpe les paragraphes⏎- Voir comment TypeLaiss organise les éléments⏎- Voir si TypeLaiss met des listes⏎- Voir si TypeLaiss met des espaces entre les lignes⏎- Analyser tout cela⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer que le lancement d'un grand audio crée un gros pavé sur ouispr
   #2 1159→511 3775ms success recall=5/10 UNRECALLED=5 dispersed=2 PERSON-LOST=1 inversions=0/3 LIST=12
      UNRECALLED (whole 0.29, best 0.29): Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
      UNRECALLED (whole 0.00, best 0.00): c'est pas naturel.
@@ -204,14 +204,14 @@
      UNRECALLED (whole 0.33, best 0.33): Et ensuite, on va analyser tout ça.
      PERSONLOST: Comme ça, ça va nous permettre d'essayer de créer par la suite soit un mode différent,
        → - Essayer de créer un mode différent
-     engineOut: Un sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment Type Laiss découpe les paragraphes⏎- Voir comment Type Laiss organise les éléments⏎- Voir si Type Laiss met des listes⏎- Voir si Type Laiss met des espaces entre les lignes⏎- Analyser tout cela⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer le gros pavé sur Dictus quand on lance un grand audio
+     engineOut: Un sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment Type Laiss découpe les paragraphes⏎- Voir comment Type Laiss organise les éléments⏎- Voir si Type Laiss met des listes⏎- Voir si Type Laiss met des espaces entre les lignes⏎- Analyser tout cela⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer le gros pavé sur Ouispr quand on lance un grand audio
   #3 1159→515 3837ms success recall=7/10 UNRECALLED=3 dispersed=3 PERSON-LOST=1 inversions=0/6 LIST=12
      UNRECALLED (whole 0.29, best 0.29): Alors je vais quand même faire un sixième test parce que les autres c'est pas vraiment ma voix,
      UNRECALLED (whole 0.00, best 0.00): c'est pas naturel.
      UNRECALLED (whole 0.33, best 0.33): Et voilà, tout simplement l,
      PERSONLOST: Comme ça, ça va nous permettre d'essayer de créer par la suite soit un mode différent,
        → - Essayer de créer un mode différent
-     engineOut: Sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment Type Laiss découpe les paragraphes⏎- Voir comment Type Laiss organise les éléments⏎- Voir si Type Laiss met des listes⏎- Voir si Type Laiss met des espaces entre les lignes⏎- Analyser tout ça⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer que le lancement d'un grand audio crée un gros pavé sur Dictus
+     engineOut: Sixième test :⏎- Faire un sixième test⏎- Repérer la qualité de la transcription⏎- Voir comment Type Laiss découpe les paragraphes⏎- Voir comment Type Laiss organise les éléments⏎- Voir si Type Laiss met des listes⏎- Voir si Type Laiss met des espaces entre les lignes⏎- Analyser tout ça⏎- Essayer de créer un mode différent⏎- Améliorer notre polish⏎- Améliorer l'expérience des utilisateurs⏎- Améliorer l'expérience des utilisateurs gratuits⏎- Observer que le lancement d'un grand audio crée un gros pavé sur Ouispr
 
 
 ════ AXES, per arm (bars.md §4)

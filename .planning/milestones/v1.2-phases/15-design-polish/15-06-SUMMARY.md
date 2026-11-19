@@ -20,10 +20,10 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Views/ModelCardView.swift
-    - DictusApp/Views/ModelManagerView.swift
-    - DictusApp/Views/HomeView.swift
-    - DictusApp/Models/ModelManager.swift
+    - OuisprApp/Views/ModelCardView.swift
+    - OuisprApp/Views/ModelManagerView.swift
+    - OuisprApp/Views/HomeView.swift
+    - OuisprApp/Models/ModelManager.swift
 
 key-decisions:
   - "Inline Text rows as section headers (not Section header: parameter) to prevent sticky behavior"
@@ -74,16 +74,16 @@ Each task was committed atomically:
 3. **Task 3: Fix model name, state sync, footer, headers** - `16baad7` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Views/ModelCardView.swift` - Active border overlay, full-width progress, contentShape, isSwitching spinner, 0.95 press scale
-- `DictusApp/Views/ModelManagerView.swift` - State-aware section filters, inline scrolling headers, red swipe tint, consolidated footer descriptions
-- `DictusApp/Views/HomeView.swift` - Removed "Whisper" prefix from model name display
-- `DictusApp/Models/ModelManager.swift` - loadState() resyncs modelStates for onboarding-downloaded models
+- `OuisprApp/Views/ModelCardView.swift` - Active border overlay, full-width progress, contentShape, isSwitching spinner, 0.95 press scale
+- `OuisprApp/Views/ModelManagerView.swift` - State-aware section filters, inline scrolling headers, red swipe tint, consolidated footer descriptions
+- `OuisprApp/Views/HomeView.swift` - Removed "Whisper" prefix from model name display
+- `OuisprApp/Models/ModelManager.swift` - loadState() resyncs modelStates for onboarding-downloaded models
 
 ## Decisions Made
 - Inline Text rows as section headers instead of Section header: parameter to avoid iOS sticky header behavior
 - Engine descriptions consolidated into single footer section (was duplicated per section)
 - 300ms spinner delay on model switch provides visible feedback for near-instant operation
-- Active border uses overlay (after .dictusGlass()) so stroke renders on top of glass material
+- Active border uses overlay (after .ouisprGlass()) so stroke renders on top of glass material
 
 ## Deviations from Plan
 

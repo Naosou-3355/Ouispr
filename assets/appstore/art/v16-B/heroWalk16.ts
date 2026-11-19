@@ -6,7 +6,7 @@ import {
   ARM_NEAR, at, BAG_D, drawWoman, FIG, LEG_FAR, LEG_NEAR, legAt, MARKER, mouthAt, mouthOpen, off, pathOf, setTheme, stroke, type Path, type Pose,
 } from "./woman";
 
-// DICTUS HERO V16-B · the onboarding intro's woman (issue #758; V15-B is art/v15-B/heroWalk15.ts).
+// OUISPR HERO V16-B · the onboarding intro's woman (issue #758; V15-B is art/v15-B/heroWalk15.ts).
 // While the intro scenes were animated (#667, PR #670) the character was redrawn at Pierre's
 // request: a jaw-length bob, reworked hands (the bag hand 1.25x larger, four fingers across the
 // phone's lower back), the phone held out in front of her mouth, and trousers drawn as two legs and
@@ -185,7 +185,7 @@ const drawFor = (end: P, text = TEXT) => (ctx: Ctx, _frame: number, env: Env) =>
 };
 
 const film = (id: string, locale: string, text: string): Film => ({
-  meta: { title: `Dictus hero V16-B · the intro's woman${locale ? `, ${locale}` : ""}`, W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: `Ouispr hero V16-B · the intro's woman${locale ? `, ${locale}` : ""}`, W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id, start: 0, end: 1, draw: drawFor(PANEL_IN, text) }],
 });
 export const heroWalk16 = film("heroWalk16", "", TEXT);

@@ -1,7 +1,7 @@
 # Natural contract, three violations — bars and plan (#439)
 
 **Issue:** [#439](https://github.com/getdictus/dictus-ios/issues/439)
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/longform-fr.json` (the six #437
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/longform-fr.json` (the six #437
 dictations, landed in the previous commit)
 **Date:** 2026-08-27
 
@@ -157,7 +157,7 @@ that are not deletions, and the classification is corrected rather than the thre
   Moved to bar 2, where it is still a 0-tolerance check.
 - `6 mois` → `six mois`, `15 trucs` → `quinze trucs`. Same shape, digits spelled back
   out against rule 3. New 0-tolerance check under bar 2.
-- `dictus` left lowercase. That is a rule-2 capitalization miss, not a deletion, and
+- `ouispr` left lowercase. That is a rule-2 capitalization miss, not a deletion, and
   #439 bars neither. The deletion check now matches case-insensitively and the
   capitalization behaviour is reported in the findings without being a bar.
 

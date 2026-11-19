@@ -3,10 +3,10 @@
 **Throwaway.** Nothing here is a step toward shipping a second LLM backend. It
 exists to answer one question and is meant to be deleted with the branch:
 
-> Can a backgrounded DictusApp reach the Neural Engine to run an LLM, and hold a
+> Can a backgrounded OuisprApp reach the Neural Engine to run an LLM, and hold a
 > ~1,700-token prefill there?
 
-Nothing in `Dictus.xcodeproj`, `DictusCore`, or CI references this directory.
+Nothing in `Ouispr.xcodeproj`, `OuisprCore`, or CI references this directory.
 The findings are in [`docs/research/268-ane-background-llm.md`](../../docs/research/268-ane-background-llm.md).
 
 ## What it measures, and on what
@@ -14,7 +14,7 @@ The findings are in [`docs/research/268-ane-background-llm.md`](../../docs/resea
 - **Model:** `anemll/anemll-Qwen-Qwen3-1.7B-ctx2048_0.3.5` — ANEMLL's own
   pre-converted Core ML build of Qwen3 1.7B. 2048-token context, batch 64, LUT6
   on the FFN and LM head. 1.8 GB of `.mlmodelc` on disk.
-- **Prompt:** the shipping one, built at runtime from DictusCore — the resolved
+- **Prompt:** the shipping one, built at runtime from OuisprCore — the resolved
   `PolishNaturalPromptFR` instructions as the system message and the `3-long`
   fixture through `VerbalPunctuationPrepass` in the Input/"Polished output:"
   framing. ~1,680 tokens by the model's own tokenizer.
@@ -62,7 +62,7 @@ The app is ~1.8 GB, so the install takes a couple of minutes over Wi-Fi.
 Then, with the phone **unlocked**:
 
 ```bash
-xcrun devicectl device process launch --device <device-id> --terminate-existing com.pivi.dictus.anebench
+xcrun devicectl device process launch --device <device-id> --terminate-existing com.pivi.ouispr.anebench
 ```
 
 It loads the model in the foreground, then shows "Loaded. Press Home now." and
@@ -73,7 +73,7 @@ Follow it and collect it without touching the phone:
 
 ```bash
 xcrun devicectl device copy from --device <device-id> --domain-type appDataContainer \
-  --domain-identifier com.pivi.dictus.anebench --source Documents --destination ./out
+  --domain-identifier com.pivi.ouispr.anebench --source Documents --destination ./out
 ```
 
 `Documents/phase.txt` is one word — `loading`, `waiting-for-background`,

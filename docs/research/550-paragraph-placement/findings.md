@@ -40,7 +40,7 @@ placement is where the model was supposed to be.
 of subject**, measured it over 432 outputs and twelve arms, and closed with no. The
 maintainer's reading on 2026-09-11 is that the criterion was wrong, not the capability:
 
-> Les paragraphes, moi je le fais naturellement. Comme je sais que Dictus fait des
+> Les paragraphes, moi je le fais naturellement. Comme je sais que Ouispr fait des
 > gros pavés, je m'arrête de parler, je termine la transcription, puis je recommence.
 > […] C'est pas vraiment un changement de sujet, c'est quand même dans le sujet
 > global, mais il y a un changement de contexte.
@@ -208,7 +208,7 @@ and 1 sentences. Arm 7's most common answer, 3 runs of 5, is **2, 3, 4**:
 ¶ Ce que j'ai remarqué, c'est que concrètement, avec Gicus …
 ¶ Alors qu'avec Tapeless, à contrario, on va avoir une sortie …
 ¶ Bref, on va avoir un truc qui va être beaucoup plus structuré. Le but, ce n'est
-  pas forcément … Et ça sera un mode intelligent de Dictus. Mais l'idée, c'est au
+  pas forcément … Et ça sera un mode intelligent de Ouispr. Mais l'idée, c'est au
   moins peut-être d'aérer les outputs … Encore une fois, si on arrive à faire un
   truc …
 ```
@@ -266,7 +266,7 @@ Three things keep this from being a formula, and the round did not resolve any o
 them:
 
 - **Five points.** Two of the five character counts come from a Typeless output,
-  because texts A and B have no Dictus side and none was invented for them.
+  because texts A and B have no Ouispr side and none was invented for them.
 - **Untested outside 246–1 150 characters**, which is most of the range a long
   dictation lives in.
 - **Nearly half the paired evidence is unusable.** On four of the seven fixtures
@@ -330,7 +330,7 @@ can be said about it: arm 7 obeyed it perfectly and the result was still wrong.
 
 The issue body gates its own acoustic route on one question and calls it the first
 technical step: *is `ASRResult.tokenTimings` actually populated at runtime for
-Parakeet, or merely declared optional in the type?* `DictusApp/Audio/ParakeetEngine.swift:169`
+Parakeet, or merely declared optional in the type?* `OuisprApp/Audio/ParakeetEngine.swift:169`
 keeps `result.text` and drops the rest.
 
 The pause hypothesis is dead, so nothing in this round depends on the answer. It is
@@ -390,7 +390,7 @@ is left to verify is a judgement this round is not entitled to make on its own w
 4. **Re-run the round if you want the numbers regenerated.** Needs Apple Intelligence
    on this Mac, takes about 25 minutes for all eight arms:
    ```sh
-   cd DictusCore
+   cd OuisprCore
    swift run polish-harness paragraph Sources/polish-harness/fixtures/paragraph-fr.json \
      --runs 5 --json /tmp/capture.json \
      $(for a in ../docs/research/550-paragraph-placement/arms/*.json; do echo --arm $a; done)
@@ -403,6 +403,6 @@ is left to verify is a judgement this round is not entitled to make on its own w
    gaps distributed differently.
 
 What the automated gates already covered, and what you do not need to repeat:
-`cd DictusCore && swift test` (1 912 tests, 1 skipped, 0 failures) and
+`cd OuisprCore && swift test` (1 912 tests, 1 skipped, 0 failures) and
 `swiftlint lint --strict` (clean). No app target was built because no app target
 changed.

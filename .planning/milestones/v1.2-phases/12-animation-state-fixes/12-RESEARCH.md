@@ -63,7 +63,7 @@ None -- discussion stayed within phase scope.
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| DictusCore | Local SPM | Shared types (DictationStatus, LogEvent, PersistentLog) | All state and logging changes |
+| OuisprCore | Local SPM | Shared types (DictationStatus, LogEvent, PersistentLog) | All state and logging changes |
 | Darwin notifications | System | Cross-process state sync | Already the established IPC pattern |
 
 ### Alternatives Considered
@@ -77,14 +77,14 @@ None -- discussion stayed within phase scope.
 ### Recommended Project Structure
 No new files needed. All changes are modifications to existing files:
 ```
-DictusKeyboard/
+OuisprKeyboard/
   KeyboardRootView.swift      # Fix overlay visibility condition
   KeyboardState.swift          # Add watchdog timer, debounce logic
   Views/RecordingOverlay.swift # Add .requested visual state
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
   Design/AnimatedMicButton.swift  # Fix asyncAfter race, .requested handling
   LogEvent.swift                  # Add animation/watchdog log events
-DictusApp/
+OuisprApp/
   DictationCoordinator.swift      # Add transcription timeout watchdog, .requested guard
 ```
 
@@ -208,10 +208,10 @@ private func startWatchdog() {
 
 ### Pattern 6: Reset on Keyboard Appear
 **What:** Check for stale dictation state when the keyboard extension appears and force-reset.
-**When to use:** On the `.dictusKeyboardWillAppear` notification in KeyboardRootView.
+**When to use:** On the `.ouisprKeyboardWillAppear` notification in KeyboardRootView.
 **Example:**
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .dictusKeyboardWillAppear)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .ouisprKeyboardWillAppear)) { _ in
     // Check for stale state from a previous crashed/abandoned session
     if state.dictationStatus == .recording || state.dictationStatus == .transcribing || state.dictationStatus == .requested {
         // Read fresh from App Group to see if the app side agrees
@@ -282,7 +282,7 @@ func startRecordingAnimation() {
 ### Pitfall 4: viewWillAppear vs .onAppear in Keyboard Extensions
 **What goes wrong:** SwiftUI's `.onAppear` fires only ONCE per extension process lifetime (the hosting UIHostingController is created once). But the keyboard appears/disappears many times.
 **Why it happens:** The keyboard extension keeps its UIHostingController alive across keyboard show/hide cycles. SwiftUI considers the view as "appeared" the whole time.
-**How to avoid:** Use the custom `.dictusKeyboardWillAppear` notification (already posted from the keyboard controller's `viewWillAppear`) for per-appearance logic like stale state detection.
+**How to avoid:** Use the custom `.ouisprKeyboardWillAppear` notification (already posted from the keyboard controller's `viewWillAppear`) for per-appearance logic like stale state detection.
 **Warning signs:** Watchdog reset logic that only works the first time the keyboard appears.
 
 ### Pitfall 5: BrandWaveform displayLevels Not Resetting
@@ -375,9 +375,9 @@ guard status == .idle || status == .failed || status == .ready || status == .req
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (bundled with Xcode) |
-| Config file | Dictus.xcodeproj scheme settings |
-| Quick run command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusAppTests 2>&1 \| tail -20` |
-| Full suite command | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
+| Config file | Ouispr.xcodeproj scheme settings |
+| Quick run command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprAppTests 2>&1 \| tail -20` |
+| Full suite command | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 \| tail -30` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -389,7 +389,7 @@ guard status == .idle || status == .failed || status == .ready || status == .req
 **Justification for manual-only:** All three requirements involve cross-process Darwin notification timing, AVAudioSession state, and SwiftUI animation rendering. These cannot be reliably tested in XCTest unit tests. The success criteria explicitly state "20 consecutive tests" which implies manual device testing. Phase 11's logging infrastructure enables diagnosis when manual tests reveal issues.
 
 ### Sampling Rate
-- **Per task commit:** Build succeeds (`xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`)
+- **Per task commit:** Build succeeds (`xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`)
 - **Per wave merge:** Manual testing protocol on device (20 consecutive mic taps, rapid tap sequences, full dictation cycle)
 - **Phase gate:** All 3 success criteria pass manual verification
 

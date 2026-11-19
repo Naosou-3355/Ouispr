@@ -3,14 +3,14 @@
 // THROWAWAY — #268 D2.
 //
 // An ordinary iOS app gets suspended seconds after it leaves the foreground, so
-// without this the harness could not run backgrounded at all. DictusApp stays
+// without this the harness could not run backgrounded at all. OuisprApp stays
 // alive for exactly this reason and by exactly this means — `UIBackgroundModes:
 // audio` in Info.plist plus an AVAudioEngine that never stops — so reproducing
 // it here is not a trick to keep the benchmark running: it is part of the state
 // under test. The engine also costs the memory a real dictation costs, which the
 // footprint readings should see.
 import AVFoundation
-import DictusCore
+import OuisprCore
 
 final class BackgroundAudioKeepAlive {
 
@@ -38,7 +38,7 @@ final class BackgroundAudioKeepAlive {
     func start() throws -> String {
         do {
             let session = AVAudioSession.sharedInstance()
-            // `.playAndRecord` mirrors DictusApp, which records. `.mixWithOthers`
+            // `.playAndRecord` mirrors OuisprApp, which records. `.mixWithOthers`
             // so the harness does not stop whatever the maintainer is listening to.
             try session.setCategory(.playAndRecord,
                                     mode: .default,

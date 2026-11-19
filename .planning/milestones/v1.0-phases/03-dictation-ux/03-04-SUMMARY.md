@@ -9,7 +9,7 @@ requires:
   - phase: 03-dictation-ux (plan 02)
     provides: RecordingOverlay, ToolbarView, KeyboardState with requestStop/requestCancel
 provides:
-  - Mic button triggers in-keyboard recording flow instead of opening DictusApp
+  - Mic button triggers in-keyboard recording flow instead of opening OuisprApp
   - KeyboardState.startRecording() method with openURL closure injection
   - ToolbarView.onMicTap callback pattern replacing Link
 affects: [phase-04-onboarding, UAT-retest]
@@ -24,9 +24,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardState.swift
-    - DictusKeyboard/Views/ToolbarView.swift
-    - DictusKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprKeyboard/Views/ToolbarView.swift
+    - OuisprKeyboard/KeyboardRootView.swift
 
 key-decisions:
   - "openURL closure injection: KeyboardState cannot access @Environment, so KeyboardRootView captures openURL and injects it via .onAppear"
@@ -56,9 +56,9 @@ completed: 2026-03-06
 
 ## Accomplishments
 - Mic button in ToolbarView now uses Button with onMicTap callback instead of Link(destination:)
-- KeyboardState.startRecording() sets local state to .requested (triggering overlay) before opening DictusApp
+- KeyboardState.startRecording() sets local state to .requested (triggering overlay) before opening OuisprApp
 - openURL environment action injected from KeyboardRootView into KeyboardState via closure
-- Full chain verified: mic tap -> startRecording -> markRequested + open dictus://dictate
+- Full chain verified: mic tap -> startRecording -> markRequested + open ouispr://dictate
 
 ## Task Commits
 
@@ -68,9 +68,9 @@ Each task was committed atomically:
 2. **Task 2: Wire onMicTap from KeyboardRootView through ToolbarView to KeyboardState** - `f157620` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardState.swift` - Added openURL closure property and startRecording() method
-- `DictusKeyboard/Views/ToolbarView.swift` - Replaced Link with Button, added onMicTap callback parameter
-- `DictusKeyboard/KeyboardRootView.swift` - Wired @Environment(\.openURL), passes onMicTap and openURL to state
+- `OuisprKeyboard/KeyboardState.swift` - Added openURL closure property and startRecording() method
+- `OuisprKeyboard/Views/ToolbarView.swift` - Replaced Link with Button, added onMicTap callback parameter
+- `OuisprKeyboard/KeyboardRootView.swift` - Wired @Environment(\.openURL), passes onMicTap and openURL to state
 
 ## Decisions Made
 - **openURL closure injection pattern:** Since KeyboardState is an ObservableObject (not a View), it cannot use @Environment(\.openURL). The cleanest pattern is to have KeyboardRootView capture the environment action and inject it as a closure property, same as the existing controller reference pattern.

@@ -42,7 +42,7 @@ started: Since onboarding was implemented
   implication: loadState() DOES read from App Group UserDefaults, and the data IS there (persisted by onboarding's ModelManager). So loadState() should work IF onAppear fires.
 
 - timestamp: 2026-03-07
-  checked: DictusApp.swift line 37
+  checked: OuisprApp.swift line 37
   found: `.fullScreenCover(isPresented: .constant(!hasCompletedOnboarding))` -- uses .constant() binding
   implication: fullScreenCover with .constant() means SwiftUI controls presentation purely by the @AppStorage value. When hasCompletedOnboarding becomes true, the cover dismisses. But MainTabView was already mounted BEHIND the cover the entire time.
 

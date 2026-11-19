@@ -16,17 +16,17 @@
      out: Pour demain je dois passer à la banque le matin, rendre les livres à la médiathèque, appeler le garage pour le contrôle technique et préparer le sac de sport du petit pour son match le soir.
 
 ━━ [R2-misrendered-product] 219 chars, lang=fr
-  raw: j'ai regardé les hue dictus iOS ce matin, il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version
+  raw: j'ai regardé les hue ouispr iOS ce matin, il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version
   #1 rejectedGuardrail/length ratio=1.00 OUT-OF-BAND 4600ms
-     out: J'ai regardé les hue dictus iOS ce matin : il y a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
+     out: J'ai regardé les hue ouispr iOS ce matin : il y a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
   #2 rejectedGuardrail/length ratio=1.01 OUT-OF-BAND 4953ms
-     out: J'ai regardé les hue dictus iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
+     out: J'ai regardé les hue ouispr iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
   #3 rejectedGuardrail/length ratio=1.01 OUT-OF-BAND 6763ms
-     out: J'ai regardé les hue dictus iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
+     out: J'ai regardé les hue ouispr iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
   #4 rejectedGuardrail/length ratio=0.99 OUT-OF-BAND 7251ms
-     out: J'ai regardé les hue dictus iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je veux qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
+     out: J'ai regardé les hue ouispr iOS ce matin : il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je veux qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
   #5 rejectedGuardrail/length ratio=1.00 OUT-OF-BAND 7038ms
-     out: J'ai regardé les hue dictus iOS ce matin, il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
+     out: J'ai regardé les hue ouispr iOS ce matin, il y en a trois qui parlent du clavier qui se fige quand on change d'appli, je voudrais qu'on les regroupe dans une seule et qu'on la mette en priorité pour la prochaine version.
 
 ━━ [R3-no-qualifier] 239 chars, lang=fr
   raw: je vais pas réinstaller le téléphone tout de suite parce que je veux pas perdre toute ma configuration, j'ai passé du temps à tout régler, donc je vais d'abord essayer de le redémarrer et de vider le cache et on verra demain si ça va mieux

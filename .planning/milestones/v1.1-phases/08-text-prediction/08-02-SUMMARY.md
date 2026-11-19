@@ -23,13 +23,13 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Views/SuggestionBarView.swift
+    - OuisprKeyboard/Views/SuggestionBarView.swift
   modified:
-    - DictusKeyboard/Views/ToolbarView.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusApp/Views/SettingsView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/Views/ToolbarView.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprApp/Views/SettingsView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Gear icon hidden during suggestions to maximize horizontal space for 3 slots"
@@ -75,12 +75,12 @@ Each task was committed atomically:
 2. **Task 2: Wire keystroke events, autocorrect, undo, and settings toggle** - `330c8d6` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/SuggestionBarView.swift` - 3-slot horizontal suggestion bar with dividers and tap handlers
-- `DictusKeyboard/Views/ToolbarView.swift` - Conditionally shows suggestion bar or gear icon based on suggestion state
-- `DictusKeyboard/Views/KeyboardView.swift` - Keystroke forwarding to SuggestionState, autocorrect on space, undo on backspace
-- `DictusKeyboard/KeyboardRootView.swift` - Owns SuggestionState, wires suggestion taps, word replacement helper
-- `DictusApp/Views/SettingsView.swift` - Correction automatique toggle with AppGroup persistence
-- `Dictus.xcodeproj/project.pbxproj` - SuggestionBarView added to DictusKeyboard target
+- `OuisprKeyboard/Views/SuggestionBarView.swift` - 3-slot horizontal suggestion bar with dividers and tap handlers
+- `OuisprKeyboard/Views/ToolbarView.swift` - Conditionally shows suggestion bar or gear icon based on suggestion state
+- `OuisprKeyboard/Views/KeyboardView.swift` - Keystroke forwarding to SuggestionState, autocorrect on space, undo on backspace
+- `OuisprKeyboard/KeyboardRootView.swift` - Owns SuggestionState, wires suggestion taps, word replacement helper
+- `OuisprApp/Views/SettingsView.swift` - Correction automatique toggle with AppGroup persistence
+- `Ouispr.xcodeproj/project.pbxproj` - SuggestionBarView added to OuisprKeyboard target
 
 ## Decisions Made
 - Gear icon hidden during suggestions: maximizes horizontal space for 3 suggestion slots, gear rarely needed during active typing
@@ -93,7 +93,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- Xcode scheme named "DictusApp" not "Dictus" -- used correct scheme for full build verification
+- Xcode scheme named "OuisprApp" not "Ouispr" -- used correct scheme for full build verification
 
 ## User Setup Required
 

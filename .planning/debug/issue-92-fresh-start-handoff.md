@@ -8,7 +8,7 @@
 
 ## Le bug, sans interpretation
 
-À chaque apparition du clavier Dictus, pendant ~500ms après `viewDidAppear`, l'utilisateur perçoit une transition visible : **le clavier semble "grandir" / s'ajuster en taille avant d'arriver à sa position finale**. Une zone d'environ **228pt de hauteur** apparaît AU-DESSUS de la zone clavier utile (au-dessus de la barre toolbar Dictus FR+mic), et disparaît après ~500ms.
+À chaque apparition du clavier Ouispr, pendant ~500ms après `viewDidAppear`, l'utilisateur perçoit une transition visible : **le clavier semble "grandir" / s'ajuster en taille avant d'arriver à sa position finale**. Une zone d'environ **228pt de hauteur** apparaît AU-DESSUS de la zone clavier utile (au-dessus de la barre toolbar Ouispr FR+mic), et disparaît après ~500ms.
 
 **Reproduction la plus dramatique** :
 1. iPhone 17 Pro / iOS 26.3.1
@@ -48,7 +48,7 @@ UIInputViewController (KeyboardViewController)
 - `leading/trailing/bottom = self.view` @ `.required`
 - `height = 276pt` @ `999` — installé en `viewDidLayoutSubviews` first-run via `DispatchQueue.main.async`
 
-**Audio click** : géré dans `DictusKeyboardBridge.swift` via `AudioServicesPlaySystemSound(1104)` etc. (3 sons distincts via `KeySound.letter/delete/modifier`). **Aucune dépendance à `UIInputViewAudioFeedback`** ou `playInputClick()`.
+**Audio click** : géré dans `OuisprKeyboardBridge.swift` via `AudioServicesPlaySystemSound(1104)` etc. (3 sons distincts via `KeySound.letter/delete/modifier`). **Aucune dépendance à `UIInputViewAudioFeedback`** ou `playInputClick()`.
 
 ---
 
@@ -94,7 +94,7 @@ L'agent de recherche a confirmé :
 ## Pistes non explorées (pour le fresh start)
 
 1. **Xcode View Debugger / Reveal sur device pendant le transient** : la SEULE façon fiable de voir QUELLE vue est grise dans la hiérarchie. Probablement nécessite de pause au bon moment (breakpoint dans viewDidAppear).
-2. **Comparer les Info.plist** : Dictus vs giellakbd-ios. Y a-t-il une clé qui change le comportement de l'inputView ? `RequestsOpenAccess`, `IsASCIICapable`, `PrefersRightToLeft`, `KeyboardName`, etc.
+2. **Comparer les Info.plist** : Ouispr vs giellakbd-ios. Y a-t-il une clé qui change le comportement de l'inputView ? `RequestsOpenAccess`, `IsASCIICapable`, `PrefersRightToLeft`, `KeyboardName`, etc.
 3. **`UIInputViewController.preferredContentSize`** : pas testé. Peut signaler à iOS la taille préférée.
 4. **`self.view.window.rootViewController?.view.backgroundColor = .clear`** : remonter la hiérarchie et clear toutes les parentes possibles.
 5. **Override `viewWillAppear` pour chercher les superviews** : remonter la chaîne `view.superview?.superview?...` et logger leur backgroundColor + class. Peut-être qu'on peut neutraliser un parent.
@@ -108,7 +108,7 @@ L'agent de recherche a confirmé :
 
 ## Outils / skills suggérés pour le fresh start
 
-- **Xcode View Debugger** : indispensable. Lancer Dictus sur device, déclencher le bug, capture la hiérarchie pendant le transient.
+- **Xcode View Debugger** : indispensable. Lancer Ouispr sur device, déclencher le bug, capture la hiérarchie pendant le transient.
 - **Reveal app** : alternative pro pour debug de view hierarchy live.
 - **Screen recording 60fps** sur device (`xcrun simctl io booted recordVideo` pour simulator, ou Voice Memos + screen recording iOS pour device) puis analyse frame par frame.
 - **`po self.view.recursiveDescription()`** dans LLDB pendant le transient pour dump la hiérarchie.
@@ -145,8 +145,8 @@ Pas recommandé — l'architecture container ne résout pas le bug et ajoute de 
 
 - `.planning/debug/issue-92-keyboard-flash-analysis.md` — analyse 10-agents originale (synthèse causes/régressions)
 - `.planning/debug/issue-92-approach-b-handoff.md` — handoff de l'approche B (à considérer comme historique maintenant)
-- `DictusKeyboard/KeyboardViewController.swift` — état actuel WIP (à reset)
-- `DictusKeyboard/DictusKeyboardBridge.swift` — bridge avec audio implémentation (12 call sites `AudioServicesPlaySystemSound`)
+- `OuisprKeyboard/KeyboardViewController.swift` — état actuel WIP (à reset)
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` — bridge avec audio implémentation (12 call sites `AudioServicesPlaySystemSound`)
 - `/Users/pierreviviere/dev/giellakbd-ios/Keyboard/Controllers/KeyboardViewController.swift` — référence upstream
 - `/Users/pierreviviere/dev/giellakbd-ios/Keyboard/Utility/Audio.swift` — référence audio upstream
 
@@ -155,7 +155,7 @@ Pas recommandé — l'architecture container ne résout pas le bug et ajoute de 
 ## Prompt suggéré pour la nouvelle session
 
 ```
-Je travaille sur l'issue #92 du repo Dictus (clavier iOS) : à chaque apparition
+Je travaille sur l'issue #92 du repo Ouispr (clavier iOS) : à chaque apparition
 du clavier, pendant ~500ms, une zone de 228pt apparaît au-dessus de la zone
 utile, donnant la sensation que le clavier "grandit". Cause structurelle :
 iOS impose UIView-Encapsulated-Layout-Height = 504pt @ priorité 1000 sur

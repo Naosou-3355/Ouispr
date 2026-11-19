@@ -24,7 +24,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Onboarding/ModelDownloadPage.swift
+    - OuisprApp/Onboarding/ModelDownloadPage.swift
 
 key-decisions:
   - "No code changes needed for Parakeet routing or display names -- verified correct as-is"
@@ -66,7 +66,7 @@ Each task was committed atomically:
 2. **Task 2: Verify Parakeet routing and display names** - No commit (verification-only, no code changes)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/ModelDownloadPage.swift` - Replaced hardcoded recommendedModel with computed property using ModelInfo.recommendedIdentifier(), data-driven model card, updated download time text and prewarm label
+- `OuisprApp/Onboarding/ModelDownloadPage.swift` - Replaced hardcoded recommendedModel with computed property using ModelInfo.recommendedIdentifier(), data-driven model card, updated download time text and prewarm label
 
 ## Decisions Made
 - No code changes needed for Parakeet routing (MODEL-07) or display names (MODEL-08) -- both verified correct through code inspection and grep

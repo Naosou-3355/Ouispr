@@ -45,7 +45,7 @@ run on this machine.
 
 Seven things, in the order they matter.
 
-1. **The GPU is not available to this app, and that invalidates every published iPhone LLM benchmark.** Apple's own Core ML documentation says to restrict a model to the CPU "**if your app might run in the background**" **[source]**, UIKit's background guidance says "**Don't commit any new Metal work to be processed**" **[source]**, and iOS 26 added a *separate, entitlement-gated* capability for background GPU work that is scoped to `BGContinuedProcessingTask` and "**not supported on all devices**" **[sdk]**. DictusApp is backgrounded for every polish call. So the candidate must run on **CPU or the Neural Engine**, and essentially every tok/s figure published for on-device LLMs is a Metal figure that does not apply here.
+1. **The GPU is not available to this app, and that invalidates every published iPhone LLM benchmark.** Apple's own Core ML documentation says to restrict a model to the CPU "**if your app might run in the background**" **[source]**, UIKit's background guidance says "**Don't commit any new Metal work to be processed**" **[source]**, and iOS 26 added a *separate, entitlement-gated* capability for background GPU work that is scoped to `BGContinuedProcessingTask` and "**not supported on all devices**" **[sdk]**. OuisprApp is backgrounded for every polish call. So the candidate must run on **CPU or the Neural Engine**, and essentially every tok/s figure published for on-device LLMs is a Metal figure that does not apply here.
 
 2. **On this M4 Pro, CPU-only inference on the real shipping prompt already misses the latency budget — for a 1B model.** Cold, CPU-only, French Natural prompt (1,704 tokens by the model's own tokenizer) plus the largest shipping fixture: **gemma3:1b takes 4.79 s**, **llama3.2:3b takes 13.03 s** **[measured]**. An iPhone SoC is a smaller configuration of the same core designs, so these are best read as floors; the multiplier above them is exactly what a device measurement would supply. The pre-registered budget was p50 ≤ 5 s.
 
@@ -57,7 +57,7 @@ Seven things, in the order they matter.
 
 6. **The Neural Engine route is the only one not yet excluded, and it is excluded on the coverage tier by its own documentation.** ANEMLL (MIT, active) is the credible ANE path; its README records an "**M1/A14 limitation**: constrained to 512-context monolithic models" and recommends 512–1024 tokens for ANE performance **[source]**. A14 is the iPhone 12. The shipping French prompt alone is 1,704 tokens **[measured]** — it does not fit in the window those devices can offer.
 
-7. **Apple FM is not a fair memory comparison and it is worth saying why.** Its ~3B weights are quantized to **2 bits per weight** with QAT, its KV cache to 8 bits **[source]**, and the model ships and updates **with the OS** **[source]** — so it costs the app no download and no app-owned weights. A second backend pays for all three in DictusApp's own jetsam budget, at 4–8 bits per weight instead of 2.
+7. **Apple FM is not a fair memory comparison and it is worth saying why.** Its ~3B weights are quantized to **2 bits per weight** with QAT, its KV cache to 8 bits **[source]**, and the model ships and updates **with the OS** **[source]** — so it costs the app no download and no app-owned weights. A second backend pays for all three in OuisprApp's own jetsam budget, at 4–8 bits per weight instead of 2.
 
 **Recommendation: no for the coverage rationale, on measured evidence. Not answered for the reliability rationale, and #351 answers it better.** Detail in the last section.
 
@@ -67,15 +67,15 @@ Seven things, in the order they matter.
 
 #268 was opened as a **coverage** question: Apple Foundation Models requires
 "iPhone 15 Pro models, and iPhone 16 models or later" **[source]**
-(support.apple.com/en-us/121115), Dictus ships `IPHONEOS_DEPLOYMENT_TARGET = 17.0`
-**[code]** `Dictus.xcodeproj/project.pbxproj:1118`, and everything between those
+(support.apple.com/en-us/121115), Ouispr ships `IPHONEOS_DEPLOYMENT_TARGET = 17.0`
+**[code]** `Ouispr.xcodeproj/project.pbxproj:1118`, and everything between those
 bounds can buy Pro and cannot run the flagship Pro feature.
 
 On 2026-08-13 a **reliability** rationale was added from #315: Apple documents
 that `GenerationError.rateLimited` "will only happen if your app is running in
 the background and exceeds the system defined rate limit" **[source]**
 (independently re-fetched from Apple's documentation during this spike, not
-taken on trust from the issue), and DictusApp is backgrounded for every polish
+taken on trust from the issue), and OuisprApp is backgrounded for every polish
 call by design. Field captures show latched runs of **11 min 50 s with zero
 successes** **[field]**.
 
@@ -122,8 +122,8 @@ BGContinuedProcessingTaskRequestResourcesGPU NS_SWIFT_NAME(gpu) = (1 << 0),
 — `iPhoneOS26.4.sdk/…/BackgroundTasks.framework/Headers/BGTaskRequest.h:122-129` **[sdk]**
 
 That capability is `iOS 26.0+`, is attached to `BGContinuedProcessingTask`, and is
-not reachable from `UIBackgroundModes: audio`, which is how DictusApp stays alive
-**[code]** `DictusApp/Info.plist:60`. An entitlement would not exist if the
+not reachable from `UIBackgroundModes: audio`, which is how OuisprApp stays alive
+**[code]** `OuisprApp/Info.plist:60`. An entitlement would not exist if the
 default were permission.
 
 ### The product already demonstrates the permitted half
@@ -159,7 +159,7 @@ circulate — the ones that make a 3B model on an iPhone look comfortable — ar
 Metal figures. This spike measured the cost of that directly: on the same
 machine, the same model, the same prompt, **Metal is 2.2–2.9× faster than CPU on
 decode and 2.5–7× faster on prefill** **[measured]**, and none of that speed is
-available to a backgrounded Dictus.
+available to a backgrounded Ouispr.
 
 ---
 
@@ -206,7 +206,7 @@ on hardware the target devices cannot approach.
 
 ### The Apple FM baseline it is being compared against
 
-From the metrics ring, `dictus-polish-debug-20260805-174258.json`, iPhone16,2,
+From the metrics ring, `ouispr-polish-debug-20260805-174258.json`, iPhone16,2,
 iOS 26.5.2, build 1.8.0 (25), **backgrounded**, quoted in #315 **[field]**:
 
 ```text
@@ -239,7 +239,7 @@ Note that the CPU-only figure is the *larger* one for the small models: the path
 V1 forces is also the more expensive one.
 
 For scale, the app's current heaviest single asset is Parakeet at **~800 MB**
-**[code]** `DictusCore/Sources/DictusCore/ModelInfo.swift:154`, and it is resident
+**[code]** `OuisprCore/Sources/OuisprCore/ModelInfo.swift:154`, and it is resident
 and pre-loaded at launch. A 1B LLM alongside it roughly triples the app's
 model-owned memory; a 3B roughly quadruples it.
 
@@ -262,7 +262,7 @@ That is a **~3B model at 2 bpw**. A candidate at Q4_K_M is carrying roughly twic
 the bits per parameter with no QAT recovery training and no adapter stack. And
 `SystemLanguageModel` is "periodically updated in routine OS updates" **[source]**
 — the weights arrive with the OS, so they cost the app nothing to download.
-Everything a second backend weighs, DictusApp owns.
+Everything a second backend weighs, OuisprApp owns.
 
 ### The half that could not be measured
 
@@ -270,7 +270,7 @@ Everything a second backend weighs, DictusApp owns.
 resident, the STT model resident and the audio engine warm — was not measured and
 cannot be from this machine.** A simulator has no jetsam limit
 (`os_proc_available_memory()` returns 0 there **[code]**
-`DictusCore/Sources/DictusCore/DeviceCapabilities.swift:103`), runs Core ML on the
+`OuisprCore/Sources/OuisprCore/DeviceCapabilities.swift:103`), runs Core ML on the
 host, and cannot reproduce background memory pressure. A simulator figure here
 would be worse than no figure, because it would look like an answer.
 
@@ -380,11 +380,11 @@ the user's own voice, and it is not a score, it is a disqualification.
 | Model | Licence | What shipping it in a paid App Store binary costs |
 | --- | --- | --- |
 | **Qwen3 / Qwen3.5** | **Apache-2.0** **[source]** (HF model cards for `Qwen/Qwen3-1.7B`, `Qwen/Qwen3.5-2B`, `Qwen/Qwen3.5-0.8B`) | Attribution and a NOTICE. No use restrictions, no branding obligation. The cleanest of the three. |
-| **Gemma 3** | **Gemma Terms of Use** **[source]** | Redistribution is permitted, but "You must include the use restrictions referenced in Section 3.2 as an **enforceable provision in any agreement**", provide every recipient a copy of the agreement, and ship a NOTICE file. Dictus's own terms would have to carry Google's Prohibited Use Policy as an enforceable term — real legal work for an individual seller. |
+| **Gemma 3** | **Gemma Terms of Use** **[source]** | Redistribution is permitted, but "You must include the use restrictions referenced in Section 3.2 as an **enforceable provision in any agreement**", provide every recipient a copy of the agreement, and ship a NOTICE file. Ouispr's own terms would have to carry Google's Prohibited Use Policy as an enforceable term — real legal work for an individual seller. |
 | **Llama 3.2** | **Llama 3.2 Community Licence** **[source]** | Must "provide a copy of this Agreement" and "prominently display **'Built with Llama'** on a related website, user interface, blogpost, about page, or product documentation". 700 M MAU ceiling — irrelevant here. A visible branding obligation inside a product sold on its own name. |
 
 Download size is the resident figures in Finding 3 minus the KV cache: **815 MB
-to 3.3 GB**. For scale, the largest thing Dictus asks a user to download today is
+to 3.3 GB**. For scale, the largest thing Ouispr asks a user to download today is
 Whisper Turbo at ~954 MB and Parakeet at ~800 MB **[code]**. The delivery
 machinery exists — `ModelManager` already downloads, verifies and compiles models
 at runtime — so this is a size question, not a plumbing question.
@@ -460,7 +460,7 @@ Steps, in order:
 2. Settings → export the **persistent log** (not the polish debug JSON — the
    persistent log, which carries `transcriptionPerformance` and
    `modelPrewarmPeakMemory`).
-3. Send that file. It gives the baseline: how much jetsam headroom DictusApp
+3. Send that file. It gives the baseline: how much jetsam headroom OuisprApp
    actually has left, backgrounded, with Parakeet resident and the audio engine
    warm, on his hardware.
 
@@ -573,13 +573,13 @@ help the user with no server, but neither does anything measured here.
 Throwaway code added on this branch, confined to the `polish-harness` target
 (macOS-only, out of every app target, not built by CI):
 
-- `DictusCore/Sources/polish-harness/LocalHTTPPolishEngine.swift` — a
+- `OuisprCore/Sources/polish-harness/LocalHTTPPolishEngine.swift` — a
   `PolishEngineProtocol` engine speaking `POST /v1/chat/completions`.
 - `--engine local --model <name> [--base-url <url>]` on `show` and `eval`.
 
 ```sh
 # Baseline (needs Apple Intelligence on the Mac)
-cd DictusCore
+cd OuisprCore
 swift run polish-harness eval Sources/polish-harness/fixtures/seed.json
 
 # Candidate, against a local OpenAI-compatible server
@@ -710,7 +710,7 @@ baseline of p50 1,654 ms **[field]**:
   Finding 2 establishes is a floor for any iPhone.
 
 So the viability of the one surviving candidate rests entirely on which compute
-units a backgrounded DictusApp can actually reach. Finding 1 asserts the GPU is
+units a backgrounded OuisprApp can actually reach. Finding 1 asserts the GPU is
 closed and this addendum does not dispute that. But the report's own "What I am
 not comfortable asserting" section records that the *mechanism* was never
 investigated, and that the shipping WhisperKit path requests `.cpuAndGPU`
@@ -735,7 +735,7 @@ prompt. Close it, and reopen only for a named model with a named footprint.
 **On the reliability rationale — no longer answered, and no longer closed.**
 The corrected state is one candidate (`qwen3:1.7b`: 1.9 GB, 66/72, jargon
 handling equal to Apple FM's on the fixture that matters) and one open mechanism
-(can a backgrounded DictusApp reach the ANE or the GPU for LLM inference).
+(can a backgrounded OuisprApp reach the ANE or the GPU for LLM inference).
 
 There is also a product-level argument, contributed by the maintainer on
 2026-08-21, that this report did not make and that constrains any future

@@ -63,7 +63,7 @@ Requirements: MODE-01, MODE-02, MODE-03, MODE-04
 ### Mode switching behavior
 - Mode changed only from app Settings (or during onboarding) — no in-keyboard mode switching
 - Globe button in keyboard = advanceToNextInputMode (switch iOS keyboards), not mode switch
-- Mode persisted via App Group SharedKeys (new key: `dictus.keyboardMode`)
+- Mode persisted via App Group SharedKeys (new key: `ouispr.keyboardMode`)
 - Keyboard reads mode on each open (same pattern as AZERTY/QWERTY layout switch) — no restart needed
 - Immediate effect: next keyboard appearance uses new mode
 
@@ -82,7 +82,7 @@ Requirements: MODE-01, MODE-02, MODE-03, MODE-04
 - User concern: "J'ai peur que l'utilisateur ne decouvre jamais ce parametre" — solved by adding mode choice to onboarding flow
 - Reuse strategy: same KeyboardModePicker component in both Settings and onboarding, one codebase to maintain
 - Mini keyboard mockups should feel like looking at the actual keyboard from a distance — recognizable at a glance
-- Micro mode is the "Dictus differentiator" — the unique selling point for dictation-first users
+- Micro mode is the "Ouispr differentiator" — the unique selling point for dictation-first users
 
 </specifics>
 
@@ -90,12 +90,12 @@ Requirements: MODE-01, MODE-02, MODE-03, MODE-04
 ## Existing Code Insights
 
 ### Reusable Assets
-- `DictusKeyboard/Views/EmojiPickerView.swift`: Full emoji picker with LazyHGrid, category bar, search — reuse as-is for Emoji+Micro mode
-- `DictusKeyboard/Views/ToolbarView.swift`: Toolbar with gear + suggestions + mic pill — reuse for Emoji+Micro (mic only, no suggestions)
-- `DictusKeyboard/Views/RecordingOverlay.swift`: Recording UI with waveform + timer + cancel/validate — reuse in all 3 modes
-- `DictusCore/Design/AnimatedMicButton.swift`: Mic pill with 4 states + Liquid Glass — scale up for Micro mode's giant mic button
-- `DictusCore/Sources/DictusCore/SharedKeys.swift`: Centralized App Group keys — add `keyboardMode` key
-- `DictusApp/Views/SettingsView.swift`: Settings with @AppStorage + App Group — add mode picker section
+- `OuisprKeyboard/Views/EmojiPickerView.swift`: Full emoji picker with LazyHGrid, category bar, search — reuse as-is for Emoji+Micro mode
+- `OuisprKeyboard/Views/ToolbarView.swift`: Toolbar with gear + suggestions + mic pill — reuse for Emoji+Micro (mic only, no suggestions)
+- `OuisprKeyboard/Views/RecordingOverlay.swift`: Recording UI with waveform + timer + cancel/validate — reuse in all 3 modes
+- `OuisprCore/Design/AnimatedMicButton.swift`: Mic pill with 4 states + Liquid Glass — scale up for Micro mode's giant mic button
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift`: Centralized App Group keys — add `keyboardMode` key
+- `OuisprApp/Views/SettingsView.swift`: Settings with @AppStorage + App Group — add mode picker section
 
 ### Established Patterns
 - `@AppStorage(SharedKeys.X, store: UserDefaults(suiteName: AppGroup.identifier))` for cross-process preferences

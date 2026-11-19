@@ -1,0 +1,20 @@
+/* Ouispr settings shown by the iOS Settings app. */
+"Enable Ouispr" = "Enable Ouispr";
+
+"1. Tap Keyboards" = "1. Tap Keyboards";
+
+"2. Enable Ouispr" = "2. Enable Ouispr";
+
+"3. Turn on Allow Full Access" = "3. Turn on Allow Full Access";
+
+"Privacy" = "Privacy";
+
+"Ouispr transcribes on your device. Full Access lets the keyboard exchange dictation requests and results with the app." = "Ouispr transcribes on your device. Full Access lets the keyboard exchange dictation requests and results with the app.";
+
+"Can't find Keyboards?" = "Can't find Keyboards?";
+
+"Close Settings, then reopen the app settings for Ouispr." = "Close Settings, then reopen the app settings for Ouispr.";
+
+"Information" = "Information";
+
+"Version" = "Version";

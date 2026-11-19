@@ -10,7 +10,7 @@ requires:
     plan: 01
     provides: SuggestionState wired, autocorrect, emoji key in layout, toggleEmojiPicker notification
   - phase: 18-uikit-keyboard-rebuild
-    provides: GiellaKeyboardView, DictusKeyboardBridge, KeyboardViewController UIKit architecture
+    provides: GiellaKeyboardView, OuisprKeyboardBridge, KeyboardViewController UIKit architecture
 provides:
   - Emoji picker UI integrated in KeyboardRootView with 3-mode body (recording, emoji, toolbar)
   - Post-transcription suggestion refresh via onTranscriptionInserted callback
@@ -28,12 +28,12 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardState.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/FrenchKeyboardLayouts.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusApp/Views/SoundSettingsView.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/FrenchKeyboardLayouts.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprApp/Views/SoundSettingsView.swift
 
 key-decisions:
   - "Emoji key identified by glyph character instead of alternate label -- avoids showing 'emoji' text on key"
@@ -79,12 +79,12 @@ Each task was committed atomically:
 2. **Task 2 fixes: Emoji button label, picker clipping, sound default desync** - `f1f4713` (fix)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardRootView.swift` - 3-mode body (recording/emoji/toolbar), showingEmoji state, onReceive for toggle notification
-- `DictusKeyboard/KeyboardState.swift` - onTranscriptionInserted callback called after text insertion
-- `DictusKeyboard/KeyboardViewController.swift` - Wire onTranscriptionInserted, disable hosting safeAreaRegions, dismiss emoji on recording
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` - Emoji key alternate set to nil (no text label)
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Identify emoji key by glyph character instead of alternate string
-- `DictusApp/Views/SoundSettingsView.swift` - Sound feedback default changed from true to false
+- `OuisprKeyboard/KeyboardRootView.swift` - 3-mode body (recording/emoji/toolbar), showingEmoji state, onReceive for toggle notification
+- `OuisprKeyboard/KeyboardState.swift` - onTranscriptionInserted callback called after text insertion
+- `OuisprKeyboard/KeyboardViewController.swift` - Wire onTranscriptionInserted, disable hosting safeAreaRegions, dismiss emoji on recording
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` - Emoji key alternate set to nil (no text label)
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Identify emoji key by glyph character instead of alternate string
+- `OuisprApp/Views/SoundSettingsView.swift` - Sound feedback default changed from true to false
 
 ## Decisions Made
 - Emoji key identified by its glyph character ("\u{1F600}") in the bridge instead of an `alternate` string, so the key renders without an "emoji" text label
@@ -100,28 +100,28 @@ Each task was committed atomically:
 - **Found during:** Task 1
 - **Issue:** Plan assumed `onEmojiTap`/`onClose` parameters, actual EmojiPickerView uses `onEmojiInsert`/`onDelete`/`onDismiss`
 - **Fix:** Used actual parameter names and wired `onDelete` to `deleteBackward()`
-- **Files modified:** DictusKeyboard/KeyboardRootView.swift
+- **Files modified:** OuisprKeyboard/KeyboardRootView.swift
 - **Committed in:** fc42e6f
 
 **2. [Rule 1 - Bug] Emoji button showing "emoji" text label**
 - **Found during:** Task 2 UAT
 - **Issue:** Key alternate "emoji" rendered as visible alternate label on the key
 - **Fix:** Set alternate to nil, identify emoji key by character in bridge
-- **Files modified:** DictusKeyboard/FrenchKeyboardLayouts.swift, DictusKeyboard/DictusKeyboardBridge.swift
+- **Files modified:** OuisprKeyboard/FrenchKeyboardLayouts.swift, OuisprKeyboard/OuisprKeyboardBridge.swift
 - **Committed in:** f1f4713
 
 **3. [Rule 1 - Bug] Emoji picker clipped on left side and too tall**
 - **Found during:** Task 2 UAT
 - **Issue:** UIHostingController safe area insets caused left-edge clipping; picker height overflowed toolbar
 - **Fix:** Disabled safeAreaRegions on hosting controller; added frame+clipped on EmojiPickerView
-- **Files modified:** DictusKeyboard/KeyboardViewController.swift, DictusKeyboard/KeyboardRootView.swift
+- **Files modified:** OuisprKeyboard/KeyboardViewController.swift, OuisprKeyboard/KeyboardRootView.swift
 - **Committed in:** f1f4713
 
 **4. [Rule 1 - Bug] Sound settings toggle showed ON but sounds were off on first install**
 - **Found during:** Task 2 UAT
 - **Issue:** @AppStorage default was `true` but actual first-install behavior has sounds off
 - **Fix:** Changed default to `false`
-- **Files modified:** DictusApp/Views/SoundSettingsView.swift
+- **Files modified:** OuisprApp/Views/SoundSettingsView.swift
 - **Committed in:** f1f4713
 
 ---

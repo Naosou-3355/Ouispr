@@ -6,7 +6,7 @@
 
 ## Decision
 
-Introduce a synchronous **polish layer** between STT final output and App Group injection in DictusApp. The layer is off by default, gated by a single global toggle in Settings, and hidden entirely on devices where Apple Foundation Models is unavailable.
+Introduce a synchronous **polish layer** between STT final output and App Group injection in OuisprApp. The layer is off by default, gated by a single global toggle in Settings, and hidden entirely on devices where Apple Foundation Models is unavailable.
 
 At round 1 the only backend is **Apple Foundation Models** (iOS 26+, Apple Intelligence enabled, A17 Pro / M-series hardware). An OSS fallback for baseline devices is deferred to a round 2 decision driven by round 1 measurements.
 
@@ -25,7 +25,7 @@ Languages wired at round 1: French, English, Spanish, German (subset of `Support
 
 Sessions are cached per `(mode, language)` tuple (max 8) with mode-and-language-specific instructions baked in; the session matching the user's current target language is prewarmed at `applicationDidFinishLaunching`. A polish call in flight is cancelled when a new dictation starts.
 
-Metrics for each polish invocation (engine, mode, target language, detected language, input/output character count, latency, outcome) are emitted to `os_log` and surfaced in a hidden debug screen in DictusApp Settings.
+Metrics for each polish invocation (engine, mode, target language, detected language, input/output character count, latency, outcome) are emitted to `os_log` and surfaced in a hidden debug screen in OuisprApp Settings.
 
 No latency cap at round 1: full distribution is measured before any time-based abort policy is introduced.
 
@@ -67,10 +67,10 @@ No latency cap at round 1: full distribution is measured before any time-based a
 
 **Positive.**
 - The polish layer is shippable to Apple Intelligence devices behind a measurement-grade toggle and instrumentation. Quality and latency data accumulate from week 1.
-- `PolishEngineProtocol` in DictusCore is a clean seam for round 2's OSS backend. Adding `LlamaCppPolishEngine` later is additive, not surgical.
+- `PolishEngineProtocol` in OuisprCore is a clean seam for round 2's OSS backend. Adding `LlamaCppPolishEngine` later is additive, not surgical.
 - The faithful contract is documented in code-adjacent prose. New maintainers reading the prompts understand the line that must not be crossed.
 - `#115` (verbal punctuation) and `#90` (Parakeet language enforcement) are addressed as a side-effect of the polish layer instead of as bespoke pipelines.
-- Repair mode is the first time Dictus actively repairs an STT hallucination instead of routing around it. If quality holds, this becomes a primitive that other features can lean on.
+- Repair mode is the first time Ouispr actively repairs an STT hallucination instead of routing around it. If quality holds, this becomes a primitive that other features can lean on.
 
 **Negative.**
 - Baseline-device users (iPhone 12-14, non-Pro iPhone 15, older iPad) see nothing related to polish until round 2 ships an OSS path. This is by design but is a user-visible gap.
@@ -83,12 +83,12 @@ The whole layer is reversible: a single feature flag in App Group preferences tu
 
 ## Implementation notes
 
-- Protocol and shared types in `DictusCore/Polish/`: `PolishEngineProtocol`, `PolishMode`, `PolishGlossary` (deleted in #536), `PolishGuardrail`, `PolishMetrics`.
-- Implementation in `DictusApp/Polish/`: `AppleFoundationModelsPolishEngine`, `PolishPromptBuilder` (per mode × language), `PolishCoordinator` (orchestration), `PolishDebugView`.
-- Toggle persisted in App Group via a new `SharedKeys` entry. Read at runtime by `PolishCoordinator`. Toggle UI lives in DictusApp Settings under the existing transcription section, label "Polir la transcription" / "Polish transcription". Hidden if `SystemLanguageModel.default.availability != .available`. Debug override flag (build setting or hidden gesture) shows the toggle on dev devices regardless.
+- Protocol and shared types in `OuisprCore/Polish/`: `PolishEngineProtocol`, `PolishMode`, `PolishGlossary` (deleted in #536), `PolishGuardrail`, `PolishMetrics`.
+- Implementation in `OuisprApp/Polish/`: `AppleFoundationModelsPolishEngine`, `PolishPromptBuilder` (per mode × language), `PolishCoordinator` (orchestration), `PolishDebugView`.
+- Toggle persisted in App Group via a new `SharedKeys` entry. Read at runtime by `PolishCoordinator`. Toggle UI lives in OuisprApp Settings under the existing transcription section, label "Polir la transcription" / "Polish transcription". Hidden if `SystemLanguageModel.default.availability != .available`. Debug override flag (build setting or hidden gesture) shows the toggle on dev devices regardless.
 - `PolishCoordinator` orchestrates: receive raw text + target language + engine identity → `NLLanguageRecognizer` on raw → choose mode (skip if gibberish) → fetch or create cached session → call engine → apply guardrail → emit metrics → return polished or raw.
 - Sessions cached in a `[PolishMode × SupportedLanguage: LanguageModelSession]` dictionary in `AppleFoundationModelsPolishEngine`. Created lazily on first use of each combo. Prewarm called on the `(light, currentTargetLanguage)` session at app launch.
-- Cancellation: `PolishCoordinator` holds a reference to the in-flight `Task`; a new dictation starting in DictusApp calls `task.cancel()` on the previous polish before the new one begins. Apple FM session `respond(to:)` is cancellable via Swift task cancellation.
+- Cancellation: `PolishCoordinator` holds a reference to the in-flight `Task`; a new dictation starting in OuisprApp calls `task.cancel()` on the previous polish before the new one begins. Apple FM session `respond(to:)` is cancellable via Swift task cancellation.
 - Round 2 trigger: after enough on-device A/B usage to characterize p50/p95 latency, Mode B trigger rate, and rejection rate by guardrail. Threshold for "enough" is not pre-defined; reviewer judgement based on log volume.
 
 ## Update — 2026-06-08: ES/DE Repair prompts added
@@ -103,7 +103,7 @@ Round 1 shipped Repair prompts for FR/EN only; ES and DE fell back to the Englis
 
 The decision above injects a static **PolishGlossary** of domain terms into every prompt, and #80 later appended the user's own canonical terms to it. That mechanism is deleted. It was never measured when it shipped, and when it finally was, it did nothing:
 
-- `Dictus` sat in the glossary and Apple FM polished `dictus` into `dictés`; `Parakeet v3` sat in it and `Parakit V3` came back untouched. Both on an iPhone 15 Pro Max, iOS 26.6.1, French, Natural mode.
+- `Ouispr` sat in the glossary and Apple FM polished `ouispr` into `dictés`; `Parakeet v3` sat in it and `Parakit V3` came back untouched. Both on an iPhone 15 Pro Max, iOS 26.6.1, French, Natural mode.
 - In the same session `whisperflow` — in nobody's glossary — was corrected to `WhisperFlow` by the model's own priors. Apple FM fixes what it already knows and does not act on a supplied list.
 - The wording escape route is closed too. `n0an/VivaDicta` ships the same two layers and asks for **phonetic repair** from a tagged `<CUSTOM_VOCABULARY>` block — the three axes a rewrite would have changed — and corrected `Claude Code` in **0 of 5** dictations on the same device, with its own log showing Apple FM ran every time. This is #439's ceiling in a second implementation.
 

@@ -22,18 +22,18 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Onboarding/WelcomePage.swift
-    - DictusApp/Onboarding/KeyboardSetupPage.swift
-    - DictusApp/Onboarding/TestRecordingPage.swift
-    - DictusApp/Onboarding/OnboardingView.swift
-    - DictusApp/Design/BrandWaveform.swift
-    - DictusApp/Design/DictusLogo.swift
-    - DictusKeyboard/Design/BrandWaveform.swift
-    - DictusApp/Views/ModelManagerView.swift
-    - DictusApp/Views/SettingsView.swift
+    - OuisprApp/Onboarding/WelcomePage.swift
+    - OuisprApp/Onboarding/KeyboardSetupPage.swift
+    - OuisprApp/Onboarding/TestRecordingPage.swift
+    - OuisprApp/Onboarding/OnboardingView.swift
+    - OuisprApp/Design/BrandWaveform.swift
+    - OuisprApp/Design/OuisprLogo.swift
+    - OuisprKeyboard/Design/BrandWaveform.swift
+    - OuisprApp/Views/ModelManagerView.swift
+    - OuisprApp/Views/SettingsView.swift
 
 key-decisions:
-  - "ScrollView+VStack for ModelManagerView instead of List, enabling .dictusGlass() per card"
+  - "ScrollView+VStack for ModelManagerView instead of List, enabling .ouisprGlass() per card"
   - "SettingsView keeps native List for iOS settings UX, glass via listRowBackground tint"
 
 patterns-established:
@@ -59,10 +59,10 @@ completed: 2026-03-07
 - **Files modified:** 9
 
 ## Accomplishments
-- WelcomePage shows animated BrandWaveform with idle breathing animation instead of static DictusLogo
+- WelcomePage shows animated BrandWaveform with idle breathing animation instead of static OuisprLogo
 - All onboarding buttons have white text on colored backgrounds (fixed light mode contrast)
 - OnboardingView uses @SceneStorage to persist page index across backgrounding/foregrounding
-- BrandWaveform and DictusLogo bars are gray in light mode, white in dark mode
+- BrandWaveform and OuisprLogo bars are gray in light mode, white in dark mode
 - Models tab has glass-styled cards for each model row
 - Settings tab has glass-tinted section backgrounds with transparent scroll background
 
@@ -74,18 +74,18 @@ Each task was committed atomically:
 2. **Task 2: Apply glass styling to Models and Settings tabs** - `8ba61ed` (feat)
 
 ## Files Created/Modified
-- `DictusApp/Onboarding/WelcomePage.swift` - Replaced DictusLogo with animated BrandWaveform
-- `DictusApp/Onboarding/KeyboardSetupPage.swift` - Fixed button text color to white
-- `DictusApp/Onboarding/TestRecordingPage.swift` - Fixed button text color to white on both buttons
-- `DictusApp/Onboarding/OnboardingView.swift` - @SceneStorage for persistent page state
-- `DictusApp/Design/BrandWaveform.swift` - colorScheme-adaptive outer bar colors
-- `DictusApp/Design/DictusLogo.swift` - colorScheme-adaptive side bar colors
-- `DictusKeyboard/Design/BrandWaveform.swift` - Same adaptive fix for keyboard extension copy
-- `DictusApp/Views/ModelManagerView.swift` - ScrollView + .dictusGlass() card layout
-- `DictusApp/Views/SettingsView.swift` - scrollContentBackground hidden, glass tinted rows
+- `OuisprApp/Onboarding/WelcomePage.swift` - Replaced OuisprLogo with animated BrandWaveform
+- `OuisprApp/Onboarding/KeyboardSetupPage.swift` - Fixed button text color to white
+- `OuisprApp/Onboarding/TestRecordingPage.swift` - Fixed button text color to white on both buttons
+- `OuisprApp/Onboarding/OnboardingView.swift` - @SceneStorage for persistent page state
+- `OuisprApp/Design/BrandWaveform.swift` - colorScheme-adaptive outer bar colors
+- `OuisprApp/Design/OuisprLogo.swift` - colorScheme-adaptive side bar colors
+- `OuisprKeyboard/Design/BrandWaveform.swift` - Same adaptive fix for keyboard extension copy
+- `OuisprApp/Views/ModelManagerView.swift` - ScrollView + .ouisprGlass() card layout
+- `OuisprApp/Views/SettingsView.swift` - scrollContentBackground hidden, glass tinted rows
 
 ## Decisions Made
-- ModelManagerView converted from List to ScrollView+VStack to enable .dictusGlass() per card (List rows don't support custom glass modifiers well)
+- ModelManagerView converted from List to ScrollView+VStack to enable .ouisprGlass() per card (List rows don't support custom glass modifiers well)
 - SettingsView keeps native grouped List for standard iOS settings UX, with .listRowBackground glass tint and .scrollContentBackground(.hidden)
 - Removed swipeActions from ModelRow since they require List context; delete buttons already present inline
 
@@ -93,11 +93,11 @@ Each task was committed atomically:
 
 ### Auto-fixed Issues
 
-**1. [Rule 2 - Missing Critical] Applied adaptive color fix to DictusKeyboard BrandWaveform copy**
+**1. [Rule 2 - Missing Critical] Applied adaptive color fix to OuisprKeyboard BrandWaveform copy**
 - **Found during:** Task 1 (adaptive colors)
 - **Issue:** Keyboard extension has its own copy of BrandWaveform.swift that also had hardcoded white bars
-- **Fix:** Added @Environment(\.colorScheme) and adaptive barColor to DictusKeyboard/Design/BrandWaveform.swift
-- **Files modified:** DictusKeyboard/Design/BrandWaveform.swift
+- **Fix:** Added @Environment(\.colorScheme) and adaptive barColor to OuisprKeyboard/Design/BrandWaveform.swift
+- **Files modified:** OuisprKeyboard/Design/BrandWaveform.swift
 - **Verification:** Build succeeds
 - **Committed in:** c85a5f4 (Task 1 commit)
 

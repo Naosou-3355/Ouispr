@@ -245,7 +245,7 @@ export const introMetro = (appearance: Theme["name"], locale: string, id: string
   const theme = THEMES[appearance], text = stringsFor(locale);
   checkCardText(CARD, text, id);
   return {
-    meta: { title: `Dictus onboarding intro B · the metro, no network · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_B },
+    meta: { title: `Ouispr onboarding intro B · the metro, no network · ${theme.name}`, W: FRAME.w, H: FRAME.h, fps: FPS, bpm: BPM, durationFrames: LOOP_B },
     assets: { images: {} },
     shots: [{ id, start: 0, end: LOOP_B, draw: drawFor(theme, text) }],
   };

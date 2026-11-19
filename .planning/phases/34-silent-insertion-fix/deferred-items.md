@@ -2,7 +2,7 @@
 
 Tracks pre-existing issues discovered during Phase 34 execution that are out of scope for STAB-01 (silent insertion fix).
 
-## Pre-existing DictusCore test failures (discovered during Plan 34-01)
+## Pre-existing OuisprCore test failures (discovered during Plan 34-01)
 
 The following 10 tests were already failing on `develop` BEFORE any Phase 34 changes were applied. They are unrelated to the insertion-failure fix (STAB-01) and must not be fixed inside this phase:
 
@@ -34,4 +34,4 @@ Plan 34-01 does not touch `AccentedCharacters.swift`, `FrequencyDictionary.swift
 
 ## Suggested follow-up
 
-Open a separate issue `chore: fix stale DictusCore test expectations (accented variants + rank)`. Attach to milestone v1.7 cleanup. Low risk, no dictation impact.
+Open a separate issue `chore: fix stale OuisprCore test expectations (accented variants + rank)`. Attach to milestone v1.7 cleanup. Low risk, no dictation impact.

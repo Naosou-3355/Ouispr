@@ -19,8 +19,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/KeyboardRootView.swift
 
 key-decisions:
   - "NotificationCenter bridge over computed property to avoid reading UserDefaults on every SwiftUI body evaluation"
@@ -49,7 +49,7 @@ completed: 2026-03-10
 
 ## Accomplishments
 - Keyboard mode now refreshes from App Group on every keyboard appearance, not just first launch
-- Added .dictusKeyboardWillAppear notification following established project pattern (.dictusTextDidChange)
+- Added .ouisprKeyboardWillAppear notification following established project pattern (.ouisprTextDidChange)
 - Mode changes in Settings take effect immediately on next keyboard open
 
 ## Task Commits
@@ -59,8 +59,8 @@ Each task was committed atomically:
 1. **Task 1: Add viewWillAppear notification and mode refresh receiver** - `e1a9aea` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/KeyboardViewController.swift` - Posts .dictusKeyboardWillAppear in viewWillAppear, defines notification name
-- `DictusKeyboard/KeyboardRootView.swift` - Receives notification via .onReceive to re-read KeyboardMode.active; added Combine import
+- `OuisprKeyboard/KeyboardViewController.swift` - Posts .ouisprKeyboardWillAppear in viewWillAppear, defines notification name
+- `OuisprKeyboard/KeyboardRootView.swift` - Receives notification via .onReceive to re-read KeyboardMode.active; added Combine import
 
 ## Decisions Made
 - Used NotificationCenter bridge (Option A) over computed property (Option C) to avoid reading UserDefaults on every SwiftUI body evaluation -- only reads once per keyboard show
@@ -74,7 +74,7 @@ Each task was committed atomically:
 - **Found during:** Task 1
 - **Issue:** .onReceive requires Combine framework for NotificationCenter.default.publisher
 - **Fix:** Added `import Combine` to KeyboardRootView.swift
-- **Files modified:** DictusKeyboard/KeyboardRootView.swift
+- **Files modified:** OuisprKeyboard/KeyboardRootView.swift
 - **Verification:** Build succeeded
 - **Committed in:** e1a9aea (Task 1 commit)
 

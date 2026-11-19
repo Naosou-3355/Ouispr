@@ -8,9 +8,9 @@
 
 Phase 17 fixes 3 known bugs in the v1.2 codebase before the keyboard architecture change (Phase 18+). The bugs span three distinct domains: (1) Dynamic Island state desync after recording ends, (2) slow log export with no spinner, and (3) grayed-out overlay on cold start swipe-back. All three bugs live in well-understood code with extensive existing comments and logging infrastructure.
 
-The codebase already has a formal state machine in `LiveActivityManager` with transition validation (added during issue #42), structured logging via `PersistentLog` with typed `LogEvent` cases, and a cold start flow using `SwipeBackOverlayView`. The test infrastructure exists in `DictusCore` (SPM test target, 13 test files) but there is NO `DictusAppTests` Xcode test target -- LiveActivityManager tests will need to be designed as pure state machine logic tests in DictusCore, or a new test target must be created in Xcode.
+The codebase already has a formal state machine in `LiveActivityManager` with transition validation (added during issue #42), structured logging via `PersistentLog` with typed `LogEvent` cases, and a cold start flow using `SwipeBackOverlayView`. The test infrastructure exists in `OuisprCore` (SPM test target, 13 test files) but there is NO `OuisprAppTests` Xcode test target -- LiveActivityManager tests will need to be designed as pure state machine logic tests in OuisprCore, or a new test target must be created in Xcode.
 
-**Primary recommendation:** Fix bugs in order FIX-01 (watchdog), FIX-02 (export), FIX-03 (overlay) -- each is independent and can be verified before moving to the next. Add unit tests for LiveActivityManager state transitions by extracting testable logic into DictusCore.
+**Primary recommendation:** Fix bugs in order FIX-01 (watchdog), FIX-02 (export), FIX-03 (overlay) -- each is independent and can be verified before moving to the next. Add unit tests for LiveActivityManager state transitions by extracting testable logic into OuisprCore.
 
 <user_constraints>
 
@@ -51,7 +51,7 @@ None -- discussion stayed within phase scope.
 | Library | Version | Purpose | Notes |
 |---------|---------|---------|-------|
 | ActivityKit | iOS 17+ | Live Activity / Dynamic Island | Already used in LiveActivityManager |
-| XCTest | built-in | Unit testing | Already configured for DictusCore SPM package |
+| XCTest | built-in | Unit testing | Already configured for OuisprCore SPM package |
 | NSFileCoordinator | Foundation | Cross-process file coordination | Already used in PersistentLog |
 
 ### No New Dependencies Required
@@ -135,7 +135,7 @@ The current code already has `isExporting` state and a `ProgressView()` inline o
 
 Cold start flow:
 1. Keyboard sends Darwin notification -> app not running -> falls back to URL scheme after 500ms
-2. `DictusApp.handleIncomingURL` sets `coldStartActive = true`, calls `coordinator.startDictation(fromURL: true)`
+2. `OuisprApp.handleIncomingURL` sets `coldStartActive = true`, calls `coordinator.startDictation(fromURL: true)`
 3. `startDictation` detects `appState != .active` -> sets `pendingColdStartDictation = true` -> returns
 4. `didBecomeActive` fires -> calls `startDictation(fromURL: true)` for real
 5. Audio engine starts, `updateStatus(.recording)` writes to App Group
@@ -191,14 +191,14 @@ Cold start flow:
 ### Pitfall 5: Test target isolation from UIKit/ActivityKit
 **What goes wrong:** Trying to test LiveActivityManager directly requires ActivityKit which is unavailable in SPM test targets.
 **Why it happens:** LiveActivityManager depends on `Activity<T>`, `ActivityAuthorizationInfo`, and `UIApplication` -- all iOS-only, no macOS equivalent.
-**How to avoid:** Extract the pure state machine logic (transition validation, phase tracking, watchdog timing) into a protocol or testable struct in DictusCore. Test the logic, not the ActivityKit calls.
+**How to avoid:** Extract the pure state machine logic (transition validation, phase tracking, watchdog timing) into a protocol or testable struct in OuisprCore. Test the logic, not the ActivityKit calls.
 **Warning signs:** Tests that only work in Xcode simulator, not `swift test`.
 
 ## Code Examples
 
 ### Extractable State Machine for Testing
 ```swift
-// In DictusCore -- testable without ActivityKit
+// In OuisprCore -- testable without ActivityKit
 struct LiveActivityStateMachine {
     enum Phase: String { case idle, standby, recording, transcribing, ready, failed }
 
@@ -267,10 +267,10 @@ static func pruneOldEntries(from content: String, maxAge: TimeInterval = 7 * 24 
 
 ## Open Questions
 
-1. **Can LiveActivityManager state machine be extracted to DictusCore?**
+1. **Can LiveActivityManager state machine be extracted to OuisprCore?**
    - What we know: The transition validation logic is pure (no ActivityKit dependency). Phase enum and validation table can be extracted.
-   - What's unclear: Whether DictusCore's Package.swift needs changes, and whether the existing LiveActivityManager can delegate to the extracted logic cleanly.
-   - Recommendation: Extract `LiveActivityStateMachine` struct to DictusCore, have LiveActivityManager use it internally. Tests go in DictusCoreTests.
+   - What's unclear: Whether OuisprCore's Package.swift needs changes, and whether the existing LiveActivityManager can delegate to the extracted logic cleanly.
+   - Recommendation: Extract `LiveActivityStateMachine` struct to OuisprCore, have LiveActivityManager use it internally. Tests go in OuisprCoreTests.
 
 2. **Exact export duration after optimization**
    - What we know: Current export is "painfully slow" even with small logs. The trim-on-every-write is the likely culprit.
@@ -288,17 +288,17 @@ static func pruneOldEntries(from content: String, maxAge: TimeInterval = 7 * 24 
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (built-in, already configured) |
-| Config file | `DictusCore/Package.swift` (testTarget: DictusCoreTests) |
-| Quick run command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet` |
-| Full suite command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| Config file | `OuisprCore/Package.swift` (testTarget: OuisprCoreTests) |
+| Quick run command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet` |
+| Full suite command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| FIX-01 | DI transitions never get stuck on .recording after recording ends | unit | `xcodebuild test -scheme DictusCore ... -only-testing:DictusCoreTests/LiveActivityStateMachineTests` | No -- Wave 0 |
+| FIX-01 | DI transitions never get stuck on .recording after recording ends | unit | `xcodebuild test -scheme OuisprCore ... -only-testing:OuisprCoreTests/LiveActivityStateMachineTests` | No -- Wave 0 |
 | FIX-01 | Watchdog fires when phase stays .recording too long after stop | unit | same as above | No -- Wave 0 |
 | FIX-01 | All valid transition paths succeed, invalid ones are rejected | unit | same as above | No -- Wave 0 |
-| FIX-02 | Export produces valid content with header | unit | `xcodebuild test -scheme DictusCore ... -only-testing:DictusCoreTests/PersistentLogTests` | Yes (exists) |
+| FIX-02 | Export produces valid content with header | unit | `xcodebuild test -scheme OuisprCore ... -only-testing:OuisprCoreTests/PersistentLogTests` | Yes (exists) |
 | FIX-02 | Log retention prunes entries older than 7 days | unit | same as above | No -- Wave 0 |
 | FIX-02 | Trim uses file size, not line counting | unit | same as above | No -- Wave 0 |
 | FIX-01 | DI visual state matches internal state during real recording flow | manual | Pierre manual test checklist | N/A |
@@ -307,13 +307,13 @@ static func pruneOldEntries(from content: String, maxAge: TimeInterval = 7 * 24 
 
 ### Sampling Rate
 - **Per task commit:** Quick test of affected module
-- **Per wave merge:** Full DictusCoreTests suite
+- **Per wave merge:** Full OuisprCoreTests suite
 - **Phase gate:** Full suite green + Pierre manual test checklist passed
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Sources/DictusCore/LiveActivityStateMachine.swift` -- extracted testable state machine
-- [ ] `DictusCore/Tests/DictusCoreTests/LiveActivityStateMachineTests.swift` -- covers FIX-01
-- [ ] `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` -- extend existing file with retention + size-based trim tests
+- [ ] `OuisprCore/Sources/OuisprCore/LiveActivityStateMachine.swift` -- extracted testable state machine
+- [ ] `OuisprCore/Tests/OuisprCoreTests/LiveActivityStateMachineTests.swift` -- covers FIX-01
+- [ ] `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` -- extend existing file with retention + size-based trim tests
 - [ ] Fix `maxLines` discrepancy: code says 1000, existing test asserts 500 -- reconcile before adding new tests
 
 ## Sources
@@ -323,8 +323,8 @@ static func pruneOldEntries(from content: String, maxAge: TimeInterval = 7 * 24 
 - Direct code analysis of `PersistentLog.swift` (247 lines) -- NSFileCoordinator I/O pattern
 - Direct code analysis of `DictationCoordinator.swift` (684 lines) -- all recording lifecycle paths
 - Direct code analysis of `MainTabView.swift` (115 lines) -- cold start overlay flow
-- Direct code analysis of `DictusApp.swift` (161 lines) -- URL scheme handling
-- Existing test files in `DictusCore/Tests/DictusCoreTests/` -- 13 test files, established patterns
+- Direct code analysis of `OuisprApp.swift` (161 lines) -- URL scheme handling
+- Existing test files in `OuisprCore/Tests/OuisprCoreTests/` -- 13 test files, established patterns
 
 ### Secondary (MEDIUM confidence)
 - ActivityKit update budget (~1/sec) -- based on Apple documentation and developer experience, not formally documented limit

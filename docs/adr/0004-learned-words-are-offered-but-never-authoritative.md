@@ -8,13 +8,13 @@
 
 A learned word is **offered** in the suggestion bar (L1) and **immune** to autocorrect (L2). It is never an **autocorrect target** (L3): the keyboard does not rewrite another word into it. L3 stays with #114.
 
-The offering is implemented by reading `UserDictionary` at query time and merging its prefix matches into `.completions`, in a pure function in DictusCore called from `TextPredictionEngine.suggestions(for:)`. At most one learned word appears, in the first slot, tie-broken by the `lastUsed` timestamp shipped in #305.
+The offering is implemented by reading `UserDictionary` at query time and merging its prefix matches into `.completions`, in a pure function in OuisprCore called from `TextPredictionEngine.suggestions(for:)`. At most one learned word appears, in the first slot, tie-broken by the `lastUsed` timestamp shipped in #305.
 
 ## Why the categorical rule is affordable here
 
-`docs/research/287-user-dictionary-learning.md` §5.4 established that no keyboard in the field implements "suggestable but never an autocorrect target" as a category. Everywhere it is probabilistic, enforced by a unified scoring function that Dictus does not have. That reads as a reason to be careful, and it was — until the two code paths were traced.
+`docs/research/287-user-dictionary-learning.md` §5.4 established that no keyboard in the field implements "suggestable but never an autocorrect target" as a category. Everywhere it is probabilistic, enforced by a unified scoring function that Ouispr does not have. That reads as a reason to be careful, and it was — until the two code paths were traced.
 
-On space, only `spellCheck` can apply anything (`DictusKeyboardBridge.handleSpace`). Every suggestion mode other than `.corrections` is tap-only. So a candidate that reaches the bar through `.completions` and never through `spellCheck` is structurally incapable of being auto-applied. The categorical rule is not a gate anyone has to write and defend — it is a property of keeping the two sources apart.
+On space, only `spellCheck` can apply anything (`OuisprKeyboardBridge.handleSpace`). Every suggestion mode other than `.corrections` is tap-only. So a candidate that reaches the bar through `.completions` and never through `spellCheck` is structurally incapable of being auto-applied. The categorical rule is not a gate anyone has to write and defend — it is a property of keeping the two sources apart.
 
 This is the load-bearing fact of the whole decision, and it is the thing to re-check before any change that lets a learned word reach `spellCheck`, the trie, or `.corrections`.
 

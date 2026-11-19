@@ -12,7 +12,7 @@ commits: [604a846, ada363b, 2e4b391, c3d97f4, 3a61a4a, 1b6985d, 8ef1b46, 1e1732e
 Fixed HomeView stale state after onboarding, recording screen immersive UI, and applied Liquid Glass polish.
 
 ### Changes
-- **DictusApp.swift**: Added onChange handler to refresh model state when onboarding completes
+- **OuisprApp.swift**: Added onChange handler to refresh model state when onboarding completes
 - **HomeView.swift**: Vertically centered content layout, fixed stale model display
 - **DictationCoordinator.swift**: Removed auto-idle timer, explicit resetStatus from RecordingView
 - **RecordingView.swift**: Stable layout with tap-to-copy, sinusoidal processing waveform, nav bar stays hidden until user action, Liquid Glass press animations

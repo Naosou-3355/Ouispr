@@ -18,17 +18,17 @@ created: 2026-03-09
 | Property | Value |
 |----------|-------|
 | **Framework** | Swift Testing / XCTest via SPM |
-| **Config file** | DictusCore/Package.swift (test target exists) |
-| **Quick run command** | `swift test --package-path DictusCore` |
-| **Full suite command** | `swift test --package-path DictusCore` |
+| **Config file** | OuisprCore/Package.swift (test target exists) |
+| **Quick run command** | `swift test --package-path OuisprCore` |
+| **Full suite command** | `swift test --package-path OuisprCore` |
 | **Estimated runtime** | ~10 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `swift test --package-path DictusCore`
-- **After every plan wave:** Run `swift test --package-path DictusCore`
+- **After every task commit:** Run `swift test --package-path OuisprCore`
+- **After every plan wave:** Run `swift test --package-path OuisprCore`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 10 seconds
 
@@ -38,8 +38,8 @@ created: 2026-03-09
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 1 | MODE-01 | unit | `swift test --package-path DictusCore --filter KeyboardModeTests` | ❌ W0 | ⬜ pending |
-| 09-01-02 | 01 | 1 | MODE-04 | unit | `swift test --package-path DictusCore --filter KeyboardModeTests` | ❌ W0 | ⬜ pending |
+| 09-01-01 | 01 | 1 | MODE-01 | unit | `swift test --package-path OuisprCore --filter KeyboardModeTests` | ❌ W0 | ⬜ pending |
+| 09-01-02 | 01 | 1 | MODE-04 | unit | `swift test --package-path OuisprCore --filter KeyboardModeTests` | ❌ W0 | ⬜ pending |
 | 09-02-01 | 02 | 1 | MODE-02 | manual-only | Xcode simulator | N/A | ⬜ pending |
 | 09-02-02 | 02 | 1 | MODE-03 | manual-only | Xcode simulator | N/A | ⬜ pending |
 
@@ -49,7 +49,7 @@ created: 2026-03-09
 
 ## Wave 0 Requirements
 
-- [ ] `DictusCore/Tests/DictusCoreTests/KeyboardModeTests.swift` — stubs for MODE-01 (enum cases, displayName, rawValue) and MODE-04 (reading from UserDefaults)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/KeyboardModeTests.swift` — stubs for MODE-01 (enum cases, displayName, rawValue) and MODE-04 (reading from UserDefaults)
 
 *Existing infrastructure covers remaining requirements.*
 

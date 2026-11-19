@@ -21,8 +21,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/HapticFeedback.swift
-    - DictusApp/Audio/TranscriptionService.swift
+    - OuisprCore/Sources/OuisprCore/HapticFeedback.swift
+    - OuisprApp/Audio/TranscriptionService.swift
 
 key-decisions:
   - "object(forKey:) pattern for Boolean defaults: bool(forKey:) returns false for missing keys, but haptics and filler words default to true"
@@ -63,8 +63,8 @@ Each task was committed atomically:
 2. **Task 2: Wire language and filler word settings** - `a059cc8` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/HapticFeedback.swift` - Added isEnabled() reading SharedKeys.hapticsEnabled, guard on all 4 methods, new keyTapped() with .light impact
-- `DictusApp/Audio/TranscriptionService.swift` - Dynamic language from SharedKeys.language, conditional FillerWordFilter based on SharedKeys.fillerWordsEnabled
+- `OuisprCore/Sources/OuisprCore/HapticFeedback.swift` - Added isEnabled() reading SharedKeys.hapticsEnabled, guard on all 4 methods, new keyTapped() with .light impact
+- `OuisprApp/Audio/TranscriptionService.swift` - Dynamic language from SharedKeys.language, conditional FillerWordFilter based on SharedKeys.fillerWordsEnabled
 
 ## Decisions Made
 - Used `object(forKey:) as? Bool ?? true` instead of `bool(forKey:)` because bool returns false for unset keys but correct default is true

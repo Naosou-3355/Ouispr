@@ -14,15 +14,15 @@ updated: 2026-03-05T00:00:00Z
 ## Tests
 
 ### 1. App Launches with Diagnostics
-expected: DictusApp opens on device/simulator. Screen shows diagnostic indicators (green checkmarks or red X) for App Group health: canRead, canWrite, containerExists.
+expected: OuisprApp opens on device/simulator. Screen shows diagnostic indicators (green checkmarks or red X) for App Group health: canRead, canWrite, containerExists.
 result: pass
 
 ### 2. Keyboard Extension Installs
-expected: After building DictusApp to device, go to Settings > General > Keyboard > Keyboards > Add New Keyboard. "Dictus" appears in the list. After adding, it appears in your keyboard list.
+expected: After building OuisprApp to device, go to Settings > General > Keyboard > Keyboards > Add New Keyboard. "Ouispr" appears in the list. After adding, it appears in your keyboard list.
 result: pass
 
 ### 3. Keyboard Activates and Displays
-expected: Open any text field (e.g. Notes, Safari). Switch to Dictus keyboard via globe key. The AZERTY keyboard layout appears with French letter arrangement (AZERTYUIOP first row).
+expected: Open any text field (e.g. Notes, Safari). Switch to Ouispr keyboard via globe key. The AZERTY keyboard layout appears with French letter arrangement (AZERTYUIOP first row).
 result: pass
 
 ### 4. Basic Typing Works
@@ -52,19 +52,19 @@ reported: "Non, ça ne marche pas, je n'ai pas de bruit quand je clique sur les 
 severity: major
 
 ### 10. Full Access Banner (No Full Access)
-expected: If Full Access is NOT granted to Dictus keyboard, a persistent banner appears explaining the limitation with a link to Settings. The mic button appears disabled. Typing still works normally.
+expected: If Full Access is NOT granted to Ouispr keyboard, a persistent banner appears explaining the limitation with a link to Settings. The mic button appears disabled. Typing still works normally.
 result: pass
 
 ### 11. Dictation URL Trigger
-expected: Tapping the mic button on the keyboard opens DictusApp via the dictus://dictate URL scheme. iOS shows a back chevron in status bar to return to previous app.
+expected: Tapping the mic button on the keyboard opens OuisprApp via the ouispr://dictate URL scheme. iOS shows a back chevron in status bar to return to previous app.
 result: pass
 
 ### 12. Dictation State Sequence in App
-expected: After dictus://dictate triggers, DictusApp UI shows a state sequence: recording (with icon) -> transcribing -> ready. This is a stub simulation lasting ~2.5 seconds total.
+expected: After ouispr://dictate triggers, OuisprApp UI shows a state sequence: recording (with icon) -> transcribing -> ready. This is a stub simulation lasting ~2.5 seconds total.
 result: pass
 
 ### 13. Cross-Process Transcription
-expected: After dictation completes in DictusApp (stub reaches "ready" state), switch back to the keyboard. The keyboard should have received the stub transcription text and inserted it into the text field.
+expected: After dictation completes in OuisprApp (stub reaches "ready" state), switch back to the keyboard. The keyboard should have received the stub transcription text and inserted it into the text field.
 result: issue
 reported: "Le texte stub n'est pas recu dans le clavier. Le retour est manuel (pas automatique). La status bar affiche 'transcription ready' avec un spinner qui tourne, mais le texte n'est pas insere dans le champ texte."
 severity: major
@@ -86,27 +86,27 @@ skipped: 0
   test: 9
   root_cause: "KeyboardInputView is added as a subview but never set as the controller's inputView. Apple's playInputClick() only works on the actual inputView, not a random subview. Secondary: only character keys call playInputClick(), space/return/delete do not."
   artifacts:
-    - path: "DictusKeyboard/KeyboardViewController.swift"
+    - path: "OuisprKeyboard/KeyboardViewController.swift"
       issue: "KeyboardInputView added as subview instead of being the inputView"
-    - path: "DictusKeyboard/Views/KeyboardView.swift"
+    - path: "OuisprKeyboard/Views/KeyboardView.swift"
       issue: "Missing playInputClick() calls in onSpace, onReturn, onDelete"
   missing:
     - "Set KeyboardInputView as the controller's inputView (or host SwiftUI inside it)"
     - "Add playInputClick() to space, return, delete handlers"
   debug_session: ".planning/debug/keyboard-click-sound.md"
 
-- truth: "After dictation completes in DictusApp, switching back to keyboard shows the stub transcription text inserted into the text field."
+- truth: "After dictation completes in OuisprApp, switching back to keyboard shows the stub transcription text inserted into the text field."
   status: failed
   reason: "User reported: Le texte stub n'est pas recu dans le clavier. Le retour est manuel (pas automatique). La status bar affiche 'transcription ready' avec un spinner qui tourne, mais le texte n'est pas insere dans le champ texte."
   severity: major
   test: 13
   root_cause: "Three issues: (1) TranscriptionStub requires manual tap on 'Inserer' button — no auto-insertion logic exists. (2) StatusBar spinner is unconditional — keeps spinning on .ready status, confusing UX. (3) Race condition: two Darwin notifications posted sequentially, refreshFromDefaults() only reads status, not lastTranscription."
   artifacts:
-    - path: "DictusKeyboard/KeyboardRootView.swift"
+    - path: "OuisprKeyboard/KeyboardRootView.swift"
       issue: "TranscriptionStub requires manual tap; StatusBar spinner unconditional"
-    - path: "DictusKeyboard/KeyboardState.swift"
+    - path: "OuisprKeyboard/KeyboardState.swift"
       issue: "refreshFromDefaults() does not read lastTranscription"
-    - path: "DictusApp/DictationCoordinator.swift"
+    - path: "OuisprApp/DictationCoordinator.swift"
       issue: "Two notifications posted in sequence create race condition"
   missing:
     - "Auto-insert transcription text or make Inserer button more prominent"

@@ -20,10 +20,10 @@ The `sourceApplication` property on `UIOpenURLContext.Options` is the most promi
 - Viability bar: must work reliably for top 15-20 apps, not partial shipping
 - Document findings in ADR (`.planning/adr-cold-start-autoreturn.md`) AND update GitHub issue #23
 - Already confirmed out of scope: `LSApplicationWorkspace` (private API), `_hostBundleID` (private API)
-- Swipe-back overlay: Wispr Flow style -- large iPhone mockup with actual Dictus recording state, animated finger/circle on home bar showing swipe-right gesture
+- Swipe-back overlay: Wispr Flow style -- large iPhone mockup with actual Ouispr recording state, animated finger/circle on home bar showing swipe-right gesture
 - Layout: 2-zone with title at top, iPhone mockup center, empathetic text below, instruction pinned at bottom
-- Mockup content: Show Dictus waveform canvas + recording state inside iPhone outline
-- Text tone: Empathetic, Wispr Flow-inspired, adapted for Dictus. Honest about iOS limitation
+- Mockup content: Show Ouispr waveform canvas + recording state inside iPhone outline
+- Text tone: Empathetic, Wispr Flow-inspired, adapted for Ouispr. Honest about iOS limitation
 - Text must be localized: FR + EN via String Catalog
 - Key fix: Replace "Swipe back to the keyboard" (wrong) with reference to previous app
 - Overlay must TEACH the swipe-back gesture visually, not just mention it
@@ -60,7 +60,7 @@ None -- discussion stayed within phase scope
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 17+ | Overlay UI, animations, shapes | Project standard, all views are SwiftUI |
-| DictusCore | local | Shared keys, App Group, KnownAppSchemes | Cross-target shared framework |
+| OuisprCore | local | Shared keys, App Group, KnownAppSchemes | Cross-target shared framework |
 
 ### Supporting (no new dependencies needed)
 | Library | Version | Purpose | When to Use |
@@ -85,13 +85,13 @@ No new dependencies required. All work uses existing project frameworks.
 **What to investigate and expected outcomes:**
 
 #### Approach 1: UIOpenURLContext.Options.sourceApplication
-**What:** When DictusApp is opened via `dictus://dictate?source=keyboard`, check `urlContext.options.sourceApplication` in the SceneDelegate/SwiftUI `onOpenURL`.
-**Expected result:** Returns `nil` because the keyboard extension (DictusKeyboard) and the host app (e.g., WhatsApp) are from different teams. iOS only populates `sourceApplication` for same-team apps since iOS 13.
+**What:** When OuisprApp is opened via `ouispr://dictate?source=keyboard`, check `urlContext.options.sourceApplication` in the SceneDelegate/SwiftUI `onOpenURL`.
+**Expected result:** Returns `nil` because the keyboard extension (OuisprKeyboard) and the host app (e.g., WhatsApp) are from different teams. iOS only populates `sourceApplication` for same-team apps since iOS 13.
 **How to test:** Add logging in `handleIncomingURL` to print `sourceApplication` value. Run from simulator with Messages (same team) vs WhatsApp (different team).
 **Confidence:** HIGH that this will NOT work for cross-team apps.
 
 #### Approach 2: Keyboard extension passing host info via URL
-**What:** Have the keyboard extension detect the host app bundle ID and pass it as a URL parameter (`dictus://dictate?source=keyboard&host=com.whatsapp`).
+**What:** Have the keyboard extension detect the host app bundle ID and pass it as a URL parameter (`ouispr://dictate?source=keyboard&host=com.whatsapp`).
 **Expected result:** WILL NOT WORK. The private API `_hostBundleID` was removed in iOS 26.4 (returns nil). KeyboardKit 10.4 confirmed this is a system-level change. No public API exists to get the host bundle ID from a keyboard extension.
 **Confidence:** HIGH that this is dead.
 
@@ -107,7 +107,7 @@ No new dependencies required. All work uses existing project frameworks.
 
 #### Approach 5: canOpenURL enumeration from the app
 **What:** After recording completes, iterate `KnownAppSchemes` and open the first one that was recently active.
-**Expected result:** ALREADY TRIED AND REMOVED (see DictusApp.swift line 164 comment). Always opens the first installed app (e.g., WhatsApp) regardless of actual source. No way to determine which app was actually being used.
+**Expected result:** ALREADY TRIED AND REMOVED (see OuisprApp.swift line 164 comment). Always opens the first installed app (e.g., WhatsApp) regardless of actual source. No way to determine which app was actually being used.
 **Confidence:** HIGH -- already proven to not work.
 
 **ADR conclusion template:** All five approaches fail because iOS provides no public API for a keyboard extension to identify its host app, and the private `_hostBundleID` API was removed in iOS 26.4. Auto-return requires knowing which app to return to, making it fundamentally impossible with current iOS capabilities.
@@ -146,7 +146,7 @@ SwipeBackOverlayView.swift (redesigned)
 Text("We'd love to skip this step, but iOS requires switching apps to activate the microphone.")
     .font(.subheadline)
 
-// French translation goes in DictusApp/Localizable.xcstrings:
+// French translation goes in OuisprApp/Localizable.xcstrings:
 // Key: "We'd love to skip this step, but iOS requires switching apps to activate the microphone."
 // FR value: "Nous aimerions ne pas avoir a changer d'app, mais iOS l'exige pour activer le micro."
 ```
@@ -226,7 +226,7 @@ struct IPhoneMockupView: View {
                 HStack(spacing: 4) {
                     ForEach(0..<5, id: \.self) { i in
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.dictusAccent)
+                            .fill(Color.ouisprAccent)
                             .frame(width: 4, height: isAnimating
                                 ? CGFloat.random(in: 12...40)
                                 : CGFloat.random(in: 6...20))
@@ -250,16 +250,16 @@ struct IPhoneMockupView: View {
                 ZStack {
                     // Animated circle sliding right
                     Circle()
-                        .fill(Color.dictusAccent)
+                        .fill(Color.ouisprAccent)
                         .frame(width: 28, height: 28)
-                        .shadow(color: Color.dictusAccent.opacity(0.5), radius: 8)
+                        .shadow(color: Color.ouisprAccent.opacity(0.5), radius: 8)
                         .offset(x: isAnimating ? 50 : -30)
                     
                     // Chevron trail
                     ForEach(0..<2, id: \.self) { i in
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(Color.dictusAccent.opacity(0.3 - Double(i) * 0.1))
+                            .foregroundColor(Color.ouisprAccent.opacity(0.3 - Double(i) * 0.1))
                             .offset(x: isAnimating
                                 ? CGFloat(25 - i * 14)
                                 : CGFloat(-35 - i * 14))
@@ -289,7 +289,7 @@ struct IPhoneMockupView: View {
 
 ### Pattern 2: sourceApplication Check (for investigation)
 ```swift
-// In DictusApp.swift or MainTabView.swift -- add during investigation
+// In OuisprApp.swift or MainTabView.swift -- add during investigation
 // SwiftUI onOpenURL doesn't expose sourceApplication directly.
 // Need SceneDelegate or UIApplicationDelegate hook:
 
@@ -334,7 +334,7 @@ VStack(spacing: 16) {
     // Pinned at bottom
     Text("Swipe right at the bottom of your screen")
         .font(.callout.weight(.medium))
-        .foregroundColor(.dictusAccent)
+        .foregroundColor(.ouisprAccent)
 }
 ```
 
@@ -402,7 +402,7 @@ None -- this phase is primarily investigation + UI redesign + bug fixes. No test
 - [KeyboardKit host features](https://keyboardkit.com/features/host) - Confirmed private API was the only mechanism
 - [Apple: UIScene.ConnectionOptions](https://developer.apple.com/documentation/uikit/uiscene/connectionoptions) - Official docs on urlContexts
 - [Apple: sourceApplication key](https://developer.apple.com/documentation/uikit/uiapplication/openurloptionskey/sourceapplication) - Official docs on sourceApplication behavior
-- Existing codebase: DictusApp.swift line 164 comment confirms canOpenURL enumeration was already tried and removed
+- Existing codebase: OuisprApp.swift line 164 comment confirms canOpenURL enumeration was already tried and removed
 
 ### Secondary (MEDIUM confidence)
 - [Swift Forums: How do keyboard apps return to previous app](https://forums.swift.org/t/how-do-voice-dictation-keyboard-apps-like-wispr-flow-return-users-to-the-previous-app-automatically/83988) - Community confirmation no public API exists

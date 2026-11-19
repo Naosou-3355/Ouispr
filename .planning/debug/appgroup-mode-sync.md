@@ -14,7 +14,7 @@ next_action: Confirm root cause and document fix
 
 ## Symptoms
 
-expected: Changing keyboard mode in DictusApp Settings immediately reflects in keyboard extension next time it opens
+expected: Changing keyboard mode in OuisprApp Settings immediately reflects in keyboard extension next time it opens
 actual: Keyboard extension keeps old mode until app is rebuilt (extension process killed and restarted)
 errors: None — silent stale read
 reproduction: 1) Open Settings, change mode from Full to Micro. 2) Switch to any app, open keyboard. 3) Keyboard still shows Full mode.

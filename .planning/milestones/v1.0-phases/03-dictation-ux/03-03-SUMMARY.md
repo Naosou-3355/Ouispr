@@ -7,7 +7,7 @@ tags: [swift, swiftui, keyboard, azerty, qwerty, accents, dictation]
 # Dependency graph
 requires:
   - phase: 03-01
-    provides: "DictusCore contracts: LayoutType, QWERTYLayout, AccentedCharacters, SharedKeys"
+    provides: "OuisprCore contracts: LayoutType, QWERTYLayout, AccentedCharacters, SharedKeys"
 provides:
   - "QWERTY layout switching via App Group preference in keyboard extension"
   - "Accented character long-press popup on AZERTY keys with drag-to-select"
@@ -21,14 +21,14 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Views/AccentPopup.swift
-    - DictusApp/Views/TestDictationView.swift
+    - OuisprKeyboard/Views/AccentPopup.swift
+    - OuisprApp/Views/TestDictationView.swift
   modified:
-    - DictusKeyboard/Models/KeyboardLayout.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/KeyButton.swift
-    - DictusApp/ContentView.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/Models/KeyboardLayout.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/KeyButton.swift
+    - OuisprApp/ContentView.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Task 1 code was bundled into 03-02 commit (107e7fe) by the previous executor -- no separate Task 1 commit"
@@ -62,7 +62,7 @@ completed: 2026-03-06
 - KeyboardLayout supports both AZERTY (default) and QWERTY layouts, switchable via App Group preference
 - KeyButton shows AccentPopup on 400ms long-press for AZERTY letters with French accented variants (e, a, u, i, o, c, y, n)
 - TestDictationView provides in-app recording and transcription without URL scheme, gated on model readiness
-- All 46 DictusCore tests pass, both DictusApp and DictusKeyboard targets build cleanly
+- All 46 OuisprCore tests pass, both OuisprApp and OuisprKeyboard targets build cleanly
 
 ## Task Commits
 
@@ -73,13 +73,13 @@ Each task was committed atomically:
 3. **Task 3: Human verification** - approved by user
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/AccentPopup.swift` - Horizontal accent picker popup with highlighted selection
-- `DictusApp/Views/TestDictationView.swift` - In-app test dictation screen with 3-state mic button and accumulated text
-- `DictusKeyboard/Models/KeyboardLayout.swift` - Added QWERTY rows and currentLettersRows() dynamic selection
-- `DictusKeyboard/Views/KeyboardView.swift` - Uses dynamic layout, filters out mic keys from letter rows
-- `DictusKeyboard/Views/KeyButton.swift` - Added long-press timer, accent lookup, drag-to-select gesture
-- `DictusApp/ContentView.swift` - Navigation link to TestDictationView when model is ready
-- `Dictus.xcodeproj/project.pbxproj` - Registered AccentPopup.swift and TestDictationView.swift
+- `OuisprKeyboard/Views/AccentPopup.swift` - Horizontal accent picker popup with highlighted selection
+- `OuisprApp/Views/TestDictationView.swift` - In-app test dictation screen with 3-state mic button and accumulated text
+- `OuisprKeyboard/Models/KeyboardLayout.swift` - Added QWERTY rows and currentLettersRows() dynamic selection
+- `OuisprKeyboard/Views/KeyboardView.swift` - Uses dynamic layout, filters out mic keys from letter rows
+- `OuisprKeyboard/Views/KeyButton.swift` - Added long-press timer, accent lookup, drag-to-select gesture
+- `OuisprApp/ContentView.swift` - Navigation link to TestDictationView when model is ready
+- `Ouispr.xcodeproj/project.pbxproj` - Registered AccentPopup.swift and TestDictationView.swift
 
 ## Decisions Made
 - Task 1 files were already committed by the 03-02 executor in `107e7fe` (they were on disk as uncommitted work). No duplicate commit needed.
@@ -95,15 +95,15 @@ Each task was committed atomically:
 - **Found during:** Task 2 (TestDictationView implementation)
 - **Issue:** DictationStatus enum has 6 cases including `.requested`, but plan only mentioned 5 states for the mic button
 - **Fix:** Added `.requested` handling in micButtonColor (gray) and statusLabel ("Demarrage..."), disabled button during requested state
-- **Files modified:** DictusApp/Views/TestDictationView.swift
-- **Verification:** DictusApp builds cleanly with exhaustive switches
+- **Files modified:** OuisprApp/Views/TestDictationView.swift
+- **Verification:** OuisprApp builds cleanly with exhaustive switches
 - **Committed in:** 7f91674 (Task 2 commit)
 
 **2. [Rule 3 - Blocking] Fixed pbxproj registration for both new files**
 - **Found during:** Task 1/2 (build verification)
 - **Issue:** Python script for pbxproj editing partially failed -- missing PBXFileReference, PBXGroup membership, and PBXSourcesBuildPhase entries
 - **Fix:** Manually added all missing entries for AccentPopup.swift and TestDictationView.swift
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** Both targets build successfully
 - **Committed in:** 7f91674 (Task 2 commit)
 

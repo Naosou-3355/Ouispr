@@ -171,8 +171,8 @@ avoir fait faire est sont etait ete suis es sommes etes ont as ai avons avez peu
 dois devoir va vais aller the a an of to in on at for with by from as is are was were be been and or
 but not no so if then than that this these those it its we you i my our c l j m n s t qu""".split())
 _FIXTURE_FILES = [
-    "../../../DictusCore/Sources/polish-harness/fixtures/device-structured-fr.json",
-    "../../../DictusCore/Sources/polish-harness/fixtures/longform-fr.json",
+    "../../../OuisprCore/Sources/polish-harness/fixtures/device-structured-fr.json",
+    "../../../OuisprCore/Sources/polish-harness/fixtures/longform-fr.json",
     "shortprobe-fr.json",
     "leakprobe-fr.json",
 ]

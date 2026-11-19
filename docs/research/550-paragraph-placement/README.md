@@ -36,7 +36,7 @@ reassembled in code. `raw/` holds the human captures, `captures/` the machine on
 quantities the harness does not score.
 
 The instrument is `swift run polish-harness paragraph`, documented in
-`DictusCore/Sources/polish-harness/README.md`.
+`OuisprCore/Sources/polish-harness/README.md`.
 
 **The answer is in `findings.md` and it is no.** One arm holds all four bars 70 of 70
 and returns the same answer as a rule that calls no model at all in 56 of those 70.
@@ -47,7 +47,7 @@ and returns the same answer as a rule that calls no model at all in 56 of those 
 first round killed *pauses explain Typeless*; this one tests *pauses serve the speaker*,
 with his own paragraph marks as the reference instead of the competitor's output.
 
-Five new fixtures, each with its audio, its Dictus raw and polished text, and the breaks
+Five new fixtures, each with its audio, its Ouispr raw and polished text, and the breaks
 the maintainer wants, collected from the numbered text **before any measurement was shown
 to him**. Sixteen sentence boundaries, each carrying a silence measured by cutting the
 audio at the pauses and transcribing every speech segment on its own, so nothing is

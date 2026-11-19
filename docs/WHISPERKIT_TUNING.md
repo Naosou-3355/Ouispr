@@ -1,11 +1,11 @@
 # WhisperKit Investigation Notes
 
-Working knowledge base for Dictus' WhisperKit integration. Captures what we know, what we tried, what failed, what worked, and the questions still open after the audit kicked off by issue #163.
+Working knowledge base for Ouispr' WhisperKit integration. Captures what we know, what we tried, what failed, what worked, and the questions still open after the audit kicked off by issue #163.
 
 **Status**: #163 resolved (turbo no longer truncates long audio). Wider audit #168 partially complete — see Section 9.
 
 Pinned version: WhisperKit **0.16.0** (`Package.resolved`).
-Local source checkout: `~/Library/Developer/Xcode/DerivedData/Dictus-*/SourcePackages/checkouts/WhisperKit/Sources/WhisperKit/Core/`.
+Local source checkout: `~/Library/Developer/Xcode/DerivedData/Ouispr-*/SourcePackages/checkouts/WhisperKit/Sources/WhisperKit/Core/`.
 
 ---
 
@@ -18,7 +18,7 @@ Local source checkout: `~/Library/Developer/Xcode/DerivedData/Dictus-*/SourcePac
 
 ## 2. Architecture context — why we are stuck in batch mode
 
-Dictus runs Whisper inference in the **main app**, not in the keyboard extension (~50 MB memory ceiling). The pipeline is:
+Ouispr runs Whisper inference in the **main app**, not in the keyboard extension (~50 MB memory ceiling). The pipeline is:
 
 1. Keyboard extension sends a Darwin notification to the app.
 2. App captures audio in `UnifiedAudioEngine` and accumulates samples in `audioSamples: [Float]`.
@@ -30,7 +30,7 @@ Dictus runs Whisper inference in the **main app**, not in the keyboard extension
 
 **Important consequence**: Argmax's published benchmarks (5×–7× realtime on iPhone 15 Pro for turbo, "0.46s latency" in the ICML paper) are **streaming-mode numbers**. They are not directly comparable to our batch wall-clock measurements. The realistic batch ceiling on this device is unknown — needs to be researched or measured in a controlled spike.
 
-Streaming might be revisited later for **Dictus Desktop** where the architecture is different. Out of scope for iOS.
+Streaming might be revisited later for **Ouispr Desktop** where the architecture is different. Out of scope for iOS.
 
 ---
 
@@ -211,7 +211,7 @@ Argmax benchmarks are streaming. We have no rigorous batch-mode benchmark for tu
 We pinned 0.16 in early March 2026. Latest is past v1.0. Changelog includes turbo-specific fixes we haven't audited. Upgrading is non-trivial (v1.0 has breaking changes — `usePrefillCache` removed, `TextDecoderContextPrefill` removed, package renamed) but might resolve issues.
 
 ### H5 — Issue is specific to this turbo variant (`_954MB`)
-There is also `openai_whisper-large-v3-v20240930_turbo_632MB` (newer compression of same architecture) and `distil-whisper_distil-large-v3_turbo_600MB` (further distillation). Untested in Dictus. Architecturally similar — distil decoder issue may persist — but mass and quantization differ.
+There is also `openai_whisper-large-v3-v20240930_turbo_632MB` (newer compression of same architecture) and `distil-whisper_distil-large-v3_turbo_600MB` (further distillation). Untested in Ouispr. Architecturally similar — distil decoder issue may persist — but mass and quantization differ.
 
 ### H6 — Custom code in our chain adds overhead
 `UnifiedAudioEngine.collectSamples` returns a fresh `[Float]`, passed through `TranscriptionService` to `WhisperKitEngine`. Three function frames. Probably negligible but never profiled.
@@ -283,7 +283,7 @@ Per-model decoding architecture (axis C of #168) is **not needed** — `.vad` wo
 The audit answered most of #168, but two threads remain:
 
 ### Q1 — Turbo's absolute slowness on iPhone
-Variant A confirms turbo at **2.7× RTF** while small runs at **17×** on the same device. Turbo is *slower* than medium in batch mode despite the distilled decoder. Likely structural (large encoder + ANE specialization slowness — see Argmax [#301](https://github.com/argmaxinc/argmax-oss-swift/issues/301), [#304](https://github.com/argmaxinc/argmax-oss-swift/issues/304)), not a Dictus bug. Tracked as a separate issue with concrete next steps: test alternative quantizations (`large-v3-v20240930_turbo_632MB`, `distil-whisper_distil-large-v3_turbo_600MB`), confirm ANE-utilisation via Instruments, and surface "slow but accurate" UX cues in the model picker.
+Variant A confirms turbo at **2.7× RTF** while small runs at **17×** on the same device. Turbo is *slower* than medium in batch mode despite the distilled decoder. Likely structural (large encoder + ANE specialization slowness — see Argmax [#301](https://github.com/argmaxinc/argmax-oss-swift/issues/301), [#304](https://github.com/argmaxinc/argmax-oss-swift/issues/304)), not a Ouispr bug. Tracked as a separate issue with concrete next steps: test alternative quantizations (`large-v3-v20240930_turbo_632MB`, `distil-whisper_distil-large-v3_turbo_600MB`), confirm ANE-utilisation via Instruments, and surface "slow but accurate" UX cues in the model picker.
 
 ### Q2 — WhisperKit upgrade as standalone hygiene
 v1.0.0 brings package URL change + Swift 6 + minor breaking renames. None of it helps any current bug, but staying on the supported branch is good housekeeping. To be planned as its own issue when bandwidth allows.

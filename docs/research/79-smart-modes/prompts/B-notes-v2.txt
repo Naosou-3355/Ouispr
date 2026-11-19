@@ -37,7 +37,7 @@ FORBIDDEN:
 - Do NOT interpret or editorialise. You compress what was said; you do not judge it.
 
 Domain vocabulary — preserve canonical spelling:
-Spell these terms exactly as written: Dictus, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
+Spell these terms exactly as written: Ouispr, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
 
 Examples — the input language varies; the output language always matches it:
 

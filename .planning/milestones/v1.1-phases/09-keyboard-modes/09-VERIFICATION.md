@@ -53,10 +53,10 @@ All three fixes are confirmed in the codebase. The automated checks pass. Howeve
 |---|-------|--------|----------|
 | 1 | KeyboardMode enum has three cases: micro, emojiMicro, full | VERIFIED | KeyboardMode.swift lines 19-22: three cases with String raw values, CaseIterable, Codable |
 | 2 | KeyboardMode.active reads from App Group and defaults to .full | VERIFIED | KeyboardMode.swift lines 29-35: reads AppGroup.defaults with SharedKeys.keyboardMode, falls back to .full |
-| 3 | SharedKeys.keyboardMode key exists for cross-process persistence | VERIFIED | SharedKeys.swift line 31: `keyboardMode = "dictus.keyboardMode"` |
+| 3 | SharedKeys.keyboardMode key exists for cross-process persistence | VERIFIED | SharedKeys.swift line 31: `keyboardMode = "ouispr.keyboardMode"` |
 | 4 | Micro mode shows large mic button with utility row, matching background, no redundant globe | VERIFIED | MicroModeView.swift: VStack layout with 120pt Capsule mic (line 40), bottom HStack with 4 utility buttons (lines 71-106), secondarySystemBackground (line 112), no globe, .requested in disabled (line 58) |
-| 5 | Emoji+ mode shows EmojiPickerView with gear icon, mic pill, clipped bounds, ABC wired | VERIFIED | EmojiMicroModeView.swift: gear via Link(dictus://) (lines 33-38), mic pill (line 43), onDismiss -> advanceToNextInputMode (lines 59-61), .clipped() (lines 64, 71), totalHeight+56 (line 70) |
-| 6 | KeyboardRootView reads mode on appear AND refreshes on every keyboard show | VERIFIED | KeyboardRootView.swift: .onAppear (line 140), .onReceive(.dictusKeyboardWillAppear) (lines 154-156). KeyboardViewController posts notification in viewWillAppear (line 88) |
+| 5 | Emoji+ mode shows EmojiPickerView with gear icon, mic pill, clipped bounds, ABC wired | VERIFIED | EmojiMicroModeView.swift: gear via Link(ouispr://) (lines 33-38), mic pill (line 43), onDismiss -> advanceToNextInputMode (lines 59-61), .clipped() (lines 64, 71), totalHeight+56 (line 70) |
+| 6 | KeyboardRootView reads mode on appear AND refreshes on every keyboard show | VERIFIED | KeyboardRootView.swift: .onAppear (line 140), .onReceive(.ouisprKeyboardWillAppear) (lines 154-156). KeyboardViewController posts notification in viewWillAppear (line 88) |
 | 7 | Settings shows segmented picker with conditional toggles per mode | VERIFIED | SettingsView.swift: KeyboardModePicker (line 62), conditional toggles for layout (line 65), haptics (line 73), autocorrect (line 78) |
 | 8 | Recording overlay works across all three keyboard modes | ? UNCERTAIN | Code structure correct -- RecordingOverlay renders above mode switch (lines 54-62). UAT test 7 was blocked, never tested. Needs human verification. |
 
@@ -66,17 +66,17 @@ All three fixes are confirmed in the codebase. The automated checks pass. Howeve
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/KeyboardMode.swift` | Enum with 3 cases, active, displayName, CaseIterable | VERIFIED | 46 lines, substantive |
-| `DictusCore/Sources/DictusCore/SharedKeys.swift` | keyboardMode shared key | VERIFIED | Line 31 |
-| `DictusCore/Tests/DictusCoreTests/KeyboardModeTests.swift` | Unit tests | VERIFIED | 84 lines, 10 tests |
-| `DictusKeyboard/Views/MicroModeView.swift` | Mic + utility row + background | VERIFIED | 149 lines, restructured in 09-05 |
-| `DictusKeyboard/Views/EmojiMicroModeView.swift` | Emoji + gear + clipped | VERIFIED | 73 lines, fixed in 09-06 |
-| `DictusKeyboard/KeyboardRootView.swift` | Mode switch + notification refresh | VERIFIED | 209 lines, fixed in 09-04 |
-| `DictusKeyboard/KeyboardViewController.swift` | viewWillAppear notification | VERIFIED | Posts .dictusKeyboardWillAppear (line 88) |
-| `DictusApp/Views/KeyboardModePicker.swift` | Segmented picker + previews | VERIFIED | 172 lines |
-| `DictusApp/Views/SettingsView.swift` | Mode picker + conditional toggles | VERIFIED | Wired |
-| `DictusApp/Onboarding/ModeSelectionPage.swift` | Blocking onboarding step | VERIFIED | 65 lines, empty default, disabled button |
-| `DictusApp/Onboarding/OnboardingView.swift` | 6 steps, mode at case 3 | VERIFIED | totalSteps=6 |
+| `OuisprCore/Sources/OuisprCore/KeyboardMode.swift` | Enum with 3 cases, active, displayName, CaseIterable | VERIFIED | 46 lines, substantive |
+| `OuisprCore/Sources/OuisprCore/SharedKeys.swift` | keyboardMode shared key | VERIFIED | Line 31 |
+| `OuisprCore/Tests/OuisprCoreTests/KeyboardModeTests.swift` | Unit tests | VERIFIED | 84 lines, 10 tests |
+| `OuisprKeyboard/Views/MicroModeView.swift` | Mic + utility row + background | VERIFIED | 149 lines, restructured in 09-05 |
+| `OuisprKeyboard/Views/EmojiMicroModeView.swift` | Emoji + gear + clipped | VERIFIED | 73 lines, fixed in 09-06 |
+| `OuisprKeyboard/KeyboardRootView.swift` | Mode switch + notification refresh | VERIFIED | 209 lines, fixed in 09-04 |
+| `OuisprKeyboard/KeyboardViewController.swift` | viewWillAppear notification | VERIFIED | Posts .ouisprKeyboardWillAppear (line 88) |
+| `OuisprApp/Views/KeyboardModePicker.swift` | Segmented picker + previews | VERIFIED | 172 lines |
+| `OuisprApp/Views/SettingsView.swift` | Mode picker + conditional toggles | VERIFIED | Wired |
+| `OuisprApp/Onboarding/ModeSelectionPage.swift` | Blocking onboarding step | VERIFIED | 65 lines, empty default, disabled button |
+| `OuisprApp/Onboarding/OnboardingView.swift` | 6 steps, mode at case 3 | VERIFIED | totalSteps=6 |
 
 ### Key Link Verification
 
@@ -85,9 +85,9 @@ All three fixes are confirmed in the codebase. The automated checks pass. Howeve
 | KeyboardMode.swift | SharedKeys.swift | SharedKeys.keyboardMode | WIRED | Line 30 |
 | KeyboardMode.swift | AppGroup.swift | AppGroup.defaults | WIRED | Line 30 |
 | KeyboardRootView.swift | KeyboardMode.swift | KeyboardMode.active | WIRED | Lines 140, 155 |
-| KeyboardViewController.swift | KeyboardRootView.swift | .dictusKeyboardWillAppear | WIRED | Post line 88, receive line 154 |
+| KeyboardViewController.swift | KeyboardRootView.swift | .ouisprKeyboardWillAppear | WIRED | Post line 88, receive line 154 |
 | MicroModeView.swift | textDocumentProxy | insertText/deleteBackward | WIRED | Lines 82, 97, 102 |
-| EmojiMicroModeView.swift | dictus:// | Link(destination:) gear | WIRED | Line 33 |
+| EmojiMicroModeView.swift | ouispr:// | Link(destination:) gear | WIRED | Line 33 |
 | EmojiMicroModeView.swift | EmojiPickerView | onDismiss -> advanceToNextInputMode | WIRED | Lines 59-61 |
 | KeyboardModePicker.swift | KeyboardMode | allCases, displayName | WIRED | Lines 24-25 |
 | SettingsView.swift | SharedKeys.keyboardMode | @AppStorage | WIRED | Line 26 |
@@ -124,7 +124,7 @@ No TODO, FIXME, PLACEHOLDER, HACK, or XXX in any phase 9 artifact. No stub imple
 ### 2. Emoji+ Mode Layout (Post-Fix UAT Re-test)
 
 **Test:** Select Emoji+ mode, open keyboard in any text field.
-**Expected:** Emoji grid fits within keyboard bounds, category bar fully visible, gear icon top-left opens Dictus app, mic pill top-right, ABC button switches keyboards.
+**Expected:** Emoji grid fits within keyboard bounds, category bar fully visible, gear icon top-left opens Ouispr app, mic pill top-right, ABC button switches keyboards.
 **Why human:** UAT test 5 failed with 3 issues. All fixed in 09-06 (commit 88b31a7) but not re-tested.
 
 ### 3. Mode Switching Persistence (Post-Fix UAT Re-test)
@@ -145,7 +145,7 @@ No automated code gaps remain. All three gap closure plans (09-04, 09-05, 09-06)
 
 - MicroModeView: restructured with VStack, utility row, matching background, .requested guard
 - EmojiMicroModeView: clipped, gear icon, ABC wired, height expanded
-- KeyboardRootView: mode refreshes via .dictusKeyboardWillAppear notification
+- KeyboardRootView: mode refreshes via .ouisprKeyboardWillAppear notification
 
 The phase is code-complete. However, 4 UAT test failures remain un-re-tested after their fixes were applied. Human verification is needed to confirm the fixes resolve the user-reported issues on device.
 

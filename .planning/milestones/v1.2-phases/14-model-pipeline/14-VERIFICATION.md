@@ -11,14 +11,14 @@ re_verification:
   gaps_remaining: []
   regressions: []
 human_verification:
-  - test: "On a device with >=6GB RAM (iPhone 14 Pro+, iPhone 15, iPhone 16), open Dictus onboarding to the model download step"
+  - test: "On a device with >=6GB RAM (iPhone 14 Pro+, iPhone 15, iPhone 16), open Ouispr onboarding to the model download step"
     expected: "Model card shows 'Parakeet v3', '~800 MB', 'Rapide et precis (NVIDIA)'; on a <=4GB device (iPhone 13 mini, 12 mini) it shows 'Small' / '~250 MB'"
     why_human: "Simulator reports RAM differently from real hardware. ProcessInfo.processInfo.physicalMemory values in iOS Simulator do not match real device tiers."
   - test: "Download a WhisperKit model, force a download error (airplane mode mid-download), then tap Reessayer"
     expected: "Corrupted/partial files are cleaned up, model returns to .notDownloaded state, fresh download is possible"
     why_human: "Requires real network interruption to trigger .error state. Static analysis confirms cleanupFailedModel() is called; end-to-end behavior needs device confirmation."
   - test: "On an iOS 17+ device with >=6GB RAM, download Parakeet v3 and dictate a French sentence"
-    expected: "Transcription completes without crashing; DictusLogger shows 'ParakeetEngine: v3 models loaded and ready'"
+    expected: "Transcription completes without crashing; OuisprLogger shows 'ParakeetEngine: v3 models loaded and ready'"
     why_human: "FluidAudio SDK (AsrModels.downloadAndLoad, AsrManager.transcribe) cannot be exercised statically. Engine routing is verified in code but actual FluidAudio invocation requires device execution."
 ---
 
@@ -69,11 +69,11 @@ No regressions found in previously-verified items.
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/ModelInfo.swift` | Catalog without Large Turbo; `recommendedIdentifier()` and `isRecommended()` | VERIFIED | 6 entries in `allIncludingDeprecated`; both static methods present |
-| `DictusApp/Models/ModelManager.swift` | `isRecommended()` delegates to `ModelInfo.isRecommended()` | VERIFIED | Line 317: `ModelInfo.isRecommended(identifier)` |
-| `DictusApp/Views/ModelCardView.swift` | Spinner + "Optimisation en cours...", retry calls `cleanupFailedModel()` | VERIFIED | Lines 140-146 (prewarm UI), lines 178-194 (error/retry) |
-| `DictusApp/Onboarding/ModelDownloadPage.swift` | Dynamic recommendation via `ModelInfo.recommendedIdentifier` | VERIFIED | Computed property lines 25-27; data-driven card lines 150-174 |
-| `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` | All assertions aligned with 4 available / 6 total / 5 WhisperKit catalog | VERIFIED | All 5 previously-stale assertions corrected |
+| `OuisprCore/Sources/OuisprCore/ModelInfo.swift` | Catalog without Large Turbo; `recommendedIdentifier()` and `isRecommended()` | VERIFIED | 6 entries in `allIncludingDeprecated`; both static methods present |
+| `OuisprApp/Models/ModelManager.swift` | `isRecommended()` delegates to `ModelInfo.isRecommended()` | VERIFIED | Line 317: `ModelInfo.isRecommended(identifier)` |
+| `OuisprApp/Views/ModelCardView.swift` | Spinner + "Optimisation en cours...", retry calls `cleanupFailedModel()` | VERIFIED | Lines 140-146 (prewarm UI), lines 178-194 (error/retry) |
+| `OuisprApp/Onboarding/ModelDownloadPage.swift` | Dynamic recommendation via `ModelInfo.recommendedIdentifier` | VERIFIED | Computed property lines 25-27; data-driven card lines 150-174 |
+| `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` | All assertions aligned with 4 available / 6 total / 5 WhisperKit catalog | VERIFIED | All 5 previously-stale assertions corrected |
 
 ---
 
@@ -128,7 +128,7 @@ None. The previous blocker (stale test assertions in ModelInfoTests.swift) has b
 ### 3. Parakeet transcription on device
 
 **Test:** On an iOS 17+ device with >=6GB RAM, download Parakeet v3 and dictate a French sentence.
-**Expected:** Text is transcribed in French without crashing. DictusLogger output confirms "ParakeetEngine: v3 models loaded and ready" and "Initializing ParakeetEngine for model: parakeet-tdt-0.6b-v3".
+**Expected:** Text is transcribed in French without crashing. OuisprLogger output confirms "ParakeetEngine: v3 models loaded and ready" and "Initializing ParakeetEngine for model: parakeet-tdt-0.6b-v3".
 **Why human:** FluidAudio SDK (`AsrModels.downloadAndLoad`, `AsrManager.transcribe`) cannot be exercised statically. Engine routing is verified in source but actual FluidAudio invocation requires device execution.
 
 ---

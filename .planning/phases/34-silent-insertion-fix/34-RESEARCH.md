@@ -26,11 +26,11 @@
 - Existing 100 ms UserDefaults retry stays (it solves a different problem: App Group propagation lag).
 
 **Loud-fail UX**
-- **Dynamic Island:** error icon + short `Dictus` label (expanded view: short error line). Does not carry the actionable recovery message.
-- **Toolbar banner:** reuses existing error-banner pattern. Actionable copy pointing to DictusApp. Auto-hide after **4 seconds**. Accompanied by error haptic via `HapticFeedback`.
-  - FR: `Insertion impossible. Retrouvez votre transcription dans Dictus.`
-  - EN: `Couldn't insert. Find your transcription in Dictus.`
-- **DictusApp home:** dedicated "last transcription" card always visible when a recent transcription exists in the App Group. Shows the text (or a preview) and a copy-to-clipboard button. This is the recovery surface users are directed to.
+- **Dynamic Island:** error icon + short `Ouispr` label (expanded view: short error line). Does not carry the actionable recovery message.
+- **Toolbar banner:** reuses existing error-banner pattern. Actionable copy pointing to OuisprApp. Auto-hide after **4 seconds**. Accompanied by error haptic via `HapticFeedback`.
+  - FR: `Insertion impossible. Retrouvez votre transcription dans Ouispr.`
+  - EN: `Couldn't insert. Find your transcription in Ouispr.`
+- **OuisprApp home:** dedicated "last transcription" card always visible when a recent transcription exists in the App Group. Shows the text (or a preview) and a copy-to-clipboard button. This is the recovery surface users are directed to.
 - No auto-copy to system pasteboard (privacy + surprise behavior).
 - No repeated-failure escalation in v1 — ship minimal, observe real-world rate via logs, revisit later if needed.
 
@@ -48,9 +48,9 @@
 - Final FR/EN wording polish if the proposed copy needs tightening for the existing banner widget.
 
 ### Deferred Ideas (OUT OF SCOPE)
-- Tappable banner → URL-scheme deep-link into DictusApp "last transcription" view. Considered, kept out of scope for v1 (adds URL scheme handling + routing). Revisit if banner-tap rate is low in telemetry.
+- Tappable banner → URL-scheme deep-link into OuisprApp "last transcription" view. Considered, kept out of scope for v1 (adds URL scheme handling + routing). Revisit if banner-tap rate is low in telemetry.
 - Repeated-failure escalation (Full Access nudge, anonymous failure counter, "reinstall keyboard" hint). Out of scope for v1 — will reconsider once real-world failure rate is measured from the probe.
-- Transcription history view in DictusApp. Out of scope — premium/Pro scope per REQUIREMENTS.md Out of Scope table (#70).
+- Transcription history view in OuisprApp. Out of scope — premium/Pro scope per REQUIREMENTS.md Out of Scope table (#70).
 - Queue-on-resume for transcriptions that land while the keyboard is suspended. Rejected after weighing wrong-field / stale-flush / password-field hazards.
 - Automated XCUITest harness for the 3 insertion paths. Deferred — manual scripted run chosen for v1 velocity; revisit if regressions recur.
 </user_constraints>
@@ -60,16 +60,16 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| STAB-01 | Transcription text is always inserted into the target app when dictation completes (fixes silent insertion failure, issue #118) | Existing code map (§Existing Code — Authoritative Insertion Paths), probe design respecting `LogEvent` privacy model (§Probe Design), shared insertion helper pattern (§Architecture — Shared Insert Helper), retry backoff budget (§Timing & UX), loud-fail UX wiring points across Dynamic Island, toolbar banner, DictusApp home (§Loud-Fail UX Integration), validation plan (§Validation Architecture). |
+| STAB-01 | Transcription text is always inserted into the target app when dictation completes (fixes silent insertion failure, issue #118) | Existing code map (§Existing Code — Authoritative Insertion Paths), probe design respecting `LogEvent` privacy model (§Probe Design), shared insertion helper pattern (§Architecture — Shared Insert Helper), retry backoff budget (§Timing & UX), loud-fail UX wiring points across Dynamic Island, toolbar banner, OuisprApp home (§Loud-Fail UX Integration), validation plan (§Validation Architecture). |
 </phase_requirements>
 
 ## Summary
 
 Issue #118 is a silent no-op on `controller?.textDocumentProxy.insertText(transcription)` at `KeyboardState.swift:341`. Logs prove the call is made (`keyboardTextInserted` fires, haptic fires, status goes `transcribing → ready`) but no text lands in the host field. The current pipeline has zero post-insertion verification — we assume success because `insertText` does not throw.
 
-The fix is well-scoped: wrap both warm-path insertion (`KeyboardState.handleTranscriptionReady:341` and the 100 ms retry at `:363-383`) and the cold-start variant in a single shared helper that (1) validates proxy health, (2) inserts, (3) verifies via `documentContextBeforeInput` delta, (4) retries 3× with 50/100/200 ms backoff, (5) escalates to a loud-fail UX (Dynamic Island error variant, toolbar banner, DictusApp "last transcription" card with copy-to-clipboard). The probe produces privacy-safe structured `LogEvent` entries on every attempt so real-world failure rate can be measured and issue #118 can be definitively closed by log inspection rather than user perception.
+The fix is well-scoped: wrap both warm-path insertion (`KeyboardState.handleTranscriptionReady:341` and the 100 ms retry at `:363-383`) and the cold-start variant in a single shared helper that (1) validates proxy health, (2) inserts, (3) verifies via `documentContextBeforeInput` delta, (4) retries 3× with 50/100/200 ms backoff, (5) escalates to a loud-fail UX (Dynamic Island error variant, toolbar banner, OuisprApp "last transcription" card with copy-to-clipboard). The probe produces privacy-safe structured `LogEvent` entries on every attempt so real-world failure rate can be measured and issue #118 can be definitively closed by log inspection rather than user perception.
 
-**Primary recommendation:** Add one shared `InsertTranscriptionHelper` (or an extension method on `UIInputViewController`) consumed by both call sites. Instrument through the existing `PersistentLog` / `LogEvent` pipeline with three new cases (`keyboardInsertProbe`, `keyboardInsertRetry`, `keyboardInsertFailed`). Drive loud-fail UX from a new `@Published` error flag on `KeyboardState` that `KeyboardRootView` forwards to `ToolbarView.statusMessage` (pattern already exists) plus a one-shot DI "insertion failed" phase variant and a DictusApp home card fed by the existing `SharedKeys.lastTranscription` / `lastTranscriptionTimestamp` that `DictationCoordinator` already writes.
+**Primary recommendation:** Add one shared `InsertTranscriptionHelper` (or an extension method on `UIInputViewController`) consumed by both call sites. Instrument through the existing `PersistentLog` / `LogEvent` pipeline with three new cases (`keyboardInsertProbe`, `keyboardInsertRetry`, `keyboardInsertFailed`). Drive loud-fail UX from a new `@Published` error flag on `KeyboardState` that `KeyboardRootView` forwards to `ToolbarView.statusMessage` (pattern already exists) plus a one-shot DI "insertion failed" phase variant and a OuisprApp home card fed by the existing `SharedKeys.lastTranscription` / `lastTranscriptionTimestamp` that `DictationCoordinator` already writes.
 
 ## Standard Stack
 
@@ -81,9 +81,9 @@ No new dependencies required. Everything runs on iOS frameworks already in use:
 | UIKit `UITextDocumentProxy` | iOS 17+ | The only Apple-sanctioned text-field proxy inside a keyboard extension | Only surface Apple exposes for writing into the host app from an extension |
 | UIKit `UIInputViewController` | iOS 17+ | `hasFullAccess`, `hasText`, `textDocumentProxy` properties | Canonical keyboard-extension host class |
 | Foundation `UserDefaults(suiteName:)` | iOS 17+ | App Group cross-process store (`group.solutions.pivi.dictus`) | Already the app/keyboard transport; no change needed |
-| `DictusCore.PersistentLog` + `LogEvent` | In-repo | Privacy-safe structured logging into App Group file | Existing pipeline consumed by log-dump UX; add cases, don't fork |
-| `DictusCore.HapticFeedback` | In-repo | Centralized `UINotificationFeedbackGenerator` + impact generators | Already has `textInserted` success idiom; add an error-haptic wrapper |
-| `ActivityKit` `Activity<DictusLiveActivityAttributes>` | iOS 17+ | Dynamic Island phase updates | Already wired in `LiveActivityManager`; extend the existing `.failed` phase or add a short variant |
+| `OuisprCore.PersistentLog` + `LogEvent` | In-repo | Privacy-safe structured logging into App Group file | Existing pipeline consumed by log-dump UX; add cases, don't fork |
+| `OuisprCore.HapticFeedback` | In-repo | Centralized `UINotificationFeedbackGenerator` + impact generators | Already has `textInserted` success idiom; add an error-haptic wrapper |
+| `ActivityKit` `Activity<OuisprLiveActivityAttributes>` | iOS 17+ | Dynamic Island phase updates | Already wired in `LiveActivityManager`; extend the existing `.failed` phase or add a short variant |
 | SwiftUI `Text` + `ToolbarView.statusMessage` | In-repo | Existing red-text error banner in the keyboard chrome | Already a documented pattern in `ToolbarView.swift:38-43`, reuse verbatim |
 
 ### Alternatives Considered
@@ -101,17 +101,17 @@ No new dependencies required. Everything runs on iOS frameworks already in use:
 ### Recommended Structure (Additive, In Existing Folders)
 
 ```
-DictusKeyboard/
+OuisprKeyboard/
 ├── KeyboardState.swift              # MODIFY: handleTranscriptionReady -> call helper
 ├── KeyboardViewController.swift     # MODIFY: any cold-start insertion wiring -> call helper
 ├── TextInsertion/                   # NEW folder
 │   └── InsertTranscriptionHelper.swift   # NEW: single helper owning validate/insert/verify/retry
 └── Views/
     └── ToolbarView.swift            # MODIFY (minimal): statusMessage wiring already exists
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 ├── LogEvent.swift                   # MODIFY: add .keyboardInsertProbe / .keyboardInsertRetry / .keyboardInsertFailed
 └── HapticFeedback.swift             # MODIFY: add insertionFailed() using UINotificationFeedbackGenerator(.error)
-DictusApp/
+OuisprApp/
 ├── DictationCoordinator.swift       # NO CHANGE (already writes SharedKeys.lastTranscription + timestamp)
 └── Views/HomeView.swift             # MODIFY: transcriptionCard is already there; source-of-truth shift
                                       # to App Group (read lastTranscription at scene-active + onReceive)
@@ -120,15 +120,15 @@ DictusApp/
 ### Pattern 1: Shared Insert Helper (Single Point Of Truth)
 **What:** One function called from both warm and cold-start paths. It owns validation, insertion, verification, retry scheduling, probe logging, and escalation.
 
-**When to use:** Any time the keyboard extension needs to write transcribed text into the host field. Other insertion paths (normal keystroke from `DictusKeyboardBridge.handleInputKey`, emoji, predictions) do NOT use this helper — they remain untouched. The helper is ONLY for the transcription-insertion contract where silent failure has been observed.
+**When to use:** Any time the keyboard extension needs to write transcribed text into the host field. Other insertion paths (normal keystroke from `OuisprKeyboardBridge.handleInputKey`, emoji, predictions) do NOT use this helper — they remain untouched. The helper is ONLY for the transcription-insertion contract where silent failure has been observed.
 
 **Signature (recommended):**
 ```swift
-// DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift
+// OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift
 // Source: new, modeled on the existing 100ms retry at KeyboardState.swift:363-383
 
 import UIKit
-import DictusCore
+import OuisprCore
 
 enum InsertTranscriptionResult {
     case success(attempts: Int, deltaChars: Int)
@@ -228,11 +228,11 @@ Total budget (50 + 100 + 200 ms delay + 4 attempts × ~1 ms insertion work) ≈ 
 **What:** If helper returns `.failed`, three surfaces activate in parallel:
 1. **Toolbar banner** — set `KeyboardState.statusMessage` to the localized FR/EN string from CONTEXT.md, with a 4-second auto-clear (pattern already exists at `KeyboardState.swift:273-277`, currently used for dictation errors). Accompanied by `HapticFeedback.insertionFailed()`.
 2. **Dynamic Island** — extend `LiveActivityManager` with an `endWithInsertionFailure()` that transitions `.transcribing → .failed` carrying a very short label (expanded region only). The state machine already allows `.transcribing → .failed` (`LiveActivityStateMachine.swift:32-39`); no rule change needed. Auto-returns to standby after 3 s like existing `endWithFailure()`.
-3. **DictusApp "last transcription" card** — already renders at `HomeView.swift:132-163` keyed to `coordinator.lastResult`. The transcription has already been written to `SharedKeys.lastTranscription` by `DictationCoordinator.swift:398-399` before the keyboard attempts insertion, so the card is guaranteed to have fresh content. **Gap to close:** the card's source of truth must become the App Group key, not only `coordinator.lastResult` (in-memory). On scene-active or on `NotificationCenter didBecomeActive`, HomeView must re-read `SharedKeys.lastTranscription` + `SharedKeys.lastTranscriptionTimestamp` so that a user returning to DictusApp after a failed insertion sees the content even if the coordinator instance was discarded.
+3. **OuisprApp "last transcription" card** — already renders at `HomeView.swift:132-163` keyed to `coordinator.lastResult`. The transcription has already been written to `SharedKeys.lastTranscription` by `DictationCoordinator.swift:398-399` before the keyboard attempts insertion, so the card is guaranteed to have fresh content. **Gap to close:** the card's source of truth must become the App Group key, not only `coordinator.lastResult` (in-memory). On scene-active or on `NotificationCenter didBecomeActive`, HomeView must re-read `SharedKeys.lastTranscription` + `SharedKeys.lastTranscriptionTimestamp` so that a user returning to OuisprApp after a failed insertion sees the content even if the coordinator instance was discarded.
 
 ### Anti-Patterns to Avoid
 - **Hand-rolled `Timer.scheduledTimer` for backoff.** Use `DispatchQueue.main.asyncAfter` — matches the existing pattern at `KeyboardState.swift:363` and keeps cancellation implicit (the success branch simply no-ops subsequent work).
-- **Modifying `DictusKeyboardBridge.handleInputKey`'s `insertText` call** (`DictusKeyboardBridge.swift:190`) with any of this logic. Normal keystrokes have different failure characteristics (single-char, user sees immediate feedback) and adding retry/probe there would regress latency. Leave it alone.
+- **Modifying `OuisprKeyboardBridge.handleInputKey`'s `insertText` call** (`OuisprKeyboardBridge.swift:190`) with any of this logic. Normal keystrokes have different failure characteristics (single-char, user sees immediate feedback) and adding retry/probe there would regress latency. Leave it alone.
 - **Touching the Darwin notification / App Group transport.** Out of scope per CONTEXT.md domain boundary. The transport works; the proxy call at the tail is the bug.
 - **Removing the existing `:363-383` 100 ms UserDefaults retry.** It solves a different problem (App Group propagation lag for `lastTranscription` key). The new helper sits INSIDE the success branch of that retry.
 - **Blocking the main thread during backoff.** `DispatchQueue.main.asyncAfter` is non-blocking. Do not use `Thread.sleep` or `RunLoop.current.run(until:)`.
@@ -245,9 +245,9 @@ Total budget (50 + 100 + 200 ms delay + 4 attempts × ~1 ms insertion work) ≈ 
 | Structured log events | A parallel "insertion diagnostics" logger | Extend `LogEvent` with new cases; log via `PersistentLog.log(_:)` | Entire export pipeline, os.log forwarding, file coordination, 7-day retention already exist. New sink = duplicated code + missed privacy guards (see `LogPrivacyTests.swift`). |
 | Error haptic | New `UINotificationFeedbackGenerator` at the call site | Add `HapticFeedback.insertionFailed()` using the existing pre-allocated `notificationGenerator` with `.error` | Avoids the 2-5 ms generator-creation overhead documented at `HapticFeedback.swift:20-23`. |
 | Timer-based retry | `Timer.scheduledTimer` with invalidate tracking | `DispatchQueue.main.asyncAfter` with a success flag | Matches existing pattern; no timer-lifecycle bugs. |
-| Dynamic Island failure variant | A new `ActivityKit` attribute struct | Reuse existing `.failed` phase in `DictusLiveActivityAttributes.ContentState.Phase`; extend the compact/minimal glyph copy | `.failed` already renders an X + `xmark` icon (`DictusLiveActivity.swift:94-97, 66-69`). Adding a parallel phase requires widget extension rebuild + store review risk. |
+| Dynamic Island failure variant | A new `ActivityKit` attribute struct | Reuse existing `.failed` phase in `OuisprLiveActivityAttributes.ContentState.Phase`; extend the compact/minimal glyph copy | `.failed` already renders an X + `xmark` icon (`OuisprLiveActivity.swift:94-97, 66-69`). Adding a parallel phase requires widget extension rebuild + store review risk. |
 | Toolbar error banner | A new SwiftUI overlay | Reuse `ToolbarView.statusMessage` which already renders red caption text at `ToolbarView.swift:38-43`, driven by `KeyboardState.statusMessage` with 3-second auto-clear precedent at `KeyboardState.swift:273-277` | Literal pattern reuse; no UI regression risk. Only change: bump the auto-clear to 4 s per CONTEXT.md, bind a new FR/EN string, and trigger from the insertion-failure path. |
-| DictusApp "last transcription" card | New SwiftUI card | Reuse `HomeView.transcriptionCard(result:)` at `HomeView.swift:132-163` | Already shows a tappable glass card with "Copied!" feedback and `dictusGlass()` styling. Only change: broaden its data source to include App Group read so it survives coordinator discard. |
+| OuisprApp "last transcription" card | New SwiftUI card | Reuse `HomeView.transcriptionCard(result:)` at `HomeView.swift:132-163` | Already shows a tappable glass card with "Copied!" feedback and `ouisprGlass()` styling. Only change: broaden its data source to include App Group read so it survives coordinator discard. |
 
 **Key insight:** Every piece of UI, logging infrastructure, and haptic plumbing this phase needs already exists in the repo. The work is (a) one new helper (one file), (b) three new `LogEvent` cases, (c) one new `HapticFeedback` method, (d) minor wiring changes. No new frameworks, no new UI components, no new architectural layers.
 
@@ -274,7 +274,7 @@ Total budget (50 + 100 + 200 ms delay + 4 attempts × ~1 ms insertion work) ≈ 
 **How to avoid:**
 - Probe `controller == nil` as `InsertionFailureReason.proxyNil`.
 - The helper's retry schedule naturally gives 350 ms for the new controller to re-register via `registerControllerAppearance` at `KeyboardState.swift:390-401`. Each retry re-reads `self.controller` (which is mutated by the new controller's `viewDidLoad`-driven assignment in `KeyboardViewController.swift:196-201`... wait — that assignment doesn't currently exist on init; it only happens via `KeyboardRootView.onAppear` at `:204`).
-- **Gap to verify during planning:** confirm that between the moment `handleTranscriptionReady` first runs and the moment the recreated controller's `KeyboardRootView.onAppear` fires (which is what currently restores `state.controller`), at least one of the 3 retries lands in the window where `state.controller` is non-nil. If not, the helper will still loud-fail (correct behavior), and the DictusApp card + banner become the sole recovery surface.
+- **Gap to verify during planning:** confirm that between the moment `handleTranscriptionReady` first runs and the moment the recreated controller's `KeyboardRootView.onAppear` fires (which is what currently restores `state.controller`), at least one of the 3 retries lands in the window where `state.controller` is non-nil. If not, the helper will still loud-fail (correct behavior), and the OuisprApp card + banner become the sole recovery surface.
 
 **Warning signs:** Log shows `keyboardInsertFailed reason=proxyNil path=coldStartBridge` with all 3 retries exhausted on cold-start scenarios. Means retry budget is insufficient for cold-start specifically; potential follow-up is raising cold-start retry count without raising warm-path count (deferred to v1.8 per "no repeated-failure escalation in v1").
 
@@ -304,14 +304,14 @@ Total budget (50 + 100 + 200 ms delay + 4 attempts × ~1 ms insertion work) ≈ 
 
 **Why it happens:** Two independent auto-dismiss timers in two processes.
 
-**How to avoid:** This is acceptable — the banner is purely a nudge, and a new recording attempt starting a new session implicitly supersedes the previous failure. No explicit coordination needed. The DictusApp "last transcription" card continues to show the prior transcription regardless of banner state.
+**How to avoid:** This is acceptable — the banner is purely a nudge, and a new recording attempt starting a new session implicitly supersedes the previous failure. No explicit coordination needed. The OuisprApp "last transcription" card continues to show the prior transcription regardless of banner state.
 
 **Warning signs:** Only problematic if the user reports banner persisting into the next dictation. If observed, drop banner auto-clear to 3 s to match DI.
 
 ## Code Examples
 
 ### Existing Warm Path — What We're Wrapping
-`DictusKeyboard/KeyboardState.swift:328-385` (read directly from source):
+`OuisprKeyboard/KeyboardState.swift:328-385` (read directly from source):
 ```swift
 private func handleTranscriptionReady() {
     logProbe("handleTranscriptionReady", details: sessionDetails())
@@ -346,7 +346,7 @@ private func handleTranscriptionReady() {
 **Target after Phase 34:** both `insertText` call sites go through the shared helper.
 
 ### Existing Structured LogEvent — Pattern For New Cases
-`DictusCore/Sources/DictusCore/LogEvent.swift:101` (diagnosticProbe — the existing extensible probe case):
+`OuisprCore/Sources/OuisprCore/LogEvent.swift:101` (diagnosticProbe — the existing extensible probe case):
 ```swift
 case diagnosticProbe(component: String, instanceID: String, action: String, details: String)
 // formatted: "component=\(component) instanceID=\(instanceID) action=\(action) details=\(details)"
@@ -387,7 +387,7 @@ case keyboardInsertFailed(
 All parameters are counts / booleans / identifiers / durations / enum rawValues. **No raw transcription content. No document context strings.** Matches the privacy model enforced by `LogPrivacyTests.swift`.
 
 ### Existing Error-Haptic-Free HapticFeedback — Pattern For New Method
-`DictusCore/Sources/DictusCore/HapticFeedback.swift:128-134` (textInserted — existing success idiom):
+`OuisprCore/Sources/OuisprCore/HapticFeedback.swift:128-134` (textInserted — existing success idiom):
 ```swift
 public static func textInserted() {
     #if canImport(UIKit) && !os(macOS)
@@ -413,7 +413,7 @@ public static func insertionFailed() {
 ```
 
 ### Existing Status-Message Banner — Pattern For Loud-Fail Toolbar
-`DictusKeyboard/KeyboardState.swift:270-277` (statusMessage with 3 s auto-clear for dictation errors) and `DictusKeyboard/Views/ToolbarView.swift:38-43`:
+`OuisprKeyboard/KeyboardState.swift:270-277` (statusMessage with 3 s auto-clear for dictation errors) and `OuisprKeyboard/Views/ToolbarView.swift:38-43`:
 ```swift
 // KeyboardState (existing dictation-failure path)
 if status == .failed, let errorMsg = defaults.string(forKey: SharedKeys.lastError) {
@@ -435,10 +435,10 @@ if let message = statusMessage {
 }
 ```
 
-**Extension for Phase 34:** call the same `statusMessage = "Insertion impossible. Retrouvez votre transcription dans Dictus."` (FR, with EN fallback based on `SharedKeys.language`) from the helper's `.failed` callback, with `asyncAfter(deadline: .now() + 4)` per CONTEXT.md.
+**Extension for Phase 34:** call the same `statusMessage = "Insertion impossible. Retrouvez votre transcription dans Ouispr."` (FR, with EN fallback based on `SharedKeys.language`) from the helper's `.failed` callback, with `asyncAfter(deadline: .now() + 4)` per CONTEXT.md.
 
 ### Existing DI Failure Phase — Pattern For Insertion-Failed Variant
-`DictusApp/LiveActivityManager.swift:445-475`:
+`OuisprApp/LiveActivityManager.swift:445-475`:
 ```swift
 func endWithFailure() {
     guard isEnabled else { return }
@@ -448,7 +448,7 @@ func endWithFailure() {
     PersistentLog.log(.liveActivityTransition(from: "transcribing", to: "failed"))
     currentPhase = .failed
     Task {
-        let state = DictusLiveActivityAttributes.ContentState(phase: .failed)
+        let state = OuisprLiveActivityAttributes.ContentState(phase: .failed)
         await activity.update(.init(state: state, staleDate: Date().addingTimeInterval(self.staleInterval)))
     }
     autoDismissTask = Task {
@@ -460,16 +460,16 @@ func endWithFailure() {
 }
 ```
 
-**Gap:** this function is **only called by `DictationCoordinator.handleError`** in DictusApp — the keyboard cannot call it directly (keyboard extension has no ActivityKit access in a write-path; only DictusApp owns `LiveActivityManager`).
+**Gap:** this function is **only called by `DictationCoordinator.handleError`** in OuisprApp — the keyboard cannot call it directly (keyboard extension has no ActivityKit access in a write-path; only OuisprApp owns `LiveActivityManager`).
 
-**Integration approach:** the keyboard writes a flag to App Group (`SharedKeys.lastError = "insertionFailed:<sessionID>"` or a new dedicated key) **plus** posts a new Darwin notification (e.g., `DarwinNotificationName.insertionFailed`). DictusApp observes the notification and calls `LiveActivityManager.shared.endWithFailure()`. DI's `.failed` phase already renders the X icon. Expanded region can pick up the new flag to show "Insertion failed — open Dictus" if desired.
+**Integration approach:** the keyboard writes a flag to App Group (`SharedKeys.lastError = "insertionFailed:<sessionID>"` or a new dedicated key) **plus** posts a new Darwin notification (e.g., `DarwinNotificationName.insertionFailed`). OuisprApp observes the notification and calls `LiveActivityManager.shared.endWithFailure()`. DI's `.failed` phase already renders the X icon. Expanded region can pick up the new flag to show "Insertion failed — open Ouispr" if desired.
 
 **Simplification option (recommended for v1):** since `DictationCoordinator` has **already** transitioned DI to `.ready` before insertion is attempted (`DictationCoordinator.swift:405` `LiveActivityManager.shared.endWithResult(preview: finalText)`), the DI is already back to `.standby` by the time the 350 ms retry window expires. Re-entering `.failed` from `.standby` is allowed by the state machine (`LiveActivityStateMachine.swift:37-38` — `.standby: [.recording, .idle]` — **wait, `.failed` is NOT an allowed transition from `.standby`**). **This is a state machine gap that must be closed during planning** — either add `.standby → .failed` to `validTransitions`, or pre-announce the DI state before insertion (hold `.ready` until insertion confirmed, then go to `.standby`; if it fails, transition directly from `.ready → .failed`, which IS allowed — `.ready` has no outgoing `.failed` edge either — actually looking again at `LiveActivityStateMachine.swift:32-39`, the allowed set is `.ready: [.standby, .recording]`, so `.ready → .failed` is ALSO not allowed).
 
 **Actionable recommendation for planner:** add one new valid transition edge in `LiveActivityStateMachine.validTransitions`: `.standby: [.recording, .idle, .failed]` (or `.ready: [.standby, .recording, .failed]` depending on when the transition is signaled). Unit-test coverage exists for this state machine (`LiveActivityStateMachineTests.swift`), so adding an edge is low-risk.
 
-### DictusApp Home — Existing Transcription Card
-`DictusApp/Views/HomeView.swift:132-163` (transcriptionCard already implemented, including copy-to-clipboard):
+### OuisprApp Home — Existing Transcription Card
+`OuisprApp/Views/HomeView.swift:132-163` (transcriptionCard already implemented, including copy-to-clipboard):
 ```swift
 private func transcriptionCard(result: String) -> some View {
     Button {
@@ -501,9 +501,9 @@ private var recoverableTranscription: String? {
 ### Existing Cold-Start Audio Bridge Insertion Path — CORRECTION
 **CONTEXT.md assumption:** a separate cold-start Audio Bridge insertion path exists in `KeyboardViewController` / `KeyboardState`.
 
-**Actual finding (HIGH confidence, read directly from `DictusKeyboard/KeyboardViewController.swift` 556 lines + `DictusKeyboard/KeyboardState.swift` 523 lines):** there is **only ONE insertion call site** in the keyboard that writes transcribed text — `KeyboardState.handleTranscriptionReady` at lines 341 and 370. Cold start does NOT have a separate insertion path; after the URL-scheme wake, DictusApp completes transcription, writes to `SharedKeys.lastTranscription`, posts `DarwinNotificationName.transcriptionReady`, and the keyboard's observer at `KeyboardState.swift:96-103` calls the **same** `handleTranscriptionReady` path used for warm recording.
+**Actual finding (HIGH confidence, read directly from `OuisprKeyboard/KeyboardViewController.swift` 556 lines + `OuisprKeyboard/KeyboardState.swift` 523 lines):** there is **only ONE insertion call site** in the keyboard that writes transcribed text — `KeyboardState.handleTranscriptionReady` at lines 341 and 370. Cold start does NOT have a separate insertion path; after the URL-scheme wake, OuisprApp completes transcription, writes to `SharedKeys.lastTranscription`, posts `DarwinNotificationName.transcriptionReady`, and the keyboard's observer at `KeyboardState.swift:96-103` calls the **same** `handleTranscriptionReady` path used for warm recording.
 
-`grep` confirms: `insertText` appears in the keyboard only in `DictusKeyboardBridge` (keystrokes) and `KeyboardState` (transcription). No separate "cold start Audio Bridge" insertion call site exists in the codebase as written.
+`grep` confirms: `insertText` appears in the keyboard only in `OuisprKeyboardBridge` (keystrokes) and `KeyboardState` (transcription). No separate "cold start Audio Bridge" insertion call site exists in the codebase as written.
 
 **Implication for the helper:** one insertion path means one call site to wrap, not two. The `path` parameter in the probe can still carry `.warmDarwin` vs. `.coldStartBridge` by inspecting `AppGroup.defaults.bool(forKey: SharedKeys.coldStartActive)` at the moment of insertion — this preserves the diagnostic value CONTEXT.md wants (distinguishing the two operational scenarios in the log) without requiring two physical call sites.
 
@@ -552,67 +552,67 @@ private var recoverableTranscription: String? {
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | XCTest via SwiftPM (macOS-based `swift test` for DictusCore; device-hosted XCTest available for UI targets but not currently configured for DictusKeyboard / DictusApp — no test targets in those Xcode targets) |
-| Config file | `DictusCore/Package.swift` (SPM); no Xcode test targets for DictusKeyboard or DictusApp |
-| Quick run command | `swift test --package-path DictusCore --filter LogEventTests` (≈ 2 s locally) |
-| Full suite command | `swift test --package-path DictusCore` (≈ 10-20 s locally, runs all existing unit tests) |
+| Framework | XCTest via SwiftPM (macOS-based `swift test` for OuisprCore; device-hosted XCTest available for UI targets but not currently configured for OuisprKeyboard / OuisprApp — no test targets in those Xcode targets) |
+| Config file | `OuisprCore/Package.swift` (SPM); no Xcode test targets for OuisprKeyboard or OuisprApp |
+| Quick run command | `swift test --package-path OuisprCore --filter LogEventTests` (≈ 2 s locally) |
+| Full suite command | `swift test --package-path OuisprCore` (≈ 10-20 s locally, runs all existing unit tests) |
 
 ### Phase Requirements → Test Map
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| STAB-01 | New `LogEvent` cases format privacy-safely (no raw transcription leaked) | unit | `swift test --package-path DictusCore --filter LogPrivacyTests` | ✅ extend existing |
-| STAB-01 | New `LogEvent` cases have correct level + subsystem mapping | unit | `swift test --package-path DictusCore --filter LogEventTests` | ✅ extend existing |
-| STAB-01 | `LiveActivityStateMachine` allows the new transition edge (`.standby → .failed` or `.ready → .failed`) | unit | `swift test --package-path DictusCore --filter LiveActivityStateMachineTests` | ✅ extend existing |
-| STAB-01 | `InsertTranscriptionResult` classifier correctly interprets delta (success / windowing / silent drop) | unit | `swift test --package-path DictusCore --filter InsertionClassifierTests` | ❌ Wave 0 — new file in DictusCore |
-| STAB-01 | `HapticFeedback.insertionFailed()` compiles on iOS and no-ops on macOS | unit | `swift test --package-path DictusCore` (will fail to compile if wrong) | ✅ implicit via existing compile-guard idiom |
+| STAB-01 | New `LogEvent` cases format privacy-safely (no raw transcription leaked) | unit | `swift test --package-path OuisprCore --filter LogPrivacyTests` | ✅ extend existing |
+| STAB-01 | New `LogEvent` cases have correct level + subsystem mapping | unit | `swift test --package-path OuisprCore --filter LogEventTests` | ✅ extend existing |
+| STAB-01 | `LiveActivityStateMachine` allows the new transition edge (`.standby → .failed` or `.ready → .failed`) | unit | `swift test --package-path OuisprCore --filter LiveActivityStateMachineTests` | ✅ extend existing |
+| STAB-01 | `InsertTranscriptionResult` classifier correctly interprets delta (success / windowing / silent drop) | unit | `swift test --package-path OuisprCore --filter InsertionClassifierTests` | ❌ Wave 0 — new file in OuisprCore |
+| STAB-01 | `HapticFeedback.insertionFailed()` compiles on iOS and no-ops on macOS | unit | `swift test --package-path OuisprCore` (will fail to compile if wrong) | ✅ implicit via existing compile-guard idiom |
 | STAB-01 | Warm insert succeeds into empty Notes field 50×/50 on real iPhone | manual scripted | `./tools/phase34-repro.sh` (new helper script) or PR checklist | ❌ Wave 0 — manual protocol document |
 | STAB-01 | Cold-start insert succeeds into Messages field 50×/50 on real iPhone (interleaved with warm) | manual scripted | same | ❌ Wave 0 — manual protocol document |
 | STAB-01 | Chained rapid recordings insert correctly 50×/50 | manual scripted | same | ❌ Wave 0 — manual protocol document |
-| STAB-01 | On induced failure (e.g., swipe to a view without focusable field between Darwin notify and insert), loud-fail UX fires: DI glyph changes, toolbar banner appears (FR/EN), error haptic, DictusApp home card shows the transcription with Copy button | manual scripted | PR checklist with scripted failure induction | ❌ Wave 0 — manual protocol document |
+| STAB-01 | On induced failure (e.g., swipe to a view without focusable field between Darwin notify and insert), loud-fail UX fires: DI glyph changes, toolbar banner appears (FR/EN), error haptic, OuisprApp home card shows the transcription with Copy button | manual scripted | PR checklist with scripted failure induction | ❌ Wave 0 — manual protocol document |
 | STAB-01 | Probe logs show structured `keyboardInsertProbe` entries with non-empty `sessionID`, non-zero `transcriptionCount`, numeric `darwinToInsertMs`, privacy-safe (no text / context string) | log-inspection | `cat exported-log.txt \| grep keyboardInsertProbe \| head -10` | ❌ Wave 0 — addressed by manual protocol |
 
 ### Sampling Rate
-- **Per task commit:** `swift test --package-path DictusCore` (full DictusCore suite; ≈ 10-20 s)
+- **Per task commit:** `swift test --package-path OuisprCore` (full OuisprCore suite; ≈ 10-20 s)
 - **Per wave merge:** Same — there is no separate integration suite for keyboard / app today. On-device manual smoke (5 dictations across 3 apps) required before merging any wave that touches insertion.
 - **Phase gate:** 50-run scripted manual protocol on real iPhone per CONTEXT.md before `/gsd:verify-work`. Log review confirms probe reports success on all 50 AND no unexpected loud-fail escalations.
 
 ### Wave 0 Gaps
 
-- [ ] `DictusCore/Tests/DictusCoreTests/InsertionClassifierTests.swift` — covers the delta-classifier logic (success / windowed-success / silent-drop / delta-mismatch). The classifier itself lives in a new source file in DictusCore (e.g., `InsertionClassifier.swift`) so it is pure-logic and testable on macOS.
-- [ ] Extend `DictusCore/Tests/DictusCoreTests/LogEventTests.swift` with level/subsystem assertions for `.keyboardInsertProbe`, `.keyboardInsertRetry`, `.keyboardInsertFailed`.
-- [ ] Extend `DictusCore/Tests/DictusCoreTests/LogPrivacyTests.swift` to include the three new events in the `allEvents` fixture so the privacy invariants auto-enforce no text leaks.
-- [ ] Extend `DictusCore/Tests/DictusCoreTests/LiveActivityStateMachineTests.swift` to cover the new allowed transition edge.
+- [ ] `OuisprCore/Tests/OuisprCoreTests/InsertionClassifierTests.swift` — covers the delta-classifier logic (success / windowed-success / silent-drop / delta-mismatch). The classifier itself lives in a new source file in OuisprCore (e.g., `InsertionClassifier.swift`) so it is pure-logic and testable on macOS.
+- [ ] Extend `OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift` with level/subsystem assertions for `.keyboardInsertProbe`, `.keyboardInsertRetry`, `.keyboardInsertFailed`.
+- [ ] Extend `OuisprCore/Tests/OuisprCoreTests/LogPrivacyTests.swift` to include the three new events in the `allEvents` fixture so the privacy invariants auto-enforce no text leaks.
+- [ ] Extend `OuisprCore/Tests/OuisprCoreTests/LiveActivityStateMachineTests.swift` to cover the new allowed transition edge.
 - [ ] `.planning/phases/34-silent-insertion-fix/test-matrix.md` (or the PR description) — the 50-run matrix protocol: 3 host apps × warm/cold/chained × scenario matrix, with pass/fail checkboxes.
-- [ ] **No test framework install needed.** Existing DictusCore XCTest via SwiftPM is sufficient; keyboard/app work is validated by the manual protocol.
+- [ ] **No test framework install needed.** Existing OuisprCore XCTest via SwiftPM is sufficient; keyboard/app work is validated by the manual protocol.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardState.swift` — read in full, lines 1-523 (insertion path, retry pattern, status message pattern, session tracking)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardViewController.swift` — read in full, lines 1-556 (controller lifecycle, hasFullAccess, hostingHeightConstraint, onTranscriptionInserted wiring at 196-201)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/DictusKeyboardBridge.swift` — read in full, lines 1-697 (proxy usage patterns, insertText call sites confirmed limited to keystrokes)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardRootView.swift` — read in full, lines 1-372 (ToolbarView wiring, hasFullAccess binding, state.controller assignment)
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/Views/ToolbarView.swift` — read in full, lines 1-88 (statusMessage banner pattern)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/PersistentLog.swift` — read in full, lines 1-321 (NSFileCoordinator writes, os.log forwarding, privacy-safe API)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/LogEvent.swift` — read in full, lines 1-501 (enum extension pattern, privacy model, subsystem/level mapping)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/HapticFeedback.swift` — read in full, lines 1-182 (pre-allocated generators, `.success` success idiom to mirror for `.error`)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/LiveActivityStateMachine.swift` — read in full, lines 1-71 (transition validation; gap in `.standby → .failed`)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/DictusLiveActivityAttributes.swift` — read in full (phase enum)
-- `/Users/pierreviviere/dev/dictus/DictusApp/LiveActivityManager.swift` — read in full, lines 1-644 (endWithFailure pattern, watchdog)
-- `/Users/pierreviviere/dev/dictus/DictusApp/DictationCoordinator.swift` — read in full, lines 1-751 (lastTranscription write at 398-399, cleanupRecordingKeys preserves key at 514-519)
-- `/Users/pierreviviere/dev/dictus/DictusApp/Views/HomeView.swift` — read in full, lines 1-200 (existing transcriptionCard + copy-to-clipboard)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Sources/DictusCore/SharedKeys.swift` — read in full, lines 1-90 (App Group key catalog)
-- `/Users/pierreviviere/dev/dictus/DictusCore/Tests/DictusCoreTests/LogEventTests.swift`, `LogPrivacyTests.swift` — test patterns to extend
-- `/Users/pierreviviere/dev/dictus/DictusWidgets/DictusLiveActivity.swift` — read lines 1-150 (DI failure glyphs already present)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardState.swift` — read in full, lines 1-523 (insertion path, retry pattern, status message pattern, session tracking)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardViewController.swift` — read in full, lines 1-556 (controller lifecycle, hasFullAccess, hostingHeightConstraint, onTranscriptionInserted wiring at 196-201)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/OuisprKeyboardBridge.swift` — read in full, lines 1-697 (proxy usage patterns, insertText call sites confirmed limited to keystrokes)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardRootView.swift` — read in full, lines 1-372 (ToolbarView wiring, hasFullAccess binding, state.controller assignment)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/Views/ToolbarView.swift` — read in full, lines 1-88 (statusMessage banner pattern)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/PersistentLog.swift` — read in full, lines 1-321 (NSFileCoordinator writes, os.log forwarding, privacy-safe API)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/LogEvent.swift` — read in full, lines 1-501 (enum extension pattern, privacy model, subsystem/level mapping)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/HapticFeedback.swift` — read in full, lines 1-182 (pre-allocated generators, `.success` success idiom to mirror for `.error`)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/LiveActivityStateMachine.swift` — read in full, lines 1-71 (transition validation; gap in `.standby → .failed`)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/OuisprLiveActivityAttributes.swift` — read in full (phase enum)
+- `/Users/pierreviviere/dev/ouispr/OuisprApp/LiveActivityManager.swift` — read in full, lines 1-644 (endWithFailure pattern, watchdog)
+- `/Users/pierreviviere/dev/ouispr/OuisprApp/DictationCoordinator.swift` — read in full, lines 1-751 (lastTranscription write at 398-399, cleanupRecordingKeys preserves key at 514-519)
+- `/Users/pierreviviere/dev/ouispr/OuisprApp/Views/HomeView.swift` — read in full, lines 1-200 (existing transcriptionCard + copy-to-clipboard)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Sources/OuisprCore/SharedKeys.swift` — read in full, lines 1-90 (App Group key catalog)
+- `/Users/pierreviviere/dev/ouispr/OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift`, `LogPrivacyTests.swift` — test patterns to extend
+- `/Users/pierreviviere/dev/ouispr/OuisprWidgets/OuisprLiveActivity.swift` — read lines 1-150 (DI failure glyphs already present)
 - GitHub issue #118 body via `gh issue view 118 --repo getdictus/dictus-ios --json` — full repro log, hypothesis, proposed probe sketch
-- `/Users/pierreviviere/dev/dictus/.planning/phases/34-silent-insertion-fix/34-CONTEXT.md` — locked decisions
-- `/Users/pierreviviere/dev/dictus/.planning/REQUIREMENTS.md` — STAB-01 definition
-- `/Users/pierreviviere/dev/dictus/.planning/config.json` — `nyquist_validation: true`, `parallelization: true`, `commit_docs: true`
+- `/Users/pierreviviere/dev/ouispr/.planning/phases/34-silent-insertion-fix/34-CONTEXT.md` — locked decisions
+- `/Users/pierreviviere/dev/ouispr/.planning/REQUIREMENTS.md` — STAB-01 definition
+- `/Users/pierreviviere/dev/ouispr/.planning/config.json` — `nyquist_validation: true`, `parallelization: true`, `commit_docs: true`
 
 ### Secondary (MEDIUM confidence)
 - Apple `UITextDocumentProxy` documented behavior (training-data-backed): `insertText` is a non-throwing void call, silently no-ops on a disconnected proxy. `documentContextBeforeInput` is nil in secure fields and windowed for long documents. **Needs on-device verification during implementation for the exact windowing cap.**
-- `UIInputViewController.hasFullAccess` reflects the user's toggle in Settings → Keyboards → Dictus → Allow Full Access; required for `UIPasteboard` and reliable proxy behavior. HIGH confidence on semantics, MEDIUM on edge-case behavior when toggled mid-session.
+- `UIInputViewController.hasFullAccess` reflects the user's toggle in Settings → Keyboards → Ouispr → Allow Full Access; required for `UIPasteboard` and reliable proxy behavior. HIGH confidence on semantics, MEDIUM on edge-case behavior when toggled mid-session.
 - ActivityKit state machine: transitions not in `validTransitions` are rejected and logged (confirmed by `LiveActivityManager.validateTransition` source).
 
 ### Tertiary (LOW confidence)

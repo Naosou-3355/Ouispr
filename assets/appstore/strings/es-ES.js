@@ -15,14 +15,14 @@
  * "pedidme" (ask me for), "Empezad sin mí" (Go / Start without me).
  *
  * Captures: captures/es-ES/ (slide 2's recording panel over Messages, not Reminders: in
- * Reminders the panel sat 51 px lower and its toolbar showed under the email; iPhone 17 Pro Max, iOS 26.5 in Spanish, Dictus
+ * Reminders the panel sat 51 px lower and its toolbar showed under the email; iPhone 17 Pro Max, iOS 26.5 in Spanish, Ouispr
  * keyboard in its Spanish QWERTY, which has no ñ key: ñ is on a long press of n).
  * Slide 5 uses en-GB's three keyboard captures.
  */
-window.DICTUS_STRINGS = {
+window.OUISPR_STRINGS = {
   locale: "es-ES",
   proBadge: "Pro",
-  wordmark: "dictus",
+  wordmark: "ouispr",
   heroArt: { "v15-B": "art/v15-B/hero-es-ES.png", "v16-B": "art/v16-B/hero-es-ES.png" },
   slides: {
     hero: {

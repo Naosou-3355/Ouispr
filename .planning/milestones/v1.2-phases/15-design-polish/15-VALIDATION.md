@@ -18,17 +18,17 @@ created: 2026-03-13
 | Property | Value |
 |----------|-------|
 | **Framework** | Swift Testing / XCTest via SPM |
-| **Config file** | `DictusCore/Package.swift` |
-| **Quick run command** | `cd DictusCore && swift test --filter DictusCoreTests` |
-| **Full suite command** | `cd DictusCore && swift test` |
+| **Config file** | `OuisprCore/Package.swift` |
+| **Quick run command** | `cd OuisprCore && swift test --filter OuisprCoreTests` |
+| **Full suite command** | `cd OuisprCore && swift test` |
 | **Estimated runtime** | ~15 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cd DictusCore && swift test --filter DictusCoreTests`
-- **After every plan wave:** Run `cd DictusCore && swift test` + Xcode build for DictusApp and DictusKeyboard targets
+- **After every task commit:** Run `cd OuisprCore && swift test --filter OuisprCoreTests`
+- **After every plan wave:** Run `cd OuisprCore && swift test` + Xcode build for OuisprApp and OuisprKeyboard targets
 - **Before `/gsd:verify-work`:** Full suite must be green + visual verification on Simulator
 - **Max feedback latency:** 20 seconds
 

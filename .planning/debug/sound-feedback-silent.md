@@ -8,7 +8,7 @@ updated: 2026-03-13T00:00:00Z
 ## Current Focus
 
 hypothesis: Bundle.main.url(forResource:withExtension:) returns nil because WAV files are inside a "Sounds/" subdirectory (folder reference in Xcode) but the lookup does not specify subdirectory
-test: Verified Xcode project.pbxproj uses folder reference (lastKnownFileType = folder), confirmed WAV files exist on disk at Dictus/Sounds/
+test: Verified Xcode project.pbxproj uses folder reference (lastKnownFileType = folder), confirmed WAV files exist on disk at Ouispr/Sounds/
 expecting: With folder reference, files are copied into bundle as Sounds/electronic_01a.wav, not at root level
 next_action: Return diagnosis with fix
 
@@ -28,15 +28,15 @@ started: Since SoundFeedbackService was implemented
 
 - timestamp: 2026-03-13
   checked: WAV files on disk
-  found: 29 WAV files exist at /Users/pierreviviere/dev/dictus/Dictus/Sounds/*.wav
+  found: 29 WAV files exist at /Users/pierreviviere/dev/ouispr/Ouispr/Sounds/*.wav
   implication: Files exist, not a missing asset issue
 
 - timestamp: 2026-03-13
   checked: Xcode project.pbxproj Sounds reference
   found: |
-    AA1000F4 = {isa = PBXFileReference; lastKnownFileType = folder; name = Sounds; path = Dictus/Sounds; sourceTree = SOURCE_ROOT}
+    AA1000F4 = {isa = PBXFileReference; lastKnownFileType = folder; name = Sounds; path = Ouispr/Sounds; sourceTree = SOURCE_ROOT}
     This is a FOLDER REFERENCE (lastKnownFileType = folder), not individual file references.
-    It IS included in DictusApp target's Resources build phase (AA600003).
+    It IS included in OuisprApp target's Resources build phase (AA600003).
   implication: Folder references copy the entire directory into the bundle, preserving the directory structure. Files end up at AppBundle/Sounds/electronic_01a.wav, not AppBundle/electronic_01a.wav.
 
 - timestamp: 2026-03-13

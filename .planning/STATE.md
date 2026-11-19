@@ -63,21 +63,21 @@ Last activity: 2026-04-22 — Project check-in, GSD state reconciled with realit
 All prior decisions logged in PROJECT.md Key Decisions table.
 
 **v1.7 roadmap decisions:**
-- Phase numbering starts at 34 to avoid collision with v1.5 Dictus Pro premium worktree (phases 30-33).
+- Phase numbering starts at 34 to avoid collision with v1.5 Ouispr Pro premium worktree (phases 30-33).
 - STAB-01 isolated in Phase 34 so the silent insertion bug can ship as a hotfix independent of heavier keyboard/autocorrect/i18n work.
 - KBD-01 + KBD-02 bundled in Phase 35 because both target keyboard geometry and the audit (KBD-01) drives the glitch fix (KBD-02).
 - AUTO-01 + AUTO-02 + AUTO-03 bundled in Phase 36 — AOSP LatinIME alignment is a single coherent architectural change, splitting would cause rework.
 - I18N-01 (Phase 38) scheduled before I18N-02 (Phase 39) — German is the first validation of the i18n process, not an independent feature.
 
 **Phase 34 execution decisions (Plan 34-01):**
-- Use `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` for DictusCore tests, NOT `swift test --package-path DictusCore` — the package is iOS-only (UIKit, ActivityKit, iOS 26 SwiftUI APIs) and does not compile for macOS. Plans 34-02/03/04 should use the same command.
+- Use `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` for OuisprCore tests, NOT `swift test --package-path OuisprCore` — the package is iOS-only (UIKit, ActivityKit, iOS 26 SwiftUI APIs) and does not compile for macOS. Plans 34-02/03/04 should use the same command.
 - Pre-existing `AccentedCharacterTests` + `FrequencyDictionaryTests` failures on `develop` documented in `.planning/phases/34-silent-insertion-fix/deferred-items.md` and deferred to a future cleanup issue — out of STAB-01 scope.
 - `InsertionClassifier` shipped as an `enum` (static-function namespace) — pure policy, no stored state, no allocator churn when called per-insertion-attempt.
 
 **Phase 34 execution decisions (Plan 34-02):**
 - HomeView `recoverableTranscription` uses 300s staleness window reusing DictationCoordinator.swift:97-102 cutoff — single-sourced contract for "fresh transcription".
 - Scene-active refresh uses `@State Int` bump + `_ = appGroupRefreshTrigger` read pattern to force SwiftUI to re-evaluate the computed property on scene activation without wrapping the App Group read in a full ObservableObject.
-- **Contract for Plan 34-03:** the failed-insertion escalation path MUST NOT call `defaults.removeObject(forKey: SharedKeys.lastTranscription)` — current clear at `DictusKeyboard/KeyboardState.swift:338` is correct for success path only. Preserving the App Group key on failure is what lets HomeView's recovery surface (Plan 34-02) surface the lost text.
+- **Contract for Plan 34-03:** the failed-insertion escalation path MUST NOT call `defaults.removeObject(forKey: SharedKeys.lastTranscription)` — current clear at `OuisprKeyboard/KeyboardState.swift:338` is correct for success path only. Preserving the App Group key on failure is what lets HomeView's recovery surface (Plan 34-02) surface the lost text.
 
 **Phase 34 execution decisions (Plan 34-03):**
 - `InsertTranscriptionHelper` is the single wrapper for every `textDocumentProxy.insertText` call originating from transcription ready. Validates controller / hasFullAccess / document context; inserts; verifies via `InsertionClassifier` (utf16 delta + `proxy.hasText` transition); retries up to 3× with 50/100/200ms backoff; escalates on terminal failure.
@@ -89,7 +89,7 @@ All prior decisions logged in PROJECT.md Key Decisions table.
 **Phase 34.1 execution decisions (Plan 34.1-01):**
 - `InsertionClassifier.classify` rewritten with 7-rule success-first priority per CONTEXT D1. Rule 1 (hasTextBefore=false && hasTextAfter=true → `.emptyFieldSuccess`) is authoritative regardless of nil context; Rule 4 treats negative delta with hasTextAfter=true as `.windowedSuccess` (iOS window truncation); Rule 6 narrows `.silentDrop` to `delta==0 && 0<beforeCount<400 && hasText unchanged`. Default (Rule 7) falls through to `.windowedSuccess` — no more ambiguous `.deltaMismatch`.
 - `.proxyDead` and `.deltaMismatch` enum cases retained as dead-but-unreachable (source-compat only) — avoids cascading exhaustive-switch refactor across `InsertTranscriptionHelper` and `LogEvent` that properly belongs to Plan 34.1-02 (retry loop removal). Tests prove classifier never returns them.
-- **Verification command change:** DictusCore scheme at project root no longer has a working `TestAction` (the `Dictus.xcodeproj/xcshareddata/xcschemes/` directory is currently untracked). Fix: created `DictusCore/.swiftpm/xcode/xcshareddata/xcschemes/DictusCore-Package.xcscheme` and run tests via `cd DictusCore && xcodebuild test -scheme DictusCore-Package -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests/InsertionClassifierTests`. Plans 34.1-02/03 must use this command.
+- **Verification command change:** OuisprCore scheme at project root no longer has a working `TestAction` (the `Ouispr.xcodeproj/xcshareddata/xcschemes/` directory is currently untracked). Fix: created `OuisprCore/.swiftpm/xcode/xcshareddata/xcschemes/OuisprCore-Package.xcscheme` and run tests via `cd OuisprCore && xcodebuild test -scheme OuisprCore-Package -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests/InsertionClassifierTests`. Plans 34.1-02/03 must use this command.
 - Pre-existing 10 failures in `AccentedCharacterTests` + `FrequencyDictionaryTests` remain — deferred per `.planning/phases/34-silent-insertion-fix/deferred-items.md`, out of STAB-01 scope.
 
 **Phase 34.1 execution decisions (Plan 34.1-02):**
@@ -129,7 +129,7 @@ None — BUG-71 fixed via PR #81, BUG-72 fixed via PR #86.
 
 ### Parallel Milestone
 
-- **v1.5 Dictus Pro** in progress on `feature/premium` worktree (Phase 30/33 — 25% done)
+- **v1.5 Ouispr Pro** in progress on `feature/premium` worktree (Phase 30/33 — 25% done)
 - Sync via `sync/develop-to-premium` branch
 - v1.7 uses phases 34-39 to avoid collision with premium phases 30-33
 

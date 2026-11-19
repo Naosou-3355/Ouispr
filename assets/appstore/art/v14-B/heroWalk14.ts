@@ -2,20 +2,20 @@ import { Gfx, softBox, tube, turn, type Ctx, type Env, type Medium, type P } fro
 import type { Film } from "./film";
 import { clipped, fillShape, mix, smooth } from "./gallery";
 
-// DICTUS HERO V14-B · "hands full", round 6 (V13-B is art/v13-B/heroWalk13.ts). Her voice becomes
+// OUISPR HERO V14-B · "hands full", round 6 (V13-B is art/v13-B/heroWalk13.ts). Her voice becomes
 // the background waveform of the whole set. After the arch the strokes come down gently and cross
 // the cut level with the strip's BrandWaveform band (centre y 1600); on slide 2 their wobble grows
 // into three marker-drawn bars on the band's own grid, heights and colour converging on the band's,
 // and screenshots.html draws the exact band from the next bar on (x 1480), behind the phone and on
 // into slides 3 to 7. BAND reproduces the band's formula from screenshots.html.
 //
-// DICTUS HERO V13-B · "hands full", round 5 (V12-B is art/v12-B/heroWalk12.ts). Round 5: slide 2
+// OUISPR HERO V13-B · "hands full", round 5 (V12-B is art/v12-B/heroWalk12.ts). Round 5: slide 2
 // has no zoomed panel any more; its phone, turned in depth, shows its own recording keyboard, and
 // the voice lands on that keyboard's waveform (PANEL_IN, measured as window.PANEL_EDGE on
 // screenshots.html). The S comes down sooner, so a long, gently curved, almost level run carries
 // the voice across the cut. Character, strokes, lettering, pavement and shadow are V12-B's.
 //
-// DICTUS HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
+// OUISPR HERO V12-B · "hands full", round 4 (V11-B is art/v11-B/heroWalk11.ts). Everything flows
 // left to right into slide 2's phone. Round 4: the stride reads unmistakably rightward (the front
 // foot far out on the right, heel down and toes high; the back foot on the left, heel lifted, toes
 // bent flat on the slabs); the voice is three uneven marker strokes on ONE soft S-curve, no straight
@@ -454,6 +454,6 @@ const drawFor = (end: P) => (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroWalk14: Film = {
-  meta: { title: "Dictus hero V14-B · hands full, round 6", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
+  meta: { title: "Ouispr hero V14-B · hands full, round 6", W, H, fps: 30, bpm: 120, durationFrames: 1 }, assets: { images: {} },
   shots: [{ id: "heroWalk14", start: 0, end: 1, draw: drawFor(PANEL_IN) }],
 };

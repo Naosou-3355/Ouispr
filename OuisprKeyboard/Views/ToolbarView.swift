@@ -1,0 +1,1061 @@
+// OuisprKeyboard/Views/ToolbarView.swift
+import SwiftUI
+import OuisprCore
+
+/// Toolbar displayed above the keyboard with app shortcut and AnimatedMicButton.
+/// Inspired by Wispr Flow -- the mic button is the primary dictation trigger.
+///
+/// WHY AnimatedMicButton replaces inline micIcon:
+/// AnimatedMicButton provides 4 visual states (idle glow, recording pulse,
+/// transcribing shimmer, success flash) that give the user clear feedback
+/// about the dictation lifecycle. The inline micIcon only had basic color changes.
+///
+/// The bar has two presentations (#241) and keeps its 52 pt in both, so opening
+/// the panel is a content swap and not a resize. In an area that has produced four
+/// layout regressions (#166 and family), that property matters more than anything
+/// else in the design:
+///
+///     closed:  [☰]  ← centre slot →  [🎤 pill]
+///     open:    [✕]                   [Ouispr Pro] [⚙]
+///
+/// The ☰ has two gestures (#639): a tap opens the voice note reader, a long press
+/// opens the panel. It wears the mic's halo while the keyboard offers at least one
+/// shared voice note.
+///
+/// There is deliberately no mic while the panel is open: the panel is not a
+/// surface anyone dictates from, and the mic's absence is what makes the state
+/// unambiguous.
+struct ToolbarView: View {
+    let hasFullAccess: Bool
+    let dictationStatus: DictationStatus
+
+    /// Whether this device can dictate from the keyboard at all (#635). False on a
+    /// pre-A14 chip: the mic is drawn disabled and the centre slot says why. Defaulted
+    /// to true so a call site that does not care keeps today's keyboard.
+    var supportsDictation: Bool = true
+
+    var onMicTap: () -> Void
+
+    // Suggestion bar integration parameters (default to idle/empty)
+    var statusMessage: String?
+
+    /// Identity carried purely so the status message's rendering can be attributed
+    /// to a view and a controller in the exported log (#261). Defaulted, so a call
+    /// site that does not care is unaffected; both current call sites supply them.
+    var messageProbeRootViewID: String = "unknown"
+    var messageProbeControllerID: String = "unknown"
+
+    /// Whether polish has stopped calling its engine for the rest of OuisprApp's
+    /// process (#315). Declared next to `statusMessage` because it is the bar's
+    /// other way of saying something went wrong, and the opposite kind of thing:
+    /// a state, not a message. It carries no timer, is not dismissed, and goes
+    /// away only when a fresh app process clears it.
+    var showsPolishUnavailable: Bool = false
+
+    /// Whether a dictation the document refused has its text waiting in OuisprApp
+    /// (#860). A state like the one above: no timer, gone on tap or on the next
+    /// dictation.
+    var showsRecoveredTranscription: Bool = false
+
+    /// Opens OuisprApp on the recovered text.
+    var onRecoveredTranscriptionTap: (() -> Void)?
+
+    var suggestions: [String] = []
+    var suggestionMode: SuggestionMode = .idle
+    var onSuggestionTap: ((Int) -> Void)?
+
+    /// Whether the last dictation insertion can still be undone (#266).
+    /// Transient by construction: it is set for a few seconds after an insertion
+    /// and only while the inserted text is verifiably still the tail of the field.
+    var showsDictationUndo: Bool = false
+
+    /// Removes the last dictation insertion. Re-checks the field before deleting.
+    var onDictationUndoTap: (() -> Void)?
+
+    /// Whether the hamburger panel currently fills the keyboard area (#241).
+    /// Drives which of the two presentations above the bar renders.
+    var isPanelOpen: Bool = false
+
+    /// Opens the panel from a long press on the hamburger, closes it from the ✕'s tap
+    /// (#639). Same callback: both are the same control in the same slot, labelled
+    /// by state.
+    var onPanelToggle: (() -> Void)?
+
+    /// Gear, panel presentation only. Opens OuisprApp.
+    var onSettingsTap: (() -> Void)?
+
+    /// What the panel's Pro entry shows, if anything (#593). Read once when the panel
+    /// opens rather than observed: a subscription cannot change while the keyboard is
+    /// the frontmost surface, and a trial ends on a clock nobody is watching here.
+    var proPromotion: ProPromotionEntry = .hidden
+
+    /// Pro entry, panel presentation only. Non-subscribers only.
+    var onProTap: (() -> Void)?
+
+    /// The armed Smart Mode, or nil for Normal (#79). Names the centre slot's
+    /// priority-5 occupant, in one of its two shapes.
+    var armedSmartMode: SmartMode?
+
+    /// The armed Smart Mode **when a dictation starting now would actually run it**
+    /// (#423), which is what the mic pill's corner badge draws.
+    ///
+    /// Two properties because they are two facts, and the bug was drawing one from
+    /// the other: with the mode armed and Smart Modes switched off, the badge said EN
+    /// over a dictation that returned French. A badge is an assertion about the next
+    /// dictation, so it comes from what the next dictation will do; the centre slot's
+    /// label is a statement about a setting, so it comes from the setting and says,
+    /// greyed, that it is not in force.
+    var effectiveSmartMode: SmartMode?
+
+    /// Whether the "long-press for Smart Modes" hint is still worth showing. The
+    /// policy is `SmartModeDiscovery`'s; this is only the answer.
+    var offersSmartModeHint: Bool = false
+
+    /// Opens the long-press fan. Returns whether it opened — a refusal (a dictation
+    /// in flight, nothing pinned) leaves the gesture inert rather than arming on a
+    /// menu the user never saw.
+    var onSmartModeFanOpen: (() -> Bool)?
+
+    /// Reports the finger's position while the fan is open, in points below the
+    /// toolbar. Negative means back up on the mic.
+    var onSmartModeFanDrag: ((CGFloat) -> Void)?
+
+    /// Release: arm what is highlighted and start recording, or abort.
+    var onSmartModeFanRelease: (() -> Void)?
+
+    /// Whether the fan is on screen right now.
+    ///
+    /// Guards re-entry into `onSmartModeFanOpen`, and it is deliberately the *state*
+    /// rather than `fanGestureDidOpen`: the fan's idle backstop can close it while
+    /// the finger is still down, and a guard on the flag would leave the long press
+    /// inert from then on.
+    var isSmartModeFanOpen: Bool = false
+
+    /// Whether the keyboard offers at least one voice note (#639): the ☰ capsule wears
+    /// the mic pill's halo. Shown or not, until the last one expires or is deleted.
+    var ringsMenuForVoiceNotes: Bool = false
+
+    /// Whether the "← Long press: languages & settings" hint is still worth showing.
+    /// The policy is `MenuPanelDiscovery`'s; this is only the answer.
+    var offersPanelHint: Bool = false
+
+    /// A tap on ☰: open the voice note reader (#639).
+    var onMenuTap: (() -> Void)?
+
+    /// A long press on ☰ was recognised and the panel is opening (#639): retires the
+    /// panel hint. The panel itself opens through `onPanelToggle`.
+    var onMenuLongPress: (() -> Void)?
+
+    /// Set when the long press on ☰ is recognised, cleared by the release it belongs
+    /// to — the `fanGestureDidOpen` arrangement, for the ☰.
+    ///
+    /// WHY: the long press is a `simultaneousGesture`, so the ☰ `Button` stays live
+    /// and fires its tap action on a release inside its bounds — which would open the
+    /// reader over the panel the long press just opened. The panel swaps this bar's
+    /// presentation (`dictationBar` → `panelBar`), so the ☰ button is normally gone by
+    /// the release and the release goes nowhere; this flag is the guarantee for every
+    /// case where it is not.
+    ///
+    /// Reset when the press **begins** (`onChanged` delivers the finger landing), not
+    /// on release, for `fanGestureWasRefused`'s reason: a release that never arrives
+    /// would otherwise leave the next tap swallowed.
+    @State private var menuLongPressDidFire = false
+
+    /// Coordinate space the fan gesture reports in. Declared here and named by
+    /// `KeyboardRootView`, which owns the view it is attached to: the drag has to be
+    /// measured against the whole keyboard area, not against the 52 pt bar the
+    /// gesture starts in.
+    static let fanCoordinateSpace = "ouisprKeyboardArea"
+
+    /// Set the moment the long-press succeeds, cleared as soon as anything has had a
+    /// chance to consume it.
+    ///
+    /// WHY it exists: the fan gesture is attached with `simultaneousGesture`, so the
+    /// underlying mic `Button` is still live and fires its action on a release inside
+    /// its bounds — which is exactly the abort. Without this, pulling back to the mic
+    /// to cancel would start the plain recording the user just cancelled.
+    ///
+    /// It is set ~0.35 s before any release, so it is always true by the time the
+    /// button action could run, whichever order SwiftUI delivers the two in.
+    @State private var fanGestureDidOpen = false
+
+    /// Whether this press already asked for the fan and was **refused** (#460).
+    ///
+    /// `isSmartModeFanOpen` cannot answer that. It reports the *state*, so it stays
+    /// false after a refusal — and `onChanged` fires on every drag update, so a
+    /// refused press asked again dozens of times. Each ask reaches
+    /// `SmartModeAvailability.current`, and through it
+    /// `SystemLanguageModel.default.availability`, on the main thread inside a
+    /// gesture: the exact cost `open()`'s own "read once, at open" comment exists to
+    /// avoid. Rare while the only refusals were a dictation in flight and an empty
+    /// pinned list; every long press of every user once #460 hid the fan.
+    ///
+    /// **Only a refusal latches**, which is what keeps this from undoing the reason
+    /// `isSmartModeFanOpen` is the state rather than `fanGestureDidOpen`: a fan that
+    /// opened and was then closed by its own idle backstop must still reopen under a
+    /// continued drag. That press never sets this.
+    ///
+    /// **Reset when the press begins, not when it ends.** A cancelled touch delivers
+    /// no `onEnded` — that is why `KeyboardSmartModeState`'s idle backstop exists at
+    /// all — so a flag cleared on release would stick after one cancelled gesture and
+    /// leave every later long press inert. `.first(true)` is the finger landing, and
+    /// no press that reaches `.second` can have skipped it.
+    ///
+    /// `releaseSafetyNet` below is written for that same hazard and is **not attached
+    /// to anything** — it predates this branch and is left alone here. Do not read it
+    /// as cover for a release-time reset.
+    @State private var fanGestureWasRefused = false
+
+    /// Drives the discovery hint's float: 0 at rest, 3 at the far end of the breath.
+    /// One value for the offset and the opacity, so the two cannot drift apart.
+    @State private var hintDrift: CGFloat = 0
+
+    var body: some View {
+        // WHY ZStack: ensures the banner text is centered horizontally across the
+        // full toolbar width, independent of the mic pill position on the right.
+        // Both layers are vertically centered by the ZStack's default alignment.
+        ZStack {
+            if !hasFullAccess {
+                fullAccessBar
+            } else if isPanelOpen {
+                panelBar
+            } else {
+                dictationBar
+            }
+        }
+        .padding(.horizontal, 12)
+        // Push content down so the mic ring/glow doesn't get clipped by the
+        // iOS keyboard container's native top border (~2pt separator).
+        .padding(.top, 4)
+        // WHY 52pt: The AnimatedMicButton pill (36pt tall) has ring/glow effects
+        // extending to 46pt. With 4pt top padding, 52pt total provides enough
+        // breathing room above and below the pill without clipping.
+        .frame(height: Self.toolbarHeight)
+    }
+
+    /// The bar's height, in both presentations. Named rather than inlined because the
+    /// fan gesture subtracts it to turn a root-space drag into a fan-space one, and a
+    /// second literal 52 would be a silent one-notch offset on every row boundary.
+    /// `KeyboardRootView` and `KeyboardViewController` hold their own copies for
+    /// their own layout; this one belongs to the bar itself.
+    static let toolbarHeight: CGFloat = 52
+
+    // MARK: - Presentations
+
+    /// The dictation cockpit: hamburger left (when idle), suggestion bar (when
+    /// typing), mic right.
+    ///
+    /// WHY the hamburger yields to suggestions:
+    /// The suggestion bar needs horizontal space to display 3 slots legibly. The
+    /// hamburger inherits that arbitration from the language switcher it replaced,
+    /// at the same 32 pt cost. Accepted consequence (#241): the keyboard language
+    /// cannot be changed mid-word.
+    ///
+    /// WHY undo sits between the error message and the suggestions (#266):
+    /// an error means the dictation failed, so there is nothing to undo and the
+    /// error wins. Suggestions lose because immediately after an insertion the user
+    /// has typed nothing, so whatever the bar is showing was predicted from text
+    /// that was just dictated — worth little, and worth less than a control that
+    /// expires in seconds and is the only alternative to holding backspace.
+    ///
+    /// WHY the polish-unavailable notice sits LAST, beside the hamburger rather
+    /// than instead of anything (#315): it is the only occupant of this bar that
+    /// can last the whole app process. Above the suggestions it would suppress
+    /// completions and corrections for that entire time, which is the keyboard's
+    /// core job; in place of the hamburger it would make the panel unreachable
+    /// for the same duration. Sharing the slot costs visibility while the user is
+    /// mid-word, and that is the cheapest of the three prices.
+    private var dictationBar: some View {
+        HStack {
+            if !centreSlot.evictsHamburger {
+                hamburgerButton
+            }
+
+            centreSlotContent
+
+            // #635: a pre-A14 device gets the Full Access bar's disabled mic, and with
+            // it no fan gesture — the long press is a dictation path too.
+            if supportsDictation {
+                micPill
+            } else {
+                disabledMic
+            }
+        }
+    }
+
+    /// The one occupant of the centre slot, resolved by the priority table in
+    /// OuisprCore (#79). The view renders whatever it is handed; the ordering is
+    /// tested over there, because this target has no test bundle.
+    private var centreSlot: ToolbarCentreSlot {
+        ToolbarCentreSlot.resolve(
+            isChoosingMode: isSmartModeFanOpen,
+            errorMessage: statusMessage,
+            recoveredTranscriptionPending: showsRecoveredTranscription,
+            offersDictationUndo: showsDictationUndo,
+            hasSuggestions: !suggestions.isEmpty,
+            dictationUnavailable: !supportsDictation,
+            polishUnavailable: showsPolishUnavailable,
+            armedModeName: armedSmartMode?.localizedDisplayName,
+            armedModeIsEffective: effectiveSmartMode != nil,
+            offersPanelHint: offersPanelHint,
+            offersDiscoveryHint: offersSmartModeHint
+        )
+    }
+
+    @ViewBuilder
+    private var centreSlotContent: some View {
+        switch centreSlot {
+        case .choosingMode:
+            fanTitle
+        case .error(let message):
+            errorMessage(message)
+        case .recoveredTranscription:
+            recoveredTranscriptionBanner
+        case .dictationUndo:
+            dictationUndoButton
+            Spacer()
+        case .suggestions:
+            SuggestionBarView(
+                suggestions: suggestions,
+                mode: suggestionMode,
+                onTap: { index in onSuggestionTap?(index) }
+            )
+        case .dictationUnavailable:
+            dictationUnavailableNotice
+        case .polishUnavailable:
+            polishUnavailableNotice
+        case .armedMode(let name):
+            armedModeLabel(name)
+        case .armedModeInactive(let name):
+            inactiveArmedModeLabel(name)
+        case .panelHint:
+            panelHint
+        case .discoveryHint:
+            discoveryHint
+        case .empty:
+            Spacer()
+        }
+    }
+
+    /// WHY not red (#313, decided 2026-08-25): red is the recording overlay's colour in
+    /// this keyboard, and a message in that same red one second after the overlay in that
+    /// red disappears reads as an alarm. Half of what lands here is not an alarm at all —
+    /// "No words detected" is the user having stopped the mic a beat early — and the other
+    /// half is not helped by shouting. Grey, the treatment the bar already gives
+    /// `polishUnavailableNotice`, says the same thing without claiming the app is broken.
+    private func errorMessage(_ message: String) -> some View {
+        Text(message)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            // WHY two lines (#313): the sentences this slot now shows are written
+            // instructions, not codes, and the longest French one runs 96 characters
+            // against roughly 50 that fit on one `.caption` line here -- one line
+            // truncates "Activez-le dans les Reglages de l'iPhone" away and leaves the
+            // user with only the half that states the problem. The bar's 52pt frame is
+            // fixed above, so two 15pt lines cost no height: this cannot move the
+            // keyboard's declared height (#166).
+            .lineLimit(2)
+            .minimumScaleFactor(0.85)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            // Instrumentation only (#261). "The message was assigned" and
+            // "a live view put it on screen" are different facts, and only
+            // the first was observable — iOS keeps several controllers
+            // alive, so a message can be set and rendered into a tree the
+            // user is not looking at. This is the second fact, reported
+            // from the one place that can actually attest to it.
+            .onAppear {
+                KeyboardState.shared.noteStatusMessageDisplayed(
+                    rootView: messageProbeRootViewID,
+                    controller: messageProbeControllerID
+                )
+            }
+            .onDisappear {
+                KeyboardState.shared.noteStatusMessageHidden(
+                    rootView: messageProbeRootViewID,
+                    controller: messageProbeControllerID
+                )
+            }
+    }
+
+    /// The mic, carrying the fan gesture.
+    ///
+    /// `simultaneousGesture` rather than `highPriorityGesture`: the plain tap is
+    /// still the overwhelmingly common way to dictate, and it must not pay a
+    /// long-press delay. See `fanGestureDidOpen` for how the two are kept from
+    /// firing on the same release.
+    private var micPill: some View {
+        AnimatedMicButton(
+            status: dictationStatus,
+            isPill: true,
+            badge: effectiveSmartMode?.badge,
+            animatesIdleGlow: false,
+            onTap: {
+                guard !fanGestureDidOpen else {
+                    fanGestureDidOpen = false
+                    return
+                }
+                onMicTap()
+            }
+        )
+        .simultaneousGesture(fanGesture)
+    }
+
+    /// Long-press, then drag, then release — one continuous gesture, because that is
+    /// what the user performs (#79, Typeless's gesture).
+    ///
+    /// ### Why the drag is *sequenced* behind the long press and not simultaneous
+    ///
+    /// Both shapes were measured on the simulator on 2026-08-24, and the difference
+    /// is which one keeps tracking once the finger leaves the mic pill — which is
+    /// the whole gesture, since every row is below it. Sequenced does: the long
+    /// press has already won arbitration, so the drag inherits the touch and follows
+    /// it down the fan. A standalone `simultaneousGesture(DragGesture(…))` is
+    /// cancelled the moment the finger exits the `Button`'s bounds, and the release
+    /// never arrives — three consecutive runs opened the fan and armed nothing.
+    ///
+    /// `.first(true)` is the long press landing. Opening there rather than on the
+    /// first drag update is what makes the fan appear under a *stationary* thumb,
+    /// which is the affordance: nothing has moved yet, and the menu is already there
+    /// to move onto.
+    private var fanGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.35)
+            .sequenced(before: DragGesture(
+                minimumDistance: 0,
+                coordinateSpace: .named(Self.fanCoordinateSpace)
+            ))
+            .onChanged { value in
+                // `.second` and NOT `.first(true)`, which is the whole of this
+                // gesture's timing (device, 2026-08-24).
+                //
+                // A `LongPressGesture`'s value means "a press is in progress", not
+                // "the press has lasted long enough". `onChanged` therefore delivers
+                // `.first(true)` the instant the finger lands, and opening there
+                // meant the fan had no delay at all: **21 mic taps out of 21 in one
+                // session opened the fan**, and a plain tap could no longer start a
+                // dictation. The 0.35 s was written down and never applied.
+                //
+                // A `SequenceGesture` moves to `.second` only once its first gesture
+                // has *succeeded*, so this is the long press completing. The drag
+                // value is nil until the finger actually moves, which is what keeps
+                // the fan appearing under a stationary thumb.
+                guard case .second(true, let drag) = value else {
+                    // Everything that is not a completed long press. `.first(true)`
+                    // is the finger landing, and it is where a new press clears the
+                    // refusal latch — see `fanGestureWasRefused` for why the reset
+                    // lives here and not on the release.
+                    fanGestureWasRefused = false
+                    return
+                }
+                if !isSmartModeFanOpen, !fanGestureWasRefused {
+                    fanGestureDidOpen = onSmartModeFanOpen?() ?? false
+                    fanGestureWasRefused = !fanGestureDidOpen
+                }
+                guard fanGestureDidOpen, let drag else { return }
+                onSmartModeFanDrag?(drag.location.y - Self.toolbarHeight)
+            }
+            .onEnded { _ in releaseFan() }
+    }
+
+    /// The release that a `SequenceGesture` does not deliver.
+    ///
+    /// A `SequenceGesture` only calls `onEnded` once its second gesture has been
+    /// *recognised*, and a `DragGesture` that never receives a movement update never
+    /// is. So a user who held the mic and let go without sliding — the natural way
+    /// to peek at the menu, and the exact shape of the documented abort — got no
+    /// release at all and the fan stayed over the keys. Measured 2026-08-24:
+    /// `smartModeFanOpened` with no `smartModeFanAborted` behind it.
+    ///
+    /// This covers exactly that case, and only that case: no movement means the
+    /// finger never left the pill, so the bounds limitation that rules this shape
+    /// out for tracking does not apply. When a real drag happens, whichever of the
+    /// two fires first closes the fan and the other finds nothing to do.
+    private var releaseSafetyNet: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { _ in releaseFan() }
+    }
+
+    /// End the gesture, once, whichever recogniser noticed.
+    private func releaseFan() {
+        guard fanGestureDidOpen else { return }
+        onSmartModeFanRelease?()
+        // Cleared a turn later, not here: the mic `Button`'s action may still be
+        // about to fire for this same release, and it is the flag that tells it to
+        // stand down.
+        DispatchQueue.main.async { fanGestureDidOpen = false }
+    }
+
+    /// Titles the fan while it is open, priority 0 (#79).
+    ///
+    /// The header the mock puts above the rows, moved into the bar. Drawn inside the
+    /// fan it would have to push the rows down, and the row positions are exactly
+    /// what `SmartModeFanLayout` maps the finger's y onto — a header there buys a
+    /// line of text and pays for it with the one piece of arithmetic in this block
+    /// that was settled on a device. The bar is empty at that moment anyway, and it
+    /// sits directly above the first row.
+    private var fanTitle: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+
+            Text(
+                "Choose a Smart Mode",
+                comment: "Toolbar title shown while the long-press Smart Mode fan is open."
+            )
+            .font(.system(size: 13, weight: .semibold))
+            .lineLimit(1)
+        }
+        .foregroundColor(.ouisprAccent)
+        .padding(.leading, 6)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The armed mode's name, priority 4 (#79).
+    ///
+    /// Accent blue and quiet, wearing the mode's own glyph beside its name. This is
+    /// where the badge on the mic is *taught*: the two sit 200 pt apart on the same
+    /// bar, so reading "→ EN" here is what makes the EN on the pill mean something
+    /// later, when the label has given way to the suggestions.
+    ///
+    /// It is a statement about a setting, not a message: the user armed this
+    /// deliberately, possibly last week, and the reason it is on screen at all is that
+    /// a sticky mode with no visible sign is how someone dictates a translation they
+    /// did not want.
+    private func armedModeLabel(_ name: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: armedSmartMode?.icon ?? "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+
+            Text(name)
+                .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+        }
+        .foregroundColor(.ouisprAccent)
+        .padding(.leading, 6)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The armed mode's name for a mode that will not run, same rung (#423).
+    ///
+    /// ### Why it is still here at all
+    ///
+    /// Because the setting survived, deliberately: `resolveArmedMode` keeps a mode
+    /// through every recoverable condition — a lapsed subscription, a switched-off
+    /// feature, Apple Intelligence off — so that switching it back on restores the
+    /// user's choice without re-arming. Hiding the label would make that invisible
+    /// and leave the user wondering where their mode went.
+    ///
+    /// ### And why it must not look like `armedModeLabel`
+    ///
+    /// That one is accent blue and it is a claim: this is what the next dictation
+    /// does. Here that claim is false. Same glyph and same name — it is the same
+    /// setting — in grey and followed by "off", which says the true thing instead:
+    /// yours, and not in force. Grey is the register this bar already uses for a
+    /// state rather than an alarm (`polishUnavailableNotice`, and every message in
+    /// the slot since #313); nothing failed here either.
+    private func inactiveArmedModeLabel(_ name: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: armedSmartMode?.icon ?? "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+
+            Text(String(
+                localized: "\(name) · off",
+                comment: "Toolbar label for an armed Smart Mode that will not run, so the dictation goes in as Normal. The placeholder is the mode's name."
+            ))
+            .font(.system(size: 13, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.leading, 6)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Priority 5, the discovery affordance (#79).
+    ///
+    /// Secondary and small, in the register of the #315 notice rather than of an
+    /// error: nothing is wrong, there is simply something here the user has not
+    /// found. `SmartModeDiscovery` retires it once the gesture has been performed.
+    ///
+    /// ### Why it moves, when nothing else in this bar does
+    ///
+    /// Every other occupant of the centre slot is a *statement* — an error, a name, a
+    /// notice — and a statement that drifts is a distraction. This one is an
+    /// invitation, and it is competing for attention with the text the user came here
+    /// to write. Static grey caption text in a keyboard toolbar is the most ignorable
+    /// object in iOS; it is read once, on the first keyboard the user ever opens, and
+    /// after that it is furniture. The drift is what buys the second look.
+    ///
+    /// The motion is deliberately the mic's own: 2 s, `easeInOut`, `autoreverses`,
+    /// the same curve as `AnimatedMicButton`'s idle glow. Two things breathing
+    /// together at the same rate read as one thing pointing at the other; two things
+    /// breathing at different rates read as a bug.
+    ///
+    /// The arrow drifts a little further than the text. That difference is the whole
+    /// effect — the group is not sliding, it is *reaching* — and it is why this is
+    /// two amplitudes on one animation rather than one `offset` on the `HStack`.
+    ///
+    /// It repeats forever in a keyboard extension, which is the cost — and since #510
+    /// it is the only thing in this bar still paying it: the mic's idle glow used to
+    /// repeat here too and no longer does, so whenever this hint is on screen it holds
+    /// the compositing loop open by itself. What keeps it affordable is that it stops
+    /// existing the moment the user performs the gesture once.
+    ///
+    /// The curve is still described above as the mic's own. That is now a statement
+    /// about the app's recording screen, which is where the breathing survives.
+    private var discoveryHint: some View {
+        driftingHint(
+            Text(
+                "Hold the mic for Smart Modes",
+                comment: "Toolbar hint teaching the long-press gesture that opens the Smart Mode fan."
+            ),
+            // Toward the mic, which is the point of the sentence and sits to the
+            // right of it in both presentations of this bar.
+            pointing: .right
+        )
+    }
+
+    /// "← Long press: languages & settings", the panel hint (#639).
+    ///
+    /// Since #639 a tap on ☰ opens the voice notes and the panel moved behind a long
+    /// press; this tells the user who has met the new tap where the languages went.
+    /// Same rung as the Smart Mode hint, and drawn by the very same layout — same
+    /// leading inset, same centring in the slot, same breath — so the two never sit
+    /// differently in the bar (#639 device feedback: a first version was glued to
+    /// the ☰ and off-centre). Only the arrow's side differs: it points at the ☰.
+    private var panelHint: some View {
+        driftingHint(
+            Text(
+                "Long press: languages & settings",
+                comment: "Toolbar hint, right of the menu button, teaching that a long press on it opens the keyboard panel (languages, layouts, settings). An arrow pointing at the menu button precedes it (#639)."
+            ),
+            pointing: .left
+        )
+    }
+
+    /// Which way a hint's arrow points: at the control the sentence names.
+    private enum HintDirection { case left, right }
+
+    /// The one layout both discovery hints use. See `discoveryHint` for the motion.
+    ///
+    /// The arrow drifts toward what it names, a little further than the text: right
+    /// for the mic, left for the ☰. Everything else is shared, which is the point.
+    private func driftingHint(_ text: Text, pointing direction: HintDirection) -> some View {
+        let sign: CGFloat = direction == .right ? 1 : -1
+        let arrow = Image(systemName: direction == .right ? "arrow.right" : "arrow.left")
+            .font(.system(size: 10, weight: .semibold))
+            .offset(x: sign * hintDrift * 2.2)
+        let label = text
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        return HStack(spacing: 6) {
+            if direction == .left { arrow }
+            label
+            if direction == .right { arrow }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .opacity(0.62 + hintDrift * 0.13)
+        .offset(x: sign * hintDrift)
+        .padding(.leading, 6)
+        .frame(maxWidth: .infinity)
+        .onAppear {
+            // Assigned inside the animation and never reset: the hint has no other
+            // states, so there is nothing here to cancel and stack the way
+            // `AnimatedMicButton` has to.
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                hintDrift = 3
+            }
+        }
+    }
+
+    /// The panel header: close left, gear anchored right, Pro entry inserted to
+    /// the gear's left for non-subscribers.
+    ///
+    /// The gear is last in the stack in both subscription states, so it never
+    /// moves — a subscriber must not have to look for it somewhere a
+    /// non-subscriber does not.
+    private var panelBar: some View {
+        HStack(spacing: 8) {
+            closeButton
+
+            Spacer()
+
+            // Same gate as every other Pro entry point (#236): while the paywall
+            // is hidden the product must look like it has no subscription at all,
+            // and a pill leading to an unreachable paywall is exactly the kind of
+            // dead end that gate exists to prevent. `ProPromotion` owns that gate
+            // now, with #593's two additions: nothing on a device that can never run
+            // Smart Modes, and the trial's two-day reminder in the pill's place.
+            if proPromotion != .hidden {
+                proEntry
+            }
+
+            settingsButton
+        }
+    }
+
+    /// No Full Access: centered banner text + disabled mic on the right.
+    private var fullAccessBar: some View {
+        ZStack {
+            HStack(spacing: 6) {
+                Image(systemName: "keyboard")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Text("Full access required")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack {
+                Spacer()
+
+                disabledMic
+            }
+        }
+    }
+
+    /// The mic as a control that cannot be used: no action, no gesture, greyed.
+    ///
+    /// Shared by the Full Access bar and by a pre-A14 device (#635) so the two refusals
+    /// look the same. `.disabled` alone would not be enough for the second: the live
+    /// pill carries the Smart Mode fan's long press, which starts a dictation on
+    /// release. This one carries nothing.
+    private var disabledMic: some View {
+        AnimatedMicButton(status: .idle, isPill: true, animatesIdleGlow: false, onTap: {})
+            .disabled(true)
+            .opacity(0.4)
+    }
+
+    /// Why the mic is greyed on a pre-A14 device (#635).
+    ///
+    /// The Full Access bar's footnote, secondary, minus its icon: this bar keeps the ☰
+    /// on its left, so the sentence has the width between two pills and no more. One
+    /// line that shrinks a little rather than wraps, so the bar keeps its 52 pt (#166).
+    ///
+    /// The copy names the device, not the chip: the user cannot act on "A12", and the
+    /// onboarding already told them the reason when they added the keyboard.
+    private var dictationUnavailableNotice: some View {
+        Text(
+            "Dictation unavailable on this device",
+            comment: "Keyboard toolbar note beside the disabled mic on a device whose chip is too old to dictate from the keyboard (#635)."
+        )
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .padding(.leading, 6)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Controls
+
+    /// Bare hamburger, no language code on it (#241): the keyboard already
+    /// announces its language through the spacebar label and the key positions,
+    /// and a variable-width label jitters the most contested 32 pt of the UI.
+    ///
+    /// Two gestures on one control (#639, amended after the device test): the tap
+    /// opens the voice note reader — reading a note and typing alternate many times in
+    /// a session — and a long press opens the panel (languages, layouts, Settings,
+    /// Pro). Accepted cost: the one-tap language switch, and the #279 paywall entry
+    /// point moves behind the long press. Same glyph either way. `simultaneousGesture`
+    /// for the mic's reason: the tap must not pay a long-press delay. See
+    /// `menuLongPressDidFire` for how a long press is kept from also being a tap.
+    private var hamburgerButton: some View {
+        Button {
+            guard !menuLongPressDidFire else {
+                menuLongPressDidFire = false
+                return
+            }
+            HapticFeedback.keyTapped()
+            onMenuTap?()
+        } label: {
+            barIcon(systemName: "line.3.horizontal", size: 17, width: Self.micPillWidth, shape: .capsule,
+                    ringed: ringsMenuForVoiceNotes)
+        }
+        .buttonStyle(GlassPressStyle())
+        .simultaneousGesture(menuLongPress)
+        .accessibilityLabel(Text("Keyboard menu"))
+    }
+
+    /// The ☰ long press (#639): opens the panel **at recognition**, with the fan's
+    /// haptic, the same feel as the Smart Mode long press on the mic (#79).
+    ///
+    /// 0.35 s, the mic's duration, so the two long presses of this bar are one gesture
+    /// to learn. A plain `LongPressGesture` ends — `onEnded` — the moment the duration
+    /// is reached with the finger still down; that is the recognition, and it is the
+    /// last moment the ☰ button is guaranteed to exist: opening the panel swaps this
+    /// bar to `panelBar` (the #79 identity trap, one level down), so nothing is
+    /// expected to receive the release.
+    private var menuLongPress: some Gesture {
+        LongPressGesture(minimumDuration: 0.35)
+            .onChanged { _ in
+                // The finger landing: a new press starts with a clean latch.
+                menuLongPressDidFire = false
+            }
+            .onEnded { _ in
+                menuLongPressDidFire = true
+                HapticFeedback.keyTapped()
+                onMenuLongPress?()
+                onPanelToggle?()
+            }
+    }
+
+    /// Removes the dictation that was just inserted (#266).
+    ///
+    /// WHY it borrows the look of the autocorrect undo chip in `SuggestionBarView`
+    /// — accent tint, uturn arrow: the two controls do the same thing to different
+    /// text, and they appear in the same strip of the same bar seconds apart. A
+    /// user who has learned that a tinted uturn arrow reverts what just happened
+    /// should not have to learn it twice.
+    ///
+    /// It does NOT pulse the way the autocorrect chip does. That pulse exists
+    /// because an autocorrection is silent; a dictation insertion is not — the
+    /// recording overlay has just closed and the text has just appeared.
+    private var dictationUndoButton: some View {
+        Button {
+            HapticFeedback.keyTapped()
+            onDictationUndoTap?()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 13, weight: .semibold))
+
+                Text("Undo")
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundColor(.ouisprAccent)
+            .padding(.horizontal, 14)
+            .frame(height: iconDiameter)
+            .background(
+                Capsule().fill(Color.ouisprAccent.opacity(0.12))
+            )
+            // Same split as `barIcon`: the capsule is what the eye sees, the 44 pt
+            // frame is what a finger hits.
+            .frame(height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(Text("Undo dictation insertion"))
+    }
+
+    /// A dictation's text was produced and never typed, and is in OuisprApp (#860).
+    ///
+    /// Accent, like Undo, because it is the other control in this slot that acts on a
+    /// dictation; not red, for #313's reason. The copy names where the text is and not
+    /// why it was interrupted: the cause is out of scope, and the app is the remedy.
+    /// Two lines at `.caption` fit the 52 pt bar, so the declared height cannot move
+    /// (#166).
+    private var recoveredTranscriptionBanner: some View {
+        Button {
+            HapticFeedback.keyTapped()
+            onRecoveredTranscriptionTap?()
+        } label: {
+            HStack(spacing: 6) {
+                Text("Dictation interrupted. Your text is in the Ouispr app.")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.leading)
+                Image(systemName: "arrow.up.forward.app")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundColor(.ouisprAccent)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: iconDiameter)
+            .background(Capsule().fill(Color.ouisprAccent.opacity(0.12)))
+            .frame(height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityIdentifier("keyboard.recoveredTranscriptionBanner")
+    }
+
+    /// Polish is not running, and will not run again until OuisprApp restarts (#315).
+    ///
+    /// WHY secondary: nothing failed for the user. The dictation still arrives, as
+    /// the deterministic floor it already takes when a guardrail rejects the model's
+    /// output — what is missing is the polish on top.
+    ///
+    /// This used to be the exception, the one message in the bar that was not red.
+    /// Since #313 it is the rule: no message in this keyboard is red, and the
+    /// argument written here is the one that generalised.
+    ///
+    /// The copy names the state and stops. No cause, no remedy, no "try again
+    /// later": Apple's background rate limit is only refunded by a fresh app
+    /// process, so there is no action to offer, and an offer that does not work
+    /// is worse than none.
+    private var polishUnavailableNotice: some View {
+        Text("Polish is temporarily unavailable.")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            // The sentence is fixed and must not truncate; on the narrowest
+            // supported width it gives up a little size instead. Single line
+            // either way, so the bar keeps its 52 pt (#166 and family).
+            .minimumScaleFactor(0.75)
+            .padding(.leading, 6)
+            .frame(maxWidth: .infinity)
+    }
+
+    private var closeButton: some View {
+        panelToggleButton(
+            systemName: "xmark",
+            label: Text("Close menu")
+        )
+    }
+
+    /// Both states of the left slot, at the identical 32 pt frame the language
+    /// label used, so ☰ becomes ✕ in place with no geometry change.
+    private func panelToggleButton(systemName: String, label: Text) -> some View {
+        Button {
+            HapticFeedback.keyTapped()
+            onPanelToggle?()
+        } label: {
+            barIcon(systemName: systemName, size: 17, width: Self.micPillWidth, shape: .capsule)
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(label)
+    }
+
+    private var settingsButton: some View {
+        Button {
+            HapticFeedback.keyTapped()
+            onSettingsTap?()
+        } label: {
+            barIcon(systemName: "gearshape", size: 19, width: iconDiameter, shape: .circle)
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(Text("Open Ouispr"))
+    }
+
+    /// Width and height of `AnimatedMicButton`'s pill body, mirrored here so the
+    /// panel toggle is the same object as the mic rather than a smaller cousin.
+    /// Kept in sync by hand: the mic owns these numbers, this is a deliberate
+    /// visual echo of them, not a shared constant to be refactored away.
+    private static let micPillWidth: CGFloat = 56
+
+    /// The ☰'s "voice note waiting" halo opacity (#639): the keyboard mic's resting
+    /// value (`AnimatedMicButton.startIdleAnimation`, static since #510), so the two
+    /// auras opposite each other in the bar are the same object.
+    private static let haloOpacity: Double = 0.45
+
+    /// Diameter of the round icon buttons, and the height of every bar control.
+    private var iconDiameter: CGFloat { 36 }
+
+    /// Shape of a bar icon's glass backing.
+    private enum BarIconShape { case circle, capsule }
+
+    /// Shared geometry for the bar's icon buttons: a 36 pt-tall glass backing
+    /// inside a touch target at least 44 pt on each axis.
+    ///
+    /// WHY the two frames differ (#241 device feedback): the visible control and
+    /// the tappable region are not the same thing. The glyph sat in a bare 32 pt
+    /// frame, under the 44 pt minimum, and closing the panel measured 10 to 22
+    /// seconds per attempt on device — taps aimed at the close control landed on
+    /// the 44 pt language rows below it instead. The outer frame is what a finger
+    /// hits; the inner one is what the eye sees.
+    ///
+    /// WHY glass rather than a bare glyph: against the mic's filled pill, an
+    /// unbacked icon read as unfinished rather than as a control.
+    ///
+    /// WHY the panel toggle is a capsule and the gear a circle: the toggle sits
+    /// opposite the mic and is the only thing balancing it, so it takes the mic's
+    /// pill footprint. The gear never faces the mic — it appears only in the panel
+    /// bar, where a second wide pill would compete with the toggle rather than
+    /// balance anything.
+    ///
+    /// `ringed` (#639): the ☰'s "voice notes are in the keyboard" state wears the mic pill's
+    /// own aura — `OuisprHalo`, the very view `AnimatedMicButton` draws behind its
+    /// pill, at the keyboard mic's resting values (accent, 2 pt, 0.45). Same geometry
+    /// and same layering: a 66 × 46 glass ring behind the 56 × 36 capsule, which stays
+    /// glass and neutral inside. Device feedback on #641: a stroke *inside* the
+    /// capsule made the ☰ read smaller than the mic opposite it, because the mic's
+    /// outer silhouette is its halo.
+    ///
+    /// A background, so the ☰'s layout frame does not move when the ring comes and
+    /// goes: its centre stays where the reader's and the panel's `✕` sit, and the
+    /// ring overhangs by 5 pt on each side the way the mic's does.
+    ///
+    /// While ringed, the glyph itself takes the accent too (trial approved by Pierre,
+    /// fifth round of #641): the three lines in the halo's blue say "notes are here"
+    /// even where the glass ring reads faintly. Not animated, like the halo it goes
+    /// with. Only the ☰ ever passes `ringed`: the panel's `✕` and the reader's `✕`
+    /// are drawn without it, so the blue never carries over the ☰ → ✕ morph.
+    private func barIcon(
+        systemName: String,
+        size: CGFloat,
+        width: CGFloat,
+        shape: BarIconShape,
+        ringed: Bool = false
+    ) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: size, weight: .medium))
+            .foregroundColor(ringed ? .ouisprAccent : .ouisprPillIconSecondary)
+            .frame(width: width, height: iconDiameter)
+            .ouisprGlass(in: shape == .capsule ? AnyShape(Capsule()) : AnyShape(Circle()))
+            .background {
+                if ringed {
+                    OuisprHalo(isPill: shape == .capsule, color: .ouisprAccent,
+                               opacity: Self.haloOpacity, lineWidth: 2)
+                }
+            }
+            .frame(width: max(width, 44), height: 44)
+            .contentShape(Rectangle())
+    }
+
+    /// White pill, gradient text, in both light and dark appearances (#241).
+    ///
+    /// Chosen over a gradient-filled pill and over gradient text alone: it carries
+    /// the paywall's own gradient, so the Pro signal reads identically across
+    /// surfaces, while staying legible against either keyboard background.
+    ///
+    /// Known and accepted: on the light keyboard a white rounded pill with a
+    /// shadow resembles a key. If it reads as a key on device, the recorded
+    /// fallback is a gradient-filled pill in light appearance only.
+    private var proEntry: some View {
+        Button {
+            HapticFeedback.keyTapped()
+            onProTap?()
+        } label: {
+            proEntryLabel
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.ouisprGradientStart, .ouisprGradientEnd],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(
+                    Capsule().fill(Color.white)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 3, x: 0, y: 1)
+                // The pill stays 28 pt tall; only the touch target grows to 44.
+                // See `barIcon` for why the two are separated.
+                .frame(height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(proEntryLabel)
+    }
+
+    /// The pill's words. The brand name, or the trial's countdown in its last two days
+    /// (#593, decision 3): the one reminder a keyboard user gets, since Ouispr sends
+    /// no push notification. Same pill, same place, same tap to the paywall, so the
+    /// gear still never moves.
+    private var proEntryLabel: Text {
+        guard case .trialEnding(let daysLeft) = proPromotion else {
+            return Text(verbatim: "Ouispr Pro")
+        }
+        return Text(
+            "Pro · \(daysLeft) days left",
+            comment: "Keyboard panel pill in the last two days of the free Ouispr Pro trial. The number is the days left, 1 or 2."
+        )
+    }
+}

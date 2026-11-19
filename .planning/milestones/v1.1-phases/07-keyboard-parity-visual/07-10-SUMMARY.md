@@ -21,8 +21,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/AccentedCharacters.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
+    - OuisprCore/Sources/OuisprCore/AccentedCharacters.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
 
 key-decisions:
   - "Accent case derived from lastTypedChar not isShifted -- isShifted auto-resets after typing, losing case info"
@@ -60,8 +60,8 @@ Each task was committed atomically:
 1. **Task 1: Fix accent uppercase and special key colors** - `99973f9` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/AccentedCharacters.swift` - adaptiveKeyLabel preserves original case instead of lowercasing unconditionally
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - displayChar removes isShifted ternary, startLongPressTimer derives case from lastTypedChar, systemGray3->systemGray5 on all special keys, shift active state colors swapped
+- `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` - adaptiveKeyLabel preserves original case instead of lowercasing unconditionally
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - displayChar removes isShifted ternary, startLongPressTimer derives case from lastTypedChar, systemGray3->systemGray5 on all special keys, shift active state colors swapped
 
 ## Decisions Made
 - Accent case derived from lastTypedChar (the stored character) rather than isShifted flag, because isShifted auto-resets after typing a character (auto-unshift), making it unreliable for determining the case of the most recently typed character

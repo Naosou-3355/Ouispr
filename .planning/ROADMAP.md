@@ -1,4 +1,4 @@
-# Roadmap: Dictus
+# Roadmap: Ouispr
 
 **Created:** 2026-03-04
 **Granularity:** Coarse
@@ -12,7 +12,7 @@
 - ✅ **v1.2 Beta Ready** — Phases 11-16 (shipped 2026-03-27)
 - ✅ **v1.3 Public Beta** — Phases 17-22 (shipped 2026-04-07)
 - ✅ **v1.4 Prediction & Stability** — Phases 23-27 (shipped 2026-04-08)
-- 🚧 **v1.5 Dictus Pro** — Phases 30-33 (in progress on `feature/premium` worktree)
+- 🚧 **v1.5 Ouispr Pro** — Phases 30-33 (in progress on `feature/premium` worktree)
 - 🚧 **v1.7 Stability, Polish & i18n** — Phases 34-39 (in progress)
 
 ## Phases
@@ -140,13 +140,13 @@ Plans:
 - [x] 34.1-03 On-device verification (13 probes, 0 failures, privacy audit PASS) — completed 2026-04-16
 
 ### Phase 35: Keyboard Geometry Polish
-**Goal**: The Dictus keyboard matches the visual dimensions and proportions of the Apple system keyboard, and renders correctly on every launch.
+**Goal**: The Ouispr keyboard matches the visual dimensions and proportions of the Apple system keyboard, and renders correctly on every launch.
 **Depends on**: Phase 34 (ship STAB-01 hotfix first so this phase does not block a critical reliability bug)
 **Requirements**: KBD-01, KBD-02
 **Milestone**: v1.7
 **Linked issues**: #117, #116
 **Success Criteria** (what must be TRUE):
-  1. On every supported device class (small/medium/large iPhones), Dictus key widths, heights, gaps, and padding match the Apple system keyboard within 2pt tolerance — measured via a documented audit vs screenshots of iOS keyboard.
+  1. On every supported device class (small/medium/large iPhones), Ouispr key widths, heights, gaps, and padding match the Apple system keyboard within 2pt tolerance — measured via a documented audit vs screenshots of iOS keyboard.
   2. The keyboard layout renders correctly on every launch and layer switch — the residual glitch from v1.6.0-beta.1 (misaligned keys on first appearance) is not reproducible across 30 consecutive cold starts.
   3. Layer transitions (letters ↔ numbers ↔ symbols) keep keys aligned to the audited geometry — no transient shrink or shift.
   4. The audit report (measured vs target for each device class) is committed to the repo so future regressions can be caught.
@@ -179,7 +179,7 @@ Plans:
 **Plans**: TBD
 
 ### Phase 38: i18n Foundation
-**Goal**: Adding a new language to Dictus is a documented, repeatable process with tooling — not ad-hoc engineering.
+**Goal**: Adding a new language to Ouispr is a documented, repeatable process with tooling — not ad-hoc engineering.
 **Depends on**: Nothing (pure process/tooling work, independent of other v1.7 phases)
 **Requirements**: I18N-01
 **Milestone**: v1.7
@@ -192,13 +192,13 @@ Plans:
 **Plans**: TBD
 
 ### Phase 39: German Language Support
-**Goal**: A German-speaking user can install Dictus, complete onboarding in German, dictate in German, and type in German with a proper QWERTZ keyboard and German autocorrect — proving the i18n process works end-to-end.
+**Goal**: A German-speaking user can install Ouispr, complete onboarding in German, dictate in German, and type in German with a proper QWERTZ keyboard and German autocorrect — proving the i18n process works end-to-end.
 **Depends on**: Phase 38 (German is the first user of the I18N-01 process)
 **Requirements**: I18N-02
 **Milestone**: v1.7
 **Linked issues**: #109
 **Success Criteria** (what must be TRUE):
-  1. When the device language is German (or the user selects German in Dictus settings), the full onboarding flow — permissions, keyboard setup, model download, test dictation — runs in German with all strings translated and rendered correctly.
+  1. When the device language is German (or the user selects German in Ouispr settings), the full onboarding flow — permissions, keyboard setup, model download, test dictation — runs in German with all strings translated and rendered correctly.
   2. A German user can type on a QWERTZ keyboard layout (with correct umlauts via long-press, sharp-s ß key placement) with no dead zones and with autocorrect producing German-appropriate suggestions from a German dictionary and German n-gram data.
   3. A German user can dictate a sentence in German using a multilingual Whisper model and see accurate German transcription inserted into the host app.
   4. The German build was produced by following the Phase 38 runbook without needing process modifications — any deviations are logged back as amendments to the runbook, closing the loop on I18N-01.

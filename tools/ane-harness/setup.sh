@@ -69,13 +69,13 @@ done
 [ "$missing" -eq 0 ] || { echo "The model bundle is incomplete. Delete $DEPS/model and re-run."; exit 1; }
 echo "Model bundle verified: ${#MODEL_FILES[@]} required paths present."
 
-# The harness builds the prompt from DictusCore at runtime, but the raw fixture
+# The harness builds the prompt from OuisprCore at runtime, but the raw fixture
 # text lives in the polish-harness resource bundle, which another target cannot
 # reach. Copy it in rather than transcribing it: a hand copy is a second source
 # of truth that drifts, and this measurement is only worth anything if the
 # prompt is byte-identical to the shipping one.
 mkdir -p "$HERE/AneBenchKit/Sources/AneBenchKit/Resources"
-cp "$HERE/../../DictusCore/Sources/polish-harness/fixtures/seed.json" \
+cp "$HERE/../../OuisprCore/Sources/polish-harness/fixtures/seed.json" \
    "$HERE/AneBenchKit/Sources/AneBenchKit/Resources/seed.json"
 echo "Copied seed.json fixtures."
 

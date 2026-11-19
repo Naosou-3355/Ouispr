@@ -43,7 +43,7 @@ built for #414 — has nothing to look at, which that type's doc already states.
 
 | Consumer | Path | Cost of a WRONG REJECTION | Cost of a WRONG ACCEPTANCE |
 |---|---|---|---|
-| Free polish in DictusApp (`PolishService.polishTargeted` / `polishAutoDetected`) | every dictation with polish on | **Low.** `resolvedOutput` returns the deterministic floor — the user's own words, verbal punctuation applied, merely unpolished | the defect this PR exists to stop |
+| Free polish in OuisprApp (`PolishService.polishTargeted` / `polishAutoDetected`) | every dictation with polish on | **Low.** `resolvedOutput` returns the deterministic floor — the user's own words, verbal punctuation applied, merely unpolished | the defect this PR exists to stop |
 | Free polish in the keyboard extension (since #361) | every dictation | same as above | same as above |
 | A Smart Mode | every armed dictation | **High.** `resolvedOutput` returns `nil` and nothing is inserted | high |
 | `polish-harness` | measurement only | none | none |
@@ -99,7 +99,7 @@ cannot clear them is reported as failing, not relaxed. Each maps to an acceptanc
 | **P4** | The two thresholds are read off a sweep, and the table is in the PR | by reading |
 | **P5** | The check is **inert** for List and Translate, proven by a test | by test |
 | **P6** | The refusal is distinguishable in the debug event from the other three guardrail refusals | by test |
-| **P7** | `cd DictusCore && swift test` green, `swiftlint lint --strict` clean, the three targets build | absolute |
+| **P7** | `cd OuisprCore && swift test` green, `swiftlint lint --strict` clean, the three targets build | absolute |
 
 P3 is the shipping bar. It is stated over free-polish outputs specifically, because those are the
 only ones the check ever runs on (§3.3), and the number is only meaningful on the base §5.2.6
@@ -139,7 +139,7 @@ texts the user's own dictation produced.
 
 ### 5.2 The ordered changes
 
-1. **`PolishPrefixAlignment`**, a new type in `DictusCore/Polish/`, with its thresholds struct
+1. **`PolishPrefixAlignment`**, a new type in `OuisprCore/Polish/`, with its thresholds struct
    beside it — the shape `PolishLanguageSegmentThresholds` established. It answers
    `alignmentOffset(of:against:)` and the yes/no the pipeline asks. Its doc comment carries the
    accepted hole from §3.4.
@@ -197,7 +197,7 @@ deterministic local call, which is what makes the numbers re-runnable by anyone,
 Apple Intelligence.
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness guardrail ../docs/research/413-414-guardrail/corpus.json \
                                    ../docs/research/413-414-guardrail/adversarial.json \
                                    ../docs/research/413-414-guardrail/freepolish.json --sweep
@@ -688,7 +688,7 @@ line, then the polished text):
 
 **This path is live.** Auto mode (#239) is explicitly the language-agnostic route, and
 `PolishPostpass` already carries the comment that per-language typography is skipped there because
-it would mangle CJK. The code anticipated CJK on this path; the guardrail did not. Dictus steers
+it would mangle CJK. The code anticipated CJK on this path; the guardrail did not. Ouispr steers
 Chinese users toward a model (#409), so they are not hypothetical.
 
 ### 10.3 The fix refines the split, and deliberately does not replace it
@@ -781,7 +781,7 @@ available to a guardrail whose entire design rule is *every uncertainty resolves
 because a rejection costs the user words they said.* Nothing in the app can reach the failure: the
 only production value is `.default`, a compile-time constant, and the initialiser is public only
 because the harness's sweep needs it. It would trade a real user-facing risk for a hypothetical
-one. `DictusCore` contains no `precondition` at all, and this is not the place to introduce the
+one. `OuisprCore` contains no `precondition` at all, and this is not the place to introduce the
 first.
 
 **Clamping in the initialiser is also refused**, and for a sharper reason: the one caller that

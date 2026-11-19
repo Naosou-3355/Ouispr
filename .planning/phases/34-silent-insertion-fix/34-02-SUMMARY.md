@@ -24,13 +24,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - "DictusApp/Views/HomeView.swift"
+    - "OuisprApp/Views/HomeView.swift"
 
 key-decisions:
   - "recoverableTranscription prefers in-memory coordinator.lastResult over App Group read — avoids a pointless UserDefaults hit when the data is already in memory, and handles the case where coordinator has fresher data than App Group would (though in practice DictationCoordinator writes App Group before setting lastResult)"
   - "Staleness window exactly 300s to match DictationCoordinator.swift:97-102 — not a new number, intentionally reused so the App Group contract stays single-sourced"
   - "Explicit `import UIKit` added even though SwiftUI transitively imports it on iOS — makes the UIApplication.didBecomeActiveNotification dependency unambiguous for future maintainers"
-  - "transcriptionCard(result:) body left untouched — only the call-site render gate changed. Preserves all existing visual treatment (Button/GlassPressStyle/dictusGlass, copy-to-clipboard, Copied! feedback)"
+  - "transcriptionCard(result:) body left untouched — only the call-site render gate changed. Preserves all existing visual treatment (Button/GlassPressStyle/ouisprGlass, copy-to-clipboard, Copied! feedback)"
 
 patterns-established:
   - "App Group read as UI recovery surface: when an out-of-process actor (keyboard extension) writes data to SharedKeys and the in-app observable model may have been discarded, a computed property that falls back to `AppGroup.defaults` read gives a resilient display path"
@@ -58,7 +58,7 @@ completed: 2026-04-16
 
 - `HomeView.recoverableTranscription` computed property shipped — prefers in-memory `coordinator.lastResult`, falls back to `AppGroup.defaults.string(forKey: SharedKeys.lastTranscription)` with `SharedKeys.lastTranscriptionTimestamp` staleness gate
 - Scene-active refresh wired via `UIApplication.didBecomeActiveNotification` + `@State private var appGroupRefreshTrigger` bumped on onAppear AND scene activation — card appears on return-to-app without user interaction
-- Existing `transcriptionCard(result:)` body (copy-to-clipboard, GlassPressStyle, dictusGlass, Copied! feedback) preserved exactly — only the render gate switched from `coordinator.lastResult` to `recoverableTranscription`
+- Existing `transcriptionCard(result:)` body (copy-to-clipboard, GlassPressStyle, ouisprGlass, Copied! feedback) preserved exactly — only the render gate switched from `coordinator.lastResult` to `recoverableTranscription`
 - Real-device user verification confirmed the recovery surface works for both in-app TestDictation cold-scene flow and baseline tap-to-copy
 
 ## Task Commits
@@ -71,7 +71,7 @@ completed: 2026-04-16
 ## Files Created/Modified
 
 ### Modified
-- `DictusApp/Views/HomeView.swift` — added `@State appGroupRefreshTrigger`, `recoverableTranscription` computed property, scene-active onReceive refresh, swapped render gate; 50 insertions / 2 deletions
+- `OuisprApp/Views/HomeView.swift` — added `@State appGroupRefreshTrigger`, `recoverableTranscription` computed property, scene-active onReceive refresh, swapped render gate; 50 insertions / 2 deletions
 
 ## Implementation Shipped
 
@@ -83,7 +83,7 @@ completed: 2026-04-16
 /// dictation start. Honors the same 300s staleness window as DictationCoordinator's init-time
 /// purge (DictationCoordinator.swift:97-102) so we never show content older than ~5 minutes.
 ///
-/// WHY: When the keyboard's loud-fail UX tells the user "Find your transcription in Dictus,"
+/// WHY: When the keyboard's loud-fail UX tells the user "Find your transcription in Ouispr,"
 /// the card must be visible on the home screen even if the DictationCoordinator instance
 /// no longer holds lastResult in memory. The App Group read is the recovery surface.
 ///
@@ -128,7 +128,7 @@ if let result = recoverableTranscription {
 }
 ```
 
-`transcriptionCard(result:)` function body (HomeView.swift:180-211) is unchanged — same Button/VStack/copy-to-clipboard/GlassPressStyle/dictusGlass treatment as before.
+`transcriptionCard(result:)` function body (HomeView.swift:180-211) is unchanged — same Button/VStack/copy-to-clipboard/GlassPressStyle/ouisprGlass treatment as before.
 
 ## Decisions Made
 
@@ -147,9 +147,9 @@ None during Task 1 execution.
 
 ### Observation surfaced during Task 2 user verification
 
-User initially tested scenario 2 (cold-scene recovery) via keyboard dictation in Notes. The card did NOT appear after force-quit + relaunch. Root-cause investigation found that `DictusKeyboard/KeyboardState.swift:338` intentionally calls `defaults.removeObject(forKey: SharedKeys.lastTranscription)` immediately after a successful keyboard insertion — this is the correct behavior for successful insertions (it prevents duplicate insertions from repeated Darwin notifications, which are an observed keyboard-extension lifecycle artifact). It is NOT a bug in Plan 34-02.
+User initially tested scenario 2 (cold-scene recovery) via keyboard dictation in Notes. The card did NOT appear after force-quit + relaunch. Root-cause investigation found that `OuisprKeyboard/KeyboardState.swift:338` intentionally calls `defaults.removeObject(forKey: SharedKeys.lastTranscription)` immediately after a successful keyboard insertion — this is the correct behavior for successful insertions (it prevents duplicate insertions from repeated Darwin notifications, which are an observed keyboard-extension lifecycle artifact). It is NOT a bug in Plan 34-02.
 
-The cold-scene test was therefore re-run via the in-app dictation path (DictusApp → New dictation → force-quit → relaunch), where the App Group key is preserved because no keyboard insertion occurred. The card appeared correctly with the transcription after cold launch, validating Plan 34-02 in isolation.
+The cold-scene test was therefore re-run via the in-app dictation path (OuisprApp → New dictation → force-quit → relaunch), where the App Group key is preserved because no keyboard insertion occurred. The card appeared correctly with the transcription after cold launch, validating Plan 34-02 in isolation.
 
 The keyboard-dictation variant of scenario 2 will be validated end-to-end by Plan 34-03 when the failed-insertion escalation path is implemented — on that path, the App Group value must be left in place so HomeView can recover it. See "Follow-ups for Plan 34-03" below.
 
@@ -160,16 +160,16 @@ All results from user testing on real device, 2026-04-16:
 | Scenario | Description | Result | Notes |
 |----------|-------------|--------|-------|
 | 1. Baseline | Complete an in-app dictation → card visible on Home → tap copies to clipboard with "Copied!" feedback | **PASS** | Existing behavior preserved exactly. `transcriptionCard(result:)` body untouched. |
-| 2a. Cold-scene recovery (in-app path) | DictusApp New dictation → force-quit DictusApp → relaunch → card appears on Home with the dictated text | **PASS** | Validates recoverableTranscription's App Group fallback + staleness window + onAppear refresh trigger. |
-| 2b. Cold-scene recovery (keyboard path) | Keyboard dictation in Notes → force-quit DictusApp → relaunch → card NOT visible | **EXPECTED / not-a-bug** | Keyboard clears SharedKeys.lastTranscription on successful insertion (KeyboardState.swift:338). Correct behavior for success path. Failure path is Plan 34-03's scope. |
+| 2a. Cold-scene recovery (in-app path) | OuisprApp New dictation → force-quit OuisprApp → relaunch → card appears on Home with the dictated text | **PASS** | Validates recoverableTranscription's App Group fallback + staleness window + onAppear refresh trigger. |
+| 2b. Cold-scene recovery (keyboard path) | Keyboard dictation in Notes → force-quit OuisprApp → relaunch → card NOT visible | **EXPECTED / not-a-bug** | Keyboard clears SharedKeys.lastTranscription on successful insertion (KeyboardState.swift:338). Correct behavior for success path. Failure path is Plan 34-03's scope. |
 | 3. Staleness guard (>5 min) | Skipped by user — non-critical | **SKIPPED** | Staleness logic matches DictationCoordinator's init-time purge (DictationCoordinator.swift:97-102) which is already exercised. |
-| 4. Scene-active refresh | Return to Dictus after backgrounding — card appears without tapping | **APPROVED** (implicit via scenario 2a) | The cold-launch path uses onAppear which bumps the same `appGroupRefreshTrigger` state variable as the scene-active onReceive. Passing scenario 2a validates the bump/re-evaluation mechanism end-to-end. |
+| 4. Scene-active refresh | Return to Ouispr after backgrounding — card appears without tapping | **APPROVED** (implicit via scenario 2a) | The cold-launch path uses onAppear which bumps the same `appGroupRefreshTrigger` state variable as the scene-active onReceive. Passing scenario 2a validates the bump/re-evaluation mechanism end-to-end. |
 
 User signal: approved. All 4 acceptance criteria either passed or were correctly explained as out-of-scope for Plan 34-02.
 
 ## Follow-ups for Plan 34-03
 
-**CRITICAL contract for Plan 34-03 executor:** When implementing the failed-insertion escalation path in DictusKeyboard, the keyboard MUST NOT call `defaults.removeObject(forKey: SharedKeys.lastTranscription)` on the failure path. Current code at `DictusKeyboard/KeyboardState.swift:338` (and :367 for the 100ms retry path) clears the key immediately after `insertText`. This is correct for the success path — it prevents duplicate insertions from repeated Darwin notifications.
+**CRITICAL contract for Plan 34-03 executor:** When implementing the failed-insertion escalation path in OuisprKeyboard, the keyboard MUST NOT call `defaults.removeObject(forKey: SharedKeys.lastTranscription)` on the failure path. Current code at `OuisprKeyboard/KeyboardState.swift:338` (and :367 for the 100ms retry path) clears the key immediately after `insertText`. This is correct for the success path — it prevents duplicate insertions from repeated Darwin notifications.
 
 For the failure path (where `InsertionClassifier.classify` returns `.silentDrop`, `.deltaMismatch`, or `.proxyDead` and all retries have been exhausted), the code must preserve the App Group value so HomeView's recovery surface (Plan 34-02) can read it. Pattern:
 
@@ -190,19 +190,19 @@ Without this change, the keyboard-dictation variant of scenario 2 (cold-scene re
 
 ## User Setup Required
 
-None — purely SwiftUI source-level change inside DictusApp. No entitlements, Info.plist, App Group config, or new dependencies.
+None — purely SwiftUI source-level change inside OuisprApp. No entitlements, Info.plist, App Group config, or new dependencies.
 
 ## Next Phase Readiness
 
-- **Plan 34-03 (DictusKeyboard insertion helper)** is the next plan to execute. It consumes Plan 34-01's foundations (LogEvent probe cases, HapticFeedback.insertionFailed(), LiveActivityStateMachine `.failed` edges, InsertionClassifier) and must honor the "do not clear SharedKeys on failure path" contract documented above.
-- **Plan 34-04 (banner/UX wiring + DictusApp recovery card polish)** — HomeView's recovery surface is now in place; Plan 34-04 will add the keyboard toolbar banner with "Retrouvez votre transcription dans Dictus." copy that points users to this surface, and any final polish on the Home-side card presentation.
+- **Plan 34-03 (OuisprKeyboard insertion helper)** is the next plan to execute. It consumes Plan 34-01's foundations (LogEvent probe cases, HapticFeedback.insertionFailed(), LiveActivityStateMachine `.failed` edges, InsertionClassifier) and must honor the "do not clear SharedKeys on failure path" contract documented above.
+- **Plan 34-04 (banner/UX wiring + OuisprApp recovery card polish)** — HomeView's recovery surface is now in place; Plan 34-04 will add the keyboard toolbar banner with "Retrouvez votre transcription dans Ouispr." copy that points users to this surface, and any final polish on the Home-side card presentation.
 
 ## Self-Check
 
 Verifying all claims:
 
 ### Files modified
-- `/Users/pierreviviere/dev/dictus/DictusApp/Views/HomeView.swift` — FOUND (verified 50-insertion / 2-deletion diff against commit 2171b31^)
+- `/Users/pierreviviere/dev/ouispr/OuisprApp/Views/HomeView.swift` — FOUND (verified 50-insertion / 2-deletion diff against commit 2171b31^)
 
 ### Commits
 - `2171b31` (Task 1 feat commit) — FOUND in git log
@@ -216,7 +216,7 @@ Verifying all claims:
 - `grep -n "if let result = coordinator.lastResult" HomeView.swift` — 0 matches (old gate removed)
 - `grep -n "UIApplication.didBecomeActiveNotification" HomeView.swift` — 1 match at line 97
 - `grep -n "appGroupRefreshTrigger" HomeView.swift` — 5 matches (declaration + read + 2 bump sites + comment)
-- `transcriptionCard(result:)` body unchanged (copy-to-clipboard / GlassPressStyle / dictusGlass all present at lines 180-211)
+- `transcriptionCard(result:)` body unchanged (copy-to-clipboard / GlassPressStyle / ouisprGlass all present at lines 180-211)
 
 ## Self-Check: PASSED
 

@@ -1,0 +1,853 @@
+// OuisprCore/Tests/OuisprCoreTests/LogEventTests.swift
+// Tests for LogEvent level and subsystem mapping.
+import XCTest
+@testable import OuisprCore
+
+final class LogEventTests: XCTestCase {
+
+    // MARK: - LogLevel cases
+
+    func testLogLevelHasExactly5Cases() {
+        XCTAssertEqual(LogLevel.allCases.count, 5)
+    }
+
+    func testLogLevelRawValues() {
+        XCTAssertEqual(LogLevel.debug.rawValue, "debug")
+        XCTAssertEqual(LogLevel.info.rawValue, "info")
+        XCTAssertEqual(LogLevel.notice.rawValue, "notice")
+        XCTAssertEqual(LogLevel.warning.rawValue, "warning")
+        XCTAssertEqual(LogLevel.error.rawValue, "error")
+    }
+
+    func testLogLevelPaddedName() {
+        // All padded names should be 7 chars for alignment
+        XCTAssertEqual(LogLevel.debug.paddedName, "DEBUG  ")
+        XCTAssertEqual(LogLevel.info.paddedName, "INFO   ")
+        XCTAssertEqual(LogLevel.notice.paddedName, "NOTICE ")
+        XCTAssertEqual(LogLevel.warning.paddedName, "WARNING")
+        XCTAssertEqual(LogLevel.error.paddedName, "ERROR  ")
+    }
+
+    // MARK: - Subsystem cases
+
+    func testSubsystemHasExactly6Cases() {
+        XCTAssertEqual(Subsystem.allCases.count, 6)
+    }
+
+    func testSubsystemRawValues() {
+        XCTAssertEqual(Subsystem.dictation.rawValue, "dictation")
+        XCTAssertEqual(Subsystem.audio.rawValue, "audio")
+        XCTAssertEqual(Subsystem.transcription.rawValue, "transcription")
+        XCTAssertEqual(Subsystem.model.rawValue, "model")
+        XCTAssertEqual(Subsystem.keyboard.rawValue, "keyboard")
+        XCTAssertEqual(Subsystem.lifecycle.rawValue, "lifecycle")
+    }
+
+    // MARK: - Dictation events
+
+    func testDictationStartedIsInfoDictation() {
+        let event = LogEvent.dictationStarted(fromURL: true, appState: "active", engineRunning: true)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .dictation)
+    }
+
+    func testDictationCompletedIsInfoDictation() {
+        let event = LogEvent.dictationCompleted(durationMs: 3000)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .dictation)
+    }
+
+    func testDictationFailedIsErrorDictation() {
+        let event = LogEvent.dictationFailed(error: "timeout")
+        XCTAssertEqual(event.level, .error)
+        XCTAssertEqual(event.subsystem, .dictation)
+    }
+
+    func testDictationDeferredIsWarningDictation() {
+        let event = LogEvent.dictationDeferred(reason: "engineNotReady")
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .dictation)
+    }
+
+    func testDictationStateReconciledIsWarningDictation() {
+        let event = LogEvent.dictationStateReconciled(
+            source: "keyboard-refresh",
+            staleStatus: "recording",
+            heartbeatAgeMs: 23_000
+        )
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .dictation)
+    }
+
+    func testDictationStateReconciledIsGreppableWithItsEvidence() {
+        // Issue #261 acceptance criterion 4: the exported log must carry an explicit
+        // event for the reconciliation, so this failure is self-diagnosing without a
+        // rebuild — the same rationale as `localModelResolved` for #249. The name and
+        // the heartbeat age are what a reader greps for, so both are pinned here.
+        let event = LogEvent.dictationStateReconciled(
+            source: "keyboard-watchdog",
+            staleStatus: "recording",
+            heartbeatAgeMs: 23_000
+        )
+        XCTAssertEqual(event.name, "dictationStateReconciled")
+        XCTAssertEqual(
+            event.message,
+            "source=keyboard-watchdog staleStatus=recording heartbeatAgeMs=23000"
+        )
+    }
+
+    func testDictationStateReconciledReportsAnAbsentHeartbeatAsMinusOne() {
+        // The app-side launch audit reaches its verdict from the fact that a fresh
+        // process owns no session, so it has no heartbeat to report.
+        let event = LogEvent.dictationStateReconciled(
+            source: "app-launch",
+            staleStatus: "transcribing",
+            heartbeatAgeMs: -1
+        )
+        XCTAssertEqual(event.message, "source=app-launch staleStatus=transcribing heartbeatAgeMs=-1")
+    }
+
+    // MARK: - Stranded cold start (#311)
+
+    func testColdStartStrandedIsAWarningWithItsResolution() {
+        // #311's regression grep pivots on this name, and on `action` telling the
+        // reader which of the three outcomes the parked start actually got. It is a
+        // warning because a parked start reaching this point is a user-visible
+        // request that nearly went nowhere.
+        let event = LogEvent.coldStartStranded(keyboardStatus: "requested", action: "retry")
+        XCTAssertEqual(event.name, "coldStartStranded")
+        XCTAssertEqual(event.message, "keyboardStatus=requested action=retry")
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    func testColdStartStrandedCarriesTheStatusTheKeyboardWasShowing() {
+        // A `dropped` line has to say what the stored status had become, because
+        // that is the whole reason nothing was done about it.
+        let event = LogEvent.coldStartStranded(keyboardStatus: "idle", action: "dropped")
+        XCTAssertEqual(event.message, "keyboardStatus=idle action=dropped")
+    }
+
+    func testColdStartStrandedReportsAnExpiredAssertion() {
+        // `expired` is the fourth vocabulary value and the only one that is not a
+        // `ColdStartResolution`: the background assertion ran out with the request
+        // still unresolved, which is a stranded start by definition.
+        let event = LogEvent.coldStartStranded(keyboardStatus: "requested", action: "expired")
+        XCTAssertEqual(event.message, "keyboardStatus=requested action=expired")
+        XCTAssertEqual(event.level, .warning)
+    }
+
+    // MARK: - Keyboard status message trail (#261)
+
+    func testDictationMessageSetIsGreppableWithItsOwner() {
+        // The device test script tells the maintainer to grep these exact names, so
+        // the names and the field order are a contract, not an implementation detail.
+        let event = LogEvent.dictationMessageSet(reason: "reconciled-keyboard-refresh", owner: "9DF73D57", visible: true)
+        XCTAssertEqual(event.name, "dictationMessageSet")
+        XCTAssertEqual(event.message, "reason=reconciled-keyboard-refresh owner=9DF73D57 visible=true")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    func testDictationMessageDisplayedCarriesBothIdentities() {
+        // `rootView` and `controller` against `owner` is what tests the hypothesis
+        // that a message renders into a tree the user is not looking at.
+        let event = LogEvent.dictationMessageDisplayed(
+            rootView: "D67967A0",
+            controller: "9DF73D57",
+            owner: "9DF73D57",
+            visible: true
+        )
+        XCTAssertEqual(event.name, "dictationMessageDisplayed")
+        XCTAssertEqual(event.message, "rootView=D67967A0 controller=9DF73D57 owner=9DF73D57 visible=true")
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    func testDictationMessageClearedWarnsWhenNobodyRenderedIt() {
+        // The whole point of counting: `displayedCount=0` is "the user was never
+        // told", and it is findable by level as well as by reading the number.
+        let unseen = LogEvent.dictationMessageCleared(reason: "reconciled-timeout", displayedCount: 0)
+        XCTAssertEqual(unseen.name, "dictationMessageCleared")
+        XCTAssertEqual(unseen.message, "reason=reconciled-timeout displayedCount=0")
+        XCTAssertEqual(unseen.level, .warning)
+
+        let seen = LogEvent.dictationMessageCleared(reason: "reconciled-timeout", displayedCount: 2)
+        XCTAssertEqual(seen.level, .info)
+    }
+
+    // MARK: - Audio events
+
+    func testAudioEngineStartedIsInfoAudio() {
+        let event = LogEvent.audioEngineStarted
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+    }
+
+    func testAudioEngineStoppedIsDebugAudio() {
+        let event = LogEvent.audioEngineStopped
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .audio)
+    }
+
+    func testAudioSessionConfiguredIsInfoAudio() {
+        let event = LogEvent.audioSessionConfigured(category: "playAndRecord")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+    }
+
+    func testAudioSessionFailedIsErrorAudio() {
+        let event = LogEvent.audioSessionFailed(error: "configError")
+        XCTAssertEqual(event.level, .error)
+        XCTAssertEqual(event.subsystem, .audio)
+    }
+
+    // MARK: - Haptics allowance (issue #293)
+
+    func testHapticsAllowanceIsInfoAudio() {
+        let event = LogEvent.audioHapticsAllowance(context: "startRecording", allowed: true)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "audioHapticsAllowance")
+    }
+
+    /// The value is the whole point of the line: `allowed=false` while the
+    /// session is active is the device-wide haptics mute (#293). It must be
+    /// greppable verbatim, not encoded in the event's presence.
+    func testHapticsAllowanceCarriesTheEffectiveValue() {
+        let denied = LogEvent.audioHapticsAllowance(context: "warmUp-alreadyRunning", allowed: false)
+        XCTAssertEqual(denied.message, "context=warmUp-alreadyRunning allowed=false")
+
+        let granted = LogEvent.audioHapticsAllowance(context: "configureAudioSession", allowed: true)
+        XCTAssertEqual(granted.message, "context=configureAudioSession allowed=true")
+    }
+
+    /// Before #293 the setter was a bare `try?`, so a throw produced the same
+    /// (empty) evidence as a success. A failure now has its own level.
+    func testHapticsAllowanceFailedIsWarningAudio() {
+        let event = LogEvent.audioHapticsAllowanceFailed(context: "startEngine-warmUp", error: "boom")
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "audioHapticsAllowanceFailed")
+        XCTAssertEqual(event.message, "context=startEngine-warmUp error=boom")
+    }
+
+    // MARK: - Inactivity timeout (issue #380)
+
+    func testWarmStateReleasedNamesItsReason() {
+        let event = LogEvent.warmStateReleased(idleSeconds: 61, reason: "idleTimeout")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "warmStateReleased")
+        XCTAssertEqual(event.message, "idleSeconds=61 reason=idleTimeout")
+    }
+
+    func testIdleReleaseArmedCarriesTheOptionAndTheTimer() {
+        let event = LogEvent.idleReleaseArmed(option: "oneMinute", timerSeconds: 60, context: "collectSamples")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "idleReleaseArmed")
+        XCTAssertEqual(event.message, "option=oneMinute timerSeconds=60 context=collectSamples")
+    }
+
+    func testIdleReleaseArmedSaysNoneForUnlimited() {
+        let event = LogEvent.idleReleaseArmed(option: "unlimited", timerSeconds: nil, context: "warmUp")
+        XCTAssertEqual(event.message, "option=unlimited timerSeconds=none context=warmUp")
+    }
+
+    // MARK: - Idle input mute (issue #430)
+
+    func testInputMutedIsInfoAudioAndCarriesTheValue() {
+        let event = LogEvent.audioInputMuted(context: "collectSamples", muted: true)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "audioInputMuted")
+        XCTAssertEqual(event.message, "context=collectSamples muted=true")
+    }
+
+    func testInputMuteFailedIsWarningAudio() {
+        let event = LogEvent.audioInputMuteFailed(context: "startRecording", muted: false, error: "boom")
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(event.name, "audioInputMuteFailed")
+        XCTAssertEqual(event.message, "context=startRecording muted=false error=boom")
+    }
+
+    /// The snapshot is the periodic line a reader scans; #293 added the
+    /// allowance to it so a regression is visible without correlating two events.
+    func testEngineStateSnapshotReportsHapticsAllowance() {
+        let event = LogEvent.engineStateSnapshot(
+            engineRunning: true,
+            isRecording: false,
+            hasWhisperKit: true,
+            sessionConfigured: true,
+            allowsHaptics: false,
+            context: "didBecomeActive"
+        )
+        XCTAssertEqual(event.subsystem, .audio)
+        XCTAssertEqual(
+            event.message,
+            "engineRunning=true isRecording=false hasWhisperKit=true "
+                + "sessionConfigured=true allowsHaptics=false context=didBecomeActive"
+        )
+    }
+
+    // MARK: - Transcription events
+
+    func testTranscriptionStartedIsInfoTranscription() {
+        let event = LogEvent.transcriptionStarted(modelName: "base")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .transcription)
+    }
+
+    func testTranscriptionCompletedIsInfoTranscription() {
+        let event = LogEvent.transcriptionCompleted(durationMs: 2500, wordCount: 42, confidence: nil)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .transcription)
+    }
+
+    /// Parakeet's score travels with the event, to three decimals: the drifted runs in
+    /// #552 sit 0.005 apart, so two would blur exactly the gap being measured (#554).
+    func testTranscriptionCompletedCarriesTheEngineConfidence() {
+        let event = LogEvent.transcriptionCompleted(durationMs: 2500, wordCount: 42, confidence: 0.9163)
+        XCTAssertEqual(event.message, "duration=2500ms words=42 confidence=0.916")
+    }
+
+    /// An engine with no score logs no field — not `confidence=0`, not `nil`. A
+    /// placeholder would read as a measurement to whoever aggregates these lines (#554).
+    func testTranscriptionCompletedWithoutConfidencePrintsNoField() {
+        let event = LogEvent.transcriptionCompleted(durationMs: 2500, wordCount: 42, confidence: nil)
+        XCTAssertEqual(event.message, "duration=2500ms words=42")
+        XCTAssertFalse(event.payload().contains("confidence"))
+    }
+
+    /// Nemotron's forced language, the prompt it resolved to and the tag the decoder emitted
+    /// (#558), in that order, and no `confidence=` field: that one is Parakeet's.
+    func testTranscriptionCompletedCarriesNemotronsLanguageFields() {
+        let event = LogEvent.transcriptionCompleted(
+            durationMs: 900, wordCount: 120, confidence: nil,
+            language: "fr", promptId: 8, detectedLanguage: "fr-FR"
+        )
+        XCTAssertEqual(event.message, "duration=900ms words=120 language=fr promptId=8 detected=fr-FR")
+        XCTAssertFalse(event.payload().contains("confidence"))
+    }
+
+    /// Parakeet's drift retry (#623), after the confidence: three counters, never text.
+    func testTranscriptionCompletedCarriesTheDriftRetryFields() {
+        let event = LogEvent.transcriptionCompleted(
+            durationMs: 3400, wordCount: 214, confidence: 0.916, retry: DriftRetryStats(spans: 3, wins: 2, durationMs: 2210)
+        )
+        XCTAssertEqual(event.message, "duration=3400ms words=214 confidence=0.916 retrySpans=3 retryWins=2 retryMs=2210")
+    }
+
+    /// A clean Parakeet dictation still prints `retrySpans=0`: the device validation reads
+    /// exactly that to confirm a clean dictation paid nothing.
+    func testTranscriptionCompletedPrintsAZeroSpanRetry() {
+        let event = LogEvent.transcriptionCompleted(
+            durationMs: 900, wordCount: 30, confidence: 0.97, retry: DriftRetryStats(spans: 0, wins: 0, durationMs: 3)
+        )
+        XCTAssertEqual(event.message, "duration=900ms words=30 confidence=0.970 retrySpans=0 retryWins=0 retryMs=3")
+    }
+
+    /// An engine without the retry prints no retry field at all.
+    func testTranscriptionCompletedWithoutARetryPrintsNoRetryField() {
+        let event = LogEvent.transcriptionCompleted(durationMs: 2500, wordCount: 42, confidence: nil)
+        XCTAssertFalse(event.payload().contains("retry"))
+    }
+
+    /// No tag emitted: the field is absent rather than `detected=nil`.
+    func testTranscriptionCompletedWithoutADetectedLanguagePrintsNoField() {
+        let event = LogEvent.transcriptionCompleted(
+            durationMs: 900, wordCount: 3, confidence: nil, language: "auto", promptId: 101
+        )
+        XCTAssertEqual(event.message, "duration=900ms words=3 language=auto promptId=101")
+    }
+
+    func testTranscriptionFailedIsErrorTranscription() {
+        let event = LogEvent.transcriptionFailed(error: "modelNotLoaded")
+        XCTAssertEqual(event.level, .error)
+        XCTAssertEqual(event.subsystem, .transcription)
+    }
+
+    // MARK: - Model events
+
+    func testModelDownloadStartedIsInfoModel() {
+        let event = LogEvent.modelDownloadStarted(name: "large-v3", sizeMB: 1500)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    func testModelDownloadCompletedIsInfoModel() {
+        let event = LogEvent.modelDownloadCompleted(name: "large-v3")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    func testModelDownloadFailedIsErrorModel() {
+        let event = LogEvent.modelDownloadFailed(name: "large-v3", error: "networkTimeout")
+        XCTAssertEqual(event.level, .error)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    func testModelSelectedIsInfoModel() {
+        let event = LogEvent.modelSelected(name: "base")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    func testModelCompilationStartedIsInfoModel() {
+        let event = LogEvent.modelCompilationStarted(name: "base")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    func testModelCompilationCompletedIsInfoModel() {
+        let event = LogEvent.modelCompilationCompleted(name: "base", durationMs: 5000)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+    }
+
+    // MARK: - Keyboard events
+
+    func testKeyboardDidAppearIsInfoKeyboard() {
+        let event = LogEvent.keyboardDidAppear
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    func testKeyboardDidDisappearIsDebugKeyboard() {
+        let event = LogEvent.keyboardDidDisappear
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    func testKeyboardMicTappedIsInfoKeyboard() {
+        let event = LogEvent.keyboardMicTapped
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    /// #23. `notice` and not `info` is the point of the case: the app is usually
+    /// terminated moments after a hand-off — that is what a hand-off is — and an `info`
+    /// line in the os.log mirror dies with it, taking the only account of why the user
+    /// did or did not land back where they were.
+    func testHostReturnIsNoticeKeyboard() {
+        let event = LogEvent.hostReturn(hostId: "com.apple.mobilenotes", outcome: "returned")
+        XCTAssertEqual(event.level, .notice)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.name, "hostReturn")
+        XCTAssertTrue(event.payload().hasSuffix("hostId=com.apple.mobilenotes outcome=returned"))
+    }
+
+    /// Every outcome the two processes actually emit, so the documented contract and the
+    /// call sites cannot drift. `no-scheme-known` was emitted for a whole device session
+    /// before it was written down.
+    func testEveryHostReturnOutcomeRendersIntact() {
+        let outcomes = [
+            "returned", "open-failed", "no-scheme", "no-scheme-known", "table-miss",
+            // #567: the branch that deliberately does not return now says so, because
+            // the bug it came from was an absent line nobody could distinguish from a
+            // branch that never ran.
+            "skipped-warm"
+        ]
+        for outcome in outcomes {
+            let event = LogEvent.hostReturn(hostId: "com.apple.Spotlight", outcome: outcome)
+            XCTAssertEqual(event.level, .notice)
+            XCTAssertTrue(
+                event.payload().hasSuffix("hostId=com.apple.Spotlight outcome=\(outcome)"),
+                "outcome \(outcome) did not survive rendering"
+            )
+        }
+    }
+
+    func testKeyboardTextInsertedIsDebugKeyboard() {
+        let event = LogEvent.keyboardTextInserted
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    // MARK: - Waveform frame cadence (#314)
+
+    /// The issue asks for frame-gap evidence at a finer grain than the 500 ms
+    /// `waveformStall` threshold: 50-100 ms is already enough to make a 60 Hz
+    /// animation feel bad, and none of it was visible in a log. The heartbeat is
+    /// where that evidence rides, because it is emitted every ~2 s and the log is
+    /// capped and deduplicated (#255) -- a per-frame event was not an option.
+    func testWaveformHeartbeatCarriesTheWorstFrameGapOfItsWindow() {
+        let event = LogEvent.waveformHeartbeat(
+            renderTick: 1200, avgLevel: 0.42, energyCount: 40, maxGapMs: 83
+        )
+        XCTAssertEqual(event.name, "waveformHeartbeat")
+        XCTAssertEqual(
+            event.message,
+            "renderTick=1200 avgLevel=0.420 energyCount=40 maxGapMs=83"
+        )
+    }
+
+    /// A window with no frame worth reporting still says so, rather than dropping the
+    /// field: a reader comparing two heartbeats needs the healthy one to be readable
+    /// as healthy, not as missing.
+    func testWaveformHeartbeatReportsASmoothWindowAsZero() {
+        let event = LogEvent.waveformHeartbeat(
+            renderTick: 60, avgLevel: 0, energyCount: 0, maxGapMs: 0
+        )
+        XCTAssertEqual(event.message, "renderTick=60 avgLevel=0.000 energyCount=0 maxGapMs=0")
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .keyboard)
+    }
+
+    // MARK: - Lifecycle events
+
+    func testAppLaunchedIsInfoLifecycle() {
+        let event = LogEvent.appLaunched(version: "1.2")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    /// The state is what tells a relaunch by iOS from a launch by the user (#707).
+    func testAppLaunchStateIsInfoLifecycle() {
+        let event = LogEvent.appLaunchState(state: "background")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+        XCTAssertEqual(event.message, "state=background")
+    }
+
+    func testBackgroundSessionEventsIsInfoLifecycle() {
+        let event = LogEvent.appBackgroundSessionEvents(identifier: "com.pivi.ouispr.model-download")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+        XCTAssertEqual(event.message, "identifier=com.pivi.ouispr.model-download")
+    }
+
+    // MARK: - Model download task diagnosis (#707)
+
+    func testTaskStateNamesItsSession() {
+        let event = LogEvent.modelDownloadTaskState(
+            name: "parakeet-tdt-0.6b-v3",
+            path: "Encoder.mlmodelc/weights/weight.bin",
+            chunk: 6,
+            phase: "start+10s",
+            origin: "new",
+            session: "bg",
+            state: "running",
+            receivedBytes: 0,
+            error: "none"
+        )
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .model)
+        XCTAssertEqual(
+            event.message,
+            "name=parakeet-tdt-0.6b-v3 path=Encoder.mlmodelc/weights/weight.bin chunk=6 "
+                + "phase=start+10s origin=new session=bg state=running received=0B error=none"
+        )
+    }
+
+    func testBackgroundTaskSilentIsAWarningWithItsOrigin() {
+        let event = LogEvent.modelDownloadBackgroundTaskSilent(
+            name: "parakeet-tdt-0.6b-v3",
+            path: "Encoder.mlmodelc/weights/weight.bin",
+            chunk: 7,
+            origin: "new",
+            secondsWithoutByte: 31
+        )
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(event.subsystem, .model)
+        XCTAssertEqual(
+            event.message,
+            "name=parakeet-tdt-0.6b-v3 path=Encoder.mlmodelc/weights/weight.bin chunk=7 "
+                + "origin=new noByte=31s"
+        )
+    }
+
+    func testOrphanedChunksAbsorbedIsANoticeTheUnifiedLogKeeps() {
+        // `notice` is the lowest level the unified log persists: the next device capture
+        // has to show a relaunch that recovered (#732).
+        let event = LogEvent.modelDownloadOrphanedChunks(
+            name: "parakeet-tdt-0.6b-v3",
+            path: "Decoder.mlmodelc/coremldata.bin",
+            file: 3,
+            absorbed: [0],
+            discarded: []
+        )
+        XCTAssertEqual(event.level, .notice)
+        XCTAssertEqual(event.subsystem, .model)
+        XCTAssertEqual(event.name, "modelDownloadOrphanedChunks")
+        XCTAssertEqual(
+            event.message,
+            "name=parakeet-tdt-0.6b-v3 path=Decoder.mlmodelc/coremldata.bin file=3 absorbed=0 discarded=none"
+        )
+    }
+
+    func testOrphanedChunksWithADiscardIsAWarning() {
+        let event = LogEvent.modelDownloadOrphanedChunks(
+            name: "parakeet-tdt-0.6b-v3",
+            path: "Encoder.mlmodelc/weights/weight.bin",
+            file: 7,
+            absorbed: [0, 1],
+            discarded: ["2:chunk-length-100-expected-33554432"]
+        )
+        XCTAssertEqual(event.level, .warning)
+        XCTAssertEqual(
+            event.message,
+            "name=parakeet-tdt-0.6b-v3 path=Encoder.mlmodelc/weights/weight.bin file=7 absorbed=0,1 "
+                + "discarded=2:chunk-length-100-expected-33554432"
+        )
+    }
+
+    func testAppDidBecomeActiveIsDebugLifecycle() {
+        let event = LogEvent.appDidBecomeActive
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    func testAppWillResignActiveIsDebugLifecycle() {
+        let event = LogEvent.appWillResignActive
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    func testAppDidEnterBackgroundIsDebugLifecycle() {
+        let event = LogEvent.appDidEnterBackground
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    func testWhisperKitLoadedIsInfoLifecycle() {
+        let event = LogEvent.appWhisperKitLoaded(modelName: "base")
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+    }
+
+    // MARK: - Full Access link on the keyboard step (#709)
+
+    /// Info, not debug: the device check of #709 greps it, and it must survive a level
+    /// filter next to `onboardingKeyboardDetected`.
+    func testFullAccessLinkOpenedIsInfoLifecycle() {
+        let event = LogEvent.onboardingFullAccessLinkOpened
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+        XCTAssertEqual(event.name, "onboardingFullAccessLinkOpened")
+        XCTAssertTrue(event.formatted().contains("onboardingFullAccessLinkOpened"))
+    }
+
+    /// Same level and subsystem as its sibling link (#709), for the same grep (#704).
+    func testFullAccessExplainerOpenedIsInfoLifecycle() {
+        let event = LogEvent.onboardingFullAccessExplainerOpened
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .lifecycle)
+        XCTAssertEqual(event.name, "onboardingFullAccessExplainerOpened")
+        XCTAssertTrue(event.formatted().contains("onboardingFullAccessExplainerOpened"))
+    }
+
+    // MARK: - User dictionary events (#307)
+
+    func testUserDictionaryWordLearnedIsDebugKeyboard() {
+        let event = LogEvent.userDictionaryWordLearned(learnedCount: 42)
+        XCTAssertEqual(event.level, .debug)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "learnedCount=42")
+    }
+
+    func testUserDictionaryEvictedIsInfoKeyboard() {
+        let event = LogEvent.userDictionaryEvicted(removed: 3, learnedCount: 1000, cap: 1000)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "removed=3 learnedCount=1000 cap=1000")
+    }
+
+    func testUserDictionaryResetIsInfoKeyboard() {
+        let event = LogEvent.userDictionaryReset(clearedCount: 17)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "clearedCount=17")
+    }
+
+    func testUserDictionaryMigratedIsInfoKeyboard() {
+        let event = LogEvent.userDictionaryMigrated(stamped: 12, droppedStamps: 2, learnedCount: 30)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "stamped=12 droppedStamps=2 learnedCount=30")
+    }
+
+    func testUserDictionaryStaleDiscardedIsInfoKeyboard() {
+        let event = LogEvent.userDictionaryStaleDiscarded(removed: 4, learnedCount: 26, days: 300)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "removed=4 learnedCount=26 days=300")
+    }
+
+    func testUserDictionaryPrunedIsInfoKeyboard() {
+        let event = LogEvent.userDictionaryPruned(removed: 20, learnedCount: 2)
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .keyboard)
+        XCTAssertEqual(event.message, "removed=20 learnedCount=2")
+    }
+
+    /// The privacy guarantee these events rest on is that none of them can carry
+    /// a word at all: every associated value is an `Int`, so the formatted line
+    /// is digits and fixed keys and nothing else. A future parameter of type
+    /// `String` would break this test before it could reach an export.
+    func testUserDictionaryEventsCannotCarryText() {
+        let events: [LogEvent] = [
+            .userDictionaryWordLearned(learnedCount: 42),
+            .userDictionaryEvicted(removed: 3, learnedCount: 1000, cap: 1000),
+            .userDictionaryReset(clearedCount: 17),
+            .userDictionaryMigrated(stamped: 12, droppedStamps: 2, learnedCount: 30),
+            .userDictionaryStaleDiscarded(removed: 4, learnedCount: 26, days: 300),
+            .userDictionaryPruned(removed: 20, learnedCount: 2)
+        ]
+        let allowed = CharacterSet(charactersIn: "0123456789= ")
+            .union(CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+        for event in events {
+            XCTAssertNil(
+                event.message.rangeOfCharacter(from: allowed.inverted),
+                "\(event.name) formats something other than plain key=integer pairs"
+            )
+            // The parameter values themselves are digits only.
+            let values = event.message.split(separator: " ").map { $0.split(separator: "=")[1] }
+            for value in values {
+                XCTAssertTrue(
+                    value.allSatisfy(\.isNumber),
+                    "\(event.name) has a non-numeric value \"\(value)\""
+                )
+            }
+        }
+    }
+
+    // MARK: - Polish engine failure (#315, #518)
+
+    /// The line has to answer "whose fault was this refusal" on its own.
+    ///
+    /// `unsupportedLanguageOrLocale` is returned byte-identically for a language
+    /// genuinely outside Apple's set (#490) and for one squarely inside it that
+    /// their classifier misread (#518), and iOS 26's `GenerationError.Context`
+    /// carries no `languageCode` to separate them. What separates them is the
+    /// reading taken before the call, which is why these two fields are on the line
+    /// rather than only in the debug export: this log is the one an agent greps
+    /// (#255), and a reason slug alone sends it to read three files.
+    func testPolishEngineFailedNamesTheLanguageItReadBeforeTheCall() {
+        // The bug: French, read as French at full share, refused anyway.
+        let ours = LogEvent.polishEngineFailed(
+            reason: "unsupportedLanguageOrLocale", engine: "apple-fm", mode: "natural",
+            engineMs: 7, detected: "fr", mix: "fr 1.00"
+        )
+        XCTAssertEqual(ours.name, "polishEngineFailed")
+        XCTAssertEqual(
+            ours.message,
+            "reason=unsupportedLanguageOrLocale engine=apple-fm mode=natural engineMs=7 "
+                + "detected=fr mix=fr 1.00"
+        )
+        XCTAssertEqual(ours.level, .warning)
+        XCTAssertEqual(ours.subsystem, .transcription)
+
+        // The legitimate case, same slug, and now distinguishable from the line.
+        let theirs = LogEvent.polishEngineFailed(
+            reason: "unsupportedLanguageOrLocale", engine: "apple-fm",
+            mode: "smart.translate.en", engineMs: 22, detected: "cs", mix: "cs 1.00"
+        )
+        XCTAssertTrue(theirs.message.contains("detected=cs"))
+        XCTAssertNotEqual(ours.message, theirs.message)
+    }
+
+    // MARK: - The pre-flight refusal (#490)
+
+    /// Its own name, so a reader can tell "we declined to ask" from "the engine
+    /// refused" with one grep instead of by reading a latency.
+    func testPolishInputLanguageRefusedIsItsOwnEventAndNotAFailure() {
+        let event = LogEvent.polishInputLanguageRefused(
+            engine: "apple-fm", mode: "smart.translate.en", detected: "cs", mix: "cs 1.00"
+        )
+        XCTAssertEqual(event.name, "polishInputLanguageRefused")
+        XCTAssertEqual(
+            event.message,
+            "engine=apple-fm mode=smart.translate.en detected=cs mix=cs 1.00"
+        )
+        // Info, not warning: the guard declining a call the backend was going to
+        // refuse anyway is the feature working.
+        XCTAssertEqual(event.level, .info)
+        XCTAssertEqual(event.subsystem, .transcription)
+    }
+
+    /// The two events read against each other on one page, which is how the two
+    /// causes of #490 and #518 are told apart.
+    func testTheRefusalAndTheFailureCarryTheSameReadingInTheSameShape() {
+        let refused = LogEvent.polishInputLanguageRefused(
+            engine: "apple-fm", mode: "smart.translate.en", detected: "cs", mix: "cs 1.00"
+        )
+        let failed = LogEvent.polishEngineFailed(
+            reason: "unsupportedLanguageOrLocale", engine: "apple-fm",
+            mode: "smart.translate.en", engineMs: 22, detected: "cs", mix: "cs 1.00"
+        )
+        for line in [refused.message, failed.message] {
+            XCTAssertTrue(line.contains("detected=cs"), line)
+            XCTAssertTrue(line.contains("mix=cs 1.00"), line)
+        }
+    }
+
+    /// A failure recorded before the mix was measured still logs, with `-` in both
+    /// slots rather than an absent field. The event predates #456's trail, and a
+    /// line whose shape changes with its content is a line no grep can rely on.
+    func testPolishEngineFailedRendersAnAbsentReadingAsPlaceholders() {
+        let event = LogEvent.polishEngineFailed(
+            reason: "rateLimited", engine: "apple-fm", mode: "natural",
+            engineMs: 4, detected: "-", mix: "-"
+        )
+        XCTAssertEqual(
+            event.message,
+            "reason=rateLimited engine=apple-fm mode=natural engineMs=4 detected=- mix=-"
+        )
+    }
+
+    // MARK: - Formatted output
+
+    func testFormattedOutputContainsLevelSubsystemAndEventName() {
+        let event = LogEvent.dictationStarted(fromURL: true, appState: "active", engineRunning: false)
+        let formatted = event.formatted()
+        // Should contain ISO8601 timestamp pattern, level, subsystem, event params
+        XCTAssertTrue(formatted.contains("INFO"))
+        XCTAssertTrue(formatted.contains("[dictation]"))
+        XCTAssertTrue(formatted.contains("dictationStarted"))
+        XCTAssertTrue(formatted.contains("fromURL=true"))
+        XCTAssertTrue(formatted.contains("appState=active"))
+        XCTAssertTrue(formatted.contains("engineRunning=false"))
+    }
+
+    func testFormattedOutputContainsISO8601Timestamp() {
+        let event = LogEvent.audioEngineStarted
+        let formatted = event.formatted()
+        // ISO8601 timestamps look like [2026-03-11T14:23:01Z]
+        let timestampPattern = #"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\]"#
+        XCTAssertNotNil(formatted.range(of: timestampPattern, options: .regularExpression))
+    }
+
+    func testFormattedOutputForEventWithNoParams() {
+        let event = LogEvent.keyboardTextInserted
+        let formatted = event.formatted()
+        XCTAssertTrue(formatted.contains("DEBUG"))
+        XCTAssertTrue(formatted.contains("[keyboard]"))
+        XCTAssertTrue(formatted.contains("keyboardTextInserted"))
+    }
+
+    // MARK: - smartModeRefused names the guardrail (#580)
+
+    /// The line this issue was filed on read `reason=-` and nothing else, so an
+    /// export could not tell `length` from `segmentOverlap` — three different bugs
+    /// behind one outcome. The check has to be in the line, not only in the metrics.
+    func testASmartModeRejectionNamesTheCheckThatRefusedIt() {
+        let formatted = LogEvent.smartModeRefused(
+            mode: "structured", outcome: "rejectedGuardrail",
+            reason: "-", check: "segmentOverlap"
+        ).formatted()
+        XCTAssertTrue(formatted.contains("outcome=rejectedGuardrail"), formatted)
+        XCTAssertTrue(formatted.contains("check=segmentOverlap"), formatted)
+    }
+
+    /// Every other refusal keeps a placeholder rather than an absent key: a reader
+    /// grepping `check=` must not have to know which outcomes carry one.
+    func testARefusalWithNoGuardrailStillPrintsThePlaceholder() {
+        let formatted = LogEvent.smartModeRefused(
+            mode: "translate.en", outcome: "engineFailed",
+            reason: "guardrailViolation", check: "-"
+        ).formatted()
+        XCTAssertTrue(formatted.contains("check=-"), formatted)
+    }
+}

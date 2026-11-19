@@ -19,7 +19,7 @@ created: 2026-03-28
 |----------|-------|
 | **Framework** | Manual testing on physical device (keyboard extensions cannot run unit tests for touch pipeline) |
 | **Config file** | none |
-| **Quick run command** | `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Quick run command** | `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Full suite command** | Build + install on device + manual UAT |
 | **Estimated runtime** | ~60 seconds (build) + manual testing |
 
@@ -27,7 +27,7 @@ created: 2026-03-28
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - **After every plan wave:** Full manual test of all features + edge key dead zone validation
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds (build time)

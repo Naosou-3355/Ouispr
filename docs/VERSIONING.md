@@ -1,4 +1,4 @@
-# Versioning — Dictus
+# Versioning — Ouispr
 
 How we number releases and tags. Complements [GIT_WORKFLOW.md](GIT_WORKFLOW.md).
 
@@ -38,7 +38,7 @@ v1.7.2 promoted to the App Store
 > **No → do not touch it.** Cut the build, bump the build number only.
 > **Yes → this is a new cycle.** Pick the next version with the table below, comparing against that shipped version.
 
-Check it, never remember it: `git show origin/main:DictusApp/Info.plist | grep -A1 CFBundleShortVersionString`. `main` is the App Store. If `develop` already reads higher, the cycle is open and the version is settled.
+Check it, never remember it: `git show origin/main:OuisprApp/Info.plist | grep -A1 CFBundleShortVersionString`. `main` is the App Store. If `develop` already reads higher, the cycle is open and the version is settled.
 
 ### Why it is not "bump whenever a feature lands"
 
@@ -91,7 +91,7 @@ CFBundleVersion            (build no.)  →  what Apple tracks: 18    (integer, 
 | Points at | the `chore: bump…` commit on develop | the release merge commit on main |
 | Answers | "when/what was build N" + promotion anchor | "exactly what is in production" |
 
-Why two tiers: build tags give full per-build traceability **without** cluttering the GitHub Releases page (only the Tags page) — this is what CI systems do. Release tags stay rare and meaningful: each one is a real, shipped version. Runtime traceability is *also* covered independently by the git-SHA generated into every built bundle (a `Generate build info` build phase writes `GitCommitSHA` + `GitBranch` into `DictusBuildInfo.plist`), so even an untagged build is identifiable from the app's debug log.
+Why two tiers: build tags give full per-build traceability **without** cluttering the GitHub Releases page (only the Tags page) — this is what CI systems do. Release tags stay rare and meaningful: each one is a real, shipped version. Runtime traceability is *also* covered independently by the git-SHA generated into every built bundle (a `Generate build info` build phase writes `GitCommitSHA` + `GitBranch` into `OuisprBuildInfo.plist`), so even an untagged build is identifiable from the app's debug log.
 
 ## TestFlight → App Store: promote, don't rebuild
 

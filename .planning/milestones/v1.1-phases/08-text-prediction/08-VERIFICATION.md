@@ -30,7 +30,7 @@ score: 13/13 must-haves verified
 | 10 | When typing a single accentable vowel, the bar shows accent variants | VERIFIED | engine.accentSuggestions(for:) called in SuggestionState.update, mode set to .accents |
 | 11 | Tapping an accent variant replaces the vowel without adding a space | VERIFIED | addSpace = (mode == .completions), so accents mode = no space |
 | 12 | When no input is in progress, the toolbar shows gear + mic with no suggestion slots | VERIFIED | suggestions.isEmpty branch in ToolbarView renders gear + Spacer + mic |
-| 13 | Autocorrect can be toggled ON/OFF in Dictus settings | VERIFIED | @AppStorage(SharedKeys.autocorrectEnabled) toggle in SettingsView, read in SuggestionState.autocorrectEnabled |
+| 13 | Autocorrect can be toggled ON/OFF in Ouispr settings | VERIFIED | @AppStorage(SharedKeys.autocorrectEnabled) toggle in SettingsView, read in SuggestionState.autocorrectEnabled |
 
 **Score:** 13/13 truths verified
 
@@ -38,20 +38,20 @@ score: 13/13 must-haves verified
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/FrequencyDictionary.swift` | JSON frequency data loader and rank lookup | VERIFIED | 56 lines, public struct, load(from:), load(language:), rank(of:), case-insensitive |
-| `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` | Word completions, spell-checking, accent suggestions | VERIFIED | 143 lines, UITextChecker + FrequencyDictionary, 3 public methods |
-| `DictusKeyboard/TextPrediction/SuggestionState.swift` | Observable suggestion state for UI binding | VERIFIED | 147 lines, ObservableObject, @Published, update(proxy:), performSpellCheck, clear |
-| `DictusKeyboard/Views/SuggestionBarView.swift` | 3-slot suggestion display with tap handlers | VERIFIED | 54 lines, HStack with dividers, bold center slot, opacity transition |
-| `DictusKeyboard/Views/ToolbarView.swift` | Suggestion bar integrated between gear and mic | VERIFIED | Conditional: suggestions empty = gear+spacer+mic; non-empty = SuggestionBarView+mic |
-| `DictusKeyboard/Views/KeyboardView.swift` | Keystroke forwarding, autocorrect, undo | VERIFIED | @ObservedObject suggestionState, performAutocorrectIfNeeded, lastAutocorrect undo |
-| `DictusKeyboard/KeyboardRootView.swift` | SuggestionState wiring | VERIFIED | @StateObject suggestionState, handleSuggestionTap, replaceCurrentWord, setLanguage |
-| `DictusApp/Views/SettingsView.swift` | Correction automatique toggle | VERIFIED | @AppStorage toggle, default true, in Clavier section |
-| `DictusCore/Sources/DictusCore/SharedKeys.swift` | autocorrectEnabled shared key | VERIFIED | public static let autocorrectEnabled = "dictus.autocorrectEnabled" |
-| `DictusCore/Tests/DictusCoreTests/FrequencyDictionaryTests.swift` | Unit tests for ranking logic | VERIFIED | 6 XCTest methods covering all edge cases |
-| `DictusCore/Tests/DictusCoreTests/Fixtures/fr_frequency_test.json` | Test fixture | VERIFIED | 17 French words for deterministic testing |
-| `DictusKeyboard/Resources/fr_frequency.json` | French word frequency rankings | VERIFIED | 1288 words, de=1, la=2, valid JSON |
-| `DictusKeyboard/Resources/en_frequency.json` | English word frequency rankings | VERIFIED | 1126 words, the=1, be=2, valid JSON |
-| `DictusCore/Package.swift` | Test resources for Fixtures | VERIFIED | resources: [.copy("Fixtures")] on testTarget |
+| `OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift` | JSON frequency data loader and rank lookup | VERIFIED | 56 lines, public struct, load(from:), load(language:), rank(of:), case-insensitive |
+| `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` | Word completions, spell-checking, accent suggestions | VERIFIED | 143 lines, UITextChecker + FrequencyDictionary, 3 public methods |
+| `OuisprKeyboard/TextPrediction/SuggestionState.swift` | Observable suggestion state for UI binding | VERIFIED | 147 lines, ObservableObject, @Published, update(proxy:), performSpellCheck, clear |
+| `OuisprKeyboard/Views/SuggestionBarView.swift` | 3-slot suggestion display with tap handlers | VERIFIED | 54 lines, HStack with dividers, bold center slot, opacity transition |
+| `OuisprKeyboard/Views/ToolbarView.swift` | Suggestion bar integrated between gear and mic | VERIFIED | Conditional: suggestions empty = gear+spacer+mic; non-empty = SuggestionBarView+mic |
+| `OuisprKeyboard/Views/KeyboardView.swift` | Keystroke forwarding, autocorrect, undo | VERIFIED | @ObservedObject suggestionState, performAutocorrectIfNeeded, lastAutocorrect undo |
+| `OuisprKeyboard/KeyboardRootView.swift` | SuggestionState wiring | VERIFIED | @StateObject suggestionState, handleSuggestionTap, replaceCurrentWord, setLanguage |
+| `OuisprApp/Views/SettingsView.swift` | Correction automatique toggle | VERIFIED | @AppStorage toggle, default true, in Clavier section |
+| `OuisprCore/Sources/OuisprCore/SharedKeys.swift` | autocorrectEnabled shared key | VERIFIED | public static let autocorrectEnabled = "ouispr.autocorrectEnabled" |
+| `OuisprCore/Tests/OuisprCoreTests/FrequencyDictionaryTests.swift` | Unit tests for ranking logic | VERIFIED | 6 XCTest methods covering all edge cases |
+| `OuisprCore/Tests/OuisprCoreTests/Fixtures/fr_frequency_test.json` | Test fixture | VERIFIED | 17 French words for deterministic testing |
+| `OuisprKeyboard/Resources/fr_frequency.json` | French word frequency rankings | VERIFIED | 1288 words, de=1, la=2, valid JSON |
+| `OuisprKeyboard/Resources/en_frequency.json` | English word frequency rankings | VERIFIED | 1126 words, the=1, be=2, valid JSON |
+| `OuisprCore/Package.swift` | Test resources for Fixtures | VERIFIED | resources: [.copy("Fixtures")] on testTarget |
 
 ### Key Link Verification
 
@@ -60,7 +60,7 @@ score: 13/13 must-haves verified
 | TextPredictionEngine | UITextChecker | completions(forPartialWordRange:in:language:) | WIRED | textChecker.completions call on line 64, rangeOfMisspelledWord on line 94 |
 | TextPredictionEngine | FrequencyDictionary | rank-based sorting of completions | WIRED | frequencyDict.rank(of:) used in sorted closures for both suggestions and spellCheck |
 | TextPredictionEngine | AccentedCharacters | accent variant lookup for single vowel | WIRED | AccentedCharacters.mappings[lowered] on line 131 |
-| FrequencyDictionaryTests | FrequencyDictionary | unit tests validating ranking behavior | WIRED | @testable import DictusCore, 6 tests using FrequencyDictionary() |
+| FrequencyDictionaryTests | FrequencyDictionary | unit tests validating ranking behavior | WIRED | @testable import OuisprCore, 6 tests using FrequencyDictionary() |
 | KeyboardView | SuggestionState | update(proxy:) on each keystroke | WIRED | suggestionState.update(proxy:) in insertCharacter, onDelete, onWordDelete via DispatchQueue.main.async |
 | ToolbarView | SuggestionBarView | conditional rendering when suggestions non-empty | WIRED | SuggestionBarView instantiated in else branch of suggestions.isEmpty |
 | KeyboardView onSpace | TextPredictionEngine.spellCheck | autocorrect before inserting space | WIRED | performAutocorrectIfNeeded() calls suggestionState.performSpellCheck(currentWord) |

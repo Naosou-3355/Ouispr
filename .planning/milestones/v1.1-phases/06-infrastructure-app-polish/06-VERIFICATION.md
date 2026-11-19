@@ -5,27 +5,27 @@ status: human_needed
 score: 7/7 must-haves verified
 must_haves:
   truths:
-    - "Design components live in one place (DictusCore) imported by both targets"
-    - "No design files remain in DictusApp/Design/ or DictusKeyboard/Design/"
+    - "Design components live in one place (OuisprCore) imported by both targets"
+    - "No design files remain in OuisprApp/Design/ or OuisprKeyboard/Design/"
     - "App icon renders in asset catalog with light, dark, and tinted variants"
     - "HomeView shows correct state after onboarding — no stale download prompt, no duplicate title"
     - "Onboarding blocks progression — no swiping between steps"
     - "Test recording screen is immersive with centered mic, waveform, fade-to-text transition"
     - "Keyboard setup auto-detects via UITextInputMode.activeInputModes — no manual confirm button"
   artifacts:
-    - path: "DictusCore/Sources/DictusCore/Design/DictusColors.swift"
+    - path: "OuisprCore/Sources/OuisprCore/Design/OuisprColors.swift"
       status: verified
-    - path: "DictusCore/Sources/DictusCore/Design/GlassModifier.swift"
+    - path: "OuisprCore/Sources/OuisprCore/Design/GlassModifier.swift"
       status: verified
-    - path: "DictusApp/Assets.xcassets/AppIcon.appiconset/Contents.json"
+    - path: "OuisprApp/Assets.xcassets/AppIcon.appiconset/Contents.json"
       status: verified
-    - path: "DictusApp/Views/HomeView.swift"
+    - path: "OuisprApp/Views/HomeView.swift"
       status: verified
-    - path: "DictusApp/Views/RecordingView.swift"
+    - path: "OuisprApp/Views/RecordingView.swift"
       status: verified
-    - path: "DictusApp/Onboarding/OnboardingView.swift"
+    - path: "OuisprApp/Onboarding/OnboardingView.swift"
       status: verified
-    - path: "DictusApp/Onboarding/KeyboardSetupPage.swift"
+    - path: "OuisprApp/Onboarding/KeyboardSetupPage.swift"
       status: verified
 human_verification:
   - test: "Run app on device, complete onboarding, verify no visual glitches"
@@ -49,8 +49,8 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Design components live in one place (DictusCore) imported by both targets | VERIFIED | 7 files in `DictusCore/Sources/DictusCore/Design/`, `public extension Color` pattern, 10 DictusKeyboard files import DictusCore and use `Color.dictus*`, `.dictusGlass()`, `BrandWaveform`, `AnimatedMicButton` |
-| 2 | No design files remain in DictusApp/Design/ or DictusKeyboard/Design/ | VERIFIED | Both directories return exit code 1 (do not exist) |
+| 1 | Design components live in one place (OuisprCore) imported by both targets | VERIFIED | 7 files in `OuisprCore/Sources/OuisprCore/Design/`, `public extension Color` pattern, 10 OuisprKeyboard files import OuisprCore and use `Color.ouispr*`, `.ouisprGlass()`, `BrandWaveform`, `AnimatedMicButton` |
+| 2 | No design files remain in OuisprApp/Design/ or OuisprKeyboard/Design/ | VERIFIED | Both directories return exit code 1 (do not exist) |
 | 3 | App icon renders in asset catalog with light, dark, and tinted variants | VERIFIED | `AppIcon-1024.png`, `AppIcon-1024-dark.png`, `AppIcon-1024-tinted.png` exist; `Contents.json` references all three |
 | 4 | HomeView shows correct state after onboarding | VERIFIED | `navigationTitle` removed (grep returns no matches), `ModelInfo.forIdentifier(modelName)` used at line 80 for display name, `.onAppear { modelManager.loadState() }` at line 48 for state refresh |
 | 5 | Onboarding blocks progression -- no swiping | VERIFIED | `switch currentPage` with cases 0-4 in OnboardingView.swift (120 lines); TabView only referenced in WHY comments explaining the replacement |
@@ -63,34 +63,34 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/Design/DictusColors.swift` | Shared color definitions | VERIFIED | `public extension Color` with `dictusAccent` etc. |
-| `DictusCore/Sources/DictusCore/Design/DictusTypography.swift` | Shared typography | VERIFIED | File exists in Design/ directory |
-| `DictusCore/Sources/DictusCore/Design/GlassModifier.swift` | Shared glass modifier | VERIFIED | `public struct GlassModifier`, `public func body`, `public extension View` with `dictusGlass()` |
-| `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` | Shared mic button | VERIFIED | File exists, used by DictusKeyboard ToolbarView |
-| `DictusCore/Sources/DictusCore/Design/BrandWaveform.swift` | Shared waveform | VERIFIED | File exists, used by DictusKeyboard RecordingOverlay and DictusApp RecordingView |
-| `DictusCore/Sources/DictusCore/Design/ProcessingAnimation.swift` | Shared processing animation | VERIFIED | File exists in Design/ directory |
-| `DictusCore/Sources/DictusCore/Design/DictusLogo.swift` | Shared logo | VERIFIED | File exists in Design/ directory |
-| `DictusApp/Assets.xcassets/AppIcon.appiconset/Contents.json` | App icon catalog | VERIFIED | References 3 PNG variants (light, dark, tinted) |
-| `DictusApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | Standard icon | VERIFIED | File exists |
-| `DictusApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png` | Dark icon | VERIFIED | File exists |
-| `DictusApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-tinted.png` | Tinted icon | VERIFIED | File exists |
+| `OuisprCore/Sources/OuisprCore/Design/OuisprColors.swift` | Shared color definitions | VERIFIED | `public extension Color` with `ouisprAccent` etc. |
+| `OuisprCore/Sources/OuisprCore/Design/OuisprTypography.swift` | Shared typography | VERIFIED | File exists in Design/ directory |
+| `OuisprCore/Sources/OuisprCore/Design/GlassModifier.swift` | Shared glass modifier | VERIFIED | `public struct GlassModifier`, `public func body`, `public extension View` with `ouisprGlass()` |
+| `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` | Shared mic button | VERIFIED | File exists, used by OuisprKeyboard ToolbarView |
+| `OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift` | Shared waveform | VERIFIED | File exists, used by OuisprKeyboard RecordingOverlay and OuisprApp RecordingView |
+| `OuisprCore/Sources/OuisprCore/Design/ProcessingAnimation.swift` | Shared processing animation | VERIFIED | File exists in Design/ directory |
+| `OuisprCore/Sources/OuisprCore/Design/OuisprLogo.swift` | Shared logo | VERIFIED | File exists in Design/ directory |
+| `OuisprApp/Assets.xcassets/AppIcon.appiconset/Contents.json` | App icon catalog | VERIFIED | References 3 PNG variants (light, dark, tinted) |
+| `OuisprApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | Standard icon | VERIFIED | File exists |
+| `OuisprApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png` | Dark icon | VERIFIED | File exists |
+| `OuisprApp/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-tinted.png` | Tinted icon | VERIFIED | File exists |
 | `scripts/generate-app-icon.swift` | Icon generation script | VERIFIED | File exists |
-| `DictusApp/Views/HomeView.swift` | Fixed home dashboard | VERIFIED | ModelInfo.forIdentifier, no navigationTitle, onAppear loadState |
-| `DictusApp/Views/RecordingView.swift` | Shared immersive recording | VERIFIED | 314 lines, RecordingMode enum, haptics, waveform, fade transition |
-| `DictusApp/Onboarding/OnboardingView.swift` | Step-controlled onboarding | VERIFIED | switch/case replacing TabView, step dots, 120 lines |
-| `DictusApp/Onboarding/KeyboardSetupPage.swift` | Auto-detecting keyboard page | VERIFIED | UITextInputMode.activeInputModes, auto-advance on detection |
-| `DictusApp/Onboarding/ModelDownloadPage.swift` | Improved model download UX | VERIFIED | "Modele vocal" title, "Installer le modele" button, "Continuer" after completion, no asyncAfter auto-advance |
-| `DictusApp/Onboarding/TestRecordingPage.swift` | Thin onboarding wrapper | VERIFIED | Delegates to RecordingView(mode: .onboarding) |
-| `DictusApp/Views/TestDictationView.swift` | Thin standalone wrapper | VERIFIED | Delegates to RecordingView(mode: .standalone) |
+| `OuisprApp/Views/HomeView.swift` | Fixed home dashboard | VERIFIED | ModelInfo.forIdentifier, no navigationTitle, onAppear loadState |
+| `OuisprApp/Views/RecordingView.swift` | Shared immersive recording | VERIFIED | 314 lines, RecordingMode enum, haptics, waveform, fade transition |
+| `OuisprApp/Onboarding/OnboardingView.swift` | Step-controlled onboarding | VERIFIED | switch/case replacing TabView, step dots, 120 lines |
+| `OuisprApp/Onboarding/KeyboardSetupPage.swift` | Auto-detecting keyboard page | VERIFIED | UITextInputMode.activeInputModes, auto-advance on detection |
+| `OuisprApp/Onboarding/ModelDownloadPage.swift` | Improved model download UX | VERIFIED | "Modele vocal" title, "Installer le modele" button, "Continuer" after completion, no asyncAfter auto-advance |
+| `OuisprApp/Onboarding/TestRecordingPage.swift` | Thin onboarding wrapper | VERIFIED | Delegates to RecordingView(mode: .onboarding) |
+| `OuisprApp/Views/TestDictationView.swift` | Thin standalone wrapper | VERIFIED | Delegates to RecordingView(mode: .standalone) |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| HomeView.swift | DictusCore Design | `import DictusCore` | WIRED | Line 4 |
+| HomeView.swift | OuisprCore Design | `import OuisprCore` | WIRED | Line 4 |
 | HomeView.swift | ModelInfo.swift | `ModelInfo.forIdentifier()` | WIRED | Line 80 |
 | HomeView.swift | RecordingView | TestDictationView wrapper | WIRED | Line 142: `TestDictationView()` |
-| DictusKeyboard (10 files) | DictusCore Design | `import DictusCore` | WIRED | 10 files import DictusCore; AccentPopup uses Color.dictusAccent, KeyButton uses .dictusGlass(), ToolbarView uses AnimatedMicButton, RecordingOverlay uses BrandWaveform |
+| OuisprKeyboard (10 files) | OuisprCore Design | `import OuisprCore` | WIRED | 10 files import OuisprCore; AccentPopup uses Color.ouisprAccent, KeyButton uses .ouisprGlass(), ToolbarView uses AnimatedMicButton, RecordingOverlay uses BrandWaveform |
 | OnboardingView.swift | TestRecordingPage | case 4: | WIRED | Line 56 |
 | TestRecordingPage | RecordingView | RecordingView(mode: .onboarding) | WIRED | Line 16 |
 | TestDictationView | RecordingView | RecordingView(mode: .standalone) | WIRED | Line 14 |
@@ -99,7 +99,7 @@ human_verification:
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| INFRA-01 | 06-01 | Design files consolidated into shared package | SATISFIED | 7 files in DictusCore/Design/, old directories deleted, both targets import |
+| INFRA-01 | 06-01 | Design files consolidated into shared package | SATISFIED | 7 files in OuisprCore/Design/, old directories deleted, both targets import |
 | INFRA-02 | 06-01 | App icon generated from brand kit | SATISFIED | 3 PNG variants + Contents.json in AppIcon.appiconset |
 | VIS-04 | 06-03 | Test recording screen redesigned | SATISFIED | RecordingView.swift with immersive layout, waveform, haptics |
 | VIS-05 | 06-03 | Recording stop screen redesigned | SATISFIED | Fade-to-text transition with easeOut animation, no card |
@@ -150,7 +150,7 @@ No automated gaps found. All 7 observable truths verified, all 19 artifacts conf
 ### Git Verification
 
 All 5 commits from phase execution verified in git history:
-- `93795ee` -- feat(06-01): consolidate design files into DictusCore
+- `93795ee` -- feat(06-01): consolidate design files into OuisprCore
 - `ecaad09` -- feat(06-01): generate app icon from brand kit
 - `c128552` -- fix(06-02): remove duplicate nav title and fix model card
 - `b1622ae` -- feat(06-03): create shared immersive RecordingView

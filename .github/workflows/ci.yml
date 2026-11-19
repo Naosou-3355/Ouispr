@@ -64,22 +64,22 @@ jobs:
           # resolution fail on 0.15.7 with "Disabled default traits … on package 'fluidaudio'
           # that declares no traits" (measured on a local checkout). The prefix keeps any
           # cache from before the bump from being restored.
-          key: spm-fa015-${{ runner.os }}-${{ hashFiles('Dictus.xcodeproj/project.pbxproj', 'DictusCore/Package.swift') }}
+          key: spm-fa015-${{ runner.os }}-${{ hashFiles('Ouispr.xcodeproj/project.pbxproj', 'OuisprCore/Package.swift') }}
           restore-keys: |
             spm-fa015-${{ runner.os }}-
 
       - name: Resolve SwiftPM dependencies
         run: |
           xcodebuild -resolvePackageDependencies \
-            -project Dictus.xcodeproj \
-            -scheme DictusApp
+            -project Ouispr.xcodeproj \
+            -scheme OuisprApp
 
-      - name: Build DictusApp (and embedded Keyboard, Widgets, Core)
+      - name: Build OuisprApp (and embedded Keyboard, Widgets, Core)
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Dictus.xcodeproj \
-            -scheme DictusApp \
+            -project Ouispr.xcodeproj \
+            -scheme OuisprApp \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/DerivedData \
@@ -98,13 +98,13 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # The DictusCore suite, run with the repository's one canonical test command (#534).
+  # The OuisprCore suite, run with the repository's one canonical test command (#534).
   # PR descriptions — increasingly written by agents — report `swift test` results;
   # this job replays that claim instead of trusting it. It is its own job, not a step
   # of `build`, so a red test is reported as a test failure rather than folded into a
   # compilation failure, and a green build or lint cannot mask it.
   test:
-    name: DictusCore Tests
+    name: OuisprCore Tests
     # macOS, no simulator: the suite runs on the Mac directly. The iOS Simulator
     # destination passes too since #301 but executes exactly the same tests while
     # paying for a simulator boot (CLAUDE.md, "Build, test, lint").
@@ -175,13 +175,13 @@ jobs:
               if !ready { missing.append(code) }
           }
           if !missing.isEmpty {
-              print("::error::NLTagger nameType asset missing for \(missing). DictusCore grounding tests would fail for an environment reason, not a code one.")
+              print("::error::NLTagger nameType asset missing for \(missing). OuisprCore grounding tests would fail for an environment reason, not a code one.")
               exit(1)
           }
           SWIFT
           swift "$RUNNER_TEMP/nl-assets.swift"
 
-      # No SwiftPM cache here, deliberately. DictusCore/Package.swift declares no
+      # No SwiftPM cache here, deliberately. OuisprCore/Package.swift declares no
       # package dependencies, so `swift test` fetches nothing — there is nothing a
       # dependency cache could save. Caching `.build` instead would trade a minute of
       # compilation for the risk of testing stale artifacts, which is the one thing
@@ -190,6 +190,6 @@ jobs:
       # #560: on a Mac, `AppGroup.containerURL` is nil for an unentitled process like
       # the test host, so nothing here touches a Group Container — on the runner or
       # on a developer machine.
-      - name: Run DictusCore tests (swift test)
-        working-directory: DictusCore
+      - name: Run OuisprCore tests (swift test)
+        working-directory: OuisprCore
         run: swift test

@@ -22,15 +22,15 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/TextPrediction/TextPredictionEngine.swift
-    - DictusKeyboard/TextPrediction/SuggestionState.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/TextPrediction/AOSPTrieEngine.swift
-    - DictusKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h
-    - DictusKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.mm
-    - DictusApp/DictusApp.swift
-    - DictusKeyboard/Resources/fr_ngrams.dict
-    - DictusKeyboard/Resources/en_ngrams.dict
+    - OuisprKeyboard/TextPrediction/TextPredictionEngine.swift
+    - OuisprKeyboard/TextPrediction/SuggestionState.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift
+    - OuisprKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.h
+    - OuisprKeyboard/Vendored/AOSPTrie/bridge/AOSPTrieBridge.mm
+    - OuisprApp/OuisprApp.swift
+    - OuisprKeyboard/Resources/fr_ngrams.dict
+    - OuisprKeyboard/Resources/en_ngrams.dict
     - tools/ngram_builder.py
 
 key-decisions:
@@ -85,10 +85,10 @@ Each task was committed atomically:
 ## Files Created/Modified
 - `TextPredictionEngine.swift` - Context-aware spellCheck with bigram reranking + prediction-based candidate discovery + Levenshtein edit distance
 - `SuggestionState.swift` - extractPreviousWord helper, passes previousWord context to spellCheck in update/updateAsync, context-aware performSpellCheck overload
-- `DictusKeyboardBridge.swift` - handleSpace extracts previousWord from proxy context, passes to performSpellCheck for n-gram boosted autocorrect
+- `OuisprKeyboardBridge.swift` - handleSpace extracts previousWord from proxy context, passes to performSpellCheck for n-gram boosted autocorrect
 - `AOSPTrieEngine.swift` - Additional n-gram bridge methods for prediction-based correction
 - `AOSPTrieBridge.h/.mm` - Bridge methods for prediction-based correction queries
-- `DictusApp.swift` - Minor adjustments for n-gram loading
+- `OuisprApp.swift` - Minor adjustments for n-gram loading
 - `fr_ngrams.dict` - Updated French n-gram binary (combined OpenSubtitles + Google Books)
 - `en_ngrams.dict` - Updated English n-gram binary (combined sources)
 - `ngram_builder.py` - OpenSubtitles integration for spoken French n-gram data
@@ -121,7 +121,7 @@ Each task was committed atomically:
 - **Found during:** Device verification (Task 2)
 - **Issue:** After autocorrect replaced a word on space, predictions were not triggered for the corrected context
 - **Fix:** Added updatePredictions call after autocorrection in handleSpace
-- **Files modified:** DictusKeyboardBridge.swift
+- **Files modified:** OuisprKeyboardBridge.swift
 - **Committed in:** 570cc1e
 
 **4. [Rule 1 - Bug] Context boost too permissive with edit distance 2**

@@ -1,9 +1,9 @@
 import type { P } from "./core";
 
-// DICTUS HERO V5 · the shared geometry of the two style candidates (#643).
+// OUISPR HERO V5 · the shared geometry of the two style candidates (#643).
 //
 // One idea: a person speaking with joy, her voice leaving her mouth as one bold stream that
-// lands at the bottom right and runs on as the Dictus BrandWaveform (drawn by the screenshot
+// lands at the bottom right and runs on as the Ouispr BrandWaveform (drawn by the screenshot
 // template from VOICE_END). Focal subject: the open, laughing mouth and the stream leaving it.
 // Light from the upper left.
 //

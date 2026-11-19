@@ -1,7 +1,7 @@
 # Natural contract, three violations — measured (#439)
 
 **Bars and plan:** `bars.md`, committed before the first model call on this fixture set.
-**Fixtures:** `DictusCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
+**Fixtures:** `OuisprCore/Sources/polish-harness/fixtures/longform-fr.json` — the six
 device dictations from #437, `raw` verbatim.
 **Where:** Mac, macOS 26.5.1, Apple Intelligence on, `polish-harness`, 2026-08-27.
 **Raw captures:** `raw/`. **Scorer:** `harness/score.py`. **Probe inputs:** `harness/*.json`.

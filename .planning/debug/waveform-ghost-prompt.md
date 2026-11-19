@@ -2,11 +2,11 @@
 
 ## Context
 
-Dictus is an iOS app (Swift/SwiftUI, iOS 17+) with a **keyboard extension** for voice dictation. The architecture:
+Ouispr is an iOS app (Swift/SwiftUI, iOS 17+) with a **keyboard extension** for voice dictation. The architecture:
 
-- **DictusApp** — Main app. Runs the audio engine + Parakeet STT in background (`UIBackgroundModes:audio`). Writes recording state to App Group.
-- **DictusKeyboard** — Keyboard extension. Reads state from App Group via Darwin notifications. Shows a recording overlay with animated waveform during dictation.
-- **DictusCore** — Shared SPM framework. Contains `BrandWaveform` (the waveform view).
+- **OuisprApp** — Main app. Runs the audio engine + Parakeet STT in background (`UIBackgroundModes:audio`). Writes recording state to App Group.
+- **OuisprKeyboard** — Keyboard extension. Reads state from App Group via Darwin notifications. Shows a recording overlay with animated waveform during dictation.
+- **OuisprCore** — Shared SPM framework. Contains `BrandWaveform` (the waveform view).
 
 Recording flow: User taps mic in keyboard → keyboard shows overlay with `BrandWaveform` → app records in background → transcription → text inserted → overlay hides.
 
@@ -60,7 +60,7 @@ The root cause: SwiftUI's conditional rendering (`if showsOverlay { RecordingOve
 
 ## Current Code
 
-### BrandWaveform.swift (DictusCore — shared framework)
+### BrandWaveform.swift (OuisprCore — shared framework)
 
 ```swift
 public struct BrandWaveform: View {
@@ -110,7 +110,7 @@ public struct BrandWaveform: View {
 }
 ```
 
-### RecordingOverlay.swift (DictusKeyboard)
+### RecordingOverlay.swift (OuisprKeyboard)
 
 ```swift
 struct RecordingOverlay: View {
@@ -142,7 +142,7 @@ struct RecordingOverlay: View {
 }
 ```
 
-### KeyboardRootView.swift (DictusKeyboard)
+### KeyboardRootView.swift (OuisprKeyboard)
 
 ```swift
 struct KeyboardRootView: View {
@@ -179,7 +179,7 @@ struct KeyboardRootView: View {
 }
 ```
 
-### KeyboardState.swift (DictusKeyboard)
+### KeyboardState.swift (OuisprKeyboard)
 
 `KeyboardState` is an `ObservableObject` that:
 - Listens to Darwin notifications (`statusChanged`, `waveformUpdate`, `transcriptionReady`)
@@ -218,15 +218,15 @@ The keyboard's BrandWaveform ghosts must be eliminated. The solution must:
 
 ## Files to modify
 
-- `DictusCore/Sources/DictusCore/Design/BrandWaveform.swift` — the waveform view
-- `DictusKeyboard/Views/RecordingOverlay.swift` — the overlay containing the waveform
-- `DictusKeyboard/KeyboardRootView.swift` — the root view with `if showsOverlay` conditional
-- `DictusKeyboard/KeyboardState.swift` — the state manager (if moving animation state out)
+- `OuisprCore/Sources/OuisprCore/Design/BrandWaveform.swift` — the waveform view
+- `OuisprKeyboard/Views/RecordingOverlay.swift` — the overlay containing the waveform
+- `OuisprKeyboard/KeyboardRootView.swift` — the root view with `if showsOverlay` conditional
+- `OuisprKeyboard/KeyboardState.swift` — the state manager (if moving animation state out)
 
 ## Build & test
 
 ```bash
-xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet
+xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet
 ```
 
 To verify the fix, grep for `waveformHeartbeat` in the logs:

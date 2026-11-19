@@ -6,18 +6,18 @@
 
 ## Summary
 
-Phase 3 transforms the keyboard from a typing tool into a Wispr Flow-inspired dictation experience. The core challenge is architectural: iOS keyboard extensions **cannot record audio directly** (Apple explicitly prohibits microphone access in extensions regardless of RequestsOpenAccess). The existing two-process architecture (keyboard triggers DictusApp via URL scheme, DictusApp records and transcribes, results flow back via Darwin notifications + App Group) remains the correct foundation. What changes is the UX: the keyboard replaces its letter layout with a recording UI that mirrors DictusApp's recording state in real time.
+Phase 3 transforms the keyboard from a typing tool into a Wispr Flow-inspired dictation experience. The core challenge is architectural: iOS keyboard extensions **cannot record audio directly** (Apple explicitly prohibits microphone access in extensions regardless of RequestsOpenAccess). The existing two-process architecture (keyboard triggers OuisprApp via URL scheme, OuisprApp records and transcribes, results flow back via Darwin notifications + App Group) remains the correct foundation. What changes is the UX: the keyboard replaces its letter layout with a recording UI that mirrors OuisprApp's recording state in real time.
 
 The implementation involves five major areas: (1) redesigning the keyboard to show a toolbar with mic button + recording overlay that replaces the letter keys, (2) wiring auto-insert of transcription via `textDocumentProxy.insertText()`, (3) adding QWERTY as an alternative layout with accented character long-press on AZERTY, (4) haptic feedback via `UIImpactFeedbackGenerator` (iOS 16 compatible), and (5) an in-app test dictation screen.
 
-**Primary recommendation:** Keep all audio recording in DictusApp. The keyboard's recording UI is a state mirror driven by Darwin notifications -- it shows waveform data, timer, and controls that signal back to DictusApp via App Group + Darwin notifications. The keyboard never touches AVAudioSession.
+**Primary recommendation:** Keep all audio recording in OuisprApp. The keyboard's recording UI is a state mirror driven by Darwin notifications -- it shows waveform data, timer, and controls that signal back to OuisprApp via App Group + Darwin notifications. The keyboard never touches AVAudioSession.
 
 <user_constraints>
 
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- Dictation flow is Wispr Flow-inspired: tap mic -> DictusApp opens briefly for mic activation -> auto-return -> keyboard shows recording UI
+- Dictation flow is Wispr Flow-inspired: tap mic -> OuisprApp opens briefly for mic activation -> auto-return -> keyboard shows recording UI
 - Recording UI replaces keyboard letters entirely during recording (waveform center, timer below, X cancel top-left, checkmark stop top-right)
 - Text auto-inserts via `textDocumentProxy.insertText()` -- no preview bar, no confirmation step
 - After insertion: keyboard snaps back to normal letter layout immediately -- no confirmation message
@@ -57,7 +57,7 @@ The implementation involves five major areas: (1) redesigning the keyboard to sh
 | KBD-02 | Full AZERTY keyboard layout | Already delivered in Phase 1 Plan 1.3; Phase 3 adds long-press accented characters |
 | KBD-03 | QWERTY layout available as alternative | New `KeyboardLayout` static property with QWERTY rows; layout selection via App Group UserDefaults |
 | KBD-05 | Mic button with clear visual states (idle, recording, transcribing) | Toolbar mic button with state-driven appearance; states tracked via `KeyboardState.dictationStatus` |
-| APP-04 | In-app test dictation screen | New view in DictusApp with `TextEditor` + record button using existing `DictationCoordinator` |
+| APP-04 | In-app test dictation screen | New view in OuisprApp with `TextEditor` + record button using existing `DictationCoordinator` |
 
 </phase_requirements>
 
@@ -68,14 +68,14 @@ The implementation involves five major areas: (1) redesigning the keyboard to sh
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 16+ | All keyboard and app UI | Project standard, already in use |
 | UIKit | iOS 16+ | `UIInputViewController`, `textDocumentProxy`, haptics | Required for keyboard extension APIs |
-| DictusCore | local SPM | Shared types, App Group, Darwin notifications | Project's cross-process framework |
-| WhisperKit | latest via SPM | Audio recording + transcription (DictusApp only) | Already integrated in Phase 2 |
+| OuisprCore | local SPM | Shared types, App Group, Darwin notifications | Project's cross-process framework |
+| WhisperKit | latest via SPM | Audio recording + transcription (OuisprApp only) | Already integrated in Phase 2 |
 
 ### Supporting (New for Phase 3)
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
 | UIImpactFeedbackGenerator | iOS 10+ | Haptic feedback | Recording start/stop, text insertion |
-| AVAudioSession | iOS 16+ | Audio session (DictusApp only) | Already used by AudioRecorder |
+| AVAudioSession | iOS 16+ | Audio session (OuisprApp only) | Already used by AudioRecorder |
 
 ### No New Dependencies Required
 Phase 3 uses only existing frameworks. No new SPM packages needed.
@@ -90,11 +90,11 @@ Apple's Custom Keyboard documentation explicitly states: "Custom keyboards have 
 
 ```
 Keyboard (tap mic)
-  -> Link(destination: "dictus://dictate") opens DictusApp
-  -> DictusApp records audio via WhisperKit AudioProcessor
-  -> DictusApp transcribes via WhisperKit
-  -> DictusApp writes result to App Group UserDefaults
-  -> DictusApp posts Darwin notification
+  -> Link(destination: "ouispr://dictate") opens OuisprApp
+  -> OuisprApp records audio via WhisperKit AudioProcessor
+  -> OuisprApp transcribes via WhisperKit
+  -> OuisprApp writes result to App Group UserDefaults
+  -> OuisprApp posts Darwin notification
   -> Keyboard receives notification, reads result
   -> Keyboard auto-inserts via textDocumentProxy.insertText()
 ```
@@ -103,23 +103,23 @@ Keyboard (tap mic)
 
 The CONTEXT.md says "recording controlled from keyboard UI." This means:
 
-1. **Start recording**: Keyboard taps mic -> opens DictusApp (same as Phase 1)
-2. **Stop recording**: Keyboard writes a "stop" signal to App Group + posts Darwin notification -> DictusApp observes and calls `stopDictation()`
-3. **Cancel recording**: Same pattern, keyboard writes "cancel" signal -> DictusApp discards audio
+1. **Start recording**: Keyboard taps mic -> opens OuisprApp (same as Phase 1)
+2. **Stop recording**: Keyboard writes a "stop" signal to App Group + posts Darwin notification -> OuisprApp observes and calls `stopDictation()`
+3. **Cancel recording**: Same pattern, keyboard writes "cancel" signal -> OuisprApp discards audio
 
 This requires **new Darwin notification names** for keyboard-to-app signaling (currently only app-to-keyboard exists):
-- `com.pivi.dictus.stopRecording` (keyboard -> app)
-- `com.pivi.dictus.cancelRecording` (keyboard -> app)
+- `com.pivi.ouispr.stopRecording` (keyboard -> app)
+- `com.pivi.ouispr.cancelRecording` (keyboard -> app)
 
 And **new DictationStatus cases** or SharedKeys for waveform data forwarding:
-- `SharedKeys.waveformEnergy` -- serialized `[Float]` array written by DictusApp during recording
-- DictusApp writes energy data to App Group on each audio buffer callback
+- `SharedKeys.waveformEnergy` -- serialized `[Float]` array written by OuisprApp during recording
+- OuisprApp writes energy data to App Group on each audio buffer callback
 - Keyboard reads on each `statusChanged` notification (or a dedicated `waveformUpdate` notification)
 
 ### Recommended Project Structure Changes
 
 ```
-DictusKeyboard/
+OuisprKeyboard/
 ├── KeyboardRootView.swift      # Updated: conditional render normal vs recording UI
 ├── KeyboardState.swift         # Updated: new stop/cancel methods, waveform data
 ├── KeyboardViewController.swift # Minor: pass controller ref for textDocumentProxy
@@ -138,13 +138,13 @@ DictusKeyboard/
 │   ├── RecordingOverlay.swift  # NEW: full recording UI replacing keyboard
 │   └── AccentPopup.swift       # NEW: long-press accented character picker
 ├── InputView.swift             # Unchanged
-DictusApp/
+OuisprApp/
 ├── DictationCoordinator.swift  # Updated: observe stop/cancel from keyboard
 ├── ContentView.swift           # Updated: add test dictation navigation
 ├── Views/
-│   ├── RecordingView.swift     # Unchanged (DictusApp's recording UI)
+│   ├── RecordingView.swift     # Unchanged (OuisprApp's recording UI)
 │   └── TestDictationView.swift # NEW: in-app test dictation screen (APP-04)
-DictusCore/
+OuisprCore/
 ├── SharedKeys.swift            # Updated: new keys for layout, waveform, stop signal
 ├── DarwinNotifications.swift   # Updated: new notification names
 ├── DictationStatus.swift       # Possibly updated with new states
@@ -152,7 +152,7 @@ DictusCore/
 
 ### Pattern: Keyboard Recording UI as State Mirror
 
-The keyboard's recording overlay is a **read-only mirror** of DictusApp's state. It does NOT record audio. It:
+The keyboard's recording overlay is a **read-only mirror** of OuisprApp's state. It does NOT record audio. It:
 1. Observes `DictationStatus` changes via Darwin notifications
 2. Reads waveform energy data from App Group UserDefaults
 3. Displays waveform visualization using the same `WaveformView` pattern from RecordingView
@@ -223,17 +223,17 @@ private func handleTranscriptionReady() {
 
 ### Pattern: Waveform Data Forwarding
 
-Waveform energy data must flow from DictusApp's AudioRecorder to the keyboard extension. Two approaches:
+Waveform energy data must flow from OuisprApp's AudioRecorder to the keyboard extension. Two approaches:
 
 **Option A: App Group UserDefaults (Recommended)**
-- DictusApp writes energy array to UserDefaults on each buffer callback (~10Hz)
+- OuisprApp writes energy array to UserDefaults on each buffer callback (~10Hz)
 - Posts `waveformUpdate` Darwin notification after write
 - Keyboard reads and displays
 - Pros: Uses existing infrastructure
 - Cons: ~10Hz update rate may feel slightly laggy; UserDefaults serialization overhead
 
 **Option B: Shared file in App Group container**
-- DictusApp writes binary Float array to a shared file
+- OuisprApp writes binary Float array to a shared file
 - Faster read/write than UserDefaults for binary data
 - Pros: Lower overhead for frequent updates
 - Cons: File I/O complexity, cleanup needed
@@ -281,7 +281,7 @@ static let accentedCharacters: [String: [String]] = [
 ## Common Pitfalls
 
 ### Pitfall 1: Waveform Data Race Condition
-**What goes wrong:** Keyboard reads waveform energy from UserDefaults before DictusApp finishes writing it, showing stale or corrupted data.
+**What goes wrong:** Keyboard reads waveform energy from UserDefaults before OuisprApp finishes writing it, showing stale or corrupted data.
 **Why it happens:** Darwin notifications are "fire and forget" -- they arrive before UserDefaults propagation completes (same issue solved with 100ms retry in Phase 1).
 **How to avoid:** Apply the same 100ms retry pattern for waveform reads. Alternatively, accept slight staleness since waveform is decorative.
 **Warning signs:** Waveform bars freeze or jump erratically.
@@ -294,20 +294,20 @@ static let accentedCharacters: [String: [String]] = [
 
 ### Pitfall 3: textDocumentProxy.insertText() Timing
 **What goes wrong:** Auto-insert fires but text doesn't appear in the host app's text field.
-**Why it happens:** The keyboard extension may not be the first responder when the transcription arrives, especially if DictusApp was just in the foreground.
+**Why it happens:** The keyboard extension may not be the first responder when the transcription arrives, especially if OuisprApp was just in the foreground.
 **How to avoid:** Ensure insertion happens only after the keyboard is visible and has focus. Check that `textDocumentProxy` is responsive before inserting.
 **Warning signs:** Transcription completes but text doesn't appear; no error thrown.
 
-### Pitfall 4: Stop Signal Not Received by DictusApp
-**What goes wrong:** User taps checkmark (stop) in keyboard recording UI, but DictusApp doesn't stop recording.
-**Why it happens:** DictusApp may be suspended in background. Darwin notifications can be delayed or dropped for suspended apps.
-**How to avoid:** DictusApp must declare `audio` background mode to stay active during recording. Verify background audio session keeps the app alive.
+### Pitfall 4: Stop Signal Not Received by OuisprApp
+**What goes wrong:** User taps checkmark (stop) in keyboard recording UI, but OuisprApp doesn't stop recording.
+**Why it happens:** OuisprApp may be suspended in background. Darwin notifications can be delayed or dropped for suspended apps.
+**How to avoid:** OuisprApp must declare `audio` background mode to stay active during recording. Verify background audio session keeps the app alive.
 **Warning signs:** Tapping stop does nothing; recording continues indefinitely.
 
-### Pitfall 5: DictusApp Not Auto-Returning to Previous App
-**What goes wrong:** After tapping mic, DictusApp opens but doesn't return the user to their previous app.
+### Pitfall 5: OuisprApp Not Auto-Returning to Previous App
+**What goes wrong:** After tapping mic, OuisprApp opens but doesn't return the user to their previous app.
 **Why it happens:** iOS has no API to programmatically return to the previous app. The user must tap the "< Back" chevron.
-**How to avoid:** This is a known limitation (documented in STATE.md). DictusApp should minimize its visible time -- start recording immediately and present minimal UI. The user can tap back to their app using the iOS status bar chevron.
+**How to avoid:** This is a known limitation (documented in STATE.md). OuisprApp should minimize its visible time -- start recording immediately and present minimal UI. The user can tap back to their app using the iOS status bar chevron.
 **Warning signs:** User confusion about how to get back to their typing app.
 
 ### Pitfall 6: Accented Character Popup Clipping
@@ -382,7 +382,7 @@ static let qwertyLettersRows: [[KeyDefinition]] = [
 
 ```swift
 // SharedKeys addition
-public static let keyboardLayout = "dictus.keyboardLayout"
+public static let keyboardLayout = "ouispr.keyboardLayout"
 
 // KeyboardLayout selection
 enum LayoutType: String {
@@ -463,9 +463,9 @@ struct ToolbarView: View {
 
     var body: some View {
         HStack {
-            // Left: app shortcut (opens DictusApp settings)
+            // Left: app shortcut (opens OuisprApp settings)
             if hasFullAccess {
-                Link(destination: URL(string: "dictus://settings")!) {
+                Link(destination: URL(string: "ouispr://settings")!) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 18))
                         .foregroundColor(.secondary)
@@ -492,7 +492,7 @@ struct ToolbarView: View {
 |--------------|------------------|--------------|--------|
 | Preview bar + confirm/dismiss | Auto-insert directly | Phase 3 (user decision) | Simpler UX, fewer components |
 | Mic button in bottom keyboard row | Mic in toolbar above keyboard | Phase 3 (user decision) | Toolbar pattern like Wispr Flow |
-| Recording UI in DictusApp only | Recording UI mirrored in keyboard | Phase 3 (user decision) | Immersive recording experience |
+| Recording UI in OuisprApp only | Recording UI mirrored in keyboard | Phase 3 (user decision) | Immersive recording experience |
 | No accented characters | Long-press popups on AZERTY | Phase 3 delivery | Better French typing |
 
 ## Open Questions
@@ -502,20 +502,20 @@ struct ToolbarView: View {
    - What's unclear: Whether serializing `[Float]` to UserDefaults at 5-10Hz causes UI jank in either process
    - Recommendation: Start with UserDefaults + JSON encoding. Profile on device. Fall back to shared file if laggy.
 
-2. **DictusApp background mode for recording**
-   - What we know: DictusApp records audio when opened via URL scheme. User returns to their app while recording continues.
-   - What's unclear: Whether DictusApp stays alive in background long enough for full dictation. iOS may suspend it.
-   - Recommendation: Add `audio` background mode to DictusApp's Info.plist. The active AVAudioSession with `.record` category should keep it alive. Test on device with recordings >30 seconds.
+2. **OuisprApp background mode for recording**
+   - What we know: OuisprApp records audio when opened via URL scheme. User returns to their app while recording continues.
+   - What's unclear: Whether OuisprApp stays alive in background long enough for full dictation. iOS may suspend it.
+   - Recommendation: Add `audio` background mode to OuisprApp's Info.plist. The active AVAudioSession with `.record` category should keep it alive. Test on device with recordings >30 seconds.
 
 3. **Left toolbar button behavior from keyboard extension**
    - What we know: `Link(destination:)` can open URL schemes from keyboard extensions
-   - What's unclear: Whether `dictus://settings` is the best route, or if it should open the main app generally
-   - Recommendation: Use `dictus://` (no specific host) to just open the app. Settings-specific routing can be added in Phase 4 when the settings screen exists.
+   - What's unclear: Whether `ouispr://settings` is the best route, or if it should open the main app generally
+   - Recommendation: Use `ouispr://` (no specific host) to just open the app. Settings-specific routing can be added in Phase 4 when the settings screen exists.
 
-4. **Stop/cancel signal reliability when DictusApp is backgrounded**
+4. **Stop/cancel signal reliability when OuisprApp is backgrounded**
    - What we know: Darwin notifications work cross-process. But backgrounded apps may have reduced notification delivery.
-   - What's unclear: Whether DictusApp reliably receives Darwin notifications while recording in background
-   - Recommendation: Test on device. If unreliable, add a polling fallback where DictusApp checks App Group for stop/cancel flags every 500ms during recording.
+   - What's unclear: Whether OuisprApp reliably receives Darwin notifications while recording in background
+   - Recommendation: Test on device. If unreliable, add a polling fallback where OuisprApp checks App Group for stop/cancel flags every 500ms during recording.
 
 ## Validation Architecture
 
@@ -523,9 +523,9 @@ struct ToolbarView: View {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (built-in) |
-| Config file | DictusCore/Package.swift (test target defined) |
-| Quick run command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 16'` |
-| Full suite command | `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 16'` |
+| Config file | OuisprCore/Package.swift (test target defined) |
+| Quick run command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 16'` |
+| Full suite command | `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 16'` |
 
 ### Phase Requirements to Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -542,14 +542,14 @@ struct ToolbarView: View {
 **Justification for manual-only tests:** Most Phase 3 requirements involve keyboard extension UI rendering, cross-process communication timing, hardware haptics, and audio recording -- none of which can be unit tested in isolation. The testable units are layout data structures (QWERTY layout correctness, accented character mappings).
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild test -scheme DictusCore -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
+- **Per task commit:** `xcodebuild test -scheme OuisprCore -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
 - **Per wave merge:** Full test suite + manual on-device testing of dictation flow
 - **Phase gate:** All unit tests green + manual UAT of complete dictation round-trip
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/QWERTYLayoutTests.swift` -- covers KBD-03 (QWERTY row counts, key labels)
-- [ ] `DictusCore/Tests/DictusCoreTests/AccentedCharacterTests.swift` -- covers KBD-02 (accent mappings for all AZERTY keys)
-- [ ] Move `KeyboardLayout` and `KeyDefinition` to DictusCore so they are testable (currently in DictusKeyboard target which has no test target)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/QWERTYLayoutTests.swift` -- covers KBD-03 (QWERTY row counts, key labels)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/AccentedCharacterTests.swift` -- covers KBD-02 (accent mappings for all AZERTY keys)
+- [ ] Move `KeyboardLayout` and `KeyDefinition` to OuisprCore so they are testable (currently in OuisprKeyboard target which has no test target)
 
 *(Note: Most Phase 3 requirements are manual-only. Wave 0 gaps are limited to data model tests.)*
 
@@ -568,7 +568,7 @@ struct ToolbarView: View {
 
 ### Tertiary (LOW confidence)
 - Waveform data forwarding via UserDefaults at 5-10Hz -- untested performance assumption, needs device validation
-- DictusApp background recording persistence -- needs device testing to confirm `audio` background mode keeps app alive
+- OuisprApp background recording persistence -- needs device testing to confirm `audio` background mode keeps app alive
 
 ## Metadata
 

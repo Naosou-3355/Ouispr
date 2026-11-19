@@ -13,7 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FIXTURES = HERE.parent.parent.parent / "DictusCore/Sources/polish-harness/fixtures"
+FIXTURES = HERE.parent.parent.parent / "OuisprCore/Sources/polish-harness/fixtures"
 
 CAPTURES = {
     ("message", "fr"): ("capture-message-fr.json", "message-fr.json"),

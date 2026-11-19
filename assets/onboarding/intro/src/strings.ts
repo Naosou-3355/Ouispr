@@ -17,7 +17,7 @@ export type IntroStrings = {
   walk: { received: string; reply: [string, string, string, string] };
   /** scene B, the mail draft: its subject, then its body, one entry per line */
   metro: { subject: string; body: [string, string, string] };
-  /** scene C, the note above the Dictus keyboard */
+  /** scene C, the note above the Ouispr keyboard */
   keyboard: {
     /** the note's title */
     title: string;

@@ -1,6 +1,6 @@
 name: Project board
 
-# Keeps the "Dictus 2.0.0" status board (getdictus/projects/2) in step with the
+# Keeps the "Ouispr 2.0.0" status board (getdictus/projects/2) in step with the
 # work, so nobody has to remember to drag a card:
 #   - a push to a branch named `<type>/<issue>-...` moves that issue to In progress
 #   - a PR that is opened or marked ready moves every issue it names to In review

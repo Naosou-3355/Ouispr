@@ -18,9 +18,9 @@ created: 2026-04-07
 | Property | Value |
 |----------|-------|
 | **Framework** | Xcode build + manual device testing |
-| **Config file** | Dictus.xcodeproj |
-| **Quick run command** | `xcodebuild build -project Dictus.xcodeproj -scheme DictusApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5` |
-| **Full suite command** | `xcodebuild build -project Dictus.xcodeproj -scheme DictusApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5` |
+| **Config file** | Ouispr.xcodeproj |
+| **Quick run command** | `xcodebuild build -project Ouispr.xcodeproj -scheme OuisprApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5` |
+| **Full suite command** | `xcodebuild build -project Ouispr.xcodeproj -scheme OuisprApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
@@ -38,10 +38,10 @@ created: 2026-04-07
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 27-01-01 | 01 | 1 | BUG-71 | build + grep | `grep -r "CXCallObserver" Dictus/` | ❌ W0 | ⬜ pending |
-| 27-01-02 | 01 | 1 | BUG-71 | build + grep | `grep -r "interruptionNotification" Dictus/` | ❌ W0 | ⬜ pending |
-| 27-02-01 | 02 | 1 | BUG-72 | build + grep | `grep -r "notifyOthersOnDeactivation\|setActive.*false" Dictus/` | ❌ W0 | ⬜ pending |
-| 27-03-01 | 03 | 1 | BUG-74 | build + grep | `grep -r "decimalDigits\|containsDigit" DictusKeyboard/` | ❌ W0 | ⬜ pending |
+| 27-01-01 | 01 | 1 | BUG-71 | build + grep | `grep -r "CXCallObserver" Ouispr/` | ❌ W0 | ⬜ pending |
+| 27-01-02 | 01 | 1 | BUG-71 | build + grep | `grep -r "interruptionNotification" Ouispr/` | ❌ W0 | ⬜ pending |
+| 27-02-01 | 02 | 1 | BUG-72 | build + grep | `grep -r "notifyOthersOnDeactivation\|setActive.*false" Ouispr/` | ❌ W0 | ⬜ pending |
+| 27-03-01 | 03 | 1 | BUG-74 | build + grep | `grep -r "decimalDigits\|containsDigit" OuisprKeyboard/` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

@@ -18,17 +18,17 @@ created: 2026-03-12
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (Xcode built-in) |
-| **Config file** | Dictus.xcodeproj test targets |
-| **Quick run command** | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DictusCoreTests` |
-| **Full suite command** | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| **Config file** | Ouispr.xcodeproj test targets |
+| **Quick run command** | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:OuisprCoreTests` |
+| **Full suite command** | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
-- **After every plan wave:** Run `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+- **After every task commit:** Run `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+- **After every plan wave:** Run `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
@@ -45,7 +45,7 @@ created: 2026-03-12
 | 13-02-03 | 02 | 1 | COLD-06 | manual | Device: HomeView mic button -> record -> stop -> verify | N/A | ⬜ pending |
 | 13-02-04 | 02 | 1 | COLD-07 | manual | Device: verify overlay appears on keyboard return | N/A | ⬜ pending |
 | 13-03-01 | 03 | 2 | COLD-08 | manual | Device: test with WhatsApp/Telegram installed | N/A | ⬜ pending |
-| 13-03-02 | 03 | 2 | COLD-03 | unit | `xcodebuild test -only-testing:DictusCoreTests/SharedKeysTests` | Partial | ⬜ pending |
+| 13-03-02 | 03 | 2 | COLD-03 | unit | `xcodebuild test -only-testing:OuisprCoreTests/SharedKeysTests` | Partial | ⬜ pending |
 | 13-03-03 | 03 | 2 | COLD-04 | manual | Device: verify transcription delivery | N/A | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -54,7 +54,7 @@ created: 2026-03-12
 
 ## Wave 0 Requirements
 
-- [ ] `DictusCoreTests/KnownAppSchemesTests.swift` — unit test for URL scheme list integrity
+- [ ] `OuisprCoreTests/KnownAppSchemesTests.swift` — unit test for URL scheme list integrity
 - [ ] Verify build succeeds with new SwipeBackOverlayView in Xcode Preview
 
 *Most COLD requirements are manual-only due to requiring real device audio session + keyboard extension lifecycle.*

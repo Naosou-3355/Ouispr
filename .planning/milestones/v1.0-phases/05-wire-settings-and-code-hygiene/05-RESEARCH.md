@@ -6,7 +6,7 @@
 
 ## Summary
 
-Phase 5 is a wiring and cleanup phase. All the infrastructure already exists -- SettingsView writes to App Group, SharedKeys are defined, HapticFeedback has methods, FillerWordFilter works, DictusColors is complete. The gap is that 3 of 4 settings toggles (language, fillerWords, haptics) are never read by their consumers. Additionally, haptics were reported as not firing at all during testing, AccentPopup uses a hardcoded Color.blue, and BrandWaveform has diverged between app (30 bars) and keyboard (40 bars).
+Phase 5 is a wiring and cleanup phase. All the infrastructure already exists -- SettingsView writes to App Group, SharedKeys are defined, HapticFeedback has methods, FillerWordFilter works, OuisprColors is complete. The gap is that 3 of 4 settings toggles (language, fillerWords, haptics) are never read by their consumers. Additionally, haptics were reported as not firing at all during testing, AccentPopup uses a hardcoded Color.blue, and BrandWaveform has diverged between app (30 bars) and keyboard (40 bars).
 
 Every change in this phase is localized -- no new files, no new frameworks, no architectural decisions. It is purely about connecting existing writes to existing reads, fixing a haptic bug, and unifying diverged code.
 
@@ -27,14 +27,14 @@ Every change in this phase is localized -- no new files, no new frameworks, no a
 - Add light haptic feedback on every key tap (UIImpactFeedbackGenerator(.light)) -- matching native iOS keyboard feel
 - Keep existing distinct patterns for dictation events: medium impact (recording start), light impact (recording stop), success notification (text insertion)
 - One master toggle in Settings controls all haptics (key taps + dictation events) -- no per-event granularity
-- Replace hardcoded Color.blue with DictusColors equivalent -- straightforward swap
+- Replace hardcoded Color.blue with OuisprColors equivalent -- straightforward swap
 - Unify to 30 bars everywhere (app and keyboard) -- not just document the divergence
 - Bar width adapts automatically to fit available space in each context (no fixed bar width)
 
 ### Claude's Discretion
 - Exact diagnosis and fix for haptic feedback bug
 - Bar width calculation approach for adaptive BrandWaveform sizing
-- Where to read the haptics setting in DictusKeyboard (KeyboardState or KeyButton level)
+- Where to read the haptics setting in OuisprKeyboard (KeyboardState or KeyButton level)
 
 ### Deferred Ideas (OUT OF SCOPE)
 None -- discussion stayed within phase scope
@@ -59,7 +59,7 @@ None -- discussion stayed within phase scope
 | SwiftUI | iOS 16+ | UI framework | Already used |
 | UIKit | iOS 16+ | UIImpactFeedbackGenerator, UINotificationFeedbackGenerator | Already used in HapticFeedback.swift |
 | WhisperKit | 0.16.0+ | Speech-to-text with language parameter | Already integrated |
-| DictusCore | local SPM | SharedKeys, HapticFeedback, FillerWordFilter, AppGroup | Already shared across targets |
+| OuisprCore | local SPM | SharedKeys, HapticFeedback, FillerWordFilter, AppGroup | Already shared across targets |
 
 ### No New Dependencies
 This phase requires zero new libraries. All work is wiring existing code.
@@ -118,7 +118,7 @@ GeometryReader { geometry in
 ### Anti-Patterns to Avoid
 - **Caching settings in init:** Don't read the setting once and store it. The user can change settings while the keyboard is visible. Read at point of use.
 - **Separate haptic toggle per event type:** User explicitly chose one master toggle. Don't add per-event granularity.
-- **Reading settings in HapticFeedback from UIKit side:** HapticFeedback is in DictusCore (SPM package). It cannot import AppGroup directly on macOS for tests. The `isEnabled()` check should read from UserDefaults internally with proper platform guards.
+- **Reading settings in HapticFeedback from UIKit side:** HapticFeedback is in OuisprCore (SPM package). It cannot import AppGroup directly on macOS for tests. The `isEnabled()` check should read from UserDefaults internally with proper platform guards.
 
 ## Don't Hand-Roll
 
@@ -143,15 +143,15 @@ GeometryReader { geometry in
 ### Pitfall 2: UserDefaults Default Values
 **What goes wrong:** `UserDefaults.bool(forKey:)` returns `false` when the key has never been set (no default registered). This means haptics and filler words appear "off" before the user ever opens Settings.
 **Why it happens:** Bool defaults to false in UserDefaults. The SettingsView @AppStorage initializers set defaults (`= true`) but those only take effect when SettingsView has been rendered at least once.
-**How to avoid:** Use `object(forKey:) == nil` check to distinguish "never set" from "explicitly false", or register defaults in AppGroup early (e.g., in DictusApp init or DictusCore). The simplest approach: read with a nil-coalescing default:
+**How to avoid:** Use `object(forKey:) == nil` check to distinguish "never set" from "explicitly false", or register defaults in AppGroup early (e.g., in OuisprApp init or OuisprCore). The simplest approach: read with a nil-coalescing default:
 ```swift
 let hapticsEnabled = defaults?.object(forKey: SharedKeys.hapticsEnabled) as? Bool ?? true
 ```
 **Confidence:** HIGH -- this is a known Swift/UserDefaults behavior.
 
 ### Pitfall 3: BrandWaveform Copy Divergence
-**What goes wrong:** DictusApp and DictusKeyboard have separate copies of BrandWaveform.swift. After unifying to 30 bars with adaptive width, both copies must be updated identically.
-**Why it happens:** Keyboard extensions cannot import DictusApp code, and moving design files to DictusCore would add UIKit/SwiftUI dependency breaking macOS tests.
+**What goes wrong:** OuisprApp and OuisprKeyboard have separate copies of BrandWaveform.swift. After unifying to 30 bars with adaptive width, both copies must be updated identically.
+**Why it happens:** Keyboard extensions cannot import OuisprApp code, and moving design files to OuisprCore would add UIKit/SwiftUI dependency breaking macOS tests.
 **How to avoid:** Update both files in the same commit. Add a comment at the top of both files referencing each other.
 **Confidence:** HIGH -- established project pattern.
 
@@ -258,9 +258,9 @@ public enum HapticFeedback {
 
 ### AccentPopup Color Fix
 ```swift
-// AccentPopup.swift line 35 — replace Color.blue with DictusColors
+// AccentPopup.swift line 35 — replace Color.blue with OuisprColors
 .fill(index == selectedIndex
-      ? Color.dictusAccent  // was: Color.blue
+      ? Color.ouisprAccent  // was: Color.blue
       : KeyMetrics.letterKeyColor)
 ```
 
@@ -302,7 +302,7 @@ struct BrandWaveform: View {
 | Unconditional `FillerWordFilter.clean()` | Conditional on toggle | This phase | User can get raw Whisper output |
 | Unconditional haptic calls | Guard on `hapticsEnabled` | This phase | User can disable haptics |
 | Fixed bar width (5pt keyboard, 4pt app) | Adaptive via GeometryReader | This phase | Consistent 30 bars in all contexts |
-| `Color.blue` in AccentPopup | `Color.dictusAccent` | This phase | Design system consistency |
+| `Color.blue` in AccentPopup | `Color.ouisprAccent` | This phase | Design system consistency |
 
 ## Open Questions
 
@@ -312,9 +312,9 @@ struct BrandWaveform: View {
    - Recommendation: Diagnose on-device. Try pre-warming generators. If `prepare()`+`impactOccurred()` in sequence is the issue, keep a generator instance alive on KeyboardState and call `prepare()` during init.
 
 2. **AppGroup.identifier access from HapticFeedback**
-   - What we know: HapticFeedback.swift is in DictusCore. AppGroup is also in DictusCore. Both compile on iOS.
-   - What's unclear: Whether `AppGroup.identifier` (which is a DictusCore type) is available at the call site within the `#if canImport(UIKit) && !os(macOS)` guard.
-   - Recommendation: It should work since both are in DictusCore. The `#if` guard only excludes the UIKit import, not Foundation types. Hardcoding the suite name string as fallback if needed.
+   - What we know: HapticFeedback.swift is in OuisprCore. AppGroup is also in OuisprCore. Both compile on iOS.
+   - What's unclear: Whether `AppGroup.identifier` (which is a OuisprCore type) is available at the call site within the `#if canImport(UIKit) && !os(macOS)` guard.
+   - Recommendation: It should work since both are in OuisprCore. The `#if` guard only excludes the UIKit import, not Foundation types. Hardcoding the suite name string as fallback if needed.
 
 ## Validation Architecture
 
@@ -322,22 +322,22 @@ struct BrandWaveform: View {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (via Swift Package Manager) |
-| Config file | DictusCore/Package.swift |
-| Quick run command | `cd DictusCore && swift test --filter DictusCoreTests` |
-| Full suite command | `cd DictusCore && swift test` |
+| Config file | OuisprCore/Package.swift |
+| Quick run command | `cd OuisprCore && swift test --filter OuisprCoreTests` |
+| Full suite command | `cd OuisprCore && swift test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | APP-03 | Settings toggles wired end-to-end | integration | Manual on-device (settings -> behavior) | N/A -- requires device |
-| STT-01 | Language parameter read from settings | unit | `swift test --filter DictusCoreTests.SharedKeysExtensionTests` | Partial (SharedKeys tests exist) |
-| STT-02 | Filler filter conditional on toggle | unit | `swift test --filter DictusCoreTests.FillerWordFilterTests` | Existing tests cover filter logic |
+| STT-01 | Language parameter read from settings | unit | `swift test --filter OuisprCoreTests.SharedKeysExtensionTests` | Partial (SharedKeys tests exist) |
+| STT-02 | Filler filter conditional on toggle | unit | `swift test --filter OuisprCoreTests.FillerWordFilterTests` | Existing tests cover filter logic |
 | DUX-03 | Haptics fire and respect toggle | manual-only | Physical device required (Taptic Engine) | N/A |
 
 ### Sampling Rate
-- **Per task commit:** `cd DictusCore && swift test` (all 52 existing tests)
+- **Per task commit:** `cd OuisprCore && swift test` (all 52 existing tests)
 - **Per wave merge:** Full suite + Xcode build both targets
-- **Phase gate:** All DictusCore tests green + device verification of all 5 success criteria
+- **Phase gate:** All OuisprCore tests green + device verification of all 5 success criteria
 
 ### Wave 0 Gaps
 None -- existing test infrastructure covers the testable components. The core changes (wiring settings reads) are integration-level and require device verification. No new unit test files needed, though the existing `SharedKeysExtensionTests.swift` could be extended to verify default value behavior.
@@ -345,7 +345,7 @@ None -- existing test infrastructure covers the testable components. The core ch
 ## Sources
 
 ### Primary (HIGH confidence)
-- Project source code: TranscriptionService.swift, KeyboardState.swift, HapticFeedback.swift, SettingsView.swift, BrandWaveform.swift (both copies), AccentPopup.swift, DictusColors.swift, SharedKeys.swift, FillerWordFilter.swift
+- Project source code: TranscriptionService.swift, KeyboardState.swift, HapticFeedback.swift, SettingsView.swift, BrandWaveform.swift (both copies), AccentPopup.swift, OuisprColors.swift, SharedKeys.swift, FillerWordFilter.swift
 - .planning/v1.0-MILESTONE-AUDIT.md -- exact gap descriptions and integration issues
 - .planning/phases/05-wire-settings-and-code-hygiene/05-CONTEXT.md -- locked decisions and code context
 

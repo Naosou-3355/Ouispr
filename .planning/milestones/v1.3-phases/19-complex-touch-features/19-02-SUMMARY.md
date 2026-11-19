@@ -23,9 +23,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Vendored/Views/KeyboardView.swift
-    - DictusKeyboard/DictusKeyboardBridge.swift
-    - DictusKeyboard/Vendored/Controllers/LongPressController.swift
+    - OuisprKeyboard/Vendored/Views/KeyboardView.swift
+    - OuisprKeyboard/OuisprKeyboardBridge.swift
+    - OuisprKeyboard/Vendored/Controllers/LongPressController.swift
 
 key-decisions:
   - "wordModeThreshold = 10 characters before switching to word-level delete"
@@ -73,9 +73,9 @@ Each task was committed atomically:
 **Plan metadata:** (pending)
 
 ## Files Created/Modified
-- `DictusKeyboard/Vendored/Views/KeyboardView.swift` - Added deleteRepeatCount, 3-stage acceleration in keyRepeatTimerDidTrigger, per-deletion haptic
-- `DictusKeyboard/DictusKeyboardBridge.swift` - Added handleWordDelete() for word-level backspace, wired didTriggerHoldKey
-- `DictusKeyboard/Vendored/Controllers/LongPressController.swift` - Rewrote LongPressCursorMovementController with dead zone, acceleration, rate limiting
+- `OuisprKeyboard/Vendored/Views/KeyboardView.swift` - Added deleteRepeatCount, 3-stage acceleration in keyRepeatTimerDidTrigger, per-deletion haptic
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` - Added handleWordDelete() for word-level backspace, wired didTriggerHoldKey
+- `OuisprKeyboard/Vendored/Controllers/LongPressController.swift` - Rewrote LongPressCursorMovementController with dead zone, acceleration, rate limiting
 
 ## Decisions Made
 - Word mode threshold set to 10 characters -- matches the feel of iOS native keyboard where deletion visibly accelerates after about 1 second of holding

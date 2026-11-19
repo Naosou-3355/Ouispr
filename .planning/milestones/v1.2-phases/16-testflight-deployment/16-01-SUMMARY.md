@@ -10,7 +10,7 @@ requires:
     provides: "Stable keyboard build ready for distribution"
 provides:
   - "Professional code signing (Team ID 9B8B36C2FA) across all targets"
-  - "Privacy Manifests (UserDefaults CA92.1) for DictusApp and DictusKeyboard"
+  - "Privacy Manifests (UserDefaults CA92.1) for OuisprApp and OuisprKeyboard"
   - "MARKETING_VERSION 1.2 for all targets"
   - "Bilingual privacy policy (PRIVACY.md)"
   - "App Store Review checklist (REVIEW-CHECKLIST.md)"
@@ -23,15 +23,15 @@ tech-stack:
 
 key-files:
   created:
-    - DictusApp/PrivacyInfo.xcprivacy
-    - DictusKeyboard/PrivacyInfo.xcprivacy
+    - OuisprApp/PrivacyInfo.xcprivacy
+    - OuisprKeyboard/PrivacyInfo.xcprivacy
     - PRIVACY.md
     - .planning/phases/16-testflight-deployment/REVIEW-CHECKLIST.md
   modified:
-    - Dictus.xcodeproj/project.pbxproj
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
-  - "Updated all 6 DEVELOPMENT_TEAM entries (DictusApp + DictusKeyboard + DictusWidgets, Debug + Release) not just 4 as plan estimated"
+  - "Updated all 6 DEVELOPMENT_TEAM entries (OuisprApp + OuisprKeyboard + OuisprWidgets, Debug + Release) not just 4 as plan estimated"
   - "MARKETING_VERSION was already 1.2 from prior work -- no change needed"
   - "PrivacyInfo.xcprivacy, PRIVACY.md, and REVIEW-CHECKLIST.md already existed from prior setup -- only signing migration was new work"
 
@@ -70,14 +70,14 @@ Each task was committed atomically:
 2. **Task 2: Signing migration, Privacy Manifests, version bump, privacy policy, and review checklist** - `bcfa646` (chore)
 
 ## Files Created/Modified
-- `Dictus.xcodeproj/project.pbxproj` - DEVELOPMENT_TEAM updated to 9B8B36C2FA in all 6 build settings
-- `DictusApp/PrivacyInfo.xcprivacy` - Privacy Manifest (pre-existing, verified)
-- `DictusKeyboard/PrivacyInfo.xcprivacy` - Privacy Manifest (pre-existing, verified)
+- `Ouispr.xcodeproj/project.pbxproj` - DEVELOPMENT_TEAM updated to 9B8B36C2FA in all 6 build settings
+- `OuisprApp/PrivacyInfo.xcprivacy` - Privacy Manifest (pre-existing, verified)
+- `OuisprKeyboard/PrivacyInfo.xcprivacy` - Privacy Manifest (pre-existing, verified)
 - `PRIVACY.md` - Bilingual privacy policy (pre-existing, verified)
 - `.planning/phases/16-testflight-deployment/REVIEW-CHECKLIST.md` - App Store Review checklist (pre-existing, verified)
 
 ## Decisions Made
-- Plan estimated 4 DEVELOPMENT_TEAM occurrences but project has 6 (includes DictusWidgets Debug/Release) -- updated all 6 for consistency
+- Plan estimated 4 DEVELOPMENT_TEAM occurrences but project has 6 (includes OuisprWidgets Debug/Release) -- updated all 6 for consistency
 - MARKETING_VERSION was already 1.2 from prior work -- no modification needed
 - PrivacyInfo.xcprivacy files, PRIVACY.md, and REVIEW-CHECKLIST.md already existed with correct content -- only signing migration was new work
 

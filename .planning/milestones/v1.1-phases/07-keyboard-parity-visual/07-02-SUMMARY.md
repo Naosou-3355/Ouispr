@@ -23,13 +23,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Models/KeyDefinition.swift
-    - DictusKeyboard/Models/KeyboardLayout.swift
-    - DictusCore/Sources/DictusCore/AccentedCharacters.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/Views/KeyRow.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift
+    - OuisprKeyboard/Models/KeyDefinition.swift
+    - OuisprKeyboard/Models/KeyboardLayout.swift
+    - OuisprCore/Sources/OuisprCore/AccentedCharacters.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/KeyRow.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift
 
 key-decisions:
   - "Apostrophe as adaptive key default -- most common non-letter char in French"
@@ -75,13 +75,13 @@ Each task was committed atomically:
 **Plan metadata:** [pending] (docs: complete plan)
 
 ## Files Created/Modified
-- `DictusKeyboard/Models/KeyDefinition.swift` - Added .emoji and .accentAdaptive to KeyType enum
-- `DictusKeyboard/Models/KeyboardLayout.swift` - Updated all row 4s (emoji replaces globe), AZERTY row 3 (added accent key)
-- `DictusCore/Sources/DictusCore/AccentedCharacters.swift` - Added adaptiveKeyLabel(), adaptiveKeyVowel(), defaultAccents
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - New EmojiKey and AdaptiveAccentKey views
-- `DictusKeyboard/Views/KeyRow.swift` - Added lastTypedChar, onAccentAdaptive params, wired new key types
-- `DictusKeyboard/Views/KeyboardView.swift` - lastTypedChar state tracking, reset on space/delete/return
-- `DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift` - Fixed @ViewBuilder -> AnyShape build error
+- `OuisprKeyboard/Models/KeyDefinition.swift` - Added .emoji and .accentAdaptive to KeyType enum
+- `OuisprKeyboard/Models/KeyboardLayout.swift` - Updated all row 4s (emoji replaces globe), AZERTY row 3 (added accent key)
+- `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` - Added adaptiveKeyLabel(), adaptiveKeyVowel(), defaultAccents
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - New EmojiKey and AdaptiveAccentKey views
+- `OuisprKeyboard/Views/KeyRow.swift` - Added lastTypedChar, onAccentAdaptive params, wired new key types
+- `OuisprKeyboard/Views/KeyboardView.swift` - lastTypedChar state tracking, reset on space/delete/return
+- `OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift` - Fixed @ViewBuilder -> AnyShape build error
 
 ## Decisions Made
 - Apostrophe as adaptive key default: most common non-letter character in French (l', d', n', j', c', s')
@@ -96,14 +96,14 @@ Each task was committed atomically:
 - **Found during:** Task 1 (build verification)
 - **Issue:** Pre-existing build error in AnimatedMicButton.swift -- @ViewBuilder on mainShape() returning `some Shape` wraps in _ConditionalContent which doesn't conform to Shape
 - **Fix:** Changed from `@ViewBuilder private func mainShape() -> some Shape` to `private func mainShape() -> AnyShape` with explicit AnyShape wrapping
-- **Files modified:** DictusCore/Sources/DictusCore/Design/AnimatedMicButton.swift
-- **Verification:** Build succeeds for both DictusKeyboard and DictusApp schemes
+- **Files modified:** OuisprCore/Sources/OuisprCore/Design/AnimatedMicButton.swift
+- **Verification:** Build succeeds for both OuisprKeyboard and OuisprApp schemes
 - **Committed in:** 5a6404e (Task 1 commit)
 
 ---
 
 **Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** Fix was necessary -- DictusKeyboard depends on DictusCore, so the pre-existing error blocked all builds. No scope creep.
+**Impact on plan:** Fix was necessary -- OuisprKeyboard depends on OuisprCore, so the pre-existing error blocked all builds. No scope creep.
 
 ## Issues Encountered
 None beyond the AnimatedMicButton fix documented above.

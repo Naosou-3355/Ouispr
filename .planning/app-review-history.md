@@ -1,4 +1,4 @@
-# Dictus iOS — App Review History
+# Ouispr iOS — App Review History
 
 Purpose: preserve the App Review timeline and exact response wording so it does not have to be reconstructed from Telegram/App Store Connect each time.
 
@@ -18,7 +18,7 @@ Related issues:
 
 ### 2026-06-16 — First build rejection: third-party AI / privacy concern
 
-- App: Dictus: AI Voice Keyboard
+- App: Ouispr: AI Voice Keyboard
 - Submission ID: `666c9103-ab91-4852-b683-10e5d3f6840a`
 - Review date: June 16, 2026
 - Review device: iPad Air 11-inch (M3)
@@ -48,7 +48,7 @@ Exact reply sent by Pierre:
 >
 > Thank you for your review. We would like to clarify a misunderstanding regarding Guidelines 5.1.1(i) and 5.1.2(i).
 >
-> Dictus does NOT send, transmit, or share any user data with a third-party AI service. There is no third-party AI service involved in the app.
+> Ouispr does NOT send, transmit, or share any user data with a third-party AI service. There is no third-party AI service involved in the app.
 >
 > All speech-to-text processing happens 100% on-device:
 > - Voice is transcribed locally on the iPhone/iPad using Apple CoreML models (WhisperKit and Parakeet), running entirely offline.
@@ -190,7 +190,7 @@ Likely caused by lost review-thread context after build cancellation/resubmissio
 >
 > Thank you for your review. We would like to clarify a misunderstanding regarding Guideline 5.1.1(iv).
 >
-> Dictus does NOT send, transmit, or share any user data with a third-party AI service. There is no cloud or third-party AI service involved in the app's transcription flow.
+> Ouispr does NOT send, transmit, or share any user data with a third-party AI service. There is no cloud or third-party AI service involved in the app's transcription flow.
 >
 > This clarification was already provided during the first review thread for submission `666c9103-ab91-4852-b683-10e5d3f6840a`; after that clarification, App Review moved on to other issues. Since this build was cancelled and resubmitted, the previous thread context may not be visible to the current reviewer, so we are restating it here.
 >
@@ -219,7 +219,7 @@ Likely caused by lost review-thread context after build cancellation/resubmissio
 
 ## Notes for future agents
 
-- Do not assume Dictus sends data to a third-party AI service. The product position for 1.7.1 is on-device STT only.
+- Do not assume Ouispr sends data to a third-party AI service. The product position for 1.7.1 is on-device STT only.
 - If Apple repeats the third-party AI concern, point to submission `666c9103-ab91-4852-b683-10e5d3f6840a` and reuse the prior wording.
 - If Apple mentions the 4% download issue, frame it as Parakeet v3 progress UX/progress reporting; verify, then fix the progress UI so it does not look frozen.
 - Keep #197 as the central issue and #207/#208 as focused action issues.

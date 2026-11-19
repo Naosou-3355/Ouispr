@@ -12,7 +12,7 @@ provides:
   - Pre-allocated static haptic generators with warmUp() and trackpadActivated()
   - HapticFeedback.keyTapped() on all key types (letters, space, return, delete, globe, shift, 123, #+= , emoji, accentAdaptive)
   - Device-adaptive keyboard height (42pt SE, 46pt standard, 50pt Plus/Max)
-  - Full Access banner opens dictus:// URL instead of blank app-settings:
+  - Full Access banner opens ouispr:// URL instead of blank app-settings:
   - clipsToBounds=false attempt for top-row popup overflow
   - KBD-05 iOS limitation documented in code
 affects: [07-04-spacebar-trackpad, 07-02-layout-keys, 07-05-dark-mode]
@@ -25,17 +25,17 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Sources/DictusCore/HapticFeedback.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Views/KeyButton.swift
+    - OuisprCore/Sources/OuisprCore/HapticFeedback.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Views/KeyButton.swift
 
 key-decisions:
   - "Pre-allocated static UIImpactFeedbackGenerator instances eliminate 2-5ms per-tap latency"
   - "Device-adaptive key height via UIScreen.main.bounds.height breakpoints (667/852pt thresholds)"
-  - "dictus:// URL scheme for Full Access banner instead of non-functional app-settings:"
+  - "ouispr:// URL scheme for Full Access banner instead of non-functional app-settings:"
   - "clipsToBounds=false as best-effort popup clipping fix (iOS may re-enforce)"
   - "KBD-05: system dictation mic icon is an iOS limitation with no public API to suppress"
 
@@ -66,7 +66,7 @@ completed: 2026-03-08
 - Eliminated 2-5ms haptic latency by replacing per-call generator creation with static pre-allocated instances
 - Every key type now triggers HapticFeedback.keyTapped(): letters, space, return, delete, globe, shift, 123, #+=, emoji, accentAdaptive
 - Keyboard height adapts to device size (42pt on SE, 46pt standard, 50pt Plus/Max)
-- Full Access banner now opens the Dictus app via dictus:// URL scheme
+- Full Access banner now opens the Ouispr app via ouispr:// URL scheme
 - Added warmUp() and trackpadActivated() methods for future use (Plan 04 spacebar trackpad)
 
 ## Task Commits
@@ -77,17 +77,17 @@ Each task was committed atomically:
 2. **Task 2: Dynamic keyboard height, Full Access banner fix, popup clipping, KBD-05 docs** - `2623e27` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/HapticFeedback.swift` - Refactored with static pre-allocated generators, warmUp(), trackpadActivated()
-- `DictusKeyboard/Views/KeyboardView.swift` - Added HapticFeedback.keyTapped() to delete, globe, layer switch, symbol toggle, space, return, accentAdaptive callbacks
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - Added HapticFeedback.keyTapped() to ShiftKey Button action, added DictusCore import
-- `DictusKeyboard/KeyboardRootView.swift` - HapticFeedback.warmUp() in onAppear, dictus:// URL, KBD-05 comment
-- `DictusKeyboard/KeyboardViewController.swift` - clipsToBounds=false for popup clipping attempt
-- `DictusKeyboard/Views/KeyButton.swift` - KeyMetrics.keyHeight now a dynamic computed property
+- `OuisprCore/Sources/OuisprCore/HapticFeedback.swift` - Refactored with static pre-allocated generators, warmUp(), trackpadActivated()
+- `OuisprKeyboard/Views/KeyboardView.swift` - Added HapticFeedback.keyTapped() to delete, globe, layer switch, symbol toggle, space, return, accentAdaptive callbacks
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - Added HapticFeedback.keyTapped() to ShiftKey Button action, added OuisprCore import
+- `OuisprKeyboard/KeyboardRootView.swift` - HapticFeedback.warmUp() in onAppear, ouispr:// URL, KBD-05 comment
+- `OuisprKeyboard/KeyboardViewController.swift` - clipsToBounds=false for popup clipping attempt
+- `OuisprKeyboard/Views/KeyButton.swift` - KeyMetrics.keyHeight now a dynamic computed property
 
 ## Decisions Made
 - Used static pre-allocated generators instead of per-call instantiation for haptic performance
 - Device height breakpoints: <=667pt (SE), <=852pt (standard), >852pt (Plus/Max)
-- dictus:// URL opens the app which can guide Full Access setup, replacing non-functional app-settings:
+- ouispr:// URL opens the app which can guide Full Access setup, replacing non-functional app-settings:
 - clipsToBounds=false is best-effort; iOS keyboard container may re-enforce clipping (documented in code)
 - KBD-05 documented as iOS limitation: no public API to remove system dictation mic icon
 

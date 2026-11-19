@@ -8,10 +8,10 @@
 ## Current Architecture (Baseline)
 
 ```
-DictusApp (Main Process)              DictusKeyboard (Extension, ~50MB limit)
+OuisprApp (Main Process)              OuisprKeyboard (Extension, ~50MB limit)
 +-----------------------+              +--------------------------------------+
 | WhisperKit/Parakeet   |              | KeyboardViewController               |
-| DictationCoordinator  |<--Darwin--->|   +-- DictusKeyboardBridge            |
+| DictationCoordinator  |<--Darwin--->|   +-- OuisprKeyboardBridge            |
 | AVAudioSession        |  Notifs     |   +-- GiellaKeyboardView (UIKit)      |
 | SwipeBackOverlay      |             |   +-- KeyboardRootView (SwiftUI)      |
 | ModelManager          |<--AppGrp--->|       +-- SuggestionBarView           |
@@ -24,7 +24,7 @@ DictusApp (Main Process)              DictusKeyboard (Extension, ~50MB limit)
                                        |       +-- FrequencyDictionary        |
                                        +--------------------------------------+
 
-DictusCore (Shared Framework)
+OuisprCore (Shared Framework)
 +-- SharedKeys, AppGroup, DarwinNotifications
 +-- FrequencyDictionary (struct)
 +-- AccentedCharacters
@@ -37,7 +37,7 @@ DictusCore (Shared Framework)
 ```
 User types character
   -> GiellaKeyboardView.touchesBegan (haptic)
-  -> DictusKeyboardBridge.didTriggerKey(.input(char))
+  -> OuisprKeyboardBridge.didTriggerKey(.input(char))
   -> proxy.insertText(character)
   -> Read proxy.documentContextBeforeInput
   -> SuggestionState.updateAsync(context:)
@@ -53,7 +53,7 @@ User types character
 
 ```
 User taps space
-  -> DictusKeyboardBridge.handleSpace()
+  -> OuisprKeyboardBridge.handleSpace()
   -> SuggestionState.performSpellCheck(currentWord)
     -> TextPredictionEngine.spellCheck()
       -> UITextChecker.rangeOfMisspelledWord + guesses()
@@ -71,23 +71,23 @@ User taps space
 
 | Component | Responsibility | Location | Status |
 |-----------|---------------|----------|--------|
-| **SymSpellEngine** | Spell correction via symmetric delete algorithm | DictusKeyboard/TextPrediction/ | NEW |
-| **NgramPredictor** | Next-word prediction from context (trigram with bigram backoff) | DictusKeyboard/TextPrediction/ | NEW |
-| **NgramTrie** | Compact binary trie data structure for trigram storage | DictusKeyboard/TextPrediction/ | NEW |
-| **TextPredictionEngine** | Orchestrator: routes to SymSpell (correction) + UITextChecker (completions) + NgramPredictor (next-word) | DictusKeyboard/TextPrediction/ | MODIFIED |
-| **SuggestionState** | UI-facing adapter, async dispatch, @Published state, autocorrect undo | DictusKeyboard/TextPrediction/ | MODIFIED |
-| **SuggestionBarView** | Displays 3-slot suggestions across all modes | DictusKeyboard/Views/ | MODIFIED |
-| **DictusKeyboardBridge** | Key event translation, autocorrect undo clearing | DictusKeyboard/ | MODIFIED |
-| **FrequencyDictionary** | Word frequency ranking for UITextChecker re-ranking | DictusCore/ | UNCHANGED |
-| **KeyboardViewController** | View lifecycle, language refresh | DictusKeyboard/ | UNCHANGED |
+| **SymSpellEngine** | Spell correction via symmetric delete algorithm | OuisprKeyboard/TextPrediction/ | NEW |
+| **NgramPredictor** | Next-word prediction from context (trigram with bigram backoff) | OuisprKeyboard/TextPrediction/ | NEW |
+| **NgramTrie** | Compact binary trie data structure for trigram storage | OuisprKeyboard/TextPrediction/ | NEW |
+| **TextPredictionEngine** | Orchestrator: routes to SymSpell (correction) + UITextChecker (completions) + NgramPredictor (next-word) | OuisprKeyboard/TextPrediction/ | MODIFIED |
+| **SuggestionState** | UI-facing adapter, async dispatch, @Published state, autocorrect undo | OuisprKeyboard/TextPrediction/ | MODIFIED |
+| **SuggestionBarView** | Displays 3-slot suggestions across all modes | OuisprKeyboard/Views/ | MODIFIED |
+| **OuisprKeyboardBridge** | Key event translation, autocorrect undo clearing | OuisprKeyboard/ | MODIFIED |
+| **FrequencyDictionary** | Word frequency ranking for UITextChecker re-ranking | OuisprCore/ | UNCHANGED |
+| **KeyboardViewController** | View lifecycle, language refresh | OuisprKeyboard/ | UNCHANGED |
 
 ### Upgraded Architecture Diagram
 
 ```
-DictusKeyboard (Extension)
+OuisprKeyboard (Extension)
 +------------------------------------------------------+
 | KeyboardViewController                                |
-|   +-- DictusKeyboardBridge                            |
+|   +-- OuisprKeyboardBridge                            |
 |   |     handleInputKey: clear lastAutocorrect  <- FIX #67
 |   |     handleSpace: correction via engine            |
 |   +-- GiellaKeyboardView (UIKit)                      |
@@ -149,7 +149,7 @@ DictusKeyboard (Extension)
 **What it does NOT replace:** `UITextChecker.completions()` for word completions (kept -- zero memory cost, good French morphology coverage).
 
 ```swift
-// DictusKeyboard/TextPrediction/SymSpellEngine.swift
+// OuisprKeyboard/TextPrediction/SymSpellEngine.swift
 
 import SymSpellSwift  // SPM dependency: github.com/gdetari/SymSpellSwift
 
@@ -210,7 +210,7 @@ class SymSpellEngine {
 4. 5-10 MB binary trie is sufficient for keyboard-grade prediction quality
 
 ```swift
-// DictusKeyboard/TextPrediction/NgramPredictor.swift
+// OuisprKeyboard/TextPrediction/NgramPredictor.swift
 
 /// Trigram-based next-word predictor using a compact binary trie.
 ///
@@ -258,7 +258,7 @@ class NgramPredictor {
 ### Component 3: NgramTrie (Data Structure)
 
 ```swift
-// DictusKeyboard/TextPrediction/NgramTrie.swift
+// OuisprKeyboard/TextPrediction/NgramTrie.swift
 
 /// Compact trigram trie stored as a flat sorted array for cache-friendly access.
 ///
@@ -390,7 +390,7 @@ private func extractContextWords(from text: String, max: Int = 2) -> [String] {
 
 **Root cause:** `lastAutocorrect` is never cleared when the user types new characters after a correction. The undo fires on any future backspace, corrupting text.
 
-**Fix location:** `DictusKeyboardBridge.handleInputKey()` -- add one line:
+**Fix location:** `OuisprKeyboardBridge.handleInputKey()` -- add one line:
 
 ```swift
 private func handleInputKey(_ character: String) {
@@ -408,7 +408,7 @@ Also clear in `handleReturn()` and `handleAdaptiveAccentKey()` for completeness 
 
 ```
 User taps space
-  -> DictusKeyboardBridge.handleSpace()
+  -> OuisprKeyboardBridge.handleSpace()
   -> SuggestionState.performSpellCheck(currentWord)
     -> TextPredictionEngine.spellCheck()
       -> SymSpellEngine.correct(word)  <- CHANGED (was UITextChecker)
@@ -453,7 +453,7 @@ User taps suggestion in .nextWord mode
 CURRENT (working):
   Keyboard mic tap
   -> Darwin notification (warm start) OR URL scheme (cold start)
-  -> DictusApp opens, starts recording
+  -> OuisprApp opens, starts recording
   -> User manually swipes back (guided by SwipeBackOverlayView)
   -> Keyboard shows recording overlay, waveform, stop/cancel buttons
 
@@ -564,7 +564,7 @@ func spellCheck(_ word: String) -> String? {
 Phase 1: Autocorrect undo fix (#67)
   Dependencies: None
   Risk: Minimal (single-line fix in 1 file + same in 2 others)
-  Files changed: DictusKeyboardBridge.swift
+  Files changed: OuisprKeyboardBridge.swift
   Validation: Type after autocorrect, backspace = normal delete (not undo)
 
 Phase 2: SymSpell integration (#68 part 1)
@@ -620,7 +620,7 @@ Phase 7: License update (#63)
 ## Sources
 
 ### HIGH Confidence
-- Existing codebase: TextPredictionEngine.swift, SuggestionState.swift, DictusKeyboardBridge.swift, FrequencyDictionary.swift, KeyboardViewController.swift (direct code analysis)
+- Existing codebase: TextPredictionEngine.swift, SuggestionState.swift, OuisprKeyboardBridge.swift, FrequencyDictionary.swift, KeyboardViewController.swift (direct code analysis)
 - [SymSpellSwift](https://github.com/gdetari/SymSpellSwift) -- MIT license, SPM, v0.1.4 (Aug 2025), Swift implementation
 - [SymSpell algorithm](https://github.com/wolfgarbe/SymSpell) -- symmetric delete documentation, prefix indexing for 90%+ memory reduction
 - GitHub issues [#67](https://github.com/getdictus/dictus-ios/issues/67) (autocorrect undo bug), [#68](https://github.com/getdictus/dictus-ios/issues/68) (prediction upgrade), [#23](https://github.com/getdictus/dictus-ios/issues/23) (auto-return)

@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Reconnect all Dictus-specific features on the new UIKit keyboard: dictation (mic button, recording overlay, transcription insert), text prediction (suggestion bar with completions, accents, autocorrect), emoji button, and settings sync. No new features -- reintegrating existing code onto the Phase 18-19 UIKit keyboard architecture.
+Reconnect all Ouispr-specific features on the new UIKit keyboard: dictation (mic button, recording overlay, transcription insert), text prediction (suggestion bar with completions, accents, autocorrect), emoji button, and settings sync. No new features -- reintegrating existing code onto the Phase 18-19 UIKit keyboard architecture.
 
 Requirements: DICT-01, DICT-02, DICT-03, DICT-04, PRED-01, PRED-02, PRED-03, SET-01
 
@@ -16,7 +16,7 @@ Requirements: DICT-01, DICT-02, DICT-03, DICT-04, PRED-01, PRED-02, PRED-03, SET
 ## Implementation Decisions
 
 ### Prediction wiring
-- DictusKeyboardBridge gets a direct reference to SuggestionState (injected by KeyboardViewController)
+- OuisprKeyboardBridge gets a direct reference to SuggestionState (injected by KeyboardViewController)
 - Bridge calls `suggestionState.updateAsync(context:)` after each keystroke (input, backspace, space, return)
 - No NotificationCenter or Combine relay -- direct call from bridge for minimal latency
 - Existing async coalescing (DispatchWorkItem cancel + background queue) handles rapid typing -- no extra debounce needed
@@ -57,7 +57,7 @@ Requirements: DICT-01, DICT-02, DICT-03, DICT-04, PRED-01, PRED-02, PRED-03, SET
   - Language preference (fr/en for predictions)
 
 ### Claude's Discretion
-- How to inject SuggestionState reference into DictusKeyboardBridge (property injection vs init param)
+- How to inject SuggestionState reference into OuisprKeyboardBridge (property injection vs init param)
 - Emoji button key type in GiellaKeyboardView layout definition
 - Emoji picker show/hide implementation details (hosting controller management)
 - Post-transcription suggestion refresh timing
@@ -75,34 +75,34 @@ Requirements: DICT-01, DICT-02, DICT-03, DICT-04, PRED-01, PRED-02, PRED-03, SET
 - `.planning/phases/19-complex-touch-features/19-CONTEXT.md` -- Touch pipeline decisions, edge key fix, zero dead zones constraint
 
 ### Text prediction (existing code to wire)
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` -- Core prediction logic: completions, spell-check, accent suggestions
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` -- Observable state: @Published suggestions, async coalescing, autocorrect undo
-- `DictusKeyboard/Views/SuggestionBarView.swift` -- 3-slot SwiftUI suggestion bar (already in ToolbarView)
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` -- Core prediction logic: completions, spell-check, accent suggestions
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` -- Observable state: @Published suggestions, async coalescing, autocorrect undo
+- `OuisprKeyboard/Views/SuggestionBarView.swift` -- 3-slot SwiftUI suggestion bar (already in ToolbarView)
 
 ### Dictation infrastructure (already wired, validate)
-- `DictusKeyboard/KeyboardState.swift` -- Darwin notifications, dictationStatus, recording lifecycle, transcription auto-insert
-- `DictusKeyboard/KeyboardRootView.swift` -- SwiftUI root: RecordingOverlay display logic, SuggestionState ownership, suggestion tap handling
-- `DictusKeyboard/Views/RecordingOverlay.swift` -- Full recording UI with waveform, cancel/stop buttons
-- `DictusKeyboard/Views/ToolbarView.swift` -- AnimatedMicButton + SuggestionBarView + Full Access banner
+- `OuisprKeyboard/KeyboardState.swift` -- Darwin notifications, dictationStatus, recording lifecycle, transcription auto-insert
+- `OuisprKeyboard/KeyboardRootView.swift` -- SwiftUI root: RecordingOverlay display logic, SuggestionState ownership, suggestion tap handling
+- `OuisprKeyboard/Views/RecordingOverlay.swift` -- Full recording UI with waveform, cancel/stop buttons
+- `OuisprKeyboard/Views/ToolbarView.swift` -- AnimatedMicButton + SuggestionBarView + Full Access banner
 
 ### Keyboard bridge (main integration point)
-- `DictusKeyboard/DictusKeyboardBridge.swift` -- Key event handler: didTriggerKey, handleInputKey, handleBackspace, handleSpace -- needs SuggestionState calls
-- `DictusKeyboard/KeyboardViewController.swift` -- View lifecycle, UIKit keyboard + SwiftUI hosting, recording state observation
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` -- Key event handler: didTriggerKey, handleInputKey, handleBackspace, handleSpace -- needs SuggestionState calls
+- `OuisprKeyboard/KeyboardViewController.swift` -- View lifecycle, UIKit keyboard + SwiftUI hosting, recording state observation
 
 ### Emoji picker (existing code to integrate)
-- `DictusKeyboard/Views/EmojiPickerView.swift` -- Full emoji picker with categories, search, recent emojis
-- `DictusKeyboard/Views/EmojiCategoryBar.swift` -- Category navigation bar
-- `DictusKeyboard/Models/EmojiData.swift` -- Emoji dataset
-- `DictusKeyboard/Models/EmojiSearchFR.swift` -- French keyword search dictionary
-- `DictusKeyboard/Models/RecentEmojis.swift` -- Recent emoji tracking via App Group
+- `OuisprKeyboard/Views/EmojiPickerView.swift` -- Full emoji picker with categories, search, recent emojis
+- `OuisprKeyboard/Views/EmojiCategoryBar.swift` -- Category navigation bar
+- `OuisprKeyboard/Models/EmojiData.swift` -- Emoji dataset
+- `OuisprKeyboard/Models/EmojiSearchFR.swift` -- French keyword search dictionary
+- `OuisprKeyboard/Models/RecentEmojis.swift` -- Recent emoji tracking via App Group
 
 ### Keyboard layouts (emoji button placement)
-- `DictusKeyboard/FrenchKeyboardLayouts.swift` -- AZERTY/QWERTY layout definitions, bottom row structure
-- `DictusKeyboard/Vendored/Models/KeyDefinition.swift` -- KeyType enum (may need emoji type or reuse existing type)
+- `OuisprKeyboard/FrenchKeyboardLayouts.swift` -- AZERTY/QWERTY layout definitions, bottom row structure
+- `OuisprKeyboard/Vendored/Models/KeyDefinition.swift` -- KeyType enum (may need emoji type or reuse existing type)
 
 ### Settings
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` -- App Group UserDefaults keys for all settings
-- `DictusCore/Sources/DictusCore/KeyboardMode.swift` -- DefaultKeyboardLayer enum
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` -- App Group UserDefaults keys for all settings
+- `OuisprCore/Sources/OuisprCore/KeyboardMode.swift` -- DefaultKeyboardLayer enum
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` -- DICT-01 through DICT-04, PRED-01 through PRED-03, SET-01
@@ -124,10 +124,10 @@ Requirements: DICT-01, DICT-02, DICT-03, DICT-04, PRED-01, PRED-02, PRED-03, SET
 - UIKit keyboard hide/show: `giellaKeyboard?.isHidden = isRecording` + hosting height expansion (KeyboardViewController:269-283)
 - SwiftUI in keyboard extension: UIHostingController as child of KeyboardViewController, view added to kbInputView
 - Settings read: `AppGroup.defaults.string(forKey: SharedKeys.xxx)` in viewWillAppear or onAppear
-- Key event flow: GiellaKeyboardView touch -> delegate -> DictusKeyboardBridge -> textDocumentProxy
+- Key event flow: GiellaKeyboardView touch -> delegate -> OuisprKeyboardBridge -> textDocumentProxy
 
 ### Integration Points
-- `DictusKeyboardBridge` needs `SuggestionState` reference (new dependency injection)
+- `OuisprKeyboardBridge` needs `SuggestionState` reference (new dependency injection)
 - `FrenchKeyboardLayouts` bottom row needs emoji key definition (new key in row 4)
 - `KeyboardViewController` or `KeyboardRootView` needs emoji picker state management (new boolean flag)
 - `KeyboardViewController.viewWillAppear` needs default layer read (new settings call)

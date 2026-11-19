@@ -18,7 +18,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift
 
 key-decisions:
   - "Added assertFalse for large-v3_turbo identifier to explicitly verify removal"
@@ -55,7 +55,7 @@ Each task was committed atomically:
 1. **Task 1: Update ModelInfoTests assertions for post-Large-Turbo catalog** - `5ef2a31` (test)
 
 ## Files Created/Modified
-- `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` - Updated count assertions and identifier checks for 6-model catalog
+- `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` - Updated count assertions and identifier checks for 6-model catalog
 
 ## Decisions Made
 - Added explicit assertFalse for large-v3_turbo identifier (not just removing the assertTrue) to guard against regression
@@ -65,7 +65,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- Xcode test schemes not configured for command-line testing (DictusCore and DictusApp schemes lack test actions). Verified correctness by cross-referencing test assertions against ModelInfo.swift catalog (6 identifiers: tiny, base, small, small_216MB, medium, parakeet).
+- Xcode test schemes not configured for command-line testing (OuisprCore and OuisprApp schemes lack test actions). Verified correctness by cross-referencing test assertions against ModelInfo.swift catalog (6 identifiers: tiny, base, small, small_216MB, medium, parakeet).
 
 ## User Setup Required
 

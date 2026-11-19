@@ -3,7 +3,7 @@ import type { Film } from "./film";
 import { clipped, fillShape, smooth } from "./gallery";
 import * as S from "./heroShapes6";
 
-// DICTUS HERO V6 · marker comic (after koi.ts), the style Pierre chose. Same medium as V5: cel
+// OUISPR HERO V6 · marker comic (after koi.ts), the style Pierre chose. Same medium as V5: cel
 // fills laid in their shade colour, the lit colour offset toward the light and clipped (one crisp
 // terminator), then one heavy navy contour. What changed: the figure stands on a skeleton (arms
 // as upper arm + forearm tubes from their own shoulders, a tapered torso), and the voice is three
@@ -121,7 +121,7 @@ export const drawHeroComic6 = (ctx: Ctx, _frame: number, env: Env) => {
 };
 
 export const heroComic6: Film = {
-  meta: { title: "Dictus hero V6 · marker comic", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
+  meta: { title: "Ouispr hero V6 · marker comic", W: S.W, H: S.H, fps: 30, bpm: 120, durationFrames: 1 },
   assets: { images: {} },
   shots: [{ id: "heroComic6", start: 0, end: 1, draw: drawHeroComic6 }],
 };

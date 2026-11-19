@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Fix the autocorrect undo race condition (FIX-01), update the Dictus license link to the correct repo (FIX-02), and add Parakeet/NVIDIA attribution plus all missing dependency licenses (FIX-03). No new features -- cleanup before prediction engine changes.
+Fix the autocorrect undo race condition (FIX-01), update the Ouispr license link to the correct repo (FIX-02), and add Parakeet/NVIDIA attribution plus all missing dependency licenses (FIX-03). No new features -- cleanup before prediction engine changes.
 
 </domain>
 
@@ -16,7 +16,7 @@ Fix the autocorrect undo race condition (FIX-01), update the Dictus license link
 ### Autocorrect undo invalidation (FIX-01)
 - Clear `lastAutocorrect` on ANY new character input in `handleCharacter()` -- only the very next backspace after autocorrect triggers undo (matches iOS native behavior)
 - Also clear `lastAutocorrect` on cursor movement (detected via `textDidChange` / `selectionDidChange` in KeyboardViewController) -- undo is nonsensical if user tapped elsewhere
-- The fix is in `DictusKeyboardBridge.handleCharacter()` (add `suggestionState?.lastAutocorrect = nil`) and in `KeyboardViewController` for cursor change detection
+- The fix is in `OuisprKeyboardBridge.handleCharacter()` (add `suggestionState?.lastAutocorrect = nil`) and in `KeyboardViewController` for cursor change detection
 
 ### Parakeet attribution format (FIX-03)
 - Full Apache 2.0 license text block, same layout as existing WhisperKit entry (name, author, URL, full license text)
@@ -27,9 +27,9 @@ Fix the autocorrect undo race condition (FIX-01), update the Dictus license link
 
 ### License screen structure (FIX-02 + FIX-03)
 - List ALL open-source dependencies, not just legally required ones -- user wants full legal compliance
-- Dependencies to list: DeviceKit (MIT), Dictus (MIT), FluidAudio/Parakeet (Apache 2.0), giellakbd-ios (BSD-3), WhisperKit (MIT)
+- Dependencies to list: DeviceKit (MIT), Ouispr (MIT), FluidAudio/Parakeet (Apache 2.0), giellakbd-ios (BSD-3), WhisperKit (MIT)
 - Order: alphabetical by name
-- Fix Dictus repo URL from `github.com/Pivii/dictus` to `github.com/getdictus/dictus-ios`
+- Fix Ouispr repo URL from `github.com/Pivii/dictus` to `github.com/getdictus/dictus-ios`
 - giellakbd-ios is vendored (not SPM) -- still needs attribution with correct BSD-3 license text
 - Need a `bsd3License()` helper for giellakbd-ios
 
@@ -48,15 +48,15 @@ Fix the autocorrect undo race condition (FIX-01), update the Dictus license link
 
 ### Bug fix
 - GitHub issue #67 — Autocorrect undo race condition (FIX-01 specification)
-- `DictusKeyboard/DictusKeyboardBridge.swift` lines 207-245 — Current handleBackspace() with autocorrect undo logic
-- `DictusKeyboard/DictusKeyboardBridge.swift` lines 175-205 — handleCharacter() where lastAutocorrect must be cleared
-- `DictusKeyboard/DictusKeyboardBridge.swift` lines 292-331 — handleSpace() where lastAutocorrect is set
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` — AutocorrectState struct and lastAutocorrect property
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` lines 207-245 — Current handleBackspace() with autocorrect undo logic
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` lines 175-205 — handleCharacter() where lastAutocorrect must be cleared
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` lines 292-331 — handleSpace() where lastAutocorrect is set
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` — AutocorrectState struct and lastAutocorrect property
 
 ### License compliance
 - GitHub issue #63 — License link + Parakeet attribution (FIX-02, FIX-03 specification)
-- `DictusApp/Views/LicensesView.swift` — Current licenses screen (only WhisperKit + Dictus, wrong repo URL)
-- `DictusKeyboard/Vendored/` — giellakbd-ios vendored files (need BSD-3 attribution)
+- `OuisprApp/Views/LicensesView.swift` — Current licenses screen (only WhisperKit + Ouispr, wrong repo URL)
+- `OuisprKeyboard/Vendored/` — giellakbd-ios vendored files (need BSD-3 attribution)
 - FluidAudio repo: https://github.com/FluidInference/FluidAudio.git — Check LICENSE file for exact Apache 2.0 text and copyright
 - DeviceKit repo: https://github.com/devicekit/DeviceKit.git — Check LICENSE file for MIT text and copyright
 
@@ -75,7 +75,7 @@ Fix the autocorrect undo race condition (FIX-01), update the Dictus license link
 - Navigation title is "Licences" (French)
 
 ### Integration Points
-- `DictusKeyboardBridge.handleCharacter()` — Add `lastAutocorrect = nil` early in the method
+- `OuisprKeyboardBridge.handleCharacter()` — Add `lastAutocorrect = nil` early in the method
 - `KeyboardViewController.textDidChange()` (or equivalent) — Clear lastAutocorrect on external text changes
 - `LicensesView.body` — Add 3 new `licenseBlock()` calls in alphabetical order
 - `KeyboardRootView.swift:251` — Already clears lastAutocorrect in one place (suggestion tap)

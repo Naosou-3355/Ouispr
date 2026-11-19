@@ -6,11 +6,11 @@
 
 ## Summary
 
-Phase 6 covers seven requirements across two domains: infrastructure (design file consolidation + app icon) and visual polish (HomeView bugs, onboarding blocking, test recording redesign). The codebase already has a working DictusCore local SPM package imported by both targets -- this is the natural home for shared design files. Six files are duplicated between DictusApp/Design/ and DictusKeyboard/Design/ with identical or near-identical content (minor comment differences only).
+Phase 6 covers seven requirements across two domains: infrastructure (design file consolidation + app icon) and visual polish (HomeView bugs, onboarding blocking, test recording redesign). The codebase already has a working OuisprCore local SPM package imported by both targets -- this is the natural home for shared design files. Six files are duplicated between OuisprApp/Design/ and OuisprKeyboard/Design/ with identical or near-identical content (minor comment differences only).
 
 The onboarding flow currently uses TabView with .page style which allows free swiping between steps. Blocking progression requires disabling swipe gestures and controlling advancement programmatically. The HomeView bug (VIS-07) traces to `ModelManager.isModelReady` which depends on both `downloadedModels` being non-empty AND `activeModel` being non-nil -- the fix involves ensuring `loadState()` is called at the right time and the state is consistent after onboarding download.
 
-**Primary recommendation:** Add design files to DictusCore as a `Design/` subdirectory (no new SPM package needed -- DictusCore already ships to both targets). Fix onboarding by replacing TabView paging with manual state machine. Redesign TestRecordingPage with immersive centered layout per user's Voice Memos reference.
+**Primary recommendation:** Add design files to OuisprCore as a `Design/` subdirectory (no new SPM package needed -- OuisprCore already ships to both targets). Fix onboarding by replacing TabView paging with manual state machine. Redesign TestRecordingPage with immersive centered layout per user's Voice Memos reference.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -19,14 +19,14 @@ The onboarding flow currently uses TabView with .page style which allows free sw
 - Test recording & stop screens: Single shared screen for both onboarding (step 5) and HomeView. Immersive centered design with large mic button, waveform as ambient background. Transcription replaces waveform area with fade transition. Haptic feedback on mic tap.
 - Onboarding model download: Auto-download "small" model, no user choice. Reword with clear French explanation + confirm button. Pre-load model (warmUp/loadModel) immediately after download so test recording step starts instantly.
 - Keyboard added detection: Auto-detect via UITextInputMode.activeInputModes on foreground return.
-- HomeView: Remove `.navigationTitle("Dictus")`. Fix modelManager.isModelReady bug. Display user-friendly model name ("Whisper Small") + size in MB.
+- HomeView: Remove `.navigationTitle("Ouispr")`. Fix modelManager.isModelReady bug. Display user-friendly model name ("Whisper Small") + size in MB.
 - App icon: Generate from brand kit SVG. Adjust for 38pt readability.
 - Design consolidation: 6 duplicated files to consolidate into shared package importable by both targets.
 
 ### Claude's Discretion
 - Onboarding blocking UX: how strictly to block (disable swipe vs button-only), visual indication of incomplete steps
 - App icon variant strategy (Light/Dark/Tinted)
-- Design consolidation approach (DictusCore extension, new DictusUI SPM package, or other)
+- Design consolidation approach (OuisprCore extension, new OuisprUI SPM package, or other)
 - Test recording screen layout details (exact spacing, animation timing)
 
 ### Deferred Ideas (OUT OF SCOPE)
@@ -41,11 +41,11 @@ The onboarding flow currently uses TabView with .page style which allows free sw
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| INFRA-01 | Design files consolidated into shared DictusUI package | Move 6 duplicated design files + DictusLogo into DictusCore/Sources/DictusCore/Design/. Both targets already import DictusCore. |
+| INFRA-01 | Design files consolidated into shared OuisprUI package | Move 6 duplicated design files + OuisprLogo into OuisprCore/Sources/OuisprCore/Design/. Both targets already import OuisprCore. |
 | INFRA-02 | App icon generated from brand kit (SVG to PNG, adaptive light/dark) | Extract SVG from brand kit HTML, generate 1024x1024 PNG, create Contents.json with light/dark/tinted variants in xcassets |
 | VIS-04 | Test recording screen in app redesigned | Redesign TestRecordingPage and TestDictationView as single shared immersive screen with centered mic + ambient waveform |
 | VIS-05 | Recording stop screen redesigned | Same screen as VIS-04 -- transcription result replaces waveform with fade transition, matching Liquid Glass theme |
-| VIS-06 | Duplicate "Dictus" navigation title removed | Remove `.navigationTitle("Dictus")` at HomeView.swift:42 -- logo section already serves as title |
+| VIS-06 | Duplicate "Ouispr" navigation title removed | Remove `.navigationTitle("Ouispr")` at HomeView.swift:42 -- logo section already serves as title |
 | VIS-07 | Post-onboarding bug fixed -- HomeView shows correct state | Fix ModelManager state consistency: ensure isModelReady reflects reality after onboarding download completes |
 | VIS-08 | Onboarding flow improved -- progression blocked until step completed | Replace TabView swipe paging with programmatic-only advancement, add visual step completion indicators |
 </phase_requirements>
@@ -56,7 +56,7 @@ The onboarding flow currently uses TabView with .page style which allows free sw
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | SwiftUI | iOS 16+ | All UI views and design system | Already used throughout project |
-| DictusCore | local SPM | Shared framework between App and Keyboard | Already imported by both targets -- natural home for shared design |
+| OuisprCore | local SPM | Shared framework between App and Keyboard | Already imported by both targets -- natural home for shared design |
 | WhisperKit | 0.16.0+ | Model download/warmUp/loadModel | Already integrated, needed for onboarding pre-load |
 
 ### Supporting
@@ -68,28 +68,28 @@ The onboarding flow currently uses TabView with .page style which allows free sw
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| DictusCore for design files | New DictusUI SPM package | Adds package management complexity with no benefit -- DictusCore already ships to both targets |
-| Manual PNG generation | Xcode asset catalog SVG import | SVGs in asset catalogs work for simple shapes but the Dictus logo uses gradients and opacity that need explicit PNG rendering for pixel-perfect control at small sizes |
+| OuisprCore for design files | New OuisprUI SPM package | Adds package management complexity with no benefit -- OuisprCore already ships to both targets |
+| Manual PNG generation | Xcode asset catalog SVG import | SVGs in asset catalogs work for simple shapes but the Ouispr logo uses gradients and opacity that need explicit PNG rendering for pixel-perfect control at small sizes |
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```
-DictusCore/
-  Sources/DictusCore/
+OuisprCore/
+  Sources/OuisprCore/
     Design/                  # NEW: shared design system
-      DictusColors.swift
-      DictusTypography.swift
+      OuisprColors.swift
+      OuisprTypography.swift
       GlassModifier.swift
       AnimatedMicButton.swift
       BrandWaveform.swift
       ProcessingAnimation.swift
-      DictusLogo.swift       # moved from DictusApp-only
+      OuisprLogo.swift       # moved from OuisprApp-only
     AppGroup.swift
     SharedKeys.swift
     ...existing files...
 
-DictusApp/
+OuisprApp/
   Design/                    # DELETED after consolidation
   Views/
     HomeView.swift           # VIS-06, VIS-07 fixes
@@ -99,22 +99,22 @@ DictusApp/
     ModelDownloadPage.swift  # Pre-load after download
     TestRecordingPage.swift  # REPLACED by shared RecordingView
 
-DictusKeyboard/
+OuisprKeyboard/
   Design/                    # DELETED after consolidation
 ```
 
 ### Pattern 1: Design System in Shared Framework
-**What:** Move all design files (colors, typography, modifiers, components) into DictusCore so both targets import them from one source.
-**When to use:** When both DictusApp and DictusKeyboard need the same UI components.
-**Key consideration:** DictusCore currently has no SwiftUI import. Adding design files means DictusCore gains a SwiftUI dependency. This is fine -- keyboard extensions can use SwiftUI.
+**What:** Move all design files (colors, typography, modifiers, components) into OuisprCore so both targets import them from one source.
+**When to use:** When both OuisprApp and OuisprKeyboard need the same UI components.
+**Key consideration:** OuisprCore currently has no SwiftUI import. Adding design files means OuisprCore gains a SwiftUI dependency. This is fine -- keyboard extensions can use SwiftUI.
 
 ```swift
-// DictusCore/Sources/DictusCore/Design/DictusColors.swift
-// Same content as current file, just moved to DictusCore
+// OuisprCore/Sources/OuisprCore/Design/OuisprColors.swift
+// Same content as current file, just moved to OuisprCore
 import SwiftUI
 
 extension Color {
-    public static let dictusAccent = Color(hex: 0x3D7EFF)
+    public static let ouisprAccent = Color(hex: 0x3D7EFF)
     // ... all existing color definitions
     // IMPORTANT: must be `public` since they're now in a framework
 }
@@ -133,7 +133,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color.dictusBackground.ignoresSafeArea()
+            Color.ouisprBackground.ignoresSafeArea()
 
             // Show only the current page -- no TabView swiping
             Group {
@@ -199,27 +199,27 @@ struct RecordingView: View {
 ```
 
 ### Anti-Patterns to Avoid
-- **Separate DictusUI package:** Creating a third SPM package adds dependency management overhead. DictusCore is already shared -- use it.
-- **Keeping design file copies "for safety":** Delete the duplicates in DictusApp/Design/ and DictusKeyboard/Design/ completely. Any remaining reference will fail to compile, making leftover references immediately visible.
+- **Separate OuisprUI package:** Creating a third SPM package adds dependency management overhead. OuisprCore is already shared -- use it.
+- **Keeping design file copies "for safety":** Delete the duplicates in OuisprApp/Design/ and OuisprKeyboard/Design/ completely. Any remaining reference will fail to compile, making leftover references immediately visible.
 - **Using TabView with disabled gestures:** TabView's gesture disabling is unreliable across iOS versions. A manual switch/case approach is simpler and fully controllable.
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Haptic feedback | Custom AudioServicesPlaySystemSound | UIImpactFeedbackGenerator (.medium) | Already used in project via DictusCore/HapticFeedback.swift |
+| Haptic feedback | Custom AudioServicesPlaySystemSound | UIImpactFeedbackGenerator (.medium) | Already used in project via OuisprCore/HapticFeedback.swift |
 | App icon sizes | Manual scaling/exporting | Script that generates all sizes from 1024x1024 source | Apple requires specific sizes; manual resizing is error-prone |
 | Step indicator dots | Custom dot view from scratch | Simple HStack of Circle views with opacity | 5-10 lines of SwiftUI, no need for a library |
-| Model display name | String parsing of identifier | ModelInfo.forIdentifier()?.displayName | Already exists in DictusCore/ModelInfo.swift |
+| Model display name | String parsing of identifier | ModelInfo.forIdentifier()?.displayName | Already exists in OuisprCore/ModelInfo.swift |
 
 **Key insight:** ModelInfo already has `displayName` ("Small", "Base", etc.) and `sizeLabel` ("~250 MB"). The HomeView model card just needs to use `ModelInfo.forIdentifier(activeModelName)` instead of displaying the raw identifier string.
 
 ## Common Pitfalls
 
 ### Pitfall 1: Access Control After Moving to Framework
-**What goes wrong:** Moving files from app target to DictusCore framework but forgetting to add `public` access modifiers. Everything compiles in the framework but callers get "inaccessible due to internal protection level" errors.
+**What goes wrong:** Moving files from app target to OuisprCore framework but forgetting to add `public` access modifiers. Everything compiles in the framework but callers get "inaccessible due to internal protection level" errors.
 **Why it happens:** Swift defaults to `internal` access. Files in the app target don't need `public` because everything is in the same module. Framework code must be `public` to be visible to importers.
-**How to avoid:** After moving each file, add `public` to: all Color extensions, all Font extensions, all View extensions (dictusGlass), all struct declarations (AnimatedMicButton, BrandWaveform, etc.), all init methods.
+**How to avoid:** After moving each file, add `public` to: all Color extensions, all Font extensions, all View extensions (ouisprGlass), all struct declarations (AnimatedMicButton, BrandWaveform, etc.), all init methods.
 **Warning signs:** Build errors mentioning "internal protection level" after the move.
 
 ### Pitfall 2: ModelManager State After Onboarding Download
@@ -228,10 +228,10 @@ struct RecordingView: View {
 **How to avoid:** Either (a) share a single ModelManager instance via @EnvironmentObject throughout the app, or (b) ensure HomeView's ModelManager calls `loadState()` on appear. Option (a) is cleaner.
 **Warning signs:** `isModelReady` returns false despite model files existing on disk.
 
-### Pitfall 3: DictusCore SwiftUI Import Breaking Keyboard Extension
-**What goes wrong:** Adding `import SwiftUI` to DictusCore files could theoretically cause issues in keyboard extension context.
+### Pitfall 3: OuisprCore SwiftUI Import Breaking Keyboard Extension
+**What goes wrong:** Adding `import SwiftUI` to OuisprCore files could theoretically cause issues in keyboard extension context.
 **Why it happens:** Keyboard extensions have restricted APIs (no UIApplication.shared). SwiftUI itself is allowed, but some UIKit bridging code might not work.
-**How to avoid:** The existing design files already use `import SwiftUI` and `import UIKit` (for UIColor bridging in DictusColors.swift). They already work in the keyboard extension target. No issue here -- the keyboard already has copies of these files.
+**How to avoid:** The existing design files already use `import SwiftUI` and `import UIKit` (for UIColor bridging in OuisprColors.swift). They already work in the keyboard extension target. No issue here -- the keyboard already has copies of these files.
 **Warning signs:** None expected -- this is a non-issue based on the existing working copies.
 
 ### Pitfall 4: Onboarding @SceneStorage Persistence After Refactor
@@ -241,7 +241,7 @@ struct RecordingView: View {
 **Warning signs:** User returns from Settings and gets sent back to step 1.
 
 ### Pitfall 5: App Icon Rendering at Small Sizes
-**What goes wrong:** The 3-bar Dictus logo is designed at 42pt+ heights. At 38pt (home screen icon size on smaller iPhones), the bars become indistinct.
+**What goes wrong:** The 3-bar Ouispr logo is designed at 42pt+ heights. At 38pt (home screen icon size on smaller iPhones), the bars become indistinct.
 **Why it happens:** The logo has thin bars (variable widths) with subtle opacity differences that blur at low resolution.
 **How to avoid:** Generate the icon at 1024x1024 with slightly thicker bars and higher opacity for the side bars. Test at 60x60pt (smallest rendered size @3x = 180px) to verify readability.
 **Warning signs:** Bars merge visually or side bars become invisible on the home screen.
@@ -250,14 +250,14 @@ struct RecordingView: View {
 
 ### Moving Design Files: Access Control Fix
 ```swift
-// BEFORE (in DictusApp target -- internal access is fine):
+// BEFORE (in OuisprApp target -- internal access is fine):
 extension Color {
-    static let dictusAccent = Color(hex: 0x3D7EFF)
+    static let ouisprAccent = Color(hex: 0x3D7EFF)
 }
 
-// AFTER (in DictusCore framework -- must be public):
+// AFTER (in OuisprCore framework -- must be public):
 extension Color {
-    public static let dictusAccent = Color(hex: 0x3D7EFF)
+    public static let ouisprAccent = Color(hex: 0x3D7EFF)
 
     public init(hex: UInt, opacity: Double = 1.0) {
         self.init(
@@ -283,24 +283,24 @@ private var modelStatusCard: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Modele actif")
-                    .font(.dictusCaption)
+                    .font(.ouisprCaption)
                     .foregroundColor(.secondary)
                 // Display "Whisper Small" instead of "openai_whisper-small"
                 Text("Whisper \(info?.displayName ?? modelName)")
-                    .font(.dictusSubheading)
+                    .font(.ouisprSubheading)
                 if let size = info?.sizeLabel {
                     Text(size)
-                        .font(.dictusCaption)
+                        .font(.ouisprCaption)
                         .foregroundColor(.secondary)
                 }
             }
             Spacer()
             Image(systemName: "checkmark.circle.fill")
                 .font(.title2)
-                .foregroundColor(.dictusSuccess)
+                .foregroundColor(.ouisprSuccess)
         }
         .padding()
-        .dictusGlass()
+        .ouisprGlass()
     }
 }
 ```
@@ -381,9 +381,9 @@ private func startDownload() {
    - Recommendation: Verify DictationCoordinator reads the active model from App Group defaults and initializes with the same model. If it creates a new WhisperKit instance, the pre-load benefit is limited to CoreML compilation cache (still valuable -- eliminates the 10-30s first-use delay).
 
 2. **Asset catalog creation**
-   - What we know: No .xcassets directory exists yet for DictusApp (confirmed by search)
+   - What we know: No .xcassets directory exists yet for OuisprApp (confirmed by search)
    - What's unclear: Where the Xcode project expects assets -- there may be an xcassets referenced in the project file that was deleted
-   - Recommendation: Create `DictusApp/Assets.xcassets/AppIcon.appiconset/` and add to the Xcode project. Verify the Xcode project's ASSETCATALOG_COMPILER_APPICON_NAME build setting.
+   - Recommendation: Create `OuisprApp/Assets.xcassets/AppIcon.appiconset/` and add to the Xcode project. Verify the Xcode project's ASSETCATALOG_COMPILER_APPICON_NAME build setting.
 
 ## Validation Architecture
 
@@ -392,22 +392,22 @@ private func startDownload() {
 |----------|-------|
 | Framework | Manual validation (no automated test framework configured) |
 | Config file | none |
-| Quick run command | `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet` |
+| Quick run command | `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet` |
 | Full suite command | Same as quick run (no tests exist) |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| INFRA-01 | Design files compile from DictusCore, no duplicates remain | build | `xcodebuild build -scheme DictusApp -quiet && xcodebuild build -scheme DictusKeyboard -quiet` | N/A -- build verification |
+| INFRA-01 | Design files compile from OuisprCore, no duplicates remain | build | `xcodebuild build -scheme OuisprApp -quiet && xcodebuild build -scheme OuisprKeyboard -quiet` | N/A -- build verification |
 | INFRA-02 | App icon renders in simulator | manual | Launch in simulator, check home screen | N/A -- visual check |
 | VIS-04 | Test recording screen matches design spec | manual | Navigate to test recording, verify layout | N/A -- visual check |
 | VIS-05 | Recording stop shows transcription with fade | manual | Record, stop, verify transition | N/A -- visual check |
-| VIS-06 | No duplicate "Dictus" title | manual | Open app, verify single title | N/A -- visual check |
+| VIS-06 | No duplicate "Ouispr" title | manual | Open app, verify single title | N/A -- visual check |
 | VIS-07 | Model card shows correct state post-onboarding | manual | Complete onboarding, verify HomeView | N/A -- state check |
 | VIS-08 | Cannot skip onboarding steps | manual | Try swiping past incomplete step | N/A -- UX check |
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild build -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
+- **Per task commit:** `xcodebuild build -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -quiet`
 - **Per wave merge:** Build both schemes + manual visual check
 - **Phase gate:** Both targets build clean, all visual requirements verified manually
 
@@ -418,10 +418,10 @@ private func startDownload() {
 
 ### Primary (HIGH confidence)
 - Codebase analysis: All 6 duplicated design files verified identical (diff confirmed)
-- DictusCore/Package.swift: Confirmed local SPM package structure already importable by both targets
+- OuisprCore/Package.swift: Confirmed local SPM package structure already importable by both targets
 - ModelManager.swift: Confirmed `downloadModel()` already prewarms with `WhisperKit(config)` where `prewarm: true, load: true`
 - ModelInfo.swift: Confirmed `displayName` and `sizeLabel` already exist for human-readable model names
-- Xcode project file: Confirmed DictusCore is a dependency of both DictusApp and DictusKeyboard targets
+- Xcode project file: Confirmed OuisprCore is a dependency of both OuisprApp and OuisprKeyboard targets
 
 ### Secondary (MEDIUM confidence)
 - iOS 18 app icon variants: Based on Apple documentation for Xcode 15+/iOS 18+ asset catalog format with light/dark/tinted appearances
@@ -433,7 +433,7 @@ private func startDownload() {
 
 **Confidence breakdown:**
 - Standard stack: HIGH - all libraries already in use, no new dependencies
-- Architecture: HIGH - consolidation approach validated by existing DictusCore integration pattern
+- Architecture: HIGH - consolidation approach validated by existing OuisprCore integration pattern
 - Pitfalls: HIGH - identified from direct codebase analysis (access control, ModelManager instances, state persistence)
 
 **Research date:** 2026-03-07

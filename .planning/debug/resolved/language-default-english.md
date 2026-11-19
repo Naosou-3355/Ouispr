@@ -43,7 +43,7 @@ started: Since initial implementation
 - timestamp: 2026-03-11
   checked: All writes to SharedKeys.language across entire codebase
   found: ZERO explicit writes. Only @AppStorage in SettingsView (line 20-21) which only writes when user interacts with the Picker.
-  implication: On fresh install, key "dictus.language" does not exist in App Group UserDefaults. Code relies on `?? "fr"` fallback.
+  implication: On fresh install, key "ouispr.language" does not exist in App Group UserDefaults. Code relies on `?? "fr"` fallback.
 
 - timestamp: 2026-03-11
   checked: TranscriptionService.transcribe() line 104-105
@@ -52,7 +52,7 @@ started: Since initial implementation
 
 - timestamp: 2026-03-11
   checked: WhisperKit DecodingOptions init (Configurations.swift line 189)
-  found: language parameter is `String?` with default nil. When Dictus passes "fr", it's non-nil String.
+  found: language parameter is `String?` with default nil. When Ouispr passes "fr", it's non-nil String.
   implication: WhisperKit receives explicit language, should use it.
 
 - timestamp: 2026-03-11
@@ -92,7 +92,7 @@ File: No initialization code exists anywhere
 - If ANY code path reads the key without the fallback, it gets nil, and WhisperKit defaults to "en".
 
 **Issue 2 (High Confidence for distil model): distil-whisper is English-only**
-File: DictusCore/Sources/DictusCore/ModelInfo.swift line 148-157
+File: OuisprCore/Sources/OuisprCore/ModelInfo.swift line 148-157
 - The `distil-whisper_distil-large-v3_turbo` model in the catalog is ENGLISH-ONLY.
 - WhisperKit detects this via logitsDim check (isModelMultilingual = false).
 - When isModelMultilingual is false, TextDecoder does NOT add language tokens to prefill.
@@ -100,7 +100,7 @@ File: DictusCore/Sources/DictusCore/ModelInfo.swift line 148-157
 - The catalog shows this as "available" with no language restriction warning.
 
 **Issue 3 (Needs verification): Crash when toggling language in Settings**
-File: DictusApp/Views/SettingsView.swift
+File: OuisprApp/Views/SettingsView.swift
 - No crash protection or onChange handler exists.
 - The crash is likely NOT caused by the language toggle itself.
 - Possible cause: toggling triggers a SwiftUI re-render that interacts badly with an ongoing dictation or WhisperKit operation.

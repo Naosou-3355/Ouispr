@@ -20,8 +20,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/RecordingOverlay.swift
-    - DictusApp/Views/SettingsView.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
+    - OuisprApp/Views/SettingsView.swift
 
 key-decisions:
   - "Matched transcribingContent layout to recordingContent (reserved top bar + footer height) to eliminate waveform Y-jump"
@@ -62,8 +62,8 @@ Each task was committed atomically:
 2. **Task 2: Fix settings tap feedback to cover full row on all controls** - `40b1170` (fix)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/RecordingOverlay.swift` - Restructured transcribingContent to match recordingContent layout, translated status text
-- `DictusApp/Views/SettingsView.swift` - Removed SettingsRowStyle, replaced Link with Button for GitHub row
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - Restructured transcribingContent to match recordingContent layout, translated status text
+- `OuisprApp/Views/SettingsView.swift` - Removed SettingsRowStyle, replaced Link with Button for GitHub row
 
 ## Decisions Made
 - Matched transcribingContent layout to recordingContent (reserved top bar 44pt + footer with timerFontSize text + spacer) to prevent waveform position jump during state transitions

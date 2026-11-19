@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-onboard_language.py -- Mechanical helper for adding a new language to Dictus.
+onboard_language.py -- Mechanical helper for adding a new language to Ouispr.
 
 Built from the friction encountered onboarding German (issue #109) under the
 LanguageProfile system (issue #110). Handles the deterministic parts; curated
@@ -20,15 +20,15 @@ should report "already present" rather than break):
     build-dicts <code>
         Runs scripts/curate_<code>_dictionary.py (must already exist),
         then dict_builder.py, then ngram_builder.py. Outputs land in
-        DictusKeyboard/Resources/.
+        OuisprKeyboard/Resources/.
 
     wire-xcode <code>
-        Edits Dictus.xcodeproj/project.pbxproj to add three resources
+        Edits Ouispr.xcodeproj/project.pbxproj to add three resources
         (de_frequency.json, de_spellcheck.dict, de_ngrams.dict) to the
-        DictusKeyboard target's resource build phase.
+        OuisprKeyboard target's resource build phase.
 
     verify <code>
-        Runs the DictusCore tests on the host Mac and a DictusApp build on
+        Runs the OuisprCore tests on the host Mac and a OuisprApp build on
         the iPhone 17 Pro simulator to make sure the keyboard appex still
         links.
 
@@ -52,16 +52,16 @@ from pathlib import Path
 
 # All paths anchored at repo root regardless of cwd.
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DICTUS_CORE = REPO_ROOT / "DictusCore" / "Sources" / "DictusCore"
-DICTUS_TESTS = REPO_ROOT / "DictusCore" / "Tests" / "DictusCoreTests"
-KEYBOARD_RES = REPO_ROOT / "DictusKeyboard" / "Resources"
-PBXPROJ = REPO_ROOT / "Dictus.xcodeproj" / "project.pbxproj"
+OUISPR_CORE = REPO_ROOT / "OuisprCore" / "Sources" / "OuisprCore"
+OUISPR_TESTS = REPO_ROOT / "OuisprCore" / "Tests" / "OuisprCoreTests"
+KEYBOARD_RES = REPO_ROOT / "OuisprKeyboard" / "Resources"
+PBXPROJ = REPO_ROOT / "Ouispr.xcodeproj" / "project.pbxproj"
 SCRIPTS = REPO_ROOT / "scripts"
 TOOLS = REPO_ROOT / "tools"
 
 # Verified during German onboarding 2026-05-05; keep in sync with
 # Pierre's local sim setup (see memory: "iPhone 17 Pro simulator").
-# Used by the DictusApp build only — the DictusCore suite runs on the host
+# Used by the OuisprApp build only — the OuisprCore suite runs on the host
 # Mac via `swift test` (#301).
 SIMULATOR_DESTINATION = "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2"
 
@@ -89,7 +89,7 @@ def _enum_case(code: str, display_name: str) -> str:
 # ---------- scaffold ----------
 
 PROFILE_TEMPLATE = '''\
-// DictusCore/Sources/DictusCore/Languages/{Lang}.swift
+// OuisprCore/Sources/OuisprCore/Languages/{Lang}.swift
 // {DisplayName} language profile. Onboarded via tools/onboard_language.py.
 // Per ADR 0001, overrides and seed bigrams ship empty on first launch when
 // the maintainer is non-native; populated post-launch from real feedback.
@@ -114,10 +114,10 @@ public let {lang}Profile = LanguageProfile(
 '''
 
 TESTS_TEMPLATE = '''\
-// DictusCore/Tests/DictusCoreTests/Languages/{Lang}LanguageTests.swift
+// OuisprCore/Tests/OuisprCoreTests/Languages/{Lang}LanguageTests.swift
 // Per-language test file (locked decision #10 of #110 grilling).
 import XCTest
-@testable import DictusCore
+@testable import OuisprCore
 
 final class {Lang}LanguageTests: XCTestCase {{
 
@@ -155,8 +155,8 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
     lang = _enum_case(code, display)
     Lang = lang.capitalize()
 
-    profile_path = DICTUS_CORE / "Languages" / f"{Lang}.swift"
-    tests_dir = DICTUS_TESTS / "Languages"
+    profile_path = OUISPR_CORE / "Languages" / f"{Lang}.swift"
+    tests_dir = OUISPR_TESTS / "Languages"
     tests_path = tests_dir / f"{Lang}LanguageTests.swift"
 
     # 1. Languages/<Lang>.swift
@@ -188,7 +188,7 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
         print(f"[wrote] {tests_path.relative_to(REPO_ROOT)}")
 
     # 3. SupportedLanguage.swift: add `case <lang> = "<code>"` if missing.
-    sl_path = DICTUS_CORE / "SupportedLanguage.swift"
+    sl_path = OUISPR_CORE / "SupportedLanguage.swift"
     sl_text = sl_path.read_text(encoding="utf-8")
     if f'case {lang} = "{code}"' in sl_text:
         print(f"[skip] SupportedLanguage already has case {lang}")
@@ -208,7 +208,7 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
               " spaceName / returnName by hand — they're per-language constants.")
 
     # 4. LanguageProfile.swift: add switch arm for the profile.
-    lp_path = DICTUS_CORE / "Languages" / "LanguageProfile.swift"
+    lp_path = OUISPR_CORE / "Languages" / "LanguageProfile.swift"
     lp_text = lp_path.read_text(encoding="utf-8")
     if f"case .{lang}: return {lang}Profile" in lp_text:
         print(f"[skip] LanguageProfile.profile switch already maps {lang}")
@@ -349,7 +349,7 @@ def cmd_wire_xcode(args: argparse.Namespace) -> int:
         f"EE1ES002 /* es_ngrams.dict */,\n\t\t\t\t{fr_ngrams_id} /* {code}_ngrams.dict */,",
     )
 
-    # 4. PBXResourcesBuildPhase for DictusKeyboard target.
+    # 4. PBXResourcesBuildPhase for OuisprKeyboard target.
     text = text.replace(
         "AA0000D5 /* es_frequency.json in Resources */,",
         f"AA0000D5 /* es_frequency.json in Resources */,\n\t\t\t\t{bf_freq_id} /* {code}_frequency.json in Resources */,",
@@ -365,36 +365,36 @@ def cmd_wire_xcode(args: argparse.Namespace) -> int:
 
     PBXPROJ.write_text(text, encoding="utf-8")
     print(f"[edited] project.pbxproj: added {code}_frequency.json + "
-          f"{code}_spellcheck.dict + {code}_ngrams.dict to DictusKeyboard")
+          f"{code}_spellcheck.dict + {code}_ngrams.dict to OuisprKeyboard")
     return 0
 
 
 # ---------- verify ----------
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    """Runs DictusCore tests + a DictusApp Debug build."""
-    print(f"=== swift test (DictusCore) ===")
+    """Runs OuisprCore tests + a OuisprApp Debug build."""
+    print(f"=== swift test (OuisprCore) ===")
     rc = subprocess.call(
         ["swift", "test"],
-        cwd=REPO_ROOT / "DictusCore",
+        cwd=REPO_ROOT / "OuisprCore",
     )
     if rc != 0:
-        print(f"[fail] DictusCoreTests failed (exit {rc})")
+        print(f"[fail] OuisprCoreTests failed (exit {rc})")
         return rc
 
-    print(f"\n=== xcodebuild build (DictusApp) ===")
+    print(f"\n=== xcodebuild build (OuisprApp) ===")
     rc = subprocess.call(
         [
             "xcodebuild", "build",
             "-project", str(PBXPROJ.parent),
-            "-scheme", "DictusApp",
+            "-scheme", "OuisprApp",
             "-destination", SIMULATOR_DESTINATION,
             "-configuration", "Debug",
         ],
         cwd=REPO_ROOT,
     )
     if rc != 0:
-        print(f"[fail] DictusApp build failed (exit {rc})")
+        print(f"[fail] OuisprApp build failed (exit {rc})")
         return rc
 
     print(f"\n[ok] verify passed")
@@ -425,7 +425,7 @@ def main() -> int:
     p_wire.add_argument("code")
     p_wire.set_defaults(func=cmd_wire_xcode)
 
-    p_verify = sub.add_parser("verify", help="DictusCore tests + DictusApp build")
+    p_verify = sub.add_parser("verify", help="OuisprCore tests + OuisprApp build")
     p_verify.add_argument("code", nargs="?", default=None,
                           help="(unused but reserved for future per-language checks)")
     p_verify.set_defaults(func=cmd_verify)

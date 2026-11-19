@@ -22,8 +22,8 @@ re_verification: false
 | #   | Truth                                                                                                                                    | Status     | Evidence                                                                                                                      |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | 1   | User types new characters after autocorrect, then presses backspace — backspace deletes the last typed character (not undo autocorrect) | ✓ VERIFIED | `suggestionState?.lastAutocorrect = nil` at line 183 in `handleInputKey()`, BEFORE `AudioServicesPlaySystemSound` at line 185 |
-| 2   | User taps Licenses in Settings and sees Dictus link pointing to `https://github.com/getdictus/dictus-ios`                               | ✓ VERIFIED | `LicensesView.swift` line 30: `url: "https://github.com/getdictus/dictus-ios"`. Old URL `Pivii/dictus` is absent.            |
-| 3   | User scrolls Licenses screen and sees all 5 dependencies listed alphabetically: DeviceKit, Dictus, FluidAudio, giellakbd-ios, WhisperKit | ✓ VERIFIED | 5 `licenseBlock(...)` calls at lines 20, 27, 34, 41, 48 in that alphabetical order                                          |
+| 2   | User taps Licenses in Settings and sees Ouispr link pointing to `https://github.com/getdictus/dictus-ios`                               | ✓ VERIFIED | `LicensesView.swift` line 30: `url: "https://github.com/getdictus/dictus-ios"`. Old URL `Pivii/dictus` is absent.            |
+| 3   | User scrolls Licenses screen and sees all 5 dependencies listed alphabetically: DeviceKit, Ouispr, FluidAudio, giellakbd-ios, WhisperKit | ✓ VERIFIED | 5 `licenseBlock(...)` calls at lines 20, 27, 34, 41, 48 in that alphabetical order                                          |
 | 4   | FluidAudio entry shows NVIDIA Corporation as author with Apache 2.0 license text                                                        | ✓ VERIFIED | Line 36: `author: "NVIDIA Corporation"`, line 38: `license: apache2License(copyright: "Copyright NVIDIA Corporation")`       |
 | 5   | giellakbd-ios entry shows UiT The Arctic University of Norway with MIT license text                                                     | ✓ VERIFIED | Line 43: `author: "UiT The Arctic University of Norway"`, line 45: `mitLicense(copyright: "Copyright (c) 2019 UiT ...")`     |
 
@@ -35,9 +35,9 @@ re_verification: false
 
 | Artifact                                        | Expected                                       | Status     | Details                                                                                               |
 | ----------------------------------------------- | ---------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
-| `DictusKeyboard/DictusKeyboardBridge.swift`     | Autocorrect undo invalidation on character input | ✓ VERIFIED | Contains `suggestionState?.lastAutocorrect = nil` at line 183, before character insertion at line 189 |
-| `DictusKeyboard/KeyboardViewController.swift`   | Autocorrect undo invalidation on external text change | ✓ VERIFIED | Contains `bridge?.suggestionState?.lastAutocorrect = nil` at line 339, between `super.textDidChange` and `bridge?.updateCapitalization()` |
-| `DictusApp/Views/LicensesView.swift`            | Complete license attribution for all 5 dependencies | ✓ VERIFIED | Contains `apache2License`, 5 alphabetical `licenseBlock` entries, correct URLs, correct authors       |
+| `OuisprKeyboard/OuisprKeyboardBridge.swift`     | Autocorrect undo invalidation on character input | ✓ VERIFIED | Contains `suggestionState?.lastAutocorrect = nil` at line 183, before character insertion at line 189 |
+| `OuisprKeyboard/KeyboardViewController.swift`   | Autocorrect undo invalidation on external text change | ✓ VERIFIED | Contains `bridge?.suggestionState?.lastAutocorrect = nil` at line 339, between `super.textDidChange` and `bridge?.updateCapitalization()` |
+| `OuisprApp/Views/LicensesView.swift`            | Complete license attribution for all 5 dependencies | ✓ VERIFIED | Contains `apache2License`, 5 alphabetical `licenseBlock` entries, correct URLs, correct authors       |
 
 ---
 
@@ -45,8 +45,8 @@ re_verification: false
 
 | From                                                          | To                             | Via                            | Status     | Details                                                                 |
 | ------------------------------------------------------------- | ------------------------------ | ------------------------------ | ---------- | ----------------------------------------------------------------------- |
-| `DictusKeyboardBridge.swift:handleInputKey()`                 | `SuggestionState.lastAutocorrect` | nil assignment before insertText | ✓ WIRED | Line 183: `suggestionState?.lastAutocorrect = nil`, line 189: `insertText(character)` — correct order |
-| `DictusKeyboard/KeyboardViewController.swift:textDidChange()` | `SuggestionState.lastAutocorrect` | nil assignment on external change | ✓ WIRED | Line 339: `bridge?.suggestionState?.lastAutocorrect = nil`, line 343: `bridge?.updateCapitalization()` — correct order |
+| `OuisprKeyboardBridge.swift:handleInputKey()`                 | `SuggestionState.lastAutocorrect` | nil assignment before insertText | ✓ WIRED | Line 183: `suggestionState?.lastAutocorrect = nil`, line 189: `insertText(character)` — correct order |
+| `OuisprKeyboard/KeyboardViewController.swift:textDidChange()` | `SuggestionState.lastAutocorrect` | nil assignment on external change | ✓ WIRED | Line 339: `bridge?.suggestionState?.lastAutocorrect = nil`, line 343: `bridge?.updateCapitalization()` — correct order |
 
 ---
 
@@ -68,7 +68,7 @@ No orphaned requirements: REQUIREMENTS.md Phase 23 mapping lists only FIX-01, FI
 
 Both commits documented in SUMMARY.md exist in the repository:
 
-- `5a83c8d` — `fix(23-01): invalidate autocorrect undo on new character input` — modifies `DictusKeyboardBridge.swift` and `KeyboardViewController.swift`
+- `5a83c8d` — `fix(23-01): invalidate autocorrect undo on new character input` — modifies `OuisprKeyboardBridge.swift` and `KeyboardViewController.swift`
 - `99c3961` — `feat(23-01): complete license attribution with all 5 dependencies` — modifies `LicensesView.swift`
 
 ---
@@ -92,8 +92,8 @@ None found. No TODO/FIXME/placeholder comments, no stub returns, no empty handle
 
 #### 2. Licenses screen visual layout
 
-**Test:** Open Dictus app, go to Settings > A propos > Licences.
-**Expected:** 5 entries in alphabetical order (DeviceKit, Dictus, FluidAudio, giellakbd-ios, WhisperKit), each showing the correct author name, a tappable URL, and the appropriate license text block. The Dictus URL should open `github.com/getdictus/dictus-ios`.
+**Test:** Open Ouispr app, go to Settings > A propos > Licences.
+**Expected:** 5 entries in alphabetical order (DeviceKit, Ouispr, FluidAudio, giellakbd-ios, WhisperKit), each showing the correct author name, a tappable URL, and the appropriate license text block. The Ouispr URL should open `github.com/getdictus/dictus-ios`.
 **Why human:** Visual rendering and link tap behavior require a running device or simulator.
 
 ---
@@ -104,7 +104,7 @@ All 5 must-have truths are verified against the actual codebase. The phase goal 
 
 - **FIX-01** (autocorrect undo race condition): `handleInputKey()` clears `lastAutocorrect` as its first statement, before `insertText()`, preventing any race between character insertion and a fast backspace. `textDidChange()` also clears it for external text changes (paste, cursor move, host autocorrect). The ordering constraints from the plan are met in both locations.
 
-- **FIX-02** (Dictus license URL): The old `github.com/Pivii/dictus` URL is absent from `LicensesView.swift`. The correct `https://github.com/getdictus/dictus-ios` URL is in place.
+- **FIX-02** (Ouispr license URL): The old `github.com/Pivii/dictus` URL is absent from `LicensesView.swift`. The correct `https://github.com/getdictus/dictus-ios` URL is in place.
 
 - **FIX-03** (missing dependency attributions): All 5 dependencies are present alphabetically. The new `apache2License(copyright:)` helper is implemented and used for FluidAudio. DeviceKit and giellakbd-ios entries were added with correct authors and MIT license text.
 

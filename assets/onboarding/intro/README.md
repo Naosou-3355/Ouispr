@@ -11,15 +11,15 @@ render of the six videos (issue #771, see "One render per language").
 
 | File | Scene (headline) | What it shows | Loop |
 |---|---|---|---|
-| `intro-a-{light,dark}.mp4` | A, walking ("Parlez. Dictus écrit.") | She walks, a tote held by its handles in one hand. With the other she holds her phone out in front of her, between chin and collarbone, seen from the back. Her voice crosses the gap to the phone as small blue bars of the Dictus waveform. A dotted trail leads from the phone to a chat thread: under a grey "Where are you?", her blue reply writes itself and grows a line at a time: "On my way, I'll be there in ten minutes. Can you order me a coffee?" | 5.5 s |
+| `intro-a-{light,dark}.mp4` | A, walking ("Parlez. Ouispr écrit.") | She walks, a tote held by its handles in one hand. With the other she holds her phone out in front of her, between chin and collarbone, seen from the back. Her voice crosses the gap to the phone as small blue bars of the Ouispr waveform. A dotted trail leads from the phone to a chat thread: under a grey "Where are you?", her blue reply writes itself and grows a line at a time: "On my way, I'll be there in ten minutes. Can you order me a coffee?" | 5.5 s |
 | `intro-b-{light,dark}.mp4` | B, the metro ("Même sans réseau.") | The same woman stands in a rocking metro carriage, one hand on the vertical pole at shoulder height. Tunnel lights streak past the window and sweep over her, the grab handles swing, and a badge in the top-right corner says no network (signal bars struck through in red). Her voice still goes into the phone, and a mail draft writes itself: "Notes from today", then "Great meeting this morning. Next steps for the launch below." | 5.5 s |
-| `intro-c-{light,dark}.mp4` | C, the keyboard ("Dans votre clavier.") | The drawn iPhone shows a note above the Dictus keyboard (QWERTY keys; AZERTY in French) through one whole dictation: "Hi" is typed (touch indicators on h, then i), the blue mic is tapped, the recording overlay runs (waveform on the voice, timer, ✕ and ✓), ✓ is tapped, transcribing runs (the sweep), and the paragraph lands: "Sam, quick reminder: dinner at eight tonight. I'll bring dessert, can you pick up the bread?" Then the note clears. | 6.5 s |
+| `intro-c-{light,dark}.mp4` | C, the keyboard ("Dans votre clavier.") | The drawn iPhone shows a note above the Ouispr keyboard (QWERTY keys; AZERTY in French) through one whole dictation: "Hi" is typed (touch indicators on h, then i), the blue mic is tapped, the recording overlay runs (waveform on the voice, timer, ✕ and ✓), ✓ is tapped, transcribing runs (the sweep), and the paragraph lands: "Sam, quick reminder: dinner at eight tonight. I'll bring dessert, can you pick up the bread?" Then the note clears. | 6.5 s |
 
 The lines quoted above are the English render's. Every language's lines are in `src/strings.ts`; the French render writes, for example, "Tu es où ?", "Notes du jour" and types "Salut" on AZERTY keys.
 
 Where the files are:
 - the videos: `<locale>.lproj/intro-<scene>-<theme>.mp4` next to this file (`en.lproj/`, `fr.lproj/`). In the Xcode project each file name is a localized variant group, so the app bundle carries `en.lproj/intro-a-light.mp4`, `fr.lproj/intro-a-light.mp4`, and so on, and `Bundle.main.url(forResource:withExtension:)` returns the device language's copy, with English as the fallback (the development region);
-- the stills (`intro-{a,b,c}-still` in `DictusApp/Assets.xcassets`, shown with Reduce Motion on and while a video loads): the English PNGs keep their names and no locale, the fallback; every other language adds `intro-<scene>-<theme>-<locale>.png` with `"locale" : "<locale>"` in the image set's `Contents.json`. The asset catalog picks the device language's by itself.
+- the stills (`intro-{a,b,c}-still` in `OuisprApp/Assets.xcassets`, shown with Reduce Motion on and while a video loads): the English PNGs keep their names and no locale, the fallback; every other language adds `intro-<scene>-<theme>-<locale>.png` with `"locale" : "<locale>"` in the image set's `Contents.json`. The asset catalog picks the device language's by itself.
 
 Format of every video:
 - 1000 × 1440 px (the 330 × 476 pt art area at 3×), 30 fps;
@@ -54,7 +54,7 @@ To render from a clean state, delete `.build/` first.
 
 ### What it depends on
 
-The script reads nothing outside this folder except the following, and writes outside it only the stills in `DictusApp/Assets.xcassets/intro-{a,b,c}-still.imageset/`:
+The script reads nothing outside this folder except the following, and writes outside it only the stills in `OuisprApp/Assets.xcassets/intro-{a,b,c}-still.imageset/`:
 
 - **The anidoodle engine**, installed at `~/.claude/skills/anidoodle` (https://github.com/alexgreensh/anidoodle). Set `ANIDOODLE=/path/to/anidoodle` to use another copy.
   - The art imports the engine's `core`, `film` and `gallery` modules.
@@ -106,11 +106,11 @@ Rejected: text-free videos with SwiftUI text on top. It costs no bytes, but the 
 
 ### Adding a language
 
-1. Add its table to `src/strings.ts`: every line, broken as on the card; the scene C word with one tap frame per letter (on the 5-frame grid, before frame 32); the suggestions; the captions as `DictusKeyboard/Localizable.xcstrings` gives them; the three letter rows as `KeyboardLetterRows` gives them for the language's layout.
+1. Add its table to `src/strings.ts`: every line, broken as on the card; the scene C word with one tap frame per letter (on the 5-frame grid, before frame 32); the suggestions; the captions as `OuisprKeyboard/Localizable.xcstrings` gives them; the three letter rows as `KeyboardLetterRows` gives them for the language's layout.
 2. `node assets/onboarding/intro/render.mjs --locale <code>`. If it stops on a missing glyph, draw that glyph in `src/handLettering.ts` (a letter with a new kind of mark needs the mark in `MARKS`), or reword.
 3. In the Xcode project, add the language to each of the six `intro-*.mp4` variant groups (a file reference named `<code>` with the path `assets/onboarding/intro/<code>.lproj/intro-….mp4`).
 4. In each `intro-{a,b,c}-still.imageset/Contents.json`, add the light and dark entries for the PNGs the render wrote, with `"locale" : "<code>"`.
-5. Add the code to `introLocales` in `DictusCore/Tests/DictusCoreTests/OnboardingIntroSceneTests.swift`.
+5. Add the code to `introLocales` in `OuisprCore/Tests/OuisprCoreTests/OnboardingIntroSceneTests.swift`.
 
 Only add a language the app itself is translated into (`knownRegions` in the project).
 
@@ -135,7 +135,7 @@ The art of the #649 mock-ups (local to the maintainer) is the App Store renders 
 
 ### Her phone is seen from the back, the text comes out beside it
 
-People talk into the back of a phone they hold out, not into a screen they show. The writing therefore appears beside the phone, in shapes that evoke the apps people write in: a chat thread in A, a mail draft in B. They are generic: no second phone, no logo, no colours but Dictus's.
+People talk into the back of a phone they hold out, not into a screen they show. The writing therefore appears beside the phone, in shapes that evoke the apps people write in: a chat thread in A, a mail draft in B. They are generic: no second phone, no logo, no colours but Ouispr's.
 
 A dotted trail leads from the phone to the card. The card fades before the seam.
 
@@ -150,7 +150,7 @@ A dotted trail leads from the phone to the card. The card fades before the seam.
   - The legs' tops rise straight above the hips, inside the seat, so no rounded end pokes out of the trousers' front.
   - The seat takes the legs' own tone and shading.
   - The walk rises over the supporting leg at the passing position, so no frame shows both knees bent.
-- **Voice:** small rounded bars of the Dictus waveform, straight from her lips to the phone, swelling with her speech. This ties A and B to the keyboard of scene C.
+- **Voice:** small rounded bars of the Ouispr waveform, straight from her lips to the phone, swelling with her speech. This ties A and B to the keyboard of scene C.
 
 ### Scene B
 

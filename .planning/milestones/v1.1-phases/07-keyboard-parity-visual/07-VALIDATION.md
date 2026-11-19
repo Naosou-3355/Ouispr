@@ -67,7 +67,7 @@ created: 2026-03-08
 | Haptic on all keys | KBD-03 | Haptic perception requires physical device | Tap letters, space, return, delete, symbols — feel haptic on each |
 | Emoji button cycles keyboard | KBD-04 | System keyboard switching requires real device | Tap emoji button, verify system emoji keyboard appears |
 | Apple dictation mic removed | KBD-05 | Visual inspection of system UI | Check if system mic appears below keyboard (known iOS limitation) |
-| No perceptible input lag | KBD-06 | Perception-based, needs side-by-side comparison | Type on Dictus vs Apple keyboard, compare responsiveness |
+| No perceptible input lag | KBD-06 | Perception-based, needs side-by-side comparison | Type on Ouispr vs Apple keyboard, compare responsiveness |
 | Mic button pill shape | VIS-01 | Visual design validation | Inspect mic button shape in keyboard toolbar |
 | Recording pill buttons | VIS-02 | Visual design validation | Start recording, inspect cancel/validate button shapes |
 | Waveform 60fps + zero state | VIS-03 | Animation smoothness requires device rendering | Record silence, observe waveform stillness; record audio, observe 60fps |

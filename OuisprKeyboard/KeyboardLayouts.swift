@@ -1,0 +1,400 @@
+// OuisprKeyboard/KeyboardLayouts.swift
+// AZERTY, QWERTY and QWERTZ layout definitions in giellakbd-ios KeyboardDefinition format.
+// Supports French, English, Spanish and German with language-aware labels.
+
+import UIKit
+import OuisprCore
+
+/// Constructs KeyboardDefinition objects for all supported layouts.
+///
+/// These layouts are built programmatically (not from JSON) using the same KeyDefinition
+/// types as the vendored giellakbd-ios codebase. Each layout includes 5 pages:
+/// normal, shifted, capslock (same visual as shifted), symbols1 (numbers), symbols2 (symbols).
+///
+/// Bottom row on letter pages: [123] [emoji] [space] [return] -- emoji key added in Phase 20.
+/// Globe key is provided by iOS below third-party keyboards -- not part of our layout.
+///
+/// Letter pages are four rows, or five when the number row is on (#331) -- see
+/// `drawsDigitRow`. The symbols pages are always four.
+enum KeyboardLayouts {
+
+    /// Glyph carried by the emoji-picker toggle key.
+    ///
+    /// The toggle has no `KeyType` of its own — it is an `.input` key whose character is
+    /// the smiley, and everything downstream tells it apart from a typed character by
+    /// comparing against this glyph. Naming it once keeps those comparisons in step
+    /// (`OuisprKeyboardBridge.didTriggerKey`, `editsDocument`, `KeySound.category(for:)`).
+    static let emojiKeyGlyph = "\u{1F600}"
+
+    // MARK: - Number Row (#331)
+
+    /// Whether the letter pages currently carry a digit row above the top letter row.
+    ///
+    /// This is the single predicate the feature turns on, and it has exactly two readers:
+    /// the page builders below, and `KeyboardViewController.computeKeyboardHeight()`. They
+    /// MUST agree. Five rows drawn in a four-row-tall grid shrinks every hit target by 20%
+    /// (the measurement in #331 that killed that option); four rows drawn in a five-row-tall
+    /// grid leaves a grey band. Neither is reachable while both sides ask this one question.
+    ///
+    /// WHY landscape never draws it, whatever the user chose (#331, confirmed by the owner):
+    /// keeping the keys at their current size means the grid grows by a fifth row's worth of
+    /// height, which in landscape puts the keyboard at 72% of a 375 pt-tall screen — 104 pt
+    /// left for the host app. Taking the vendored provider's `rowCount > 4 && isLandscape`
+    /// subtraction instead just reinstates the 20% shrink under another name. Landscape has
+    /// no version of this that passes, so it keeps four rows and today's height.
+    ///
+    /// WHY iPad never draws it either (#336): the height provider's reference row count is
+    /// already 5 on a large iPad, so asking it for 5 rows returns the base height unchanged —
+    /// the grid does not grow and `sizeForItemAt` divides the same height by five instead of
+    /// four, taking cells from 82 pt to 65.6 pt. That is the 20% shrink #331 rejected, arriving
+    /// through the back door. Excluding the context is the fix that keeps the vendored layout
+    /// maths untouched.
+    ///
+    /// WHY all iPads and not just `isLargeIPad`, the only class that shrinks: on a mini or
+    /// medium iPad the provider's reference count is 4, the grid does grow, and the row would
+    /// be safe there. It goes anyway. That split is `screenInches >= 12` against DeviceKit's
+    /// diagonal table, with 13.0 substituted whenever the diagonal is missing — a fragile thing
+    /// to hang a feature on for a device class Ouispr does not target. The app ships
+    /// iPhone-only and reaches an iPad through compatibility mode.
+    ///
+    /// An iPad whose identifier DeviceKit does not recognise reads as neither, and the height
+    /// provider falls through to its iPhone values, where a five-row request does grow the
+    /// grid. The unrecognised case is the safe one either way.
+    ///
+    /// WHY `isPad` and not `isIPhoneAppRunningOnIPad(traitCollection:)`, which is what the
+    /// height provider uses: this predicate must stay context-free. Its whole job is to give
+    /// the two readers below one answer, and a parameter is a way for them to be handed
+    /// different ones. On an iPhone-only app `isPad` is already true exactly when the app is
+    /// running on an iPad in compatibility mode.
+    ///
+    /// WHY the orientation half is here and not in `NumberRowPreference`: `DeviceContext`
+    /// lives in this target (it depends on DeviceKit and UIScreen); OuisprCore cannot see it.
+    static var drawsDigitRow: Bool {
+        let device = DeviceContext.current
+        return NumberRowPreference.isEnabled && !device.isLandscape && !device.isPad
+    }
+
+    /// The digit row, prepended to every letter page when `drawsDigitRow` is true.
+    ///
+    /// Ten plain input keys, 10 units — the same unit total as every other row, so the
+    /// renderer normalizes it to exactly the width of the letter rows below it.
+    ///
+    /// No long-press alternates by construction: `longPressData` is built from
+    /// `AccentedCharacters.mappings`, which is keyed on letters, so a digit has nothing to
+    /// hold. Plain digits in v1 is a decision that needs no code to keep.
+    private static func digitRow() -> [KeyDefinition] {
+        inputRow("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+    }
+
+    /// Prepends the digit row to a letter page when the setting is on and we are in portrait.
+    ///
+    /// Applied by every letter-page builder rather than by each layout, so a layout added
+    /// later gets the row without opting in. The symbols pages (`numbersPage`, `symbolsPage`)
+    /// deliberately do not call this: `symbols1` already carries the digits.
+    ///
+    /// The "Row N" comments in the builders below number the letter page they are written in,
+    /// so with the digit row on they all sit one row lower in the rendered grid.
+    private static func withDigitRow(_ page: [[KeyDefinition]]) -> [[KeyDefinition]] {
+        drawsDigitRow ? [digitRow()] + page : page
+    }
+
+    // MARK: - Public API
+
+    /// AZERTY layout (default for French).
+    static func azerty(lang: SupportedLanguage = .active, needsGlobe: Bool) -> KeyboardDefinition {
+        return KeyboardDefinition(
+            name: lang.displayName,
+            locale: lang.rawValue,
+            spaceName: lang.spaceName,
+            returnName: lang.returnName,
+            longPress: longPressData,
+            layout: KeyboardDefinition.Layout(
+                normal: azertyNormal(lang: lang, needsGlobe: needsGlobe),
+                shifted: azertyShifted(lang: lang, needsGlobe: needsGlobe),
+                symbols1: numbersPage(lang: lang, needsGlobe: needsGlobe),
+                symbols2: symbolsPage(lang: lang, needsGlobe: needsGlobe)
+            )
+        )
+    }
+
+    /// QWERTY layout (default for English and Spanish).
+    static func qwerty(lang: SupportedLanguage = .active, needsGlobe: Bool) -> KeyboardDefinition {
+        return KeyboardDefinition(
+            name: lang.displayName + (lang == .french ? " (QWERTY)" : ""),
+            locale: lang.rawValue,
+            spaceName: lang.spaceName,
+            returnName: lang.returnName,
+            longPress: longPressData,
+            layout: KeyboardDefinition.Layout(
+                normal: qwertyNormal(lang: lang, needsGlobe: needsGlobe),
+                shifted: qwertyShifted(lang: lang, needsGlobe: needsGlobe),
+                symbols1: numbersPage(lang: lang, needsGlobe: needsGlobe),
+                symbols2: symbolsPage(lang: lang, needsGlobe: needsGlobe)
+            )
+        )
+    }
+
+    /// QWERTZ layout (default for German).
+    ///
+    /// Rows 1 and 2 carry 11 keys where the other two layouts carry 10: ü closes the top
+    /// row, ö and ä close the home row. That is the layout iOS ships as its default German
+    /// keyboard and the one the AOSP-derived keyboards build. The row data itself lives in
+    /// `OuisprCore.QWERTZLayout` so it can be covered by tests — the keyboard target has no
+    /// test bundle.
+    static func qwertz(lang: SupportedLanguage = .active, needsGlobe: Bool) -> KeyboardDefinition {
+        return KeyboardDefinition(
+            name: lang.displayName + (lang == .german ? "" : " (QWERTZ)"),
+            locale: lang.rawValue,
+            spaceName: lang.spaceName,
+            returnName: lang.returnName,
+            longPress: longPressData,
+            layout: KeyboardDefinition.Layout(
+                normal: qwertzNormal(lang: lang, needsGlobe: needsGlobe),
+                shifted: qwertzShifted(lang: lang, needsGlobe: needsGlobe),
+                symbols1: numbersPage(lang: lang, needsGlobe: needsGlobe),
+                symbols2: symbolsPage(lang: lang, needsGlobe: needsGlobe)
+            )
+        )
+    }
+
+    /// Returns the layout matching the user's App Group preferences.
+    ///
+    /// - Parameter needsGlobe: pass `UIInputViewController.needsInputModeSwitchKey`. When true
+    ///   (iPad, older iPhones) a next-keyboard globe is added; when false (recent iPhones where
+    ///   the system draws its own globe) the layout is unchanged. Required by App Store
+    ///   Guideline 4.4.1.
+    static func current(needsGlobe: Bool) -> KeyboardDefinition {
+        let lang = SupportedLanguage.active
+        switch LayoutType.active {
+        case .azerty: return azerty(lang: lang, needsGlobe: needsGlobe)
+        case .qwerty: return qwerty(lang: lang, needsGlobe: needsGlobe)
+        case .qwertz: return qwertz(lang: lang, needsGlobe: needsGlobe)
+        }
+    }
+
+    // MARK: - AZERTY Letter Pages
+
+    private static func azertyNormal(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        withDigitRow([
+            // Row 1: 10 keys
+            inputRow("a", "z", "e", "r", "t", "y", "u", "i", "o", "p"),
+            // Row 2: 10 keys
+            inputRow("q", "s", "d", "f", "g", "h", "j", "k", "l", "m"),
+            // Row 3: shift + 6 letters + accent key + delete = 9 items (10 units)
+            [
+                KeyDefinition(type: .shift, size: CGSize(width: 1.5, height: 1)),
+                key("w"), key("x"), key("c"), key("v"), key("b"), key("n"),
+                KeyDefinition(type: .input(key: "'", alternate: "accent")),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            // Row 4: 123 + emoji + space + return
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ])
+    }
+
+    private static func azertyShifted(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        withDigitRow([
+            // Row 1: uppercase
+            inputRow("A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P"),
+            // Row 2: uppercase
+            inputRow("Q", "S", "D", "F", "G", "H", "J", "K", "L", "M"),
+            // Row 3: shift (filled state handled by KeyView) + uppercase letters + accent key + delete
+            [
+                KeyDefinition(type: .shift, size: CGSize(width: 1.5, height: 1)),
+                key("W"), key("X"), key("C"), key("V"), key("B"), key("N"),
+                KeyDefinition(type: .input(key: "'", alternate: "accent")),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            // Row 4: same as normal
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ])
+    }
+
+    // MARK: - QWERTY Letter Pages
+
+    private static func qwertyNormal(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        withDigitRow([
+            // Row 1: 10 keys = 10 units
+            inputRow("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"),
+            // Row 2: 9 keys with side spacers = 10 units (matches Apple QWERTY centering)
+            [
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                key("a"), key("s"), key("d"), key("f"), key("g"), key("h"), key("j"), key("k"), key("l"),
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1))
+            ],
+            // Row 3: shift + 7 letters + delete = 10 units
+            [
+                KeyDefinition(type: .shift, size: CGSize(width: 1.5, height: 1)),
+                key("z"), key("x"), key("c"), key("v"), key("b"), key("n"), key("m"),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            // Row 4: unified bottom row (123 + emoji + space + return)
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ])
+    }
+
+    private static func qwertyShifted(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        withDigitRow([
+            inputRow("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"),
+            [
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                key("A"), key("S"), key("D"), key("F"), key("G"), key("H"), key("J"), key("K"), key("L"),
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1))
+            ],
+            [
+                KeyDefinition(type: .shift, size: CGSize(width: 1.5, height: 1)),
+                key("Z"), key("X"), key("C"), key("V"), key("B"), key("N"), key("M"),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ])
+    }
+
+    // MARK: - QWERTZ Letter Pages
+
+    private static func qwertzNormal(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        qwertzPage(rows: QWERTZLayout.lowercasedLettersRows, lang: lang, needsGlobe: needsGlobe)
+    }
+
+    private static func qwertzShifted(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        qwertzPage(rows: QWERTZLayout.lettersRows, lang: lang, needsGlobe: needsGlobe)
+    }
+
+    /// Builds a QWERTZ letter page from the three letter rows of `QWERTZLayout`.
+    ///
+    /// WHY one builder for both cases, unlike AZERTY and QWERTY: those two spell their
+    /// normal and shifted rows out twice because the rows differ in more than case (the
+    /// AZERTY accent key, the QWERTY spacers). QWERTZ has neither, so the pages differ
+    /// only by which of the two arrays is passed in.
+    ///
+    /// Rows 1 and 2 total 11 units against 10 everywhere else. That is deliberate: the
+    /// renderer normalizes each row against its own unit total (`KeyboardView`), so the
+    /// umlaut rows render slightly narrower keys — what iOS and Android both do. Do NOT
+    /// pad them to 10 with spacers; that would push ü/ä off the edge of the row.
+    private static func qwertzPage(rows: [[String]],
+                                   lang: SupportedLanguage,
+                                   needsGlobe: Bool) -> [[KeyDefinition]] {
+        let flankSize = CGSize(width: QWERTZLayout.flankKeyUnitWidth, height: 1)
+        return withDigitRow([
+            // Row 1: 11 keys = 11 units (…o p ü)
+            rows[0].map { key($0) },
+            // Row 2: 11 keys = 11 units (…k l ö ä)
+            rows[1].map { key($0) },
+            // Row 3: shift + 7 letters + delete = 10 units
+            [KeyDefinition(type: .shift, size: flankSize)]
+                + rows[2].map { key($0) }
+                + [KeyDefinition(type: .backspace, size: flankSize)],
+            // Row 4: unified bottom row (123 + emoji + space + return)
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ])
+    }
+
+    // MARK: - Numbers Page (symbols1)
+
+    private static func numbersPage(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        [
+            // Row 1: digits
+            inputRow("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
+            // Row 2: common punctuation and symbols
+            inputRow("-", "/", ":", ";", "(", ")", "\u{20AC}", "&", "@", "\""),
+            // Row 3: #+= toggle + punctuation + delete
+            [
+                KeyDefinition(type: .shiftSymbols, size: CGSize(width: 1.5, height: 1)),
+                // #+= and delete keep width 1.5 (identical to shift/delete on the letter pages).
+                // The 5 punctuation keys are widened to 1.2 with small 0.5 end spacers so the
+                // row totals 10 units and the cluster sits tighter -- matching Apple.
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                punct("."), punct(","), punct("?"), punct("!"), punct("'"),
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            // Row 4: unified bottom row (ABC + emoji + space + return)
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ]
+    }
+
+    // MARK: - Symbols Page (symbols2)
+
+    private static func symbolsPage(lang: SupportedLanguage, needsGlobe: Bool) -> [[KeyDefinition]] {
+        [
+            // Row 1: brackets and math
+            inputRow("[", "]", "{", "}", "#", "%", "^", "*", "+", "="),
+            // Row 2: special characters
+            inputRow("_", "\\", "|", "~", "<", ">", "$", "\u{00A3}", "\u{00A5}", "\u{00B7}"),
+            // Row 3: 123 toggle + punctuation + delete
+            [
+                KeyDefinition(type: .shiftSymbols, size: CGSize(width: 1.5, height: 1)),
+                // #+= and delete keep width 1.5 (identical to shift/delete on the letter pages).
+                // The 5 punctuation keys are widened to 1.2 with small 0.5 end spacers so the
+                // row totals 10 units and the cluster sits tighter -- matching Apple.
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                punct("."), punct(","), punct("?"), punct("!"), punct("'"),
+                KeyDefinition(type: .spacer, size: CGSize(width: 0.5, height: 1)),
+                KeyDefinition(type: .backspace, size: CGSize(width: 1.5, height: 1))
+            ],
+            // Row 4: unified bottom row (ABC + emoji + space + return)
+            bottomRow(lang: lang, needsGlobe: needsGlobe)
+        ]
+    }
+
+    // MARK: - Bottom Rows
+
+    /// Next-keyboard (globe) key. Rendered as a globe icon and wired to
+    /// `advanceToNextInputMode()` by the vendored KeyView/bridge. Inserted only when the
+    /// system does not already provide its own globe (`needsInputModeSwitchKey == true`).
+    private static func globeKey() -> KeyDefinition {
+        KeyDefinition(type: .keyboard, size: CGSize(width: 1.0, height: 1))
+    }
+
+    /// Bottom row, IDENTICAL across the letters and symbols pages so nothing resizes when the
+    /// user toggles 123/ABC (Apple parity). The `.symbols` key auto-labels "123" on letter
+    /// pages and "ABC" on symbol pages, and the emoji key stays present on every page.
+    ///
+    /// [123/ABC 1.25w] [emoji 1.25w] [space 5.5w] [return 2.0w] = 10 units.
+    /// [🌐 1.0w] [123/ABC 1.5w] [emoji 1.5w] [space 4.0w] [return 2.0w] = 10 units.
+    /// 123/ABC and emoji share the same small width. Without the globe they are 1.25 so the
+    /// space bar starts where Apple's does (#877): at 1.5 a tap on the left end of Apple's space
+    /// bar opened the emoji picker. The globe row (needsInputModeSwitchKey, App Store 4.4.1)
+    /// keeps its 1.5 split: it was not measured against Apple's.
+    private static func bottomRow(lang: SupportedLanguage, needsGlobe: Bool) -> [KeyDefinition] {
+        var row: [KeyDefinition] = needsGlobe ? [globeKey()] : []
+        let sideKeyWidth: CGFloat = needsGlobe ? 1.5 : 1.25
+        row.append(contentsOf: [
+            KeyDefinition(type: .symbols, size: CGSize(width: sideKeyWidth, height: 1)),
+            KeyDefinition(type: .input(key: emojiKeyGlyph, alternate: nil), size: CGSize(width: sideKeyWidth, height: 1)),
+            KeyDefinition(type: .spacebar(name: lang.spaceName), size: CGSize(width: needsGlobe ? 4.0 : 5.5, height: 1)),
+            KeyDefinition(type: .returnkey(name: lang.returnName), size: CGSize(width: 2.0, height: 1))
+        ])
+        return row
+    }
+
+    // MARK: - Long Press Accents
+
+    /// Long-press accent data shared across all languages.
+    /// Includes French accents (grave, circumflex, diaeresis) and Spanish accents (acute).
+    private static let longPressData: [String: [String]] = {
+        var longPress: [String: [String]] = [:]
+        for (baseKey, accents) in AccentedCharacters.mappings {
+            longPress[baseKey] = accents
+        }
+        return longPress
+    }()
+
+    // MARK: - Helper Functions
+
+    /// Create a standard 1x1 input key.
+    private static func key(_ char: String) -> KeyDefinition {
+        KeyDefinition(type: .input(key: char, alternate: nil))
+    }
+
+    /// Create a slightly wider (1.2) punctuation input key for the symbols pages' row 3,
+    /// so the 5 keys sit tighter together like Apple's keyboard.
+    private static func punct(_ char: String) -> KeyDefinition {
+        KeyDefinition(type: .input(key: char, alternate: nil), size: CGSize(width: 1.2, height: 1))
+    }
+
+    /// Create a row of standard input keys from variadic strings.
+    private static func inputRow(_ keys: String...) -> [KeyDefinition] {
+        keys.map { KeyDefinition(type: .input(key: $0, alternate: nil)) }
+    }
+}

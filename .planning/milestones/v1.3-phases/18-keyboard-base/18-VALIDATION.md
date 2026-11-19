@@ -18,17 +18,17 @@ created: 2026-03-27
 | Property | Value |
 |----------|-------|
 | **Framework** | XCTest (Xcode built-in) |
-| **Config file** | DictusKeyboard target in Xcode project |
-| **Quick run command** | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:DictusCoreTests 2>&1 \| tail -20` |
-| **Full suite command** | `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 \| tail -30` |
+| **Config file** | OuisprKeyboard target in Xcode project |
+| **Quick run command** | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:OuisprCoreTests 2>&1 \| tail -20` |
+| **Full suite command** | `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 \| tail -30` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:DictusCoreTests 2>&1 | tail -20`
-- **After every plan wave:** Run `xcodebuild test -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 | tail -30`
+- **After every task commit:** Run `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:OuisprCoreTests 2>&1 | tail -20`
+- **After every plan wave:** Run `xcodebuild test -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16 Pro' 2>&1 | tail -30`
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
@@ -55,7 +55,7 @@ created: 2026-03-27
 
 ## Wave 0 Requirements
 
-- [ ] Unit tests for layout data (AZERTY/QWERTY row counts, key definitions) in DictusCoreTests
+- [ ] Unit tests for layout data (AZERTY/QWERTY row counts, key definitions) in OuisprCoreTests
 - [ ] Verify build succeeds with vendored giellakbd-ios files
 
 *Keyboard extension UI testing is primarily manual (Simulator + device). Unit tests verify layout data correctness.*

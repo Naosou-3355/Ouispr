@@ -1,4 +1,4 @@
-# Requirements: Dictus v1.7 — Stability, Polish & i18n
+# Requirements: Ouispr v1.7 — Stability, Polish & i18n
 
 **Defined:** 2026-04-15
 **Core Value:** A user can dictate text in French in any iOS app and correct it immediately on the same keyboard — no subscription, no cloud, no account.
@@ -28,7 +28,7 @@ Requirements for this milestone. Each maps to roadmap phases (34-39).
 
 ### Internationalization
 
-- [ ] **I18N-01**: A documented, reusable process exists for adding a new language to Dictus — covers Whisper model wiring, keyboard layout, UI strings, autocorrect dictionary, n-gram data, onboarding (issue #110)
+- [ ] **I18N-01**: A documented, reusable process exists for adding a new language to Ouispr — covers Whisper model wiring, keyboard layout, UI strings, autocorrect dictionary, n-gram data, onboarding (issue #110)
 - [ ] **I18N-02**: German is fully integrated — QWERTZ keyboard layout, WhisperKit German transcription (multilingual model), German autocorrect dictionary + n-gram data, German UI strings, onboarding in German. First end-to-end validation of the I18N-01 process (issue #109)
 
 ## Out of Scope

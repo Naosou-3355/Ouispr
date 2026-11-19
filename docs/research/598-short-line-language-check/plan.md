@@ -56,7 +56,7 @@ its counting rule), and `polish-harness guardrail` (`GuardrailCorpus.scoreLangua
 
 C587's records carry the **engine's** output (post-pass applied, before any guardrail), the
 fixture id and the outcome, but not the transcript. The transcript is resolved from the
-fixture id against `DictusCore/Sources/polish-harness/fixtures/*.json` and
+fixture id against `OuisprCore/Sources/polish-harness/fixtures/*.json` and
 `docs/research/571-summary/step2/fixtures-*.json` (251 ids, none conflicting, every capture
 id resolves — checked before this note). The expected code is then computed exactly as
 `.sameAsInput` does: `detectLanguageCode(in: VerbalPunctuationPrepass(raw))`. A transcript

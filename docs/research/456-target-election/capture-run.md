@@ -5,7 +5,7 @@ offline and pinned by tests. The second — *is its French translated* — needs
 so it was measured rather than argued.
 
 ```sh
-cd DictusCore
+cd OuisprCore
 swift run polish-harness show ../docs/research/456-target-election/capture-fixture.json --runs 5
 ```
 

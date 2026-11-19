@@ -26,14 +26,14 @@ tech-stack:
 
 key-files:
   created:
-    - DictusKeyboard/Views/ToolbarView.swift
-    - DictusKeyboard/Views/RecordingOverlay.swift
+    - OuisprKeyboard/Views/ToolbarView.swift
+    - OuisprKeyboard/Views/RecordingOverlay.swift
   modified:
-    - DictusKeyboard/KeyboardState.swift
-    - DictusKeyboard/KeyboardRootView.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/KeyRow.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprKeyboard/KeyboardState.swift
+    - OuisprKeyboard/KeyboardRootView.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/KeyRow.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
   - "Auto-insert transcription via textDocumentProxy.insertText() instead of preview banner"
@@ -82,14 +82,14 @@ Each task was committed atomically:
 **Plan metadata:** (pending final commit)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/ToolbarView.swift` - Toolbar with gear icon + state-dependent mic button
-- `DictusKeyboard/Views/RecordingOverlay.swift` - Immersive recording UI with waveform, timer, cancel/stop
-- `DictusKeyboard/KeyboardState.swift` - requestStop/requestCancel, waveform observation, auto-insert
-- `DictusKeyboard/KeyboardRootView.swift` - Conditional rendering: toolbar + keyboard OR toolbar + recording overlay
-- `DictusKeyboard/Views/KeyboardView.swift` - Removed MicKey struct (mic now in toolbar)
-- `DictusKeyboard/Views/KeyRow.swift` - Updated .mic case to EmptyView (filtered out upstream)
-- `Dictus.xcodeproj/project.pbxproj` - Added ToolbarView, RecordingOverlay; fixed missing TestDictationView ref
-- `DictusKeyboard/Views/AccentPopup.swift` - Pre-existing file included in commit (from Plan 3.1 work)
+- `OuisprKeyboard/Views/ToolbarView.swift` - Toolbar with gear icon + state-dependent mic button
+- `OuisprKeyboard/Views/RecordingOverlay.swift` - Immersive recording UI with waveform, timer, cancel/stop
+- `OuisprKeyboard/KeyboardState.swift` - requestStop/requestCancel, waveform observation, auto-insert
+- `OuisprKeyboard/KeyboardRootView.swift` - Conditional rendering: toolbar + keyboard OR toolbar + recording overlay
+- `OuisprKeyboard/Views/KeyboardView.swift` - Removed MicKey struct (mic now in toolbar)
+- `OuisprKeyboard/Views/KeyRow.swift` - Updated .mic case to EmptyView (filtered out upstream)
+- `Ouispr.xcodeproj/project.pbxproj` - Added ToolbarView, RecordingOverlay; fixed missing TestDictationView ref
+- `OuisprKeyboard/Views/AccentPopup.swift` - Pre-existing file included in commit (from Plan 3.1 work)
 
 ## Decisions Made
 - **Auto-insert via textDocumentProxy**: Transcribed text goes directly into the active text field without preview or confirmation, matching standard iOS dictation behavior
@@ -103,9 +103,9 @@ Each task was committed atomically:
 
 **1. [Rule 3 - Blocking] Removed missing TestDictationView.swift reference from pbxproj**
 - **Found during:** Task 1 (build verification)
-- **Issue:** project.pbxproj was externally modified to reference DictusApp/Views/TestDictationView.swift which does not exist on disk, causing build failure
+- **Issue:** project.pbxproj was externally modified to reference OuisprApp/Views/TestDictationView.swift which does not exist on disk, causing build failure
 - **Fix:** Removed all 4 pbxproj references (PBXBuildFile, PBXFileReference, PBXGroup, PBXSourcesBuildPhase)
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** xcodebuild build succeeds
 - **Committed in:** 107e7fe (Task 1 commit)
 
@@ -113,7 +113,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (project file inspection)
 - **Issue:** External modification added AccentPopup.swift to Sources phase but not the PBXGroup hierarchy, causing Xcode project inconsistency
 - **Fix:** Added AA100070 to Views group children
-- **Files modified:** Dictus.xcodeproj/project.pbxproj
+- **Files modified:** Ouispr.xcodeproj/project.pbxproj
 - **Verification:** xcodebuild build succeeds, file visible in Xcode navigator
 - **Committed in:** 107e7fe (Task 1 commit)
 

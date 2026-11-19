@@ -3,7 +3,7 @@ phase: 34-silent-insertion-fix
 plan: 03
 subsystem: keyboard
 
-tags: [dictus-keyboard, text-insertion, stab-01, privacy-logging, haptics, swiftui-banner, app-group, retry-backoff]
+tags: [ouispr-keyboard, text-insertion, stab-01, privacy-logging, haptics, swiftui-banner, app-group, retry-backoff]
 
 # Dependency graph
 requires:
@@ -31,13 +31,13 @@ tech-stack:
 
 key-files:
   created:
-    - "DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift"
+    - "OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift"
   modified:
-    - "DictusKeyboard/KeyboardState.swift"
-    - "Dictus.xcodeproj/project.pbxproj"
+    - "OuisprKeyboard/KeyboardState.swift"
+    - "Ouispr.xcodeproj/project.pbxproj"
 
 key-decisions:
-  - "Shipped helper at DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift with pbxproj entries (preferred placement per plan). No fallback to flat layout needed."
+  - "Shipped helper at OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift with pbxproj entries (preferred placement per plan). No fallback to flat layout needed."
   - "Helper uses proxy.hasText (UITextDocumentProxy -> UIKeyInput) instead of ctrl.hasText for the before/after snapshot. Same semantics at this call site; preferring the proxy is more literal about what is being probed."
   - "handleTranscriptionReady keeps the pre-helper removeObject + synchronize pattern for both primary and 100ms-retry paths — duplicate-insertion guard against repeated Darwin notifications is preserved. The .failed branch re-writes SharedKeys.lastTranscription + SharedKeys.lastTranscriptionTimestamp, closing the Plan 34-02 contract."
   - "Haptic is fired by the caller (dispatchInsertion), not inside the helper — helper remains UI/feedback-agnostic. Success: HapticFeedback.textInserted(). Failure: HapticFeedback.insertionFailed()."
@@ -58,9 +58,9 @@ duration: ~45min
 completed: 2026-04-16
 ---
 
-# Phase 34 Plan 03: DictusKeyboard Insertion Helper with Loud-Fail Escalation Summary
+# Phase 34 Plan 03: OuisprKeyboard Insertion Helper with Loud-Fail Escalation Summary
 
-**Single validate -> insert -> verify -> retry -> escalate helper wraps the sole transcription-insertion call site in DictusKeyboard, with privacy-safe probe telemetry, FR/EN red-banner + error-haptic loud-fail, and App Group preservation on failure so HomeView can recover the lost text**
+**Single validate -> insert -> verify -> retry -> escalate helper wraps the sole transcription-insertion call site in OuisprKeyboard, with privacy-safe probe telemetry, FR/EN red-banner + error-haptic loud-fail, and App Group preservation on failure so HomeView can recover the lost text**
 
 ## Performance
 
@@ -74,7 +74,7 @@ completed: 2026-04-16
 
 - `InsertTranscriptionHelper` shipped — exactly one public static method `insertTranscription(...)` wraps validate -> insert -> verify -> retry -> escalate. Retry schedule 50 / 100 / 200 ms cumulative (worst case ~350 ms) via `DispatchQueue.main.asyncAfter`, NOT Timer.
 - `KeyboardState.handleTranscriptionReady` refactored — both the primary path (was line 341) and the 100ms UserDefaults retry (was line 370) route through new `dispatchInsertion(...)`. Old direct `controller?.textDocumentProxy.insertText(transcription)` call sites fully removed.
-- FR/EN loud-fail UX wired — `escalateInsertionFailure` sets `statusMessage` to the exact CONTEXT.md-locked copy (`"Insertion impossible. Retrouvez votre transcription dans Dictus."` / `"Couldn't insert. Find your transcription in Dictus."`), fires `HapticFeedback.insertionFailed()`, schedules 4s auto-clear with stale-message guard.
+- FR/EN loud-fail UX wired — `escalateInsertionFailure` sets `statusMessage` to the exact CONTEXT.md-locked copy (`"Insertion impossible. Retrouvez votre transcription dans Ouispr."` / `"Couldn't insert. Find your transcription in Ouispr."`), fires `HapticFeedback.insertionFailed()`, schedules 4s auto-clear with stale-message guard.
 - Plan 34-02 contract honored — on terminal failure, `dispatchInsertion` re-writes `SharedKeys.lastTranscription` + `SharedKeys.lastTranscriptionTimestamp` to the App Group so `HomeView.recoverableTranscription` can surface the lost text on next app foregrounding.
 - Real-device happy-path verified — 9 warm-path insertions, all `attempt=0` success, zero retries, zero failures. Delta math `beforeCount + transcriptionCount = afterCount` exact across all 9 probes.
 - Privacy audit PASSED — zero raw transcription text in any probe / retry / failed log entry across 892 log lines. Grep for `message=/text=/transcription=/result=/content=` + common French/English dictated words returned zero hits.
@@ -90,11 +90,11 @@ completed: 2026-04-16
 ## Files Created/Modified
 
 ### Created
-- `DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift` — Helper struct + `InsertionPath` enum + `InsertionFailureReason` enum + `InsertTranscriptionResult` enum. 190 lines. Commented with Phase 34 STAB-01 rationale + "no second physical call site" research reference.
+- `OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift` — Helper struct + `InsertionPath` enum + `InsertionFailureReason` enum + `InsertTranscriptionResult` enum. 190 lines. Commented with Phase 34 STAB-01 rationale + "no second physical call site" research reference.
 
 ### Modified
-- `DictusKeyboard/KeyboardState.swift` — `handleTranscriptionReady` refactored to delegate both paths to `dispatchInsertion`. Added private helpers: `dispatchInsertion`, `resetToIdleAfterInsertion`, `escalateInsertionFailure`. Added SharedKeys.coldStartActive read for path discrimination. Old direct `insertText` call sites removed.
-- `Dictus.xcodeproj/project.pbxproj` — PBXBuildFile + PBXFileReference + PBXGroup + PBXSourcesBuildPhase entries so the `TextInsertion/` subdirectory + `InsertTranscriptionHelper.swift` are built into the DictusKeyboard target.
+- `OuisprKeyboard/KeyboardState.swift` — `handleTranscriptionReady` refactored to delegate both paths to `dispatchInsertion`. Added private helpers: `dispatchInsertion`, `resetToIdleAfterInsertion`, `escalateInsertionFailure`. Added SharedKeys.coldStartActive read for path discrimination. Old direct `insertText` call sites removed.
+- `Ouispr.xcodeproj/project.pbxproj` — PBXBuildFile + PBXFileReference + PBXGroup + PBXSourcesBuildPhase entries so the `TextInsertion/` subdirectory + `InsertTranscriptionHelper.swift` are built into the OuisprKeyboard target.
 
 ## Implementation Shipped
 
@@ -206,9 +206,9 @@ private func escalateInsertionFailure(reason: InsertionFailureReason, attempts: 
     let message: String
     switch lang {
     case "en":
-        message = "Couldn't insert. Find your transcription in Dictus."
+        message = "Couldn't insert. Find your transcription in Ouispr."
     default:
-        message = "Insertion impossible. Retrouvez votre transcription dans Dictus."
+        message = "Insertion impossible. Retrouvez votre transcription dans Ouispr."
     }
     statusMessage = message
 
@@ -223,7 +223,7 @@ private func escalateInsertionFailure(reason: InsertionFailureReason, attempts: 
 
 ## Real-Device Verification Results (Task 3)
 
-User tested on a real iPhone, exported logs to `/Users/pierreviviere/Downloads/dictus-logs 133.txt` (892 lines).
+User tested on a real iPhone, exported logs to `/Users/pierreviviere/Downloads/ouispr-logs 133.txt` (892 lines).
 
 | # | Scenario | Result | Notes |
 |---|----------|--------|-------|
@@ -263,7 +263,7 @@ This is an existing state-machine gap in Plan 34-01's scope, unrelated to Plan 3
 - **Found during:** Task 2 (KeyboardState refactor)
 - **Issue:** `handleTranscriptionReady` clears `SharedKeys.lastTranscription` BEFORE calling the helper (correct duplicate-insertion guard). The plan draft's `dispatchInsertion` `.failed` branch did NOT re-write the key, which would silently break Plan 34-02's explicit contract ("the failed-insertion escalation path MUST NOT call `defaults.removeObject(forKey: SharedKeys.lastTranscription)`" — 34-02-SUMMARY.md). Without the re-write, HomeView's recovery surface would not surface the lost text after a keyboard-dictation failure.
 - **Fix:** Added App Group re-write inside `dispatchInsertion`'s `.failed` branch (KeyboardState.swift:418-420). Writes both `SharedKeys.lastTranscription` AND `SharedKeys.lastTranscriptionTimestamp` (the timestamp is required by `HomeView.recoverableTranscription`'s 300s staleness gate).
-- **Files modified:** `DictusKeyboard/KeyboardState.swift`
+- **Files modified:** `OuisprKeyboard/KeyboardState.swift`
 - **Verification:** grep confirms two `.set(... forKey: SharedKeys.lastTranscription ...)` writes in KeyboardState (pre-existing elsewhere + new failure-path write). Code review matches the pseudo-code in 34-02-SUMMARY.md's "Follow-ups for Plan 34-03" section.
 - **Committed in:** `3b288fd` (Task 2 refactor commit)
 
@@ -271,7 +271,7 @@ This is an existing state-machine gap in Plan 34-01's scope, unrelated to Plan 3
 - **Found during:** Task 1 (helper implementation)
 - **Issue:** Plan draft used `ctrl.hasText` for before/after snapshots. `UIInputViewController.hasText` is a passthrough to the proxy; reading it via `proxy.hasText` is more literal and avoids one hop of indirection. Not a functional bug, but worth noting as a minor hardening.
 - **Fix:** Helper reads `proxy.hasText` directly (both for `hasTextBefore` and `hasTextAfter`).
-- **Files modified:** `DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift`
+- **Files modified:** `OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift`
 - **Verification:** Build passes. Real-device test shows `hasTextBefore=true` / `hasTextAfter=true` on every happy-path insertion (matches expected behavior for non-empty text fields).
 - **Committed in:** `1371c08` (Task 1 feat commit)
 
@@ -286,21 +286,21 @@ None during Task 1 or Task 2 implementation. The checkpoint-level deferrals (col
 
 ## User Setup Required
 
-None — purely source-level changes inside `DictusKeyboard` + pbxproj wiring. No entitlements, Info.plist, App Group config, or new dependencies.
+None — purely source-level changes inside `OuisprKeyboard` + pbxproj wiring. No entitlements, Info.plist, App Group config, or new dependencies.
 
 ## Follow-ups for Plan 34-04
 
-1. **Cold-start path coverage** — Plan 34-04's manual test matrix MUST exercise cold-start dictation (fully background DictusApp, tap mic in keyboard from another app, verify text lands, inspect logs for `path=coldStartBridge` probe). All 9 probes in this session's verification log were `path=warmDarwin`. Helper code path is identical, but empirical observation is the only way to close the coverage gap.
+1. **Cold-start path coverage** — Plan 34-04's manual test matrix MUST exercise cold-start dictation (fully background OuisprApp, tap mic in keyboard from another app, verify text lands, inspect logs for `path=coldStartBridge` probe). All 9 probes in this session's verification log were `path=warmDarwin`. Helper code path is identical, but empirical observation is the only way to close the coverage gap.
 2. **Banner + suggestion-bar observational validation** — user deferred these ("à suivre"). If Plan 34-04 includes any UX polish pass over the toolbar, it should re-run: (a) induce an insertion failure (or force the banner code path via a debug build switch), (b) measure banner on-screen duration vs 4s target, (c) verify suggestion bar returns after banner clears without requiring a key tap.
 3. **Force-fail #118 long-term monitoring** — if a user reports silent insertion after shipping Phase 34, first action is to request logs and grep for `keyboardInsertRetry` / `keyboardInsertFailed`. The new telemetry gives us the forensic trail that was missing before. If we see terminal `keyboardInsertFailed` entries at non-trivial frequency, root-cause via `finalReason` distribution (silentDrop vs deltaMismatch vs proxyDead vs contextUnavailable) and potentially extend the helper.
 4. **Known state-machine gap: `.recording -> .failed` edge missing in LiveActivityStateMachine** — pre-existing in Plan 34-01's scope, surfaced as a one-line `liveActivityFailed context=rejectedTransition` in the verification log. Self-recovers via `.recording -> .standby`. Not blocking Phase 34 STAB-01. Candidate for a later plan if this becomes noisy.
 
 ## Next Phase Readiness
 
-- **Plan 34-04 (banner/UX wiring + DictusApp recovery card polish)** — unblocked. Consumes all of Plan 34-03's shipped surfaces:
+- **Plan 34-04 (banner/UX wiring + OuisprApp recovery card polish)** — unblocked. Consumes all of Plan 34-03's shipped surfaces:
   - `InsertTranscriptionHelper` is the single call site for insertion — 34-04 does not need to touch it.
   - `statusMessage` red banner is already rendering FR/EN copy with 4s auto-clear — 34-04 may polish visual treatment (icon, tint, motion) but the data flow is complete.
-  - App Group preservation on failure is wired — 34-04 can focus on the DictusApp side: ensuring the HomeView recovery card (Plan 34-02) is visually prominent, actionable, and intuitively discoverable when a user opens Dictus after a failed insertion.
+  - App Group preservation on failure is wired — 34-04 can focus on the OuisprApp side: ensuring the HomeView recovery card (Plan 34-02) is visually prominent, actionable, and intuitively discoverable when a user opens Ouispr after a failed insertion.
 - **Phase 34 STAB-01 requirement** — shipped end-to-end across Plans 34-01 (foundations), 34-02 (recovery surface), 34-03 (helper + loud-fail UX). 34-04 is UX polish + manual-test sign-off, not new functionality for STAB-01. Requirement can be marked complete in this plan's finalization.
 
 ## Self-Check
@@ -308,11 +308,11 @@ None — purely source-level changes inside `DictusKeyboard` + pbxproj wiring. N
 Verifying all claims:
 
 ### Files created
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/TextInsertion/InsertTranscriptionHelper.swift` — FOUND (190 lines, matches shipped implementation)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/TextInsertion/InsertTranscriptionHelper.swift` — FOUND (190 lines, matches shipped implementation)
 
 ### Files modified
-- `/Users/pierreviviere/dev/dictus/DictusKeyboard/KeyboardState.swift` — FOUND (handleTranscriptionReady refactored, dispatchInsertion + escalateInsertionFailure + resetToIdleAfterInsertion present, App Group re-write on failure present at lines 418-420)
-- `/Users/pierreviviere/dev/dictus/Dictus.xcodeproj/project.pbxproj` — FOUND (git status clean on this branch; file is tracked in prior commits)
+- `/Users/pierreviviere/dev/ouispr/OuisprKeyboard/KeyboardState.swift` — FOUND (handleTranscriptionReady refactored, dispatchInsertion + escalateInsertionFailure + resetToIdleAfterInsertion present, App Group re-write on failure present at lines 418-420)
+- `/Users/pierreviviere/dev/ouispr/Ouispr.xcodeproj/project.pbxproj` — FOUND (git status clean on this branch; file is tracked in prior commits)
 
 ### Commits
 - `1371c08` (Task 1 feat: add InsertTranscriptionHelper) — FOUND in git log
@@ -323,8 +323,8 @@ Verifying all claims:
 - `private func dispatchInsertion` — 1 match
 - `private func escalateInsertionFailure` — 1 match
 - `private func resetToIdleAfterInsertion` — 1 match
-- `"Insertion impossible. Retrouvez votre transcription dans Dictus."` — 1 match
-- `"Couldn't insert. Find your transcription in Dictus."` — 1 match
+- `"Insertion impossible. Retrouvez votre transcription dans Ouispr."` — 1 match
+- `"Couldn't insert. Find your transcription in Ouispr."` — 1 match
 - `asyncAfter(deadline: .now() + 4)` — 1 match (4s auto-clear)
 - `HapticFeedback.insertionFailed()` — 1 match
 - `SharedKeys.coldStartActive` — 1 match (path discrimination)

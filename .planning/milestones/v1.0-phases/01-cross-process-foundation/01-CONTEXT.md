@@ -15,8 +15,8 @@ Prove the two-process dictation architecture works end-to-end on a real device. 
 
 ### App-switching experience
 - App opens instantly on mic tap and starts recording automatically — no splash screen or confirmation step
-- After transcription completes, auto-return to the previous app (via dictus://return or system back navigation) — no manual "Done" button
-- Keyboard shows a subtle status indicator while the main app is working ("Recording in Dictus...", "Transcribing...") so the user knows what's happening
+- After transcription completes, auto-return to the previous app (via ouispr://return or system back navigation) — no manual "Done" button
+- Keyboard shows a subtle status indicator while the main app is working ("Recording in Ouispr...", "Transcribing...") so the user knows what's happening
 - On failure (app doesn't open, recording fails, App Group write fails), keyboard shows a subtle inline error that auto-dismisses after a few seconds ("Dictation failed — try again")
 
 ### AZERTY layout
@@ -29,7 +29,7 @@ Prove the two-process dictation architecture works end-to-end on a real device. 
 - When Full Access is off, mic button is visible but dimmed — tapping it shows a brief explanation of why it's disabled and how to enable Full Access
 - Persistent banner visible every time the keyboard appears when Full Access is off — non-dismissible, matches REQUIREMENTS (APP-01)
 - Keyboard looks identical to the full version when degraded — same styling, only difference is grayed-out mic + banner
-- Banner deep-links directly to iOS Settings > Keyboards > Dictus for fastest user path
+- Banner deep-links directly to iOS Settings > Keyboards > Ouispr for fastest user path
 
 ### Keyboard shell style
 - Match the native iOS keyboard as closely as possible — same key shapes, colors, shadows, system-like appearance
@@ -39,8 +39,8 @@ Prove the two-process dictation architecture works end-to-end on a real device. 
 
 ### Claude's Discretion
 - Exact App Group data format for transcription results (JSON, plist, UserDefaults keys)
-- URL scheme parameter design for dictus://dictate and dictus://return
-- DictusCore SPM package internal structure
+- URL scheme parameter design for ouispr://dictate and ouispr://return
+- OuisprCore SPM package internal structure
 - AppGroupDiagnostic implementation details
 - Exact key dimensions and spacing
 - Animation timing for status indicators and error messages
@@ -68,10 +68,10 @@ Prove the two-process dictation architecture works end-to-end on a real device. 
 - CLAUDE.md specifies: camelCase for variables/functions, PascalCase for types/structs, one file = one responsibility
 
 ### Integration Points
-- Xcode workspace with two targets: DictusApp (main app) and DictusKeyboard (keyboard extension)
-- DictusCore SPM package for shared code between targets
+- Xcode workspace with two targets: OuisprApp (main app) and OuisprKeyboard (keyboard extension)
+- OuisprCore SPM package for shared code between targets
 - App Group: group.com.pivi.dictus for cross-process data sharing
-- URL scheme: dictus://dictate (keyboard → app) and dictus://return (app → keyboard)
+- URL scheme: ouispr://dictate (keyboard → app) and ouispr://return (app → keyboard)
 
 </code_context>
 

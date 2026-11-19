@@ -66,7 +66,7 @@ counted, and read against the baseline rather than against zero.
 ## 5. What is run
 
 ```sh
-cd DictusCore
+cd OuisprCore
 H=.build/debug/polish-harness; O=../docs/research/587-language-clause; F=Sources/polish-harness/fixtures
 for m in message notes structured; do
   $H fidelity $F/translated-structured.json --mode $m --runs 3 --json $O/capture-$m.json > $O/raw/$m.txt

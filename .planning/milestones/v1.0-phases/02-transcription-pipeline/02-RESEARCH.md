@@ -20,7 +20,7 @@ The main challenge is model management: WhisperKit models live on HuggingFace (`
 - No maximum recording duration -- user records as long as needed
 - Recording screen shows a live audio waveform visualization + stop button + elapsed time counter
 - After transcription completes, auto-return immediately to keyboard -- no result preview in the main app (brief "Done" checkmark, then user switches back)
-- Recording starts automatically when app opens via `dictus://dictate` (carried forward from Phase 1)
+- Recording starts automatically when app opens via `ouispr://dictate` (carried forward from Phase 1)
 - User chooses which model to download during initial setup (no pre-selected default)
 - Smart model routing: audio under 5 seconds uses tiny/base (fast), audio over 5 seconds uses small (accurate)
 - If only one model is downloaded, always use that model regardless of duration -- no error, no prompt
@@ -84,7 +84,7 @@ The main challenge is model management: WhisperKit models live on HuggingFace (`
 | Custom model downloader | `WhisperKit.download(variant:progressCallback:)` | HuggingFace integration, progress callbacks, background session support |
 | Manual Core ML compilation | `whisperKit.prewarmModels()` | Specializes models for device hardware |
 
-**SPM Dependency (add to DictusApp target only):**
+**SPM Dependency (add to OuisprApp target only):**
 ```swift
 // In Xcode: File > Add Package Dependencies
 // URL: https://github.com/argmaxinc/WhisperKit.git
@@ -92,13 +92,13 @@ The main challenge is model management: WhisperKit models live on HuggingFace (`
 // Product: WhisperKit (NOT TTSKit)
 ```
 
-**Important:** WhisperKit must NOT be added to DictusKeyboard target. Keyboard extensions have ~50 MB memory limit -- even the tiny model exceeds this at runtime. Transcription runs exclusively in DictusApp.
+**Important:** WhisperKit must NOT be added to OuisprKeyboard target. Keyboard extensions have ~50 MB memory limit -- even the tiny model exceeds this at runtime. Transcription runs exclusively in OuisprApp.
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```
-DictusApp/
+OuisprApp/
 ├── DictationCoordinator.swift       # MODIFY: replace stub with real pipeline
 ├── Audio/
 │   ├── AudioRecorder.swift          # Wraps WhisperKit's AudioProcessor
@@ -113,7 +113,7 @@ DictusApp/
     ├── RecordingView.swift          # Waveform + stop button + timer
     └── ModelManagerView.swift       # Model list + download/delete UI
 
-DictusCore/Sources/DictusCore/
+OuisprCore/Sources/OuisprCore/
 ├── SharedKeys.swift                 # ADD: modelReady, activeModel keys
 └── (existing files unchanged)
 ```
@@ -255,7 +255,7 @@ struct SmartModelRouter {
 
 ### Anti-Patterns to Avoid
 - **Building custom AVAudioEngine pipeline:** WhisperKit's AudioProcessor already handles 16 kHz mono Float32 conversion. Building your own duplicates work and risks format mismatches.
-- **Loading WhisperKit in keyboard extension:** Memory limit (~50 MB) will crash the extension. All transcription MUST stay in DictusApp.
+- **Loading WhisperKit in keyboard extension:** Memory limit (~50 MB) will crash the extension. All transcription MUST stay in OuisprApp.
 - **Downloading models without prewarming:** First transcription will be extremely slow if Core ML models are not pre-compiled. Always call `prewarmModels()` after download.
 - **Using multilingual model names without prefix:** WhisperKit model identifiers use `openai_whisper-` prefix (e.g., `openai_whisper-tiny`, not `tiny`). Using wrong identifiers will fail silently.
 
@@ -305,7 +305,7 @@ try session.setActive(true)
 ### Pitfall 5: Microphone Permission Not Requested
 **What goes wrong:** Recording starts but captures silence
 **Why it happens:** `NSMicrophoneUsageDescription` missing from Info.plist, or permission not requested before first recording
-**How to avoid:** DictusApp Info.plist already has it (Phase 1). Always check `AVAudioSession.sharedInstance().recordPermission` before starting; request if `.undetermined`
+**How to avoid:** OuisprApp Info.plist already has it (Phase 1). Always check `AVAudioSession.sharedInstance().recordPermission` before starting; request if `.undetermined`
 **Warning signs:** `audioSamples` array is empty after recording
 
 ### Pitfall 6: Filler Word Filter Removing Valid Words
@@ -434,7 +434,7 @@ struct WaveformView: View {
 
 1. **WhisperKit `useBackgroundSession` reliability**
    - What we know: WhisperKit supports `useBackgroundSession: true` in `download()`
-   - What's unclear: Whether WhisperKit handles `application(_:handleEventsForBackgroundURLSession:)` automatically or if DictusApp needs AppDelegate integration
+   - What's unclear: Whether WhisperKit handles `application(_:handleEventsForBackgroundURLSession:)` automatically or if OuisprApp needs AppDelegate integration
    - Recommendation: Test with default foreground download first; add background session in Plan 2.3 if needed
 
 2. **Model storage location**
@@ -453,31 +453,31 @@ struct WaveformView: View {
 | Property | Value |
 |----------|-------|
 | Framework | XCTest (built-in, already in use) |
-| Config file | DictusCore/Tests/DictusCoreTests/DictusCoreTests.swift (existing) |
-| Quick run command | `xcodebuild test -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing DictusCoreTests` |
-| Full suite command | `xcodebuild test -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16'` |
+| Config file | OuisprCore/Tests/OuisprCoreTests/OuisprCoreTests.swift (existing) |
+| Quick run command | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing OuisprCoreTests` |
+| Full suite command | `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16'` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | STT-01 | French transcription produces text | integration (device) | Manual: requires microphone + WhisperKit model on device | No - Wave 0 |
-| STT-02 | Filler words removed from output | unit | `xcodebuild test ... -only-testing DictusCoreTests/FillerWordFilterTests` | No - Wave 0 |
-| STT-03 | Punctuation preserved | unit | `xcodebuild test ... -only-testing DictusCoreTests/FillerWordFilterTests` (verify filter preserves punctuation) | No - Wave 0 |
-| STT-04 | Smart routing selects model by duration | unit | `xcodebuild test ... -only-testing DictusCoreTests/SmartModelRouterTests` | No - Wave 0 |
+| STT-02 | Filler words removed from output | unit | `xcodebuild test ... -only-testing OuisprCoreTests/FillerWordFilterTests` | No - Wave 0 |
+| STT-03 | Punctuation preserved | unit | `xcodebuild test ... -only-testing OuisprCoreTests/FillerWordFilterTests` (verify filter preserves punctuation) | No - Wave 0 |
+| STT-04 | Smart routing selects model by duration | unit | `xcodebuild test ... -only-testing OuisprCoreTests/SmartModelRouterTests` | No - Wave 0 |
 | STT-05 | Transcription under 3s for 10s audio | manual-only | Physical device benchmark (simulator has no Neural Engine) | N/A |
 | APP-02 | Model manager download/select/delete | integration (device) | Manual: requires network + HuggingFace access | No - Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** `xcodebuild test -project Dictus.xcodeproj -scheme DictusApp -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing DictusCoreTests`
+- **Per task commit:** `xcodebuild test -project Ouispr.xcodeproj -scheme OuisprApp -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing OuisprCoreTests`
 - **Per wave merge:** Full test suite
 - **Phase gate:** Full suite green + manual device test of recording + transcription
 
 ### Wave 0 Gaps
-- [ ] `DictusCore/Tests/DictusCoreTests/FillerWordFilterTests.swift` -- covers STT-02, STT-03
-- [ ] `DictusCore/Tests/DictusCoreTests/SmartModelRouterTests.swift` -- covers STT-04
-- [ ] `DictusCore/Tests/DictusCoreTests/ModelInfoTests.swift` -- covers APP-02 (model metadata)
+- [ ] `OuisprCore/Tests/OuisprCoreTests/FillerWordFilterTests.swift` -- covers STT-02, STT-03
+- [ ] `OuisprCore/Tests/OuisprCoreTests/SmartModelRouterTests.swift` -- covers STT-04
+- [ ] `OuisprCore/Tests/OuisprCoreTests/ModelInfoTests.swift` -- covers APP-02 (model metadata)
 
-Note: `FillerWordFilter` and `SmartModelRouter` should live in DictusCore (pure logic, no WhisperKit dependency) so they are unit-testable in the existing test target. WhisperKit integration itself requires device testing.
+Note: `FillerWordFilter` and `SmartModelRouter` should live in OuisprCore (pure logic, no WhisperKit dependency) so they are unit-testable in the existing test target. WhisperKit integration itself requires device testing.
 
 ## Sources
 

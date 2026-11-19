@@ -20,10 +20,10 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/KeyboardViewController.swift
-    - DictusKeyboard/Views/KeyRow.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/KeyboardViewController.swift
+    - OuisprKeyboard/Views/KeyRow.swift
 
 key-decisions:
   - "Proportional vertical movement (1 char per 15pt) replaces 40-char line jumps for smooth trackpad feel"
@@ -68,10 +68,10 @@ Each task was committed atomically:
 2. **Task 2: Autocapitalisation after sentence punctuation** - `9ee2026` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - Smooth trackpad acceleration curve, word-level delete with counter
-- `DictusKeyboard/Views/KeyboardView.swift` - Autocap logic, deleteWordBackward helper, onWordDelete callback
-- `DictusKeyboard/KeyboardViewController.swift` - textDidChange notification for autocap recheck
-- `DictusKeyboard/Views/KeyRow.swift` - Pass onWordDelete to DeleteKey
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - Smooth trackpad acceleration curve, word-level delete with counter
+- `OuisprKeyboard/Views/KeyboardView.swift` - Autocap logic, deleteWordBackward helper, onWordDelete callback
+- `OuisprKeyboard/KeyboardViewController.swift` - textDidChange notification for autocap recheck
+- `OuisprKeyboard/Views/KeyRow.swift` - Pass onWordDelete to DeleteKey
 
 ## Decisions Made
 - Replaced 40-char vertical line jumps with proportional 1-char-per-15pt movement -- UAT found "locked to lines" feel was caused by discrete jumps

@@ -15,7 +15,7 @@ note: "Fresh UAT — previous 3-mode system replaced by DefaultKeyboardLayer (le
 ## Tests
 
 ### 1. Default Layer Picker in Settings
-expected: In DictusApp Settings, the "Clavier" section shows a picker with two options: ABC (letters) and 123 (numbers). Tapping each option selects it and shows a miniature preview of the corresponding keyboard layout. The selection persists after closing Settings.
+expected: In OuisprApp Settings, the "Clavier" section shows a picker with two options: ABC (letters) and 123 (numbers). Tapping each option selects it and shows a miniature preview of the corresponding keyboard layout. The selection persists after closing Settings.
 result: pass
 
 ### 2. Onboarding Layer Selection

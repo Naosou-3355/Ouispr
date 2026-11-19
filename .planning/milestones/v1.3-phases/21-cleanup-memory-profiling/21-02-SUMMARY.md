@@ -26,9 +26,9 @@ key-files:
 
 key-decisions:
   - "Emoji picker 139 MiB is critical blocker for public beta -- needs optimization before release"
-  - "System leaks (~20 in idle) are iOS internals, not Dictus code -- acceptable"
+  - "System leaks (~20 in idle) are iOS internals, not Ouispr code -- acceptable"
   - "KeyTapSignposter intervals not captured in Instruments -- needs wiring investigation"
-  - "Dictation transcription runs in DictusApp, not keyboard extension -- memory stays low"
+  - "Dictation transcription runs in OuisprApp, not keyboard extension -- memory stays low"
 
 patterns-established:
   - "Memory profiling protocol: 7 operation modes measured independently on physical device"
@@ -74,7 +74,7 @@ Each task was committed atomically:
 - Classified ~20 idle leaks as iOS system internals (UIViewServiceDeputyManager, BSServiceConnection, etc.) -- not actionable
 - Marked emoji picker memory as critical blocker: 139 MiB is 2.8x the 50 MiB jetsam limit
 - Noted signposter needs investigation: either not wired into touch chain or Instruments filter misconfigured
-- Dictation transcription not profiled separately in keyboard extension since WhisperKit runs in DictusApp process
+- Dictation transcription not profiled separately in keyboard extension since WhisperKit runs in OuisprApp process
 
 ## Deviations from Plan
 
@@ -82,7 +82,7 @@ None -- plan executed exactly as written. User provided profiling data, report w
 
 ## Issues Encountered
 - **KeyTapSignposter not visible in Instruments:** Custom signposts from `com.pivi.dictus.keyboard` subsystem were not captured. System signposts (`keyboardPerf.UI`) were visible. Root cause unclear -- may be a wiring issue (signposter code not reached in UIKit touch chain) or Instruments filter configuration. Documented in report for future investigation.
-- **Debug Navigator limitation:** DictusKeyboard extension process not listed in Debug Navigator, so no baseline comparison possible for the extension itself. Only DictusApp was visible at 62.5 MB.
+- **Debug Navigator limitation:** OuisprKeyboard extension process not listed in Debug Navigator, so no baseline comparison possible for the extension itself. Only OuisprApp was visible at 62.5 MB.
 
 ## User Setup Required
 

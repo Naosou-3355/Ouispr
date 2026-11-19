@@ -1,8 +1,8 @@
 // swift-tools-version: 6.0
 //
-// THROWAWAY — #268 D2. Not part of the app: nothing in Dictus.xcodeproj, in
-// DictusCore's package, or in CI references this. It exists to answer one
-// question — can a backgrounded DictusApp reach the Neural Engine to run an
+// THROWAWAY — #268 D2. Not part of the app: nothing in Ouispr.xcodeproj, in
+// OuisprCore's package, or in CI references this. It exists to answer one
+// question — can a backgrounded OuisprApp reach the Neural Engine to run an
 // LLM — and it is meant to be deleted with the branch that carries it.
 //
 // `../.deps/Anemll` does not exist in a fresh checkout: run ../setup.sh first,
@@ -11,7 +11,7 @@ import PackageDescription
 
 let package = Package(
     name: "ane-harness",
-    // macOS 26 comes from DictusCore, which the polish prompts live in;
+    // macOS 26 comes from OuisprCore, which the polish prompts live in;
     // iOS 18 is AnemllCore's floor. The harness itself needs neither.
     platforms: [.iOS(.v18), .macOS("26.0")],
     products: [
@@ -19,14 +19,14 @@ let package = Package(
         .executable(name: "ane-bench", targets: ["ane-bench"])
     ],
     dependencies: [
-        .package(path: "../../../DictusCore"),
+        .package(path: "../../../OuisprCore"),
         .package(path: "../.deps/Anemll/anemll-swift-cli")
     ],
     targets: [
         .target(
             name: "AneBenchKit",
             dependencies: [
-                .product(name: "DictusCore", package: "DictusCore"),
+                .product(name: "OuisprCore", package: "OuisprCore"),
                 .product(name: "AnemllCore", package: "anemll-swift-cli")
             ],
             resources: [.copy("Resources/seed.json")]

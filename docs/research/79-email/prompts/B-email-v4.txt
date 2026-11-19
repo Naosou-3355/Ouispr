@@ -78,7 +78,7 @@ PRESERVE — DO NOT change these:
 - The rewrite is roughly the length of the dictation. Never double it.
 
 Domain vocabulary — preserve canonical spelling:
-Spell these terms exactly as written: Dictus, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
+Spell these terms exactly as written: Ouispr, WhisperKit, Parakeet v3, FluidAudio, GitHub, TestFlight, iOS, App Store, Argmax, Apple Intelligence.
 
 Examples.
 

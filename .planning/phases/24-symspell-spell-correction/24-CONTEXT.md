@@ -38,7 +38,7 @@ Requirements: PRED-01, PRED-02, PRED-03
 ### Autocorrect rejection (undo protection)
 - **Standard behavior**: After user undoes an autocorrection (backspace after space), the original word is "accepted" for that instance. Typing space again does NOT re-apply the correction.
 - **Flow**: type "helo" + space -> corrected to "hello " -> backspace undoes to "helo" -> space again -> "helo " stays as-is.
-- **Current bug**: Dictus re-applies correction on every space, trapping the user. Must be fixed in this phase.
+- **Current bug**: Ouispr re-applies correction on every space, trapping the user. Must be fixed in this phase.
 - **Reference**: Follow open-source keyboard standards (Gboard/AOSP behavior).
 
 ### Dictionary format & loading
@@ -68,18 +68,18 @@ Requirements: PRED-01, PRED-02, PRED-03
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Current prediction code (to modify)
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` — Current spellCheck() using UITextChecker + FrequencyDictionary. SymSpell replaces spellCheck(), completions() stays.
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` — Observable state, async coalescing, AutocorrectState for undo. Needs autocorrect rejection logic.
-- `DictusKeyboard/Views/SuggestionBarView.swift` — 3-slot suggestion bar UI. Layout changes for standard pattern (verbatim/correction/alternative).
-- `DictusCore/Sources/DictusCore/FrequencyDictionary.swift` — Current JSON loader, stays for UITextChecker ranking.
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` — Current spellCheck() using UITextChecker + FrequencyDictionary. SymSpell replaces spellCheck(), completions() stays.
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` — Observable state, async coalescing, AutocorrectState for undo. Needs autocorrect rejection logic.
+- `OuisprKeyboard/Views/SuggestionBarView.swift` — 3-slot suggestion bar UI. Layout changes for standard pattern (verbatim/correction/alternative).
+- `OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift` — Current JSON loader, stays for UITextChecker ranking.
 
 ### Current dictionaries (to expand)
-- `DictusKeyboard/Resources/fr_frequency.json` — Current French dictionary (1,288 words). Replace with 30-50K from Lexique 3.83.
-- `DictusKeyboard/Resources/en_frequency.json` — Current English dictionary (1,126 words). Replace with 30-50K from Google 1T/COCA.
+- `OuisprKeyboard/Resources/fr_frequency.json` — Current French dictionary (1,288 words). Replace with 30-50K from Lexique 3.83.
+- `OuisprKeyboard/Resources/en_frequency.json` — Current English dictionary (1,126 words). Replace with 30-50K from Google 1T/COCA.
 
 ### Keyboard bridge (autocorrect wiring)
-- `DictusKeyboard/DictusKeyboardBridge.swift` — handleSpace triggers autocorrect, handleBackspace triggers undo. Autocorrect rejection logic needed here.
-- `DictusKeyboard/KeyboardViewController.swift` — View lifecycle, SuggestionState ownership.
+- `OuisprKeyboard/OuisprKeyboardBridge.swift` — handleSpace triggers autocorrect, handleBackspace triggers undo. Autocorrect rejection logic needed here.
+- `OuisprKeyboard/KeyboardViewController.swift` — View lifecycle, SuggestionState ownership.
 
 ### Prior phase decisions
 - `.planning/phases/20-feature-reintegration/20-CONTEXT.md` — Prediction wiring pattern, autocorrect-on-space behavior, undo-on-backspace.
@@ -101,15 +101,15 @@ Requirements: PRED-01, PRED-02, PRED-03
 ### Established Patterns
 - JSON frequency files loaded per-language in `TextPredictionEngine.init()` and `setLanguage()`
 - Background queue (`suggestionQueue`) for suggestion computation with cancellation
-- `DictusKeyboardBridge` calls `SuggestionState.updateAsync(context:)` after each keystroke
+- `OuisprKeyboardBridge` calls `SuggestionState.updateAsync(context:)` after each keystroke
 - Autocorrect-on-space: bridge's `handleSpace()` calls `performSpellCheck()`, inserts correction, stores `AutocorrectState`
 - Undo-on-backspace: bridge's `handleBackspace()` checks `lastAutocorrect` and restores original word
 
 ### Integration Points
 - New `SymSpellEngine` class replaces UITextChecker calls inside `TextPredictionEngine.spellCheck()`
 - `SuggestionBarView` layout needs reordering: verbatim | correction (bold) | alternative
-- Autocorrect rejection flag needed in `SuggestionState` or `DictusKeyboardBridge` (after undo, skip next correction for that word)
-- Larger JSON frequency files replace current small ones in `DictusKeyboard/Resources/`
+- Autocorrect rejection flag needed in `SuggestionState` or `OuisprKeyboardBridge` (after undo, skip next correction for that word)
+- Larger JSON frequency files replace current small ones in `OuisprKeyboard/Resources/`
 
 </code_context>
 

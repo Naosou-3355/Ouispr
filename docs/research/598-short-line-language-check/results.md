@@ -235,8 +235,8 @@ framework, but that is an inference, not a measurement of the device.
   could separate them. This is why any fix based on a better reading of the line (a higher
   floor, another detector call) cannot be the answer, and why the fix that works is one that
   stops judging such a line between those two languages.
-- `CLAUDE.md` says the iOS Simulator destination of the DictusCore package builds since #301.
+- `CLAUDE.md` says the iOS Simulator destination of the OuisprCore package builds since #301.
   It does not on `develop` today: `polish-harness/LostWordReplay.swift` (#575) uses
   `corpusPaths` and `args` outside the `#if os(macOS)` guard, and `xcodebuild test -scheme
-  DictusCore-Package -destination <iOS simulator>` fails on it. Not fixed here (out of scope);
+  OuisprCore-Package -destination <iOS simulator>` fails on it. Not fixed here (out of scope);
   the iOS comparison above was taken with a standalone binary instead.

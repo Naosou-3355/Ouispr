@@ -6,7 +6,7 @@ tags: [swiftui, onboarding, recording, haptics, auto-detection]
 
 requires:
   - phase: 06-01
-    provides: DictusCore design components (AnimatedMicButton, BrandWaveform, ProcessingAnimation, HapticFeedback)
+    provides: OuisprCore design components (AnimatedMicButton, BrandWaveform, ProcessingAnimation, HapticFeedback)
 provides:
   - Shared immersive RecordingView used from onboarding and HomeView
   - Swipe-blocked onboarding with programmatic step advancement
@@ -21,13 +21,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusApp/Views/RecordingView.swift
-    - DictusApp/Onboarding/TestRecordingPage.swift
-    - DictusApp/Views/TestDictationView.swift
-    - DictusApp/Views/MainTabView.swift
-    - DictusApp/Onboarding/OnboardingView.swift
-    - DictusApp/Onboarding/ModelDownloadPage.swift
-    - DictusApp/Onboarding/KeyboardSetupPage.swift
+    - OuisprApp/Views/RecordingView.swift
+    - OuisprApp/Onboarding/TestRecordingPage.swift
+    - OuisprApp/Views/TestDictationView.swift
+    - OuisprApp/Views/MainTabView.swift
+    - OuisprApp/Onboarding/OnboardingView.swift
+    - OuisprApp/Onboarding/ModelDownloadPage.swift
+    - OuisprApp/Onboarding/KeyboardSetupPage.swift
 
 key-decisions:
   - "RecordingMode enum (.onboarding/.standalone) controls post-transcription buttons"
@@ -74,13 +74,13 @@ Each task was committed atomically:
 3. **Task 3: Verify onboarding flow and recording screen** - APPROVED (checkpoint:human-verify)
 
 ## Files Created/Modified
-- `DictusApp/Views/RecordingView.swift` - Immersive recording screen with mode enum, haptics, waveform-to-text fade
-- `DictusApp/Onboarding/TestRecordingPage.swift` - Thin wrapper: RecordingView(mode: .onboarding)
-- `DictusApp/Views/TestDictationView.swift` - Thin wrapper: RecordingView(mode: .standalone)
-- `DictusApp/Views/MainTabView.swift` - Updated overlay to pass mode: .standalone
-- `DictusApp/Onboarding/OnboardingView.swift` - switch/case replacing TabView, step dots, slide transitions
-- `DictusApp/Onboarding/ModelDownloadPage.swift` - Reworded UX, removed auto-advance
-- `DictusApp/Onboarding/KeyboardSetupPage.swift` - Auto-detection, removed manual confirm button
+- `OuisprApp/Views/RecordingView.swift` - Immersive recording screen with mode enum, haptics, waveform-to-text fade
+- `OuisprApp/Onboarding/TestRecordingPage.swift` - Thin wrapper: RecordingView(mode: .onboarding)
+- `OuisprApp/Views/TestDictationView.swift` - Thin wrapper: RecordingView(mode: .standalone)
+- `OuisprApp/Views/MainTabView.swift` - Updated overlay to pass mode: .standalone
+- `OuisprApp/Onboarding/OnboardingView.swift` - switch/case replacing TabView, step dots, slide transitions
+- `OuisprApp/Onboarding/ModelDownloadPage.swift` - Reworded UX, removed auto-advance
+- `OuisprApp/Onboarding/KeyboardSetupPage.swift` - Auto-detection, removed manual confirm button
 
 ## Decisions Made
 - Used HapticFeedback.recordingStarted()/recordingStopped() (existing API) instead of generic HapticFeedback.impact(.medium) referenced in plan
@@ -95,7 +95,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (Build verification)
 - **Issue:** MainTabView.swift also instantiates RecordingView as a full-screen overlay. Adding the required `mode` parameter broke this call site.
 - **Fix:** Added `mode: .standalone` to the RecordingView call in MainTabView
-- **Files modified:** DictusApp/Views/MainTabView.swift
+- **Files modified:** OuisprApp/Views/MainTabView.swift
 - **Verification:** Build succeeds
 - **Committed in:** b1622ae (Task 1 commit)
 
@@ -112,7 +112,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - Phase 6 complete -- all 3 plans executed and verified
-- DictusCore shared design package available for all subsequent phases
+- OuisprCore shared design package available for all subsequent phases
 - App icon, HomeView fixes, onboarding flow, and recording UX all polished
 - Ready for Phase 7 (Keyboard Parity & Visual) which depends on Phase 6 infrastructure
 

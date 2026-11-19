@@ -57,7 +57,7 @@ KEEP = {
                       "ambiguïtés", "paragraphes"],
     "5-rambling": ["ça me reviendra", "Julien", "mardi", "février", "comptable",
                    "19 euros", "assurance", "entretien"],
-    "6-unscripted": ["Dictus", "gros pavé", "c'est pas", "sixième", "listes"],
+    "6-unscripted": ["Ouispr", "gros pavé", "c'est pas", "sixième", "listes"],
 }
 
 # ── Bar 4 — where fixture 4's boundary lands ─────────────────────────────────

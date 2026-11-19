@@ -1,5 +1,5 @@
-warning: 'dictuscore': found 1 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
-    /Users/pierreviviere/dev/dictus-wt/79d/DictusCore/Sources/polish-harness/README.md
+warning: 'ouisprcore': found 1 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/pierreviviere/dev/ouispr-wt/79d/OuisprCore/Sources/polish-harness/README.md
 [0/1] Planning build
 Building for debugging...
 [0/3] Write swift-version--58304C5D6DBC2206.txt

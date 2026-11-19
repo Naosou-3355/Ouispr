@@ -40,18 +40,18 @@ re_verification: false
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/LiveActivityStateMachine.swift` | Extracted testable state machine | VERIFIED | `public struct LiveActivityStateMachine` with `Phase` enum, `transition(to:)`, `needsWatchdog`, `reset()`, `forcePhase()` — 71 lines |
-| `DictusCore/Tests/DictusCoreTests/LiveActivityStateMachineTests.swift` | Unit tests, min 80 lines | VERIFIED | 164 lines; 17 `func test` methods covering valid/invalid transitions, watchdog flag, reset |
-| `DictusApp/LiveActivityManager.swift` | Watchdog + state machine delegation | VERIFIED | Contains `recordingWatchdog`, `startRecordingWatchdog()`, `cancelRecordingWatchdog()`, `private var stateMachine = LiveActivityStateMachine()` |
-| `DictusApp/DictationCoordinator.swift` | Watchdog armed after stop/cancel | VERIFIED | 3 occurrences of `startRecordingWatchdog()` — after stopDictation (363), cancelDictation (421), handleError (689) |
+| `OuisprCore/Sources/OuisprCore/LiveActivityStateMachine.swift` | Extracted testable state machine | VERIFIED | `public struct LiveActivityStateMachine` with `Phase` enum, `transition(to:)`, `needsWatchdog`, `reset()`, `forcePhase()` — 71 lines |
+| `OuisprCore/Tests/OuisprCoreTests/LiveActivityStateMachineTests.swift` | Unit tests, min 80 lines | VERIFIED | 164 lines; 17 `func test` methods covering valid/invalid transitions, watchdog flag, reset |
+| `OuisprApp/LiveActivityManager.swift` | Watchdog + state machine delegation | VERIFIED | Contains `recordingWatchdog`, `startRecordingWatchdog()`, `cancelRecordingWatchdog()`, `private var stateMachine = LiveActivityStateMachine()` |
+| `OuisprApp/DictationCoordinator.swift` | Watchdog armed after stop/cancel | VERIFIED | 3 occurrences of `startRecordingWatchdog()` — after stopDictation (363), cancelDictation (421), handleError (689) |
 
 ### Plan 02 (FIX-02)
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `DictusCore/Sources/DictusCore/PersistentLog.swift` | Size-based trim, 7-day retention, pruneOldEntries | VERIFIED | `maxFileSize: UInt64 = 200_000`, `retentionPeriod`, `pruneOldEntries()`, `attributesOfItem` in `coordinatedTrim` |
-| `DictusCore/Tests/DictusCoreTests/PersistentLogTests.swift` | Tests for size trim and date retention, min 40 lines | VERIFIED | 210 lines; 13 test methods including `testShouldTrimReturnsFalseUnderLimit`, `testPruneOldEntriesRemovesOldLines`, `testPruneOldEntriesKeepsRecentLines`, `testPruneOldEntriesKeepsUnparseableLines` |
-| `DictusApp/Views/SettingsView.swift` | Export with prune + spinner | VERIFIED | `pruneOldEntries()` called inside `exportContent()`, `CFAbsoluteTimeGetCurrent()` for duration measurement, `PersistentLog.log(.logExportCompleted(...))` on line 172 |
+| `OuisprCore/Sources/OuisprCore/PersistentLog.swift` | Size-based trim, 7-day retention, pruneOldEntries | VERIFIED | `maxFileSize: UInt64 = 200_000`, `retentionPeriod`, `pruneOldEntries()`, `attributesOfItem` in `coordinatedTrim` |
+| `OuisprCore/Tests/OuisprCoreTests/PersistentLogTests.swift` | Tests for size trim and date retention, min 40 lines | VERIFIED | 210 lines; 13 test methods including `testShouldTrimReturnsFalseUnderLimit`, `testPruneOldEntriesRemovesOldLines`, `testPruneOldEntriesKeepsRecentLines`, `testPruneOldEntriesKeepsUnparseableLines` |
+| `OuisprApp/Views/SettingsView.swift` | Export with prune + spinner | VERIFIED | `pruneOldEntries()` called inside `exportContent()`, `CFAbsoluteTimeGetCurrent()` for duration measurement, `PersistentLog.log(.logExportCompleted(...))` on line 172 |
 
 ---
 
@@ -59,10 +59,10 @@ re_verification: false
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `DictusApp/LiveActivityManager.swift` | `DictusCore/Sources/DictusCore/LiveActivityStateMachine.swift` | `private var stateMachine = LiveActivityStateMachine()` | WIRED | Instantiated at line 105; used for transition validation and forcePhase sync |
-| `DictusApp/DictationCoordinator.swift` | `DictusApp/LiveActivityManager.swift` | `LiveActivityManager.shared.startRecordingWatchdog()` | WIRED | 3 call sites confirmed (lines 363, 421, 689) |
-| `DictusApp/Views/SettingsView.swift` | `DictusCore/Sources/DictusCore/PersistentLog.swift` | `PersistentLog.exportContent()` at line 170 | WIRED | `exportContent()` calls `pruneOldEntries()` before reading; SettingsView calls `exportContent()` inside Task |
-| `DictusCore/Sources/DictusCore/PersistentLog.swift` | `FileManager.default.attributesOfItem` | O(1) size check in `coordinatedTrim` | WIRED | `attributesOfItem(atPath: url.path)` at line 220; no line-counting in `coordinatedTrim` |
+| `OuisprApp/LiveActivityManager.swift` | `OuisprCore/Sources/OuisprCore/LiveActivityStateMachine.swift` | `private var stateMachine = LiveActivityStateMachine()` | WIRED | Instantiated at line 105; used for transition validation and forcePhase sync |
+| `OuisprApp/DictationCoordinator.swift` | `OuisprApp/LiveActivityManager.swift` | `LiveActivityManager.shared.startRecordingWatchdog()` | WIRED | 3 call sites confirmed (lines 363, 421, 689) |
+| `OuisprApp/Views/SettingsView.swift` | `OuisprCore/Sources/OuisprCore/PersistentLog.swift` | `PersistentLog.exportContent()` at line 170 | WIRED | `exportContent()` calls `pruneOldEntries()` before reading; SettingsView calls `exportContent()` inside Task |
+| `OuisprCore/Sources/OuisprCore/PersistentLog.swift` | `FileManager.default.attributesOfItem` | O(1) size check in `coordinatedTrim` | WIRED | `attributesOfItem(atPath: url.path)` at line 220; no line-counting in `coordinatedTrim` |
 
 ---
 

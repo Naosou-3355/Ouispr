@@ -32,10 +32,10 @@ Fixed the prewarm progress bar stuck at 0% (UAT test 3) and discovered/fixed two
 ## Key files
 
 ### Modified
-- `DictusApp/Models/ModelManager.swift` — state transition ordering, Parakeet deletion, download progress, logging
-- `DictusApp/Views/ModelCardView.swift` — defensive nil-check on download progress
-- `DictusApp/Onboarding/ModelDownloadPage.swift` — same nil-check fix
-- `DictusCore/Sources/DictusCore/LogEvent.swift` — 4 new model lifecycle events
+- `OuisprApp/Models/ModelManager.swift` — state transition ordering, Parakeet deletion, download progress, logging
+- `OuisprApp/Views/ModelCardView.swift` — defensive nil-check on download progress
+- `OuisprApp/Onboarding/ModelDownloadPage.swift` — same nil-check fix
+- `OuisprCore/Sources/OuisprCore/LogEvent.swift` — 4 new model lifecycle events
 
 ## Deviations
 

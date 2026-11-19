@@ -25,9 +25,9 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - DictusKeyboard/Views/SpecialKeyButton.swift
-    - DictusKeyboard/Views/KeyboardView.swift
-    - DictusKeyboard/Views/KeyRow.swift
+    - OuisprKeyboard/Views/SpecialKeyButton.swift
+    - OuisprKeyboard/Views/KeyboardView.swift
+    - OuisprKeyboard/Views/KeyRow.swift
 
 key-decisions:
   - "Removed duplicate HapticFeedback.keyTapped() from onSpace callback -- SpaceKey now handles its own haptics internally"
@@ -70,9 +70,9 @@ Each task was committed atomically:
 2. **Task 2: Wire trackpad overlay and cursor movement into KeyboardView** - `773c14a` (feat)
 
 ## Files Created/Modified
-- `DictusKeyboard/Views/SpecialKeyButton.swift` - SpaceKey refactored with DragGesture, trackpad state, cursor movement callbacks
-- `DictusKeyboard/Views/KeyboardView.swift` - Trackpad overlay in ZStack, onCursorMove wired to adjustTextPosition
-- `DictusKeyboard/Views/KeyRow.swift` - Added onCursorMove and onTrackpadStateChange parameters
+- `OuisprKeyboard/Views/SpecialKeyButton.swift` - SpaceKey refactored with DragGesture, trackpad state, cursor movement callbacks
+- `OuisprKeyboard/Views/KeyboardView.swift` - Trackpad overlay in ZStack, onCursorMove wired to adjustTextPosition
+- `OuisprKeyboard/Views/KeyRow.swift` - Added onCursorMove and onTrackpadStateChange parameters
 
 ## Decisions Made
 - Removed duplicate `HapticFeedback.keyTapped()` from KeyboardView's `onSpace` callback since SpaceKey now fires its own haptic on initial touch -- avoids double haptic on space tap
@@ -87,7 +87,7 @@ Each task was committed atomically:
 - **Found during:** Task 2 (wiring callbacks)
 - **Issue:** KeyboardView's onSpace called HapticFeedback.keyTapped(), but SpaceKey now fires its own haptic on initial touch via DragGesture.onChanged -- would cause double haptic on every space tap
 - **Fix:** Removed HapticFeedback.keyTapped() from KeyboardView's onSpace closure
-- **Files modified:** DictusKeyboard/Views/KeyboardView.swift
+- **Files modified:** OuisprKeyboard/Views/KeyboardView.swift
 - **Verification:** Build succeeds, single haptic path for space tap
 - **Committed in:** 773c14a (Task 2 commit)
 

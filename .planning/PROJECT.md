@@ -1,8 +1,8 @@
-# Dictus
+# Ouispr
 
 ## What This Is
 
-Dictus is a free, open-source iOS keyboard app for on-device French speech-to-text dictation. Users speak into any iOS app and get accurate French transcription auto-inserted at the cursor — no subscription, no cloud, no account. Built with WhisperKit and Parakeet (FluidAudio) for multi-engine speech recognition, featuring full AZERTY/QWERTY UIKit keyboard (giellakbd-ios) with AOSP compressed trie spell correction (C++), n-gram next-word prediction (trigram with Stupid Backoff), spacebar trackpad, haptic feedback, iOS 26 Liquid Glass design, and cold start Audio Bridge for seamless dictation even when iOS kills the app. Currently in public TestFlight beta (v1.4).
+Ouispr is a free, open-source iOS keyboard app for on-device French speech-to-text dictation. Users speak into any iOS app and get accurate French transcription auto-inserted at the cursor — no subscription, no cloud, no account. Built with WhisperKit and Parakeet (FluidAudio) for multi-engine speech recognition, featuring full AZERTY/QWERTY UIKit keyboard (giellakbd-ios) with AOSP compressed trie spell correction (C++), n-gram next-word prediction (trigram with Stupid Backoff), spacebar trackpad, haptic feedback, iOS 26 Liquid Glass design, and cold start Audio Bridge for seamless dictation even when iOS kills the app. Currently in public TestFlight beta (v1.4).
 
 ## Core Value
 
@@ -24,7 +24,7 @@ A user can dictate text in French in any iOS app and correct it immediately on t
 - ✓ Settings (model, language, keyboard layout, filler word toggle, haptic toggle) — v1.0
 - ✓ iOS 26 Liquid Glass design throughout — v1.0
 - ✓ Two-process architecture (keyboard triggers app for recording) — v1.0
-- ✓ Design files consolidated into DictusCore shared package — v1.1
+- ✓ Design files consolidated into OuisprCore shared package — v1.1
 - ✓ App icon generated from brand kit (light/dark/tinted) — v1.1
 - ✓ Spacebar trackpad with haptic ticks and line-based vertical movement — v1.1
 - ✓ Adaptive accent key (apostrophe/accent based on context, case-preserving) — v1.1
@@ -107,7 +107,7 @@ A user can dictate text in French in any iOS app and correct it immediately on t
 Shipped v1.4 with ~21K LOC Swift + 1.7K C++ + 1.3K Python across 5 milestones in 35 days.
 Tech stack: Swift 5.9+ / SwiftUI / WhisperKit 0.16.0+ / FluidAudio (Parakeet) via SPM / C++ AOSP trie + N-gram engine (ObjC++ bridge).
 Architecture: Two-process (keyboard extension + main app via Darwin notifications + URL scheme + Audio Bridge for cold start).
-Keyboard: giellakbd-ios UICollectionView with DictusKeyboardBridge delegate adapter.
+Keyboard: giellakbd-ios UICollectionView with OuisprKeyboardBridge delegate adapter.
 App Group: `group.solutions.pivi.dictus`.
 Minimum target: iOS 17.0.
 Keyboard extension memory limit: ~50MB (verified on device).
@@ -140,7 +140,7 @@ Known remaining issues:
 | Audio background mode | Keep recording alive when user returns to previous app | ✓ Good — seamless UX |
 | SmartModelRouter dropped | Runtime model switching breaks background recording | ✓ Good — stability over feature |
 | FillerWordFilter removed | Whisper model handles filler removal natively | ✓ Good — less code |
-| Design consolidated into DictusCore | Eliminated 6-file duplication between targets | ✓ Good — single source of truth |
+| Design consolidated into OuisprCore | Eliminated 6-file duplication between targets | ✓ Good — single source of truth |
 | Pre-allocated haptic generators | Static instances eliminate 2-5ms per-tap latency | ✓ Good — native-feel haptics |
 | Canvas waveform over per-bar gradient | Single-pass rendering for 60fps performance | ✓ Good — smooth animation |
 | AOSP trie over SymSpell | Proximity scoring, accent-aware costs, lower memory (~0.4 MiB vs ~8 MiB) | ✓ Good — production-grade quality |

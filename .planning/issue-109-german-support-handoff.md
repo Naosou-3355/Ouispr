@@ -7,7 +7,7 @@
 
 ## Why this work exists
 
-PR1 built the **language onboarding system** (LanguageProfile + DictusCore helpers + FrenchAdaptiveKey + dynamic SettingsView picker) but did not add any new language. This PR (PR2) is the **dogfood proof** of the system: ship German end-to-end using the new architecture as the empirical validation that "adding a language is a one-file change."
+PR1 built the **language onboarding system** (LanguageProfile + OuisprCore helpers + FrenchAdaptiveKey + dynamic SettingsView picker) but did not add any new language. This PR (PR2) is the **dogfood proof** of the system: ship German end-to-end using the new architecture as the empirical validation that "adding a language is a one-file change."
 
 If PR2 hits friction the system was supposed to remove, the friction itself is data for the doc + script we owe at the end.
 
@@ -16,23 +16,23 @@ If PR2 hits friction the system was supposed to remove, the friction itself is d
 Read first: `.planning/issue-110-language-onboarding-handoff.md` — full PR1 plan.
 
 Concretely on `develop` today:
-- `DictusCore/Sources/DictusCore/Languages/{French,English,Spanish}.swift` — three pure-data `LanguageProfile` files
-- `DictusCore/Sources/DictusCore/Languages/LanguageProfile.swift` — the struct + `SupportedLanguage.profile` switch
-- `DictusCore/Sources/DictusCore/TextCorrection/{applyOverride,expandAccents,expandContractions,FrequencyProvider}` — pure-Swift helpers driven by a protocol
-- `DictusCore/Sources/DictusCore/AccentedCharacters.swift` — multilingual long-press `mappings` + `FrenchAdaptiveKey` namespace (French-only AZERTY adaptive accent key)
-- `DictusKeyboard/TextPrediction/AOSPTrieEngine.swift` — consumes the helpers via `currentProfile`; conforms to `FrequencyProvider` via extension
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` — gates `correctApostrophePrefix` on `!profile.contractionPrefixes.isEmpty`
-- `DictusApp/Views/SettingsView.swift` — language picker uses `ForEach(SupportedLanguage.allCases)`
+- `OuisprCore/Sources/OuisprCore/Languages/{French,English,Spanish}.swift` — three pure-data `LanguageProfile` files
+- `OuisprCore/Sources/OuisprCore/Languages/LanguageProfile.swift` — the struct + `SupportedLanguage.profile` switch
+- `OuisprCore/Sources/OuisprCore/TextCorrection/{applyOverride,expandAccents,expandContractions,FrequencyProvider}` — pure-Swift helpers driven by a protocol
+- `OuisprCore/Sources/OuisprCore/AccentedCharacters.swift` — multilingual long-press `mappings` + `FrenchAdaptiveKey` namespace (French-only AZERTY adaptive accent key)
+- `OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift` — consumes the helpers via `currentProfile`; conforms to `FrequencyProvider` via extension
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` — gates `correctApostrophePrefix` on `!profile.contractionPrefixes.isEmpty`
+- `OuisprApp/Views/SettingsView.swift` — language picker uses `ForEach(SupportedLanguage.allCases)`
 - `CONTEXT.md` (repo root) — domain glossary
 - `docs/adr/0001-empty-overrides-and-seeds-for-non-native-language-launches.md` — override/seed empty policy for non-native launches
 
-193/193 DictusCore tests pass on this state.
+193/193 OuisprCore tests pass on this state.
 
 ## What PR2 must deliver
 
 ### 1. German `LanguageProfile`
 
-Create `DictusCore/Sources/DictusCore/Languages/German.swift` mirroring the existing pattern. Per ADR 0001:
+Create `OuisprCore/Sources/OuisprCore/Languages/German.swift` mirroring the existing pattern. Per ADR 0001:
 
 - `code: "de"`, `displayName: "Deutsch"`, `shortCode: "DE"`, `defaultLayout: .qwerty` (QWERTZ deferred to issue #151)
 - `spaceName: "Leertaste"`, `returnName: "Eingabe"` (verify these are the conventional German keyboard labels)
@@ -52,7 +52,7 @@ Add `case german = "de"` to `SupportedLanguage` enum (and update the `profile`, 
 
 ### 2. Per-language test file
 
-Per locked decision #10: `DictusCore/Tests/DictusCoreTests/Languages/GermanLanguageTests.swift` (new directory). Tests should cover:
+Per locked decision #10: `OuisprCore/Tests/OuisprCoreTests/Languages/GermanLanguageTests.swift` (new directory). Tests should cover:
 - `germanProfile.code == "de"`, `displayName == "Deutsch"`, etc. (snapshot of the data)
 - `applyOverride(profile: germanProfile, word: ...)` returns nil for any input (empty overrides per ADR 0001)
 - `expandAccents(profile: germanProfile, ...)` with a `MockFrequencyProvider` covering `straße`, `mädchen`, `über`, `schön`
@@ -67,7 +67,7 @@ The Python tooling at `tools/` builds `de_spellcheck.dict` and `de_ngrams.dict` 
 - `tools/ngram_builder.py::SEED_BIGRAMS_BY_LANG` — per ADR 0001, do **not** add German seeds. The Wikipedia + OpenSubtitles + Google Books corpus should run alone.
 - Stopwords list for German.
 
-Run the pipeline. Output binaries land in the keyboard target's bundle resources. Wire them into Xcode (`DictusKeyboard.xcodeproj` build phases) so `de_spellcheck.dict` and `de_ngrams.dict` ship with the app.
+Run the pipeline. Output binaries land in the keyboard target's bundle resources. Wire them into Xcode (`OuisprKeyboard.xcodeproj` build phases) so `de_spellcheck.dict` and `de_ngrams.dict` ship with the app.
 
 ### 4. `tools/onboard_language.py` script
 
@@ -77,7 +77,7 @@ Phases:
 - `scaffold <lang>` — generates `Languages/<Lang>.swift` skeleton + `Tests/Languages/<Lang>LanguageTests.swift` skeleton
 - `build-dicts <lang>` — runs the Python dictionary + n-gram pipeline
 - `wire-xcode <lang>` — edits `project.pbxproj` to add the .dict binaries to keyboard bundle resources
-- `verify <lang>` — runs DictusCoreTests + checks Swift profile data matches the Python pipeline expectations
+- `verify <lang>` — runs OuisprCoreTests + checks Swift profile data matches the Python pipeline expectations
 
 ### 5. `docs/agents/language-onboarding.md`
 
@@ -139,8 +139,8 @@ See `.planning/issue-110-language-onboarding-handoff.md` for the full list. Most
 2. **`.planning/issue-110-language-onboarding-handoff.md`** — PR1 plan + locked decisions
 3. **`CONTEXT.md`** — domain glossary
 4. **`docs/adr/0001-empty-overrides-and-seeds-for-non-native-language-launches.md`** — override/seed policy
-5. **`DictusCore/Sources/DictusCore/Languages/{French,English,Spanish}.swift`** — templates by example
-6. **`DictusCore/Sources/DictusCore/SupportedLanguage.swift`** — the enum to extend
+5. **`OuisprCore/Sources/OuisprCore/Languages/{French,English,Spanish}.swift`** — templates by example
+6. **`OuisprCore/Sources/OuisprCore/SupportedLanguage.swift`** — the enum to extend
 7. **`tools/`** directory — Python pipeline. Identify the entry points before assuming structure.
 8. **`git log --oneline 8efda46..HEAD`** on develop — see exactly what PR1 changed
 

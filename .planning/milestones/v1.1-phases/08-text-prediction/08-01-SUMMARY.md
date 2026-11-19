@@ -22,20 +22,20 @@ tech-stack:
 
 key-files:
   created:
-    - DictusCore/Sources/DictusCore/FrequencyDictionary.swift
-    - DictusCore/Tests/DictusCoreTests/FrequencyDictionaryTests.swift
-    - DictusCore/Tests/DictusCoreTests/Fixtures/fr_frequency_test.json
-    - DictusKeyboard/TextPrediction/TextPredictionEngine.swift
-    - DictusKeyboard/TextPrediction/SuggestionState.swift
-    - DictusKeyboard/Resources/fr_frequency.json
-    - DictusKeyboard/Resources/en_frequency.json
+    - OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift
+    - OuisprCore/Tests/OuisprCoreTests/FrequencyDictionaryTests.swift
+    - OuisprCore/Tests/OuisprCoreTests/Fixtures/fr_frequency_test.json
+    - OuisprKeyboard/TextPrediction/TextPredictionEngine.swift
+    - OuisprKeyboard/TextPrediction/SuggestionState.swift
+    - OuisprKeyboard/Resources/fr_frequency.json
+    - OuisprKeyboard/Resources/en_frequency.json
   modified:
-    - DictusCore/Sources/DictusCore/SharedKeys.swift
-    - DictusCore/Package.swift
-    - Dictus.xcodeproj/project.pbxproj
+    - OuisprCore/Sources/OuisprCore/SharedKeys.swift
+    - OuisprCore/Package.swift
+    - Ouispr.xcodeproj/project.pbxproj
 
 key-decisions:
-  - "FrequencyDictionary as pure Swift struct in DictusCore for testability without UIKit"
+  - "FrequencyDictionary as pure Swift struct in OuisprCore for testability without UIKit"
   - "TextPredictionEngine as class (not struct) due to UITextChecker reference type"
   - "Frequency-ranked UITextChecker completions for better suggestion quality"
   - "Single language loaded at a time to minimize memory in keyboard extension"
@@ -64,10 +64,10 @@ completed: 2026-03-09
 - **Files modified:** 10
 
 ## Accomplishments
-- FrequencyDictionary in DictusCore with 6 unit tests covering ranking, case insensitivity, invalid data, and fixture loading
+- FrequencyDictionary in OuisprCore with 6 unit tests covering ranking, case insensitivity, invalid data, and fixture loading
 - TextPredictionEngine with frequency-ranked word completions, spell-check corrections, and accent variant suggestions
 - SuggestionState as ObservableObject adapter for SwiftUI suggestion bar binding
-- French (1288 words) and English (1126 words) frequency dictionaries bundled in DictusKeyboard
+- French (1288 words) and English (1126 words) frequency dictionaries bundled in OuisprKeyboard
 
 ## Task Commits
 
@@ -78,19 +78,19 @@ Each task was committed atomically:
 3. **Task 3: Frequency dictionary JSON files** - `e640fdc` (feat)
 
 ## Files Created/Modified
-- `DictusCore/Sources/DictusCore/FrequencyDictionary.swift` - JSON frequency data loader with rank lookup
-- `DictusCore/Tests/DictusCoreTests/FrequencyDictionaryTests.swift` - 6 unit tests for ranking logic
-- `DictusCore/Tests/DictusCoreTests/Fixtures/fr_frequency_test.json` - Test fixture with 17 French words
-- `DictusKeyboard/TextPrediction/TextPredictionEngine.swift` - UITextChecker completions + spell-check + accents
-- `DictusKeyboard/TextPrediction/SuggestionState.swift` - ObservableObject with update(proxy:), performSpellCheck, clear
-- `DictusKeyboard/Resources/fr_frequency.json` - 1288 common French words ranked by frequency
-- `DictusKeyboard/Resources/en_frequency.json` - 1126 common English words ranked by frequency
-- `DictusCore/Sources/DictusCore/SharedKeys.swift` - Added autocorrectEnabled key
-- `DictusCore/Package.swift` - Added test resources for Fixtures directory
-- `Dictus.xcodeproj/project.pbxproj` - TextPrediction group, Resources group, build phases
+- `OuisprCore/Sources/OuisprCore/FrequencyDictionary.swift` - JSON frequency data loader with rank lookup
+- `OuisprCore/Tests/OuisprCoreTests/FrequencyDictionaryTests.swift` - 6 unit tests for ranking logic
+- `OuisprCore/Tests/OuisprCoreTests/Fixtures/fr_frequency_test.json` - Test fixture with 17 French words
+- `OuisprKeyboard/TextPrediction/TextPredictionEngine.swift` - UITextChecker completions + spell-check + accents
+- `OuisprKeyboard/TextPrediction/SuggestionState.swift` - ObservableObject with update(proxy:), performSpellCheck, clear
+- `OuisprKeyboard/Resources/fr_frequency.json` - 1288 common French words ranked by frequency
+- `OuisprKeyboard/Resources/en_frequency.json` - 1126 common English words ranked by frequency
+- `OuisprCore/Sources/OuisprCore/SharedKeys.swift` - Added autocorrectEnabled key
+- `OuisprCore/Package.swift` - Added test resources for Fixtures directory
+- `Ouispr.xcodeproj/project.pbxproj` - TextPrediction group, Resources group, build phases
 
 ## Decisions Made
-- FrequencyDictionary as pure Swift struct in DictusCore: keeps it testable without UIKit dependency and reusable across targets
+- FrequencyDictionary as pure Swift struct in OuisprCore: keeps it testable without UIKit dependency and reusable across targets
 - TextPredictionEngine as class (not struct): UITextChecker is an NSObject reference type, class avoids copy-on-write issues
 - Frequency-ranked completions: UITextChecker returns alphabetical completions, re-ranking by frequency ensures common words appear first
 - Single language loaded at a time: only one frequency dictionary in memory to respect keyboard extension memory limits
@@ -101,7 +101,7 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 ## Issues Encountered
-- DictusCore swift test cannot run via `swift test` CLI due to pre-existing SwiftUI availability errors (Design/ files require iOS). Tests verified via xcodebuild build for iOS Simulator. This is a pre-existing limitation, not caused by this plan.
+- OuisprCore swift test cannot run via `swift test` CLI due to pre-existing SwiftUI availability errors (Design/ files require iOS). Tests verified via xcodebuild build for iOS Simulator. This is a pre-existing limitation, not caused by this plan.
 
 ## User Setup Required
 
@@ -110,7 +110,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 - TextPredictionEngine and SuggestionState ready for Plan 02 suggestion bar UI integration
 - FrequencyDictionary API stable for any future consumers
-- DictusKeyboard builds cleanly with all new files
+- OuisprKeyboard builds cleanly with all new files
 
 ---
 *Phase: 08-text-prediction*

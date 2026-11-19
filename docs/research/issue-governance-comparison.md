@@ -1,18 +1,18 @@
-# Issue governance patterns for Dictus
+# Issue governance patterns for Ouispr
 
 Date: 2026-09-20
 
 ## Question
 
-How should Dictus combine issue triage, product prioritisation, agent implementation and human validation without inventing a private process that established open-source projects have not tested?
+How should Ouispr combine issue triage, product prioritisation, agent implementation and human validation without inventing a private process that established open-source projects have not tested?
 
-This note compares public, primary-source evidence from GitHub itself and established repositories. It separates observed practice from the smaller operating model proposed for Dictus.
+This note compares public, primary-source evidence from GitHub itself and established repositories. It separates observed practice from the smaller operating model proposed for Ouispr.
 
 ## GitHub's native model
 
 GitHub Projects is designed as a synchronized table, board and roadmap over issues and pull requests, with saved views, custom fields and automation.[1] [2] GitHub's own guidance recommends one source of truth for each fact, small issues and PRs, explicit dependency links, customized views, column limits and automatic updates for mechanical state.[1]
 
-Milestones are the native repository-level grouping for a release or other outcome. They expose scope, completion and an ordered list of issues and PRs.[4] They are therefore a good fit for Dictus releases, but not enough on their own for separate agent, decision and validation queues.
+Milestones are the native repository-level grouping for a release or other outcome. They expose scope, completion and an ordered list of issues and PRs.[4] They are therefore a good fit for Ouispr releases, but not enough on their own for separate agent, decision and validation queues.
 
 Built-in Project workflows can set status when items are added, closed or merged and can auto-add or archive matching items.[3] This supports a clean separation: GitHub performs deterministic bookkeeping, while an agent performs semantic triage and product-aware recommendations.
 
@@ -46,7 +46,7 @@ The public timeline proves fast AI-assisted triage and AI-assisted implementatio
 - Require tests and environment-appropriate evidence in the PR.
 - Treat the issue as support and product context, not merely a prompt for code generation.
 
-## Dictus baseline before adoption
+## Ouispr baseline before adoption
 
 Snapshot from the GitHub API on 2026-09-20:
 
@@ -64,7 +64,7 @@ The repository already has the core strategic layers:
 
 - `docs/RELEASE-PLAN.md` for release intent;
 - `docs/ROADMAP.md` for an ordered active lane;
-- milestones for `2.0.0 - Dictus Pro`, the keyboard campaign and `Someday`;
+- milestones for `2.0.0 - Ouispr Pro`, the keyboard campaign and `Someday`;
 - detailed issue briefs and grilling decisions;
 - #534 for running the existing test suite as required CI;
 - #535 for a repeatable headless simulator smoke test.
@@ -73,7 +73,7 @@ The missing layer is operational routing. `ready-for-agent` currently mixes "spe
 
 ## OpenClaw
 
-OpenClaw's scale is much larger than Dictus, but its boundary model is directly relevant. Structured issue forms collect evidence and route support or security reports away from ordinary product issues. Its labels separate type, product surface, priority, impact, evidence state, automation eligibility and human gates rather than trying to encode all of them in one status.[9] [10]
+OpenClaw's scale is much larger than Ouispr, but its boundary model is directly relevant. Structured issue forms collect evidence and route support or security reports away from ordinary product issues. Its labels separate type, product surface, priority, impact, evidence state, automation eligibility and human gates rather than trying to encode all of them in one status.[9] [10]
 
 The ClawSweeper design keeps model workers away from mutation credentials. AI workers analyze and recommend; deterministic scripts own comments, labels, pushes, closure and merges through bounded credentials. Repair and automerge are opt-in, exact-head and fail-closed.[11]
 
@@ -112,14 +112,14 @@ VS Code uses visible planning stages to distinguish unaccepted candidates, accep
 
 ### Pattern to adopt
 
-- Intake should collect Dictus version/build, iOS/device, model, affected app or keyboard surface, reproduction and redacted logs.
+- Intake should collect Ouispr version/build, iOS/device, model, affected app or keyboard surface, reproduction and redacted logs.
 - Priority is assigned after the report is understood.
 - Accepted does not mean scheduled.
 - A current release milestone means delivery intent.
 - A small ordered queue is distinct from the general accepted backlog.
 - Duplicate automation suggests and cites; it does not close on similarity alone.
 
-## What Dictus should use
+## What Ouispr should use
 
 The common pattern across these repositories is not a particular bot or label name. It is a chain of custody:
 
@@ -134,7 +134,7 @@ structured intake
   -> human-controlled release
 ```
 
-The resulting lightweight Dictus model is documented in [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md). It deliberately keeps the existing milestones and priority labels, adds a distinct `needs-decision` state, keeps scheduling in `docs/ROADMAP.md` rather than in a second approval label, and limits the initial implementation queue to one issue.
+The resulting lightweight Ouispr model is documented in [`docs/ISSUE-GOVERNANCE.md`](../ISSUE-GOVERNANCE.md). It deliberately keeps the existing milestones and priority labels, adds a distinct `needs-decision` state, keeps scheduling in `docs/ROADMAP.md` rather than in a second approval label, and limits the initial implementation queue to one issue.
 
 ## Sources
 

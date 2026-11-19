@@ -17,18 +17,18 @@ created: 2026-03-13
 
 | Property | Value |
 |----------|-------|
-| **Framework** | XCTest (Swift Package, DictusCore target) |
-| **Config file** | `DictusCore/Package.swift` |
-| **Quick run command** | `cd DictusCore && swift test` |
-| **Full suite command** | `cd DictusCore && swift test` |
+| **Framework** | XCTest (Swift Package, OuisprCore target) |
+| **Config file** | `OuisprCore/Package.swift` |
+| **Quick run command** | `cd OuisprCore && swift test` |
+| **Full suite command** | `cd OuisprCore && swift test` |
 | **Estimated runtime** | ~15 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cd DictusCore && swift test`
-- **After every plan wave:** Run `cd DictusCore && swift test` + manual Xcode build verification
+- **After every task commit:** Run `cd OuisprCore && swift test`
+- **After every plan wave:** Run `cd OuisprCore && swift test` + manual Xcode build verification
 - **Before `/gsd:verify-work`:** Full suite must be green + successful archive + TestFlight distribution
 - **Max feedback latency:** 15 seconds
 
@@ -56,7 +56,7 @@ created: 2026-03-13
 
 - [ ] Verify PrivacyInfo.xcprivacy plist is valid XML after creation
 - [ ] Verify all documentation files exist after creation (README.md, CONTRIBUTING.md, PRIVACY.md, .github/ISSUE_TEMPLATE/*.md)
-- [ ] Existing DictusCore tests still pass after version bump
+- [ ] Existing OuisprCore tests still pass after version bump
 
 *This phase is primarily configuration + documentation. Automated validation is limited to file existence and format checks.*
 
