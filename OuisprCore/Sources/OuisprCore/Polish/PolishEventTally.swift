@@ -30,7 +30,7 @@ public struct PolishEventTally: Equatable, Sendable {
     /// The outcomes the export seeds at zero. `skippedAutoMode` stays: events from
     /// pre-#239 builds can still sit in the seven-day ring.
     public static let seededOutcomes: [PolishMetrics.Outcome] = [
-        .success, .rejectedGuardrail, .skipped, .skippedShort, .skippedAutoMode,
+        .success, .rejectedGuardrail, .skipped, .skippedShort, .skippedClean, .skippedAutoMode,
         .cancelled, .engineFailed, .engineUnavailable, .exceededContextBudget,
         .unsupportedInputLanguage, .smartModeSkippedShortInput, .skippedToggleOff
     ]
