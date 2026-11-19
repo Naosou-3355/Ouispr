@@ -78,6 +78,10 @@ public enum PolishSelfCorrection {
             guard cueEnd < tokens.count, start > 0 else { continue }
             if strong == nil, !restartWords.contains(keys[cueEnd]),
                !kinds[0].union(kinds[1]).contains(keys[cueEnd]) { continue }
+            // `je veux dire la vérité` is the verb; only `…, je veux dire …` corrects.
+            if cue == ["je", "veux", "dire"], !tokens[start - 1].surface.hasSuffix(",") { continue }
+            // `pardon pour le bruit`, `pardon de te déranger`: an apology.
+            if cue == ["pardon"], ["pour", "de", "d'"].contains(keys[cueEnd]) { continue }
             // A sentence ending right before the cue: nothing to retract in it.
             if endsSentence(tokens[start - 1].surface) { continue }
             // `ou plutôt` in a question offers a choice (`la plage ou plutôt la
@@ -87,8 +91,17 @@ public enum PolishSelfCorrection {
             let lo = max(0, start - window)
             var retractFrom: Int?
             for p in stride(from: start - 1, through: lo, by: -1) {
-                if keys[p] == first || sameKind(keys[p], first) { retractFrom = p; break }
-                if p < start - 1, endsSentence(tokens[p].surface) { break }
+                // A sentence boundary between here and the replacement, even after
+                // the cue (`C'est ton vélo, non ? La sonnette…`) or spaced the French
+                // way (`du pain ? Ah non…`): nothing is taken back across it.
+                if crossesSentence(text[tokens[p].range.lowerBound..<tokens[cueEnd].range.lowerBound]) { break }
+                // A weak cue only restarts on the same word, a weekday or a month: a
+                // determiner of another noun (`Le chef m'a dit non, la réunion…`) is
+                // the next clause, not a correction.
+                let kindMatches = strong == nil
+                    ? kinds[0...1].contains { $0.contains(keys[p]) && $0.contains(first) }
+                    : sameKind(keys[p], first)
+                if keys[p] == first || kindMatches { retractFrom = p; break }
             }
             guard let from = retractFrom else { continue }
             // Remove from the retracted word to the start of the replacement.
@@ -117,6 +130,16 @@ public enum PolishSelfCorrection {
     /// Whether the sentence running from here ends with `?`.
     static func questionEnds(_ rest: Substring) -> Bool {
         rest.first { ".?!…".contains($0) } == "?"
+    }
+
+    /// Whether a sentence ends inside `span`: `. ? ! …` followed by a space.
+    static func crossesSentence(_ span: Substring) -> Bool {
+        var previous: Character?
+        for ch in span {
+            if ch.isWhitespace, let mark = previous, ".?!…".contains(mark) { return true }
+            previous = ch
+        }
+        return false
     }
 
     static func endsSentence(_ surface: String) -> Bool {

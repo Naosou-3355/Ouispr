@@ -44,42 +44,76 @@ public enum PolishEditCheck {
         let outTokens = tokens(polished)
         guard !inTokens.isEmpty, !outTokens.isEmpty else { return polished }
 
-        // Edits against the output, applied back to front so ranges stay valid.
-        enum Edit { case remove(Range<String.Index>), replace(Range<String.Index>, String), insert(String.Index, String) }
-        var edits: [(at: String.Index, edit: Edit)] = []
+        var edits: [TextEdit] = []
+        // Restored words, by the output word they go back before, in spoken order.
+        var restored: [Int: [String]] = [:]
         for op in align(inTokens.map(\.key), outTokens.map(\.key)) {
             switch op {
             case let .insert(j):
-                guard outTokens[j].key == "ne" else { continue }
-                // The token and the space after it.
-                var range = outTokens[j].range
-                if range.upperBound < polished.endIndex, polished[range.upperBound] == " " {
-                    range = range.lowerBound..<polished.index(after: range.upperBound)
-                }
-                edits.append((range.lowerBound, .remove(range)))
+                if outTokens[j].key == "ne" { edits.append(removingNe(at: j, in: outTokens, polished: polished)) }
             case let .replace(i, j):
                 guard outTokens[j].key == "n'" + inTokens[i].key else { continue }
-                edits.append((outTokens[j].range.lowerBound,
-                              .replace(outTokens[j].range, rebuilt(outTokens[j].surface, word: inTokens[i].word))))
+                edits.append(TextEdit(range: outTokens[j].range,
+                                      text: rebuilt(outTokens[j].surface, word: inTokens[i].word)))
             case let .delete(i, beforeOutput):
                 guard protectedWords.contains(inTokens[i].key), keepsSpeakersWord(at: i, in: inTokens) else { continue }
-                if beforeOutput < outTokens.count {
-                    edits.append((outTokens[beforeOutput].range.lowerBound, .insert(outTokens[beforeOutput].range.lowerBound, inTokens[i].word + " ")))
-                } else {
-                    edits.append((polished.endIndex, .insert(polished.endIndex, " " + inTokens[i].word)))
-                }
+                restored[beforeOutput, default: []].append(inTokens[i].word)
             }
+        }
+        for (position, words) in restored {
+            edits.append(restoring(words, before: position, in: outTokens, input: inTokens, polished: polished))
         }
         guard !edits.isEmpty else { return polished }
+        // Applied back to front so the ranges still ahead stay valid.
         var result = polished
-        for (_, edit) in edits.sorted(by: { $0.at > $1.at }) {
-            switch edit {
-            case let .remove(range): result.removeSubrange(range)
-            case let .replace(range, text): result.replaceSubrange(range, with: text)
-            case let .insert(index, text): result.insert(contentsOf: text, at: index)
-            }
+        for edit in edits.sorted(by: { $0.range.lowerBound > $1.range.lowerBound }) {
+            result.replaceSubrange(edit.range, with: edit.text)
         }
         return result
+    }
+
+    /// One change to the output: `range` of it becomes `text`.
+    struct TextEdit {
+        let range: Range<String.Index>
+        let text: String
+    }
+
+    /// An added `ne` and the space after it removed. When it opened the sentence
+    /// (`Ne touche pas à ça.`), the next word takes its capital.
+    static func removingNe(at j: Int, in out: [Token], polished: String) -> TextEdit {
+        var range = out[j].range
+        if range.upperBound < polished.endIndex, polished[range.upperBound] == " " {
+            range = range.lowerBound..<polished.index(after: range.upperBound)
+        }
+        guard out[j].surface.first?.isUppercase == true, j + 1 < out.count,
+              range.upperBound == out[j + 1].range.lowerBound,
+              let first = out[j + 1].surface.first, first.isLowercase else {
+            return TextEdit(range: range, text: "")
+        }
+        return TextEdit(range: range.lowerBound..<polished.index(after: range.upperBound),
+                        text: String(first).uppercased())
+    }
+
+    /// Dropped words written back before output word `position`. At the start of a
+    /// sentence the first restored word takes the capital (`Nous on part demain.`,
+    /// not `nous On part demain.`), and the word after it goes back to the lowercase
+    /// the speaker's text had — a name the speaker's text capitalised keeps it.
+    static func restoring(_ words: [String], before position: Int, in out: [Token],
+                          input: [Token], polished: String) -> TextEdit {
+        let joined = words.joined(separator: " ")
+        guard position < out.count else {
+            return TextEdit(range: polished.endIndex..<polished.endIndex, text: " " + joined)
+        }
+        let next = out[position]
+        let at = next.range.lowerBound
+        let opensSentence = position == 0 || PolishSelfCorrection.endsSentence(out[position - 1].surface)
+        guard opensSentence, let first = next.surface.first, first.isUppercase else {
+            return TextEdit(range: at..<at, text: joined + " ")
+        }
+        let capitalised = joined.prefix(1).uppercased() + joined.dropFirst()
+        let lowercaseInInput = input.contains { $0.word == next.word.lowercased() }
+        guard lowercaseInInput else { return TextEdit(range: at..<at, text: capitalised + " ") }
+        return TextEdit(range: at..<polished.index(after: at), text: capitalised + " " + String(first).lowercased())
     }
 
     /// A deleted protected word is the speaker's to keep unless it is one half of an

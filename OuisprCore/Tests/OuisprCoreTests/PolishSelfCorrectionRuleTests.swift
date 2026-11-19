@@ -48,6 +48,27 @@ final class PolishSelfCorrectionRuleTests: XCTestCase {
         }
     }
 
+    func testNoCorrectionAcrossASentenceOrOnAnotherClause() {
+        for text in [
+            // A tag question, then the next sentence.
+            "C'est ton vélo, non ? La sonnette est cassée.",
+            "Tu viens samedi, non ? Dimanche je suis pris.",
+            "C'est bien ton code, non ? Le test passe.",
+            // French spacing before the question mark.
+            "Il reste du pain ? Ah non, le pain est fini.",
+            // A reported `non`, then the next clause.
+            "Le chef m'a dit non, la réunion est annulée.",
+            "Le patron a répondu non, la réunion est demain.",
+            "La réponse est non, le projet est arrêté.",
+            // `je veux dire` as a verb, `pardon` as an apology.
+            "Ce soir je veux dire la vérité à ma mère.",
+            "Demain à midi je veux dire à Paul que c'est fini.",
+            "Désolé pour hier, pardon pour le bruit."
+        ] {
+            XCTAssertEqual(fix(text), text, text)
+        }
+    }
+
     func testEnglishIsLeftAlone() {
         let text = "See you Monday, sorry, Tuesday."
         XCTAssertEqual(PolishSelfCorrection.apply(text, language: .english), text)
