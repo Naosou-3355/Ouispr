@@ -41,6 +41,10 @@ public struct PolishMetrics: Sendable, Codable {
         /// punctuated, and with nothing any rule of the free-polish prompt acts on
         /// (`PolishCleanInput`). Deterministic passes still ran.
         case skippedClean
+        /// The model did not answer within the time the user is asked to wait after
+        /// stopping (`PolishLatencyBudget`), or was given no time at all: the
+        /// deterministic floor was inserted instead.
+        case overTimeBudget
         /// LEGACY — no longer emitted since #239. Between #226 and #239 the
         /// whole polish layer was bypassed in Whisper Auto-detect mode and the
         /// bypass was recorded under this outcome. Auto mode now runs the

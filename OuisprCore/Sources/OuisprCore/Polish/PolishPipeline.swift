@@ -144,9 +144,15 @@ public enum PolishPipeline {
             // A closing fence the model appended is dropped before anything judges
             // the text (#587): it carries no word, so no guardrail would refuse it
             // and it would reach the document as the last line.
-            let polished = PolishPostpass.stripTrailingFenceLines(job.typographyLanguage.map {
+            let decoded = PolishPostpass.stripTrailingFenceLines(job.typographyLanguage.map {
                 PolishPostpass.decodeFromEngine(polishedRaw, language: $0)
             } ?? PolishPostpass.decodeNewlines(polishedRaw))
+            // The free polish keeps the model's edits one by one, minus a dropped
+            // pronoun or negation and an added `ne` (`PolishEditCheck`).
+            let polished = job.task.isSmart ? decoded : PolishEditCheck.review(
+                polished: decoded, input: preprocessed,
+                language: job.typographyLanguage ?? detectLanguage(in: preprocessed)
+            )
             if Task.isCancelled {
                 let postMs = Int(Date().timeIntervalSince(postStart) * 1000)
                 return Result(engineOutput: polished, outcome: .cancelled, engineMs: engineMs, postprocessMs: postMs,

@@ -251,6 +251,8 @@ let prewarmEngine = args.contains("--prewarm")
 /// `--no-clean-gate`: run the engine on clean transcripts too (the behaviour before
 /// the gate), to measure what the gate saves and what it changes.
 let cleanGate = !args.contains("--no-clean-gate")
+// `--budget`: cut the free polish off at `PolishLatencyBudget`, as the app does.
+let latencyBudget = args.contains("--budget")
 // #439. Overrides every fixture's `lang`. See `Fixture.routed(through:)`.
 let langOverride = optionValue("--lang", in: args)
 let modeAIdentifier = optionValue("--mode-a", in: args) ?? modeIdentifier
@@ -580,7 +582,11 @@ func runOnce(_ fx: Fixture,
         await engine.prewarm(task: job.task, targetLanguage: job.promptLanguage)
         try? await Task.sleep(for: .seconds(2))
     }
-    let r = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
+    let r = await PolishPipeline.transform(
+        preprocessed: preprocessed, engine: engine, job: job, gate: PolishAvailabilityGate(),
+        budget: latencyBudget && !job.task.isSmart
+            ? PolishLatencyBudget.seconds(for: preprocessed, language: target) : nil
+    )
     // nil for a Smart Mode on any non-success: it inserts nothing rather than the
     // untransformed floor, which #79 names as the worst outcome available.
     let final = PolishPipeline.resolvedOutput(r, preprocessed: preprocessed, job: job)
@@ -642,7 +648,13 @@ func runOnceAuto(_ fx: Fixture,
         await engine.prewarm(task: job.task, targetLanguage: job.promptLanguage)
         try? await Task.sleep(for: .seconds(2))
     }
-    let r = await PolishPipeline.transform(preprocessed: preprocessed, engine: engine, job: job)
+    let r = await PolishPipeline.transform(
+        preprocessed: preprocessed, engine: engine, job: job, gate: PolishAvailabilityGate(),
+        budget: latencyBudget && !job.task.isSmart
+            ? PolishLatencyBudget.seconds(for: preprocessed,
+                                          language: detectedCode.flatMap(SupportedLanguage.init(rawValue:)))
+            : nil
+    )
     let final = PolishPipeline.resolvedOutput(r, preprocessed: preprocessed, job: job)
     return RunOutcome(final: final, engineOutput: r.engineOutput, outcome: r.outcome,
                       engineMs: r.engineMs, detected: detectedCode, task: job.task,

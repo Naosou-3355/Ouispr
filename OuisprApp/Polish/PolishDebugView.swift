@@ -379,7 +379,7 @@ private struct PolishExportShareSheet: UIViewControllerRepresentable {
 
 private extension PolishMetrics.Outcome {
     static var allDisplayCases: [PolishMetrics.Outcome] {
-        [.success, .rejectedGuardrail, .skipped, .skippedShort, .skippedClean, .skippedAutoMode,
+        [.success, .rejectedGuardrail, .skipped, .skippedShort, .skippedClean, .overTimeBudget, .skippedAutoMode,
          .cancelled, .engineFailed, .engineUnavailable, .exceededContextBudget,
          .unsupportedInputLanguage, .smartModeSkippedShortInput, .skippedToggleOff]
     }
@@ -391,6 +391,7 @@ private extension PolishMetrics.Outcome {
         case .skipped: return "skipped"
         case .skippedShort: return "short"
         case .skippedClean: return "clean"
+        case .overTimeBudget: return "budget"
         case .skippedAutoMode: return "auto"
         case .cancelled: return "cancelled"
         case .engineFailed: return "failed"
@@ -407,7 +408,7 @@ private extension PolishMetrics.Outcome {
         case .success: return .green
         // Orange, not red: an overflow is a refusal, not a breakage — the
         // engine was never called and the user still got their text (#270).
-        case .rejectedGuardrail, .skipped, .skippedShort, .skippedClean, .skippedAutoMode,
+        case .rejectedGuardrail, .skipped, .skippedShort, .skippedClean, .overTimeBudget, .skippedAutoMode,
              .exceededContextBudget, .unsupportedInputLanguage,
              // A mode declining a dictation it has nothing to do with is the mildest
              // entry on this list, and it belongs with the refusals rather than with

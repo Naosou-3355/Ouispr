@@ -51,6 +51,9 @@ public enum VerbalPunctuationPrepass {
     /// Apply the language's verbal-punctuation rules to `raw`. Returns the
     /// input unchanged for languages without configured rules.
     public static func apply(_ raw: String, language: SupportedLanguage) -> String {
+        // Hesitation sounds go first, so no rule below sees `point euh virgule`.
+        // Then a spoken self-correction, now that no `euh` sits inside its cue.
+        let raw = PolishSelfCorrection.apply(PolishFillerPass.apply(raw, language: language), language: language)
         let rules = self.rules(for: language)
         guard !rules.isEmpty else { return raw }
         var out = raw
