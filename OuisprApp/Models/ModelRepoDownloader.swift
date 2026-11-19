@@ -71,6 +71,9 @@ final class ModelRepoDownloader {
         var maxAttemptsPerFile: Int = 3
         /// HuggingFace repo id, e.g. "argmaxinc/whisperkit-coreml".
         let repoPath: String
+        /// The commit every URL of the download names (`/resolve/<commit>/<path>`),
+        /// pinned in the source rather than resolved from `main` at download time.
+        let revision: String
         /// Repo-relative directory prefixes (with trailing "/") whose contents are
         /// downloaded recursively. Everything outside them is skipped.
         let directoryPatterns: [String]
