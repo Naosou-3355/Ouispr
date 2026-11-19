@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Scores a bench run: latency (end of speech -> final text) and quality.
 
-  score.py <cases.json> --device <results.tsv> [--label iphone]
+  score.py <cases.json> --device <results.tsv> [--label iphone] [--load <load.tsv>]
   score.py <cases.json> --mac <v3.tsv> <polish-harness-show.txt> [--label mac]
 
 Several runs can be given in one call (each --device / --mac adds one); they are printed
@@ -30,6 +30,7 @@ def load_device(path):
     for r in csv.DictReader(open(path, encoding='utf-8'), delimiter='\t'):
         out[r['id']] = dict(hyp=r['hypothesis'].replace('⏎', '\n'), text=r['polished'].replace('⏎', '\n'),
                             outcome=r['outcome'], asr=float(r['asr_ms']), pol=float(r['polish_ms']),
+                            wall=float(r['polish_wall_ms']) if r.get('polish_wall_ms') else None,
                             thermal=r.get('thermal', ''))
     return out
 
@@ -59,6 +60,15 @@ def score(cases, R):
     r['tot'] = stats(tot)
     r['le1'] = 100 * sum(t <= 1000 for t in tot) / len(tot)
     r['le2'] = 100 * sum(t <= 2000 for t in tot) / len(tot)
+    if all(R[i].get('wall') is not None for i in ids):
+        wall = [R[i]['wall'] for i in ids]
+        called = [R[i]['wall'] for i in ids if R[i]['outcome'] not in ('skippedClean', 'skipped', 'overTimeBudget')]
+        e2e = [R[i]['asr'] + R[i]['wall'] for i in ids]
+        r['wall'] = stats(wall); r['wall_called'] = stats(called) if called else '-'
+        r['e2e'] = stats(e2e)
+        r['wall_p95'] = q(wall, .95)
+        r['e2e_le1'] = 100 * sum(t <= 1000 for t in e2e) / len(e2e)
+        r['e2e_le2'] = 100 * sum(t <= 2000 for t in e2e) / len(e2e)
     r['skip'] = 100 * sum(R[i]['outcome'] in ('skippedClean', 'overTimeBudget') for i in ids) / len(ids)
     hot = [i for i in ids if R[i]['thermal'] in ('serious', 'critical')]
     r['hot'] = len(hot)
@@ -89,6 +99,13 @@ def main(argv):
             runs.append(['iphone', load_device(args[k + 1])]); k += 2
         elif args[k] == '--mac':
             runs.append(['mac', load_mac(args[k + 1], args[k + 2])]); k += 3
+        elif args[k] == '--load':
+            print("== chargement des modèles (ms)")
+            for line in open(args[k + 1], encoding='utf-8'):
+                f = line.rstrip('\n').split('\t')
+                if len(f) >= 2:
+                    print(f"  {f[0]}: {float(f[1]):.5f}  ({f[2] if len(f) > 2 else ''})")
+            k += 2
         elif args[k] == '--label':
             runs[-1][0] = args[k + 1]; k += 2
         else:
@@ -101,6 +118,13 @@ def main(argv):
         print("  nettoyage ms    :", r['pol'])
         print("  total ms        :", r['tot'])
         print(f"  ≤ 1 s {r['le1']:.5f} %  ≤ 2 s {r['le2']:.5f} %")
+        if 'wall' in r:
+            print("  nettoyage complet ms (passes déterministes comprises), toutes dictées:", r['wall'])
+            print("  nettoyage complet ms, dictées passées au modèle:", r['wall_called'])
+            print("  fin de parole → texte ms:", r['e2e'])
+            print(f"  fin de parole → texte ≤ 1 s {r['e2e_le1']:.5f} %  ≤ 2 s {r['e2e_le2']:.5f} %")
+            ok = 'OK' if r['wall_p95'] <= 1000 else 'NON'
+            print(f"  seuil nettoyage p95 ≤ 1 s: {ok} ({r['wall_p95']:.5f} ms)")
         for key, lab in [('A', 'reprises corrigées'), ('B', '« : » placés'), ('C', '« : » parasites'),
                          ('D', 'mails mis en lignes'), ('E', 'SMS/faux mails cassés'), ('H', 'hésitations retirées')]:
             a, b = r[key]; print(f"  {lab}: {a}/{b} = {100 * a / max(b, 1):.5f} %")
