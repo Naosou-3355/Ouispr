@@ -118,6 +118,18 @@ final class KeyboardPolishCoordinator {
         Task { await run(pending) }
     }
 
+    /// Warm the Apple FM session this keyboard will polish with, at the mic tap.
+    ///
+    /// WHY: measured on the iPhone (2026-11-19, iPhone 18 Pro Max), a call on a cold
+    /// session took 1491 ms and one on a session warmed 2 s earlier 770 ms. The
+    /// recording that follows the tap is the window Apple asks for (at least 1 s before
+    /// `respond`). The model runs out of process; what this process holds is the session
+    /// object, the same one the polish would create on its first call anyway.
+    /// `PolishService.prewarm` is a no-op when the polish is off.
+    func prewarm() {
+        service.prewarm()
+    }
+
     /// Give up on the previous dictation because a new one is starting
     /// (decision 15: N+1 cancels N and takes its place).
     ///
