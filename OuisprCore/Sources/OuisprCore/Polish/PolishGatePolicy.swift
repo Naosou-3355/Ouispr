@@ -47,6 +47,20 @@ public enum PolishGatePolicy {
     /// the deterministic floor, which preserves trust (ADR 0002). A Smart Mode runs
     /// anyway: short sentences to translate land here routinely, and its prompt does
     /// not depend on detection having succeeded.
+    /// Whether the clean-input gate skips the engine for this dictation.
+    ///
+    /// `language` is the language the transcript was read as, and only when that is
+    /// the language the polish writes in: a transcript in another language is the
+    /// repair path's job, and a mixed one may hold an off-language fragment (rule 8).
+    /// A Smart Mode always runs: it transforms text that is already clean.
+    public static func skipsForCleanInput(_ preprocessed: String,
+                                          language: SupportedLanguage?,
+                                          isMixed: Bool,
+                                          task: PolishTask) -> Bool {
+        guard !task.isSmart, !isMixed, let language else { return false }
+        return PolishCleanInput.isClean(preprocessed, language: language)
+    }
+
     public static func skipsForGibberish(hasDetectedLanguage: Bool, task: PolishTask) -> Bool {
         guard !task.isSmart else { return false }
         return !hasDetectedLanguage
