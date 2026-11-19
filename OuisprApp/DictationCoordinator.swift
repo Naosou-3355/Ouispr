@@ -108,6 +108,10 @@ class DictationCoordinator: ObservableObject {
     /// dictation, or a full history the record fell straight out of.
     var polishHandoffHistoryID: UUID?
 
+    /// The collected sample of the current dictation, when collection mode is on, so
+    /// the polished text can join its raw transcript. Nil when collection is off.
+    var collectionSampleID: UUID?
+
     /// Which dictation the app is currently in. Moves when one starts and when one
     /// is abandoned -- see `DictationSessionGeneration` for why both matter.
     private var sessionGeneration = DictationSessionGeneration()
@@ -1035,6 +1039,17 @@ class DictationCoordinator: ObservableObject {
                 if !Task.isCancelled, sessionGeneration.mayReport(from: session) {
                     DictationTally.record(transcript.text, audioDuration: audioDuration)
                 }
+                // Opt-in collection mode: keeps this dictation's audio and raw
+                // transcript for an offline test bench. A no-op when off, and the
+                // files are written off the main thread.
+                collectionSampleID = sessionGeneration.mayReport(from: session)
+                    ? DictationSampleStore.shared.recordIfEnabled(
+                        samples: samples,
+                        transcript: transcript,
+                        policy: languagePolicy,
+                        origin: dictationOrigin
+                    )
+                    : nil
                 // Polish and the hand-off below do not touch the speech engine.
                 releaseEngine()
 

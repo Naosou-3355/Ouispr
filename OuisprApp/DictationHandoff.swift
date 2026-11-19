@@ -143,6 +143,7 @@ extension DictationCoordinator {
         TranscriptionHistoryStore.shared.append(TranscriptionRecord(
             text: finalText, policy: languagePolicy, duration: audioDuration
         ))
+        DictationSampleStore.shared.setPolished(finalText, for: collectionSampleID)
         status = .ready
         defaults.set(finalText, forKey: SharedKeys.lastTranscription)
         defaults.set(Date().timeIntervalSince1970, forKey: SharedKeys.lastTranscriptionTimestamp)
@@ -407,6 +408,7 @@ extension DictationCoordinator {
             if let historyID {
                 TranscriptionHistoryStore.shared.updateText(id: historyID, to: produced)
             }
+            DictationSampleStore.shared.setPolished(produced, for: collectionSampleID)
         }
         PersistentLog.log(.polishHandoff(
             step: "finished",
