@@ -1,14 +1,14 @@
 // OuisprApp/Views/HomeView.swift
-// Home dashboard showing model status, last transcription, and the new-dictation mic.
+// Home: the sphere, the mic, and two discreet ways out to the history and the settings.
 import SwiftUI
 import OuisprCore
 
-/// Home tab dashboard — the first screen users see after onboarding.
+/// Home — the app's single screen, and the first one users see after onboarding.
 ///
-/// WHY a dedicated HomeView instead of reusing ContentView:
-/// ContentView combined navigation, diagnostics, and model prompts in one view.
-/// HomeView is focused: it's a dashboard showing current status and quick actions.
-/// Diagnostics move to Settings (Plan 04-02), model management is its own tab.
+/// Design V2 (20 Nov 2026): one screen, one action. The sphere says the app is ready,
+/// the mic starts a dictation, and everything else (history, settings, models) sits
+/// behind the two icons at the top. There is no tab bar any more: `MainTabView` shows
+/// this screen alone.
 struct HomeView: View {
     @EnvironmentObject var coordinator: DictationCoordinator
     @EnvironmentObject var proStatus: ProStatusManager
@@ -20,8 +20,20 @@ struct HomeView: View {
 
     @State private var showCopiedFeedback = false
 
-    /// Drives the history sheet (#70).
-    @State private var showHistory = false
+    /// The sheet on screen, if any: the history (#70), the settings or the models.
+    ///
+    /// WHY one optional and not a Boolean per sheet: two Booleans can both be true,
+    /// and SwiftUI presents one sheet per view. An optional cannot name two.
+    @State private var sheet: HomeSheet?
+
+    /// What the two icons at the top, and the "no model" card, can open.
+    private enum HomeSheet: String, Identifiable {
+        case history
+        case settings
+        case models
+
+        var id: String { rawValue }
+    }
 
     /// Drives the Ouispr Pro hub: from the Pro banner, or when a non-subscriber
     /// reaches for the history. One cover on a view that never leaves the screen (#216).
@@ -85,23 +97,22 @@ struct HomeView: View {
     /// while reaching for one of them must not open another screen.
     private let swipeUpThreshold: CGFloat = 60
 
-    /// Read active model name from App Group for display.
-    private var activeModelName: String? {
-        AppGroup.defaults.string(forKey: SharedKeys.activeModel)
-    }
-
     var body: some View {
         VStack(spacing: 24) {
-            // The cards scroll only when they do not fit: a short screen (iPhone SE, or
-            // the iPhone layout an iPad runs in), a last transcription, a large Dynamic
-            // Type. Since #788 the mic below is 92 pt tall with its halo, and without
-            // this the cards pushed it and the history hint under the tab bar.
+            // The two secondary destinations, as quiet as they can be while staying
+            // 44 pt targets (design V2, option A).
+            topBar
+                .homeSmartModeRingBackdrop(ringSession != nil)
+
+            // The content scrolls only when it does not fit: a short screen (iPhone SE,
+            // or the iPhone layout an iPad runs in), a last transcription, a large
+            // Dynamic Type. Since #788 the mic below is 92 pt tall with its halo, and
+            // without this the content pushed it off the bottom of the screen.
             //
             // WHY `ViewThatFits` and not a permanent ScrollView: a scroll view takes
             // every vertical drag that starts on it, which would take the swipe up to
             // the history (#70) away from most of the screen. Here it exists only on
-            // the screens that need it, and there the mic and the hint below it,
-            // which stay outside, are still where the swipe starts.
+            // the screens that need it.
             ViewThatFits(in: .vertical) {
                 // Centred in the space above the mic. A frame and not a `Spacer` on
                 // each side: two collapsed spacers in a 24 pt stack still cost 64 pt,
@@ -114,37 +125,21 @@ struct HomeView: View {
             }
             .homeSmartModeRingBackdrop(ringSession != nil)
 
-            // The primary action, a round mic since #788. At the bottom of the content
-            // rather than among the cards: it is within thumb reach, it stays put when
-            // the last-transcription card comes and goes, and it sits where the
-            // recording screen's own mic sits.
+            // The primary action, a round mic since #788. At the bottom of the content:
+            // it is within thumb reach, it stays put when the last-transcription card
+            // comes and goes, and it sits where the recording screen's own mic sits.
             if modelManager.isModelReady {
                 micRow
-                    // Above the hint below it, which the dial's line overlaps.
-                    .zIndex(1)
+                    // Room under the mic for the Smart Mode dial's release hint, which
+                    // is drawn below it, on screens with no home indicator margin.
+                    .padding(.bottom, 24)
             }
-
-            // The affordance for the history (#70), last so it sits at the bottom
-            // edge the swipe starts from. Absent entirely on `.hidden`: while the
-            // paywall is unreachable the app must look like there is no subscription
-            // at all (#236), and a lock leading nowhere is the one place that would
-            // break it.
-            Group {
-                switch entryPoint {
-                case .open:
-                    SwipeUpHintView { showHistory = true }
-                case .locked:
-                    SwipeUpHintView(isLocked: true) { showPaywall = true }
-                case .hidden:
-                    EmptyView()
-                }
-            }
-            // Gone rather than blurred while the dial's line is drawn over it.
-            .opacity(ringSession != nil && HomeSmartModeRingStyle.showsReleaseHint ? 0 : 1)
-            .homeSmartModeRingBackdrop(ringSession != nil)
         }
         .padding()
         .background(Color.ouisprBackground.ignoresSafeArea())
+        // Home pushes nothing and has no title: an empty navigation bar would only
+        // take 44 pt from the top of the app's single screen.
+        .toolbar(.hidden, for: .navigationBar)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
         } action: { width in
@@ -175,7 +170,7 @@ struct HomeView: View {
                     let travelled = min(value.translation.height, value.predictedEndTranslation.height)
                     guard travelled < -swipeUpThreshold else { return }
                     if entryPoint == .open {
-                        showHistory = true
+                        sheet = .history
                     } else {
                         showPaywall = true
                     }
@@ -188,18 +183,34 @@ struct HomeView: View {
             // Off as well while the Smart Mode dial is open (#489).
             including: entryPoint == .hidden || ringSession != nil ? .none : .all
         )
-        .sheet(isPresented: $showHistory) {
-            // A sheet is the vertical transition the issue asks for, and it brings
-            // the swipe-down back to the home screen with it. See HistoryView.
-            //
-            // The store is handed over explicitly rather than left to the ambient
-            // environment: a sheet is presented from a different part of the view
-            // tree, and an `@EnvironmentObject` that resolves today because the root
-            // happens to publish it is a crash waiting for someone to move it.
-            HistoryView()
+        .sheet(item: $sheet, onDismiss: {
+            // Coming back from a sheet does not re-fire `onAppear`, and the models and
+            // the settings are where the model and the Smart Modes change. Before
+            // design V2 they were tabs, and returning to this one refreshed both.
+            modelManager.loadState()
+            refreshSmartMode()
+        }, content: { presented in
+            switch presented {
+            case .history:
+                // The store is handed over explicitly rather than left to the ambient
+                // environment: a sheet is presented from a different part of the view
+                // tree, and an `@EnvironmentObject` that resolves today because the root
+                // happens to publish it is a crash waiting for someone to move it.
+                HistoryView()
+                    .environmentObject(history)
+                    .environmentObject(proStatus)
+            case .settings:
+                secondarySheet {
+                    SettingsView(modelManager: modelManager)
+                }
                 .environmentObject(history)
                 .environmentObject(proStatus)
-        }
+            case .models:
+                secondarySheet {
+                    ModelManagerView(modelManager: modelManager)
+                }
+            }
+        })
         .paywallCover(isPresented: $showPaywall)
         .onAppear {
             // Refresh model state every time HomeView appears.
@@ -215,7 +226,7 @@ struct HomeView: View {
         }
         .onChange(of: proStatus.isProActive) { _, _ in refreshSmartMode() }
         .onChange(of: switches.values) { _, _ in refreshSmartMode() }
-        // A dial left open behind another tab would come back stale.
+        // A dial left open behind another screen would come back stale.
         .onDisappear { ringSession = nil }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OuisprOnboardingCompleted"))) { _ in
             // WHY onReceive in addition to onAppear:
@@ -227,16 +238,89 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Top Bar
+
+    /// History on the left, settings on the right: two glass circles, nothing else.
+    ///
+    /// The history icon follows `entryPoint`, as the swipe does: open, locked (it
+    /// then opens the Pro hub, because someone who tapped it asked for the feature),
+    /// or absent while the paywall is unreachable (#236).
+    private var topBar: some View {
+        HStack {
+            switch entryPoint {
+            case .open:
+                topBarButton(symbol: "clock", label: "History", identifier: "home.history") {
+                    sheet = .history
+                }
+            case .locked:
+                topBarButton(symbol: "clock", label: "History", identifier: "home.history") {
+                    showPaywall = true
+                }
+            case .hidden:
+                EmptyView()
+            }
+            Spacer()
+            topBarButton(symbol: "slider.horizontal.3", label: "Settings", identifier: "home.settings") {
+                sheet = .settings
+            }
+        }
+    }
+
+    private func topBarButton(
+        symbol: String,
+        label: LocalizedStringKey,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Color.ouisprTextPrimary)
+                .frame(width: 44, height: 44)
+                .ouisprGlass(in: Circle())
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// A settings-style screen in a sheet: its own navigation stack, a close button,
+    /// and the grabber that says it can be dragged down.
+    private func secondarySheet<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationStack {
+            content()
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            sheet = nil
+                        } label: {
+                            Image(systemName: "chevron.down")
+                        }
+                        .accessibilityLabel("Close")
+                    }
+                }
+        }
+        .presentationDragIndicator(.visible)
+    }
+
     // MARK: - Dashboard Cards
 
-    /// Logo, model, last transcription and Pro card.
+    /// The sphere, what it says, the last transcription and the Pro card.
     private var dashboardCards: some View {
         VStack(spacing: 24) {
-            // Logo mark
-            logoSection
+            // The app's face. Paused while a dictation covers this screen: the
+            // recording screen draws its own, and a hidden sphere must not ask for
+            // sixty frames a second.
+            ParticleSphereView(mood: .resting, isPaused: coordinator.status != .idle)
+                .frame(width: 240, height: 240)
+                // Room for the halo, which is drawn outside the sphere's frame.
+                .padding(.vertical, 16)
 
-            // Model status card
-            modelStatusCard
+            if modelManager.isModelReady {
+                readySection
+            } else {
+                modelPromptCard
+            }
 
             // Last transcription preview
             if let result = coordinator.lastResult {
@@ -253,92 +337,53 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Logo Section
+    // MARK: - Ready Section
 
-    /// Static 3-bar brand logo at the top of the home screen.
-    /// Subscribers see the Ouispr Pro gradient wordmark from the paywall hero,
-    /// a quiet permanent reminder of what they unlocked.
-    private var logoSection: some View {
+    /// "Ready to dictate", and the one sentence that says how.
+    private var readySection: some View {
         VStack(spacing: 8) {
-            OuisprLogo(height: 60)
-                .padding(.top, 8)
-            if proStatus.isProActive {
-                Text("Ouispr Pro")
-                    .font(.ouisprHeading)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.ouisprGradientStart, .ouisprGradientEnd],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                // During the reverse trial, the one indicator it gets on this screen
-                // (#593): discreet, never a nag, and honest about the wordmark above
-                // it, which would otherwise read as a subscription.
-                if let daysLeft = proStatus.trialBadgeDaysLeft {
-                    ProTrialBadge(daysLeft: daysLeft)
-                }
-            } else {
-                Text("Ouispr")
-                    .font(.ouisprHeading)
-                    .foregroundColor(.ouisprAccent)
+            Text("Ready to dictate")
+                .font(.ouisprHeading)
+                .foregroundStyle(Color.ouisprTextPrimary)
+            Text("Tap the mic and speak.")
+                .font(.ouisprBody)
+                .foregroundStyle(Color.ouisprTextSecondary)
+            // During the reverse trial, the one indicator it gets on this screen
+            // (#593): discreet, never a nag.
+            if let daysLeft = proStatus.trialBadgeDaysLeft {
+                ProTrialBadge(daysLeft: daysLeft)
+                    .padding(.top, 4)
             }
         }
-        .padding(.bottom, 8)
+        .multilineTextAlignment(.center)
     }
 
-    // MARK: - Model Status Card
+    // MARK: - Model Prompt Card
 
-    /// Shows active model name and ready status, or prompts to download.
-    ///
-    /// WHY a prominent card for "no model" state:
-    /// First-time users need clear guidance. Without a model, the app can't transcribe.
-    /// The card makes the first required action obvious (navigate to Models tab).
-    private var modelStatusCard: some View {
-        Group {
-            if modelManager.isModelReady, let modelName = activeModelName {
-                // Active model display using ModelInfo for human-readable name/size.
-                // WHY ModelInfo.forIdentifier: The raw identifier (e.g. "openai_whisper-small")
-                // is not user-friendly. ModelInfo maps it to "Small" + "~250 MB".
-                HStack {
-                    let info = ModelInfo.forIdentifier(modelName)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Active model")
-                            .font(.ouisprCaption)
-                            .foregroundColor(.secondary)
-                        Text(info?.localizedDisplayName ?? modelName)
-                            .font(.ouisprSubheading)
-                        if let size = info?.sizeLabel {
-                            Text(size)
-                                .font(.ouisprCaption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.ouisprSuccess)
-                }
-                .padding()
-                .ouisprGlass()
-            } else {
-                // No model — prompt to download
-                VStack(spacing: 12) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.ouisprAccent)
-                    Text("Download a model to get started")
-                        .font(.ouisprSubheading)
-                        .multilineTextAlignment(.center)
-                    Text("Go to the Models tab to download your first transcription model.")
-                        .font(.ouisprCaption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
-                .ouisprGlass()
+    /// Without a model the app cannot transcribe, and there is no mic to tap: this
+    /// card is then the screen's one action, and it opens the models.
+    private var modelPromptCard: some View {
+        Button {
+            sheet = .models
+        } label: {
+            VStack(spacing: 12) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.ouisprAccent)
+                Text("Download a model to get started")
+                    .font(.ouisprSubheading)
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .multilineTextAlignment(.center)
+                Text("Choose a model")
+                    .font(.ouisprBody)
+                    .foregroundColor(.ouisprAccent)
             }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .ouisprGlass()
         }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityIdentifier("home.chooseModel")
     }
 
     // MARK: - Last Transcription Card
@@ -367,7 +412,7 @@ struct HomeView: View {
                 }
                 Text(result)
                     .font(.ouisprBody)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.ouisprTextPrimary)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
             }

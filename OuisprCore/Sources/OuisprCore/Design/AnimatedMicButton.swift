@@ -160,7 +160,7 @@ public struct AnimatedMicButton: View {
 
                 // Main button shape (circle or pill)
                 mainShape()
-                    .fill(buttonFillColor)
+                    .fill(buttonFill)
                     .frame(width: buttonWidth, height: buttonHeight)
 
                 // Shimmer overlay for the two post-recording stages
@@ -189,7 +189,7 @@ public struct AnimatedMicButton: View {
                     .foregroundColor(.white)
                 } else {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: isPill ? 14 : 16, weight: .medium))
+                        .font(.system(size: isPill ? 14 : 24, weight: .medium))
                         .foregroundColor(.white)
                         .scaleEffect(status == .recording ? pulseScale * 0.9 + 0.1 : 1.0)
                 }
@@ -310,6 +310,20 @@ public struct AnimatedMicButton: View {
     }
 
     // MARK: - Helpers
+
+    /// What fills the button.
+    ///
+    /// The round mic at rest wears the sphere's gradient (design V2, bench 2): it is
+    /// the app's main action and the sphere is the app's face, so they share a
+    /// colour. The keyboard pill does not: #79's rule for it stands, and a 56 x 36
+    /// pill is too small for a gradient to read as anything but a stain. A Smart
+    /// Mode face keeps its own fill, and so does every status that is not rest.
+    private var buttonFill: AnyShapeStyle {
+        if !isPill, isTappable, restingFace == nil {
+            return AnyShapeStyle(OuisprSphereGradient.linear)
+        }
+        return AnyShapeStyle(buttonFillColor)
+    }
 
     private var buttonFillColor: Color {
         switch status {

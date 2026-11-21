@@ -1,5 +1,5 @@
 // OuisprApp/Views/RecordingView.swift
-// Stable-layout recording screen: waveform + mic button always in place, text appears below.
+// Stable-layout recording screen: the sphere and the controls stay in place, the text appears between them.
 import SwiftUI
 import OuisprCore
 
@@ -16,17 +16,24 @@ enum RecordingMode {
     case standalone
 }
 
-/// Stable-layout recording screen with always-visible waveform and fixed mic button.
+/// Stable-layout recording screen: a stage label, the sphere, the text, the controls.
 ///
 /// WHY stable layout instead of state-driven visibility:
-/// Elements appearing/disappearing causes jarring layout shifts. The waveform and mic
-/// button stay in place across all states — only their visual appearance changes:
-/// - Idle: flat waveform, blue mic
-/// - Recording: animated waveform, red stop button
-/// - Transcribing: sinusoidal waveform, disabled shimmer mic
-/// - Result: flat waveform, blue mic (ready for new recording), text below
+/// Elements appearing/disappearing causes jarring layout shifts. The label, the sphere
+/// and the control row keep their place across all states — only what they show changes:
+/// - Idle: resting sphere, mic
+/// - Recording: "Listening", the sphere follows the voice, cancel / mic / validate
+/// - Transcribing, processing: "Cleaning up", the sphere breathes, cancel
+/// - Result: "Finished", calm sphere, the text comes into focus word by word,
+///   copy / mic / share
 ///
-/// Transcription text appears BELOW the fixed elements, so nothing moves.
+/// Design V2 (20 Nov 2026). The sphere replaces the waveform this screen used to draw:
+/// it is the same object as on Home, so starting a dictation changes what the sphere
+/// does, not what is on screen.
+///
+/// WHAT IS NOT HERE YET, on purpose: the text does not appear while the user speaks
+/// (the engines hand over one text at the end), and the screen cannot show the raw
+/// text next to the cleaned one (the coordinator publishes only the final text).
 struct RecordingView: View {
     let mode: RecordingMode
     var onComplete: (() -> Void)?
@@ -84,118 +91,36 @@ struct RecordingView: View {
             // coordinates Home's mic was reported in.
             GeometryReader { geo in
                 VStack(spacing: 0) {
-                    // Close button (top-left) — standalone only
-                    HStack {
-                        if mode == .standalone {
-                            Button {
-                                HapticFeedback.recordingStopped()
-                                // Step 1: animate RecordingView out
-                                withAnimation(.easeOut(duration: 0.25)) {
-                                    isDismissing = true
-                                }
-                                // Step 2: after animation, reset status (no animation leak to HomeView).
-                                // Generation guard (issue #60): if a new dictation started while the
-                                // dismiss animation ran, this stale reset must not tear it down.
-                                let generation = coordinator.dictationGeneration
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                    guard coordinator.dictationGeneration == generation else { return }
-                                    coordinator.resetStatus()
-                                }
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 17, weight: .medium))
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 40, height: 40)
-                                    .ouisprGlass(in: Circle())
-                            }
-                            .frame(width: 44, height: 44)
-                            .buttonStyle(GlassPressStyle(pressedScale: 1.35))
-                            .padding(.leading, 20)
-                            .padding(.top, 8)
-                        }
-                        Spacer()
-                    }
+                    topRow
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
 
-                    // MARK: - Upper zone: result text (centered between top and waveform)
-                    // WHY above waveform: The waveform+mic are anchored in the bottom
-                    // third. Placing the result in the large empty upper zone avoids
-                    // pushing anything down when text appears.
-                    ZStack {
-                        if showResult, let result = transcriptionResult {
-                            // WHY GeometryReader + ScrollView combo:
-                            // GeometryReader gives us the available height so we can
-                            // vertically center short text. ScrollView handles long text
-                            // that exceeds the zone. Short text sits centered; long text scrolls.
-                            GeometryReader { geo in
-                                ScrollView {
-                                    Button {
-                                        UIPasteboard.general.string = result
-                                        showCopiedFeedback = true
-                                        HapticFeedback.recordingStopped()
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                            showCopiedFeedback = false
-                                        }
-                                    } label: {
-                                        Text(result)
-                                            .font(.ouisprBody)
-                                            .foregroundStyle(.primary)
-                                            .multilineTextAlignment(.center)
-                                            .padding()
-                                            .frame(maxWidth: .infinity)
-                                            .ouisprGlass(in: RoundedRectangle(cornerRadius: 14))
-                                    }
-                                    .buttonStyle(GlassPressStyle(pressedScale: 0.96))
-                                    .padding(.horizontal, 32)
-                                    .frame(minHeight: geo.size.height)
-                                }
-                            }
-                            .transition(.opacity)
-                        } else if showError, let error = errorMessage {
-                            VStack(spacing: 12) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 32))
-                                    .foregroundColor(.orange)
-                                Text(error)
-                                    .font(.ouisprCaption)
-                                    .foregroundColor(.ouisprRecording)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 32)
+                    // The same sphere as on Home, a little smaller to leave the text
+                    // its room. It never leaves: only its mood changes.
+                    ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel)
+                        .frame(maxWidth: 200, maxHeight: 200)
+                        .padding(.top, 28)
+                        .padding(.bottom, 16)
 
-                                if mode == .onboarding {
-                                    Button("Retry") {
-                                        errorMessage = nil
-                                        showError = false
-                                        showResult = false
-                                    }
-                                    .font(.ouisprBody)
-                                    .foregroundColor(.ouisprAccent)
-                                    .padding(.top, 8)
-                                }
-                            }
-                        }
+                    // MARK: - Text zone (between the sphere and the controls)
+                    // WHY flexible: it is the one zone allowed to give height back, so
+                    // the sphere above and the controls below never move.
+                    textZone
+                        .frame(maxHeight: .infinity)
 
-                        // Onboarding: auto-advance handled in handleStatusChange
-                    }
-                    .frame(maxHeight: .infinity)
-
-                    // MARK: - Waveform (always visible, anchored in bottom third)
-                    waveformSection
-                        .padding(.horizontal)
-                        .frame(height: 120)
-
-                    // MARK: - Status text (duration or processing indicator)
-                    statusText
+                    // MARK: - Feedback line ("Copied!")
+                    feedbackText
                         .frame(height: 30)
                         .padding(.top, 8)
 
-                    // MARK: - Mic / Stop button (always in same position)
-                    micOrStopButton
+                    // MARK: - Controls (always in the same position)
+                    controls
                         .frame(height: Self.micSlotHeight)
                         .padding(.top, 16)
 
-                    // Whatever lifts the button's centre to the height of Home's mic, so the
+                    // Whatever lifts the mic's centre to the height of Home's mic, so the
                     // one the user just tapped does not jump down when this screen covers it
-                    // (#788). Every state of the button shares the slot, so all of them line up.
+                    // (#788). Every state of the row shares the slot, so all of them line up.
                     Spacer()
                         .frame(height: bottomSpacing(in: geo))
                 }
@@ -278,84 +203,182 @@ struct RecordingView: View {
         )
     }
 
-    // MARK: - Waveform Section
+    // MARK: - Top Row
 
-    /// Always-visible waveform that changes behavior based on state.
-    /// Single BrandWaveform instance — properties change dynamically instead of
-    /// swapping 3 separate instances. Prevents ghost CADisplayLinks when the app
-    /// continues its run loop in background (UIBackgroundModes:audio).
-    private var waveformSection: some View {
-        BrandWaveform(
-            energyLevels: displayedStatus == .recording
-                ? coordinator.bufferEnergy
-                : Array(repeating: Float(0), count: 30),
-            maxHeight: 120,
-            animation: waveformAnimation,
-            isActive: displayedStatus == .recording || isPostRecordingStage
-        )
-        .opacity(displayedStatus == .recording ? 0.5 :
-                 isPostRecordingStage ? 0.3 : 0.15)
+    /// The close button on the left (standalone only) and the stage label, centred.
+    private var topRow: some View {
+        ZStack {
+            HStack {
+                if mode == .standalone {
+                    Button(action: cancelOrClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(Color.ouisprTextPrimary)
+                            .frame(width: 44, height: 44)
+                            .ouisprGlass(in: Circle())
+                    }
+                    .buttonStyle(GlassPressStyle())
+                    .accessibilityLabel("Close")
+                    // While a dictation is in flight the control row carries the way
+                    // out, labelled as what it is: a cancel. Hidden rather than
+                    // removed, so nothing in this row moves.
+                    .opacity(isDictationInFlight ? 0 : 1)
+                    .disabled(isDictationInFlight)
+                    .accessibilityHidden(isDictationInFlight)
+                }
+                Spacer()
+            }
+            stageLabel
+        }
+        .frame(height: 44)
     }
 
-    /// The animation for the current stage.
-    ///
-    /// This screen draws the same three animations as the keyboard overlay, from
-    /// the same `ProcessingWaveform` maths (#267). An earlier round shared one
-    /// animation across both post-recording stages, on the argument that the
-    /// distinction belongs where the user waits during a keyboard dictation. Device
-    /// testing settled it the other way: someone dictating inside OuisprApp is
-    /// waiting on this screen, and it owes them the same answer.
-    ///
-    /// Driven by `displayedStatus` rather than the coordinator's, so the animation and
-    /// the label below change together (#309).
-    private var waveformAnimation: WaveformAnimation {
-        switch displayedStatus {
-        case .recording:
-            return .micLevels
-        case .transcribing:
-            return .sweep
-        case .processing:
-            return .travellingPeak
-        case .idle, .requested, .ready, .failed:
-            return .still
-        }
+    /// Whether the pipeline is recording or working on the audio, as drawn.
+    private var isDictationInFlight: Bool {
+        displayedStatus == .recording || isPostRecordingStage
     }
 
     /// Whether the pipeline is past the microphone and working on the audio or the
-    /// transcript. Drives opacity and the disabled mic button, both of which are
-    /// the same for either stage.
+    /// transcript. Drives the sphere and the control row, both of which are the same
+    /// for either stage.
     private var isPostRecordingStage: Bool {
         displayedStatus == .transcribing || displayedStatus == .processing
     }
 
-    // MARK: - Status Text
+    // MARK: - Stage Label
+
+    /// A coloured dot and one or two words: what the phone is doing right now.
+    ///
+    /// Driven by `displayedStatus` rather than the coordinator's, so the label and the
+    /// sphere change together (#309). The two post-recording stages keep their own
+    /// words: naming the wrong stage is the complaint #267 exists to fix.
+    @ViewBuilder
+    private var stageLabel: some View {
+        if displayedStatus == .recording {
+            stageLabelRow(dot: .ouisprRecording, text: "Listening", detail: formattedTime)
+        } else if displayedStatus == .transcribing {
+            stageLabelRow(dot: .ouisprAccent, text: "Transcribing...", detail: nil)
+        } else if displayedStatus == .processing {
+            stageLabelRow(dot: .ouisprAccent, text: "Cleaning up", detail: nil)
+        } else if showResult {
+            stageLabelRow(dot: .ouisprSuccess, text: "Finished", detail: nil)
+        }
+    }
+
+    private func stageLabelRow(dot: Color, text: LocalizedStringKey, detail: String?) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(dot)
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
+            Text(text)
+                .foregroundStyle(Color.ouisprTextSecondary)
+            if let detail {
+                Text(verbatim: detail)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.ouisprTextTertiary)
+            }
+        }
+        .font(.ouisprStageLabel)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Sphere
+
+    private var sphereMood: ParticleSphereMood {
+        switch displayedStatus {
+        case .recording:
+            return .listening
+        case .transcribing, .processing:
+            return .working
+        case .idle, .requested, .ready, .failed:
+            return showResult ? .done : .resting
+        }
+    }
+
+    /// The loudest of the most recent levels, 0 to 1.
+    ///
+    /// WHY the last few and not the last one: the coordinator publishes a waveform
+    /// snapshot, a row of buckets whose newest end is on the right. One bucket is one
+    /// short slice of sound; taking the peak of a few is what makes a syllable reach
+    /// the sphere whole.
+    private var voiceLevel: Double {
+        guard displayedStatus == .recording else { return 0 }
+        return Double(coordinator.bufferEnergy.suffix(4).max() ?? 0)
+    }
+
+    // MARK: - Text Zone
 
     @ViewBuilder
-    private var statusText: some View {
-        if displayedStatus == .recording {
-            Text(formattedTime)
-                .font(.system(size: 20, weight: .light, design: .monospaced))
-                .foregroundStyle(.secondary)
-        } else if displayedStatus == .transcribing {
-            Text("Transcribing...")
-                .font(.ouisprCaption)
-                .foregroundStyle(.secondary)
-        } else if displayedStatus == .processing {
-            // The waveform is shared between the two stages here, but the label is
-            // not: naming the wrong stage is the complaint #267 exists to fix, and
-            // it costs a user dictating inside OuisprApp the same six seconds of
-            // wondering whether the app has hung.
-            Text("Processing...")
-                .font(.ouisprCaption)
-                .foregroundStyle(.secondary)
-        } else if showCopiedFeedback {
+    private var textZone: some View {
+        if showResult, let result = transcriptionResult {
+            // WHY GeometryReader + ScrollView combo:
+            // GeometryReader gives us the available height so we can
+            // vertically center short text. ScrollView handles long text
+            // that exceeds the zone. Short text sits centered; long text scrolls.
+            GeometryReader { zone in
+                ScrollView {
+                    RevealingText(result)
+                        // A new text is a new reveal: the polished text can replace
+                        // the raw one while this screen is up (#467).
+                        .id(result)
+                        .foregroundStyle(Color.ouisprTextPrimary)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .frame(minHeight: zone.size.height)
+                }
+                // A long text scrolls under a soft top edge instead of being cut by
+                // the sphere's zone (bench 3).
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black, location: 0.08),
+                            .init(color: .black, location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+            }
+            .transition(.opacity)
+        } else if showError, let error = errorMessage {
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(.orange)
+                Text(error)
+                    .font(.ouisprCaption)
+                    .foregroundColor(.ouisprRecording)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                if mode == .onboarding {
+                    Button("Retry") {
+                        errorMessage = nil
+                        showError = false
+                        showResult = false
+                    }
+                    .font(.ouisprBody)
+                    .foregroundColor(.ouisprAccent)
+                    .padding(.top, 8)
+                }
+            }
+        } else {
+            // Nothing to read yet. The zone keeps its height.
+            Color.clear
+        }
+        // Onboarding: auto-advance handled in handleStatusChange
+    }
+
+    // MARK: - Feedback Line
+
+    @ViewBuilder
+    private var feedbackText: some View {
+        if showCopiedFeedback {
             Text("Copied!")
                 .font(.ouisprCaption)
                 .foregroundStyle(Color.ouisprSuccess)
-        } else if showResult {
-            Text("Tap text to copy")
-                .font(.ouisprCaption)
-                .foregroundStyle(.secondary.opacity(0.6))
         } else {
             // Empty placeholder to maintain layout
             Text(" ")
@@ -363,47 +386,140 @@ struct RecordingView: View {
         }
     }
 
-    // MARK: - Mic / Stop Button
+    // MARK: - Controls
 
-    /// Always-present button that changes appearance based on state.
-    /// WHY always present: Prevents layout jumps. The button is the visual anchor
-    /// of the screen — it transforms in place (mic → stop → shimmer → mic).
+    /// The control row, which changes with the stage and never moves.
+    /// WHY always present: Prevents layout jumps. The mic is the visual anchor
+    /// of the screen, at the height of Home's own (#788).
     @ViewBuilder
-    private var micOrStopButton: some View {
+    private var controls: some View {
         if displayedStatus == .recording {
-            // Red stop button with glass ring
-            Button(action: stopRecording) {
-                ZStack {
-                    // Glass ring behind the stop button
-                    Circle()
-                        .fill(Color.clear)
-                        .frame(width: 96, height: 96)
-                        .ouisprGlass(in: Circle())
-                    Circle()
-                        .fill(Color.ouisprRecording)
-                        .frame(width: 72, height: 72)
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.white)
-                        .frame(width: 26, height: 26)
-                }
+            HStack(spacing: 28) {
+                sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
+                listeningMicButton
+                sideButton(symbol: "checkmark", label: "Stop recording", action: stopRecording)
             }
-            .buttonStyle(GlassPressStyle(pressedScale: 0.88))
-            .accessibilityLabel("Stop recording")
         } else if isPostRecordingStage {
-            // Shimmer mic during processing (disabled). The status is passed
-            // through rather than pinned to `.transcribing` so the button reflects
-            // the stage it is actually in (#267); the shimmer is the same for both.
-            AnimatedMicButton(status: displayedStatus) {}
-                .disabled(true)
+            // The cleaning stage can last several seconds: the way out stays in reach.
+            Button(action: cancelOrClose) {
+                HStack(spacing: 8) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("Cancel")
+                        .font(.ouisprBody)
+                }
+                .foregroundStyle(Color.ouisprTextPrimary)
+                .padding(.horizontal, 22)
+                .frame(minHeight: 52)
+                .ouisprGlassBar()
+            }
+            .buttonStyle(GlassPressStyle())
         } else {
-            // Idle / result state: mic button ready for (new) recording
-            AnimatedMicButton(status: .idle) {
-                startRecording()
+            // Idle / result state: mic button ready for (new) recording, with the
+            // two things a result is for on either side of it.
+            HStack(spacing: 28) {
+                if let result = shareableResult {
+                    sideButton(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
+                } else {
+                    sideButtonPlaceholder
+                }
+                AnimatedMicButton(status: .idle) {
+                    startRecording()
+                }
+                .accessibilityLabel("New dictation")
+                if let result = shareableResult {
+                    ShareLink(item: result) {
+                        sideButtonFace(symbol: "square.and.arrow.up")
+                    }
+                    .buttonStyle(GlassPressStyle())
+                    .accessibilityLabel("Share")
+                } else {
+                    sideButtonPlaceholder
+                }
             }
         }
     }
 
+    /// The text the copy and share buttons act on: a result on screen, outside
+    /// onboarding, where the screen moves on by itself a moment later.
+    private var shareableResult: String? {
+        guard mode == .standalone, showResult else { return nil }
+        return transcriptionResult
+    }
+
+    /// The mic while it listens: the sphere's gradient, and a tap ends the dictation,
+    /// as the checkmark next to it does.
+    private var listeningMicButton: some View {
+        Button(action: stopRecording) {
+            ZStack {
+                OuisprHalo(isPill: false, color: .ouisprRecording, opacity: 0.5, lineWidth: 2)
+                Circle()
+                    .fill(OuisprSphereGradient.linear)
+                    .frame(width: 72, height: 72)
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(.white)
+            }
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel("Stop recording")
+    }
+
+    private func sideButton(symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            sideButtonFace(symbol: symbol)
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(label)
+    }
+
+    private func sideButtonFace(symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 19, weight: .medium))
+            .foregroundStyle(Color.ouisprTextPrimary)
+            .frame(width: 52, height: 52)
+            .ouisprGlass(in: Circle())
+    }
+
+    /// Takes a side button's room, so the mic stays centred when there is none.
+    private var sideButtonPlaceholder: some View {
+        Color.clear
+            .frame(width: 52, height: 52)
+            .accessibilityHidden(true)
+    }
+
     // MARK: - Actions
+
+    /// Leave: cancel a dictation in flight, or close the screen on a result.
+    private func cancelOrClose() {
+        HapticFeedback.recordingStopped()
+        guard mode == .standalone else {
+            // Onboarding keeps this screen up: only the dictation goes.
+            coordinator.resetStatus()
+            return
+        }
+        // Step 1: animate RecordingView out
+        withAnimation(.easeOut(duration: 0.25)) {
+            isDismissing = true
+        }
+        // Step 2: after animation, reset status (no animation leak to HomeView).
+        // Generation guard (issue #60): if a new dictation started while the
+        // dismiss animation ran, this stale reset must not tear it down.
+        let generation = coordinator.dictationGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            guard coordinator.dictationGeneration == generation else { return }
+            coordinator.resetStatus()
+        }
+    }
+
+    private func copyToPasteboard(_ result: String) {
+        UIPasteboard.general.string = result
+        showCopiedFeedback = true
+        HapticFeedback.recordingStopped()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            showCopiedFeedback = false
+        }
+    }
 
     private func startRecording() {
         // Asked BEFORE the result state is cleared (#484): a tap that ends on the preparation

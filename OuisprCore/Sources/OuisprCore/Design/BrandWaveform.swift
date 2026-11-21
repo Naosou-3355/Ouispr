@@ -363,18 +363,20 @@ public struct BrandWaveform: View {
     ///
     /// WHY plain Color instead of ShapeStyle/LinearGradient:
     /// Canvas's `context.fill(path, with:)` accepts `Shading` not `ShapeStyle`.
-    /// Per-path gradients aren't practical in Canvas. Instead, center bars use the
-    /// brand blue midpoint color (ouisprGradientStart) which is visually close to
-    /// the old top-to-bottom gradient. A minor simplification for major perf gain.
+    /// Per-path gradients aren't practical in Canvas. Instead, each center bar takes
+    /// one colour of the sphere's gradient, from blue on the left to blue-violet on
+    /// the right, so the row reads as one gradient.
     private func resolvedBarColor(at index: Int) -> Color {
         // Distance from center (0.0 = center, 1.0 = edge)
         let center = Float(barCount - 1) / 2.0
         let distanceFromCenter = abs(Float(index) - center) / center
 
-        // Center bars: brand blue, edge bars: white/gray with decreasing opacity
+        // Center bars: the sphere's gradient, edge bars: white/gray with decreasing opacity
         if distanceFromCenter < 0.4 {
-            // Inner 40%: solid brand blue (midpoint of old gradient)
-            return .ouisprGradientStart
+            // Inner 40%: blue on the left to blue-violet on the right, the colours of
+            // the sphere (design V2). One colour per bar, as Canvas wants.
+            let signedDistance = (Float(index) - center) / center
+            return OuisprSphereGradient.color(at: Double(0.5 + signedDistance / 0.8))
         } else {
             // Outer 60%: adaptive color with opacity decreasing toward edges
             let opacity = Double(1.0 - distanceFromCenter) * 0.9 + 0.15

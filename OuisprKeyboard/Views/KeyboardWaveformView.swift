@@ -370,7 +370,11 @@ struct KeyboardWaveformView: View {
         let distanceFromCenter = abs(Float(index) - center) / center
 
         if distanceFromCenter < 0.4 {
-            return .ouisprGradientStart
+            // The sphere's colours, blue to blue-violet across the centre bars, so the
+            // keyboard's waveform and the app's sphere read as one product (design V2).
+            // Same rule as `BrandWaveform`.
+            let signedDistance = (Float(index) - center) / center
+            return OuisprSphereGradient.color(at: Double(0.5 + signedDistance / 0.8))
         }
 
         let opacity = Double(1.0 - distanceFromCenter) * 0.9 + 0.15
