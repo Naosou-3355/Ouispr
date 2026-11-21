@@ -52,12 +52,16 @@ public struct ParticleSphereTargets: Equatable, Sendable {
     /// The targets Alex picked on the test benches (20 Nov 2026): a lively rotation at
     /// rest, a marked reaction to the voice, a breathing sphere while the text is
     /// cleaned up, a sphere that calms down at the end.
+    /// Radians per second at rest and while listening. 0.42 is the speed the mesh
+    /// sphere turned at on bench 5, where Alex validated it (0.7 with the dotted sphere).
+    public static let restingRotationSpeed = 0.42
+
     public static func targets(for mood: ParticleSphereMood) -> ParticleSphereTargets {
         switch mood {
         case .resting:
-            return ParticleSphereTargets(rotationSpeed: 0.7, voiceGain: 0, ripple: 1, pulse: 0)
+            return ParticleSphereTargets(rotationSpeed: restingRotationSpeed, voiceGain: 0, ripple: 1, pulse: 0)
         case .listening:
-            return ParticleSphereTargets(rotationSpeed: 0.7, voiceGain: 1, ripple: 1, pulse: 0)
+            return ParticleSphereTargets(rotationSpeed: restingRotationSpeed, voiceGain: 1, ripple: 1, pulse: 0)
         case .working:
             return ParticleSphereTargets(rotationSpeed: 0.25, voiceGain: 0, ripple: 0.4, pulse: 1)
         case .done:

@@ -86,13 +86,13 @@ final class ParticleSphereTests: XCTestCase {
     func testTheSphereTurnsAtRest() {
         var simulation = ParticleSphereSimulation()
         run(&simulation, mood: .resting, seconds: 1)
-        XCTAssertEqual(simulation.angle, 0.7, accuracy: 0.02)
+        XCTAssertEqual(simulation.angle, ParticleSphereTargets.restingRotationSpeed, accuracy: 0.02)
     }
 
     func testAMoodChangeEasesInsteadOfSnapping() {
         var simulation = ParticleSphereSimulation()
         simulation.advance(mood: .done, voiceLevel: 0, elapsed: 1.0 / 60.0, reduceMotion: false)
-        XCTAssertGreaterThan(simulation.current.rotationSpeed, 0.6)
+        XCTAssertGreaterThan(simulation.current.rotationSpeed, 0.35)
         run(&simulation, mood: .done, seconds: 3)
         XCTAssertEqual(simulation.current.rotationSpeed, 0.1, accuracy: 0.01)
     }
