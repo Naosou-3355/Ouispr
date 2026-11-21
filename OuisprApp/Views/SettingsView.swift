@@ -72,6 +72,11 @@ struct SettingsView: View {
     @AppStorage(SharedKeys.polishEnabled, store: UserDefaults(suiteName: AppGroup.identifier))
     private var polishEnabled = true  // Mirrors AppLaunchDefaults (on in Ouispr)
 
+    /// The look of a dictation: capitals and punctuation. Shown here only for the
+    /// row's value; the choice is made in `TranscriptionStylePicker`.
+    @AppStorage(SharedKeys.transcriptionStyle, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var transcriptionStyle: TranscriptionStyle = .defaultStyle
+
     #if DEBUG
     /// Debug-only: logs autocorrect decisions with user text to the debug log.
     /// This toggle only exists in DEBUG builds — the Release binary doesn't contain
@@ -283,6 +288,16 @@ struct SettingsView: View {
                 if PolishAvailability.isToggleVisible {
                     Toggle("Polish transcription", isOn: $polishEnabled)
                     polishStateFooter
+                }
+
+                // Capitals and punctuation of every dictation. Independent of polish:
+                // it applies even when polish is off or Apple Intelligence is missing.
+                NavigationLink {
+                    TranscriptionStylePicker()
+                } label: {
+                    LabeledContent("Transcription style") {
+                        Text(TranscriptionStylePicker.title(for: transcriptionStyle))
+                    }
                 }
 
                 // Visible for a subscriber, and for anyone who still has saved
@@ -744,6 +759,78 @@ struct SettingsView: View {
     private var diagnosticView: some View {
         DiagnosticDetailView(result: AppGroupDiagnostic.run())
             .navigationTitle("Diagnostic")
+    }
+}
+
+/// The transcription style list: one row per style, each with the same sentence
+/// written in that style, so the difference is seen rather than described.
+///
+/// WHY the example is computed by `TranscriptionStyle.apply` rather than written out:
+/// what the row shows is then exactly what the keyboard will type.
+struct TranscriptionStylePicker: View {
+    @AppStorage(SharedKeys.transcriptionStyle, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var transcriptionStyle: TranscriptionStyle = .defaultStyle
+
+    /// The sentence every row shows, in the app's language.
+    private static let sample = String(
+        localized: "Hey, are you free for lunch tomorrow? Let's do 12 if that works for you."
+    )
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(TranscriptionStyle.allCases, id: \.self) { style in
+                    Button {
+                        transcriptionStyle = style
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(Self.title(for: style))
+                                    .font(.headline)
+                                Text(Self.rule(for: style))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Text(style.apply(to: Self.sample))
+                                    .font(.callout)
+                                    .padding(10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                            }
+                            Image(systemName: style == transcriptionStyle ? "checkmark.circle.fill" : "circle")
+                                .font(.title3)
+                                .foregroundStyle(style == transcriptionStyle ? Color.accentColor : Color.secondary)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(style == transcriptionStyle ? .isSelected : [])
+                }
+            } footer: {
+                Text("Only capitals and punctuation change. Your words stay the same.")
+            }
+        }
+        .navigationTitle("Transcription style")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The style's name, looked up in the string catalog.
+    static func title(for style: TranscriptionStyle) -> LocalizedStringKey {
+        switch style {
+        case .formal: return "Formal"
+        case .casual: return "Casual"
+        case .veryCasual: return "Very casual"
+        }
+    }
+
+    /// What the style does, in one line.
+    private static func rule(for style: TranscriptionStyle) -> LocalizedStringKey {
+        switch style {
+        case .formal: return "Capitals and full punctuation"
+        case .casual: return "Capitals, no period at the end"
+        case .veryCasual: return "No capitals, no commas or periods"
+        }
     }
 }
 

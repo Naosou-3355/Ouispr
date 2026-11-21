@@ -178,6 +178,9 @@ public enum SharedKeys {
     /// Whether the polish layer runs between STT final output and App Group write, default false.
     /// Off by default — round 1 is opt-in measurement. See ADR 0002.
     public static let polishEnabled = "ouispr.polishEnabled"
+    /// String: the `TranscriptionStyle` raw value (capitals and punctuation of a dictation).
+    /// Written by OuisprApp's Settings, read by the keyboard just before it inserts a dictation.
+    public static let transcriptionStyle = "ouispr.transcriptionStyle"
     /// Bool: whether polish has stopped calling its engine for the rest of this app
     /// process (#315). Written only by OuisprApp, read by whichever surface has to
     /// say so — the keyboard toolbar today. Absent reads false, which is the
