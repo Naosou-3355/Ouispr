@@ -23,7 +23,7 @@ public enum KeyboardDictationIntent: String, Sendable, Equatable, CaseIterable {
 /// build its URLs from the same vocabulary.
 public enum KeyboardDictationURL {
     /// The scheme registered by OuisprApp in `CFBundleURLTypes`.
-    private static let scheme = "ouispr"
+    private static let scheme = OuisprVariant.current.urlScheme
     /// The only host that carries a dictation request.
     private static let host = "dictate"
 

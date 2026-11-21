@@ -27,20 +27,24 @@ public struct GlassModifier<S: Shape>: ViewModifier {
     }
 }
 
-/// Button style mimicking iOS Liquid Glass press interaction.
+/// Button style for every glass control: a slight scale-down under the finger.
 ///
 /// WHY a custom ButtonStyle:
-/// iOS 26 Liquid Glass elements have a characteristic press animation — a subtle
-/// scale-down on touch with a spring bounce on release. This style replicates that
-/// feel for all interactive glass elements (buttons, cards, close icons).
+/// One place decides how a press feels, so a button on Home and a button on the
+/// recording screen answer the finger the same way.
+///
+/// WHY 0.97 in 140 ms with no bounce (design V2, bench 4): the press has to confirm
+/// the touch and get out of the way. The earlier 0.92 with a spring read as playful,
+/// which is not what a sober interface wants. Call sites that pass their own scale
+/// keep it.
 public struct GlassPressStyle: ButtonStyle {
-    /// Scale when finger is down. 0.92 = subtle, not cartoonish.
+    /// Scale when finger is down.
     private let pressedScale: CGFloat
 
     /// Opacity when finger is down.
     private let pressedOpacity: Double
 
-    public init(pressedScale: CGFloat = 0.92, pressedOpacity: Double = 0.85) {
+    public init(pressedScale: CGFloat = 0.97, pressedOpacity: Double = 0.85) {
         self.pressedScale = pressedScale
         self.pressedOpacity = pressedOpacity
     }
@@ -49,7 +53,7 @@ public struct GlassPressStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? pressedScale : 1.0)
             .opacity(configuration.isPressed ? pressedOpacity : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+            .animation(.easeOut(duration: 0.14), value: configuration.isPressed)
     }
 }
 

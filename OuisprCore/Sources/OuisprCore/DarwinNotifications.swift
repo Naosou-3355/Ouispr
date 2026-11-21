@@ -5,31 +5,40 @@ import Foundation
 /// Darwin notifications carry no payload — they are ping-only.
 /// After receiving a notification, read the actual data from AppGroup.defaults.
 public enum DarwinNotificationName {
+    /// A name under this variant's own prefix.
+    ///
+    /// WHY not one fixed prefix: Darwin notifications reach every process on the
+    /// phone. With shared names, the keyboard of the everyday app would start and
+    /// stop recordings in the trial app installed next to it (`OuisprVariant`).
+    private static func name(_ event: String) -> CFString {
+        "\(OuisprVariant.current.notificationPrefix).\(event)" as CFString
+    }
+
     /// Posted by OuisprApp when transcription result is written to App Group.
-    public static let transcriptionReady = "com.pivi.ouispr.transcriptionReady" as CFString
+    public static let transcriptionReady = name("transcriptionReady")
 
     /// Posted by OuisprApp when dictation status changes.
-    public static let statusChanged = "com.pivi.ouispr.statusChanged" as CFString
+    public static let statusChanged = name("statusChanged")
 
     /// Posted by keyboard extension to request OuisprApp stop recording (keyboard -> app).
-    public static let stopRecording = "com.pivi.ouispr.stopRecording" as CFString
+    public static let stopRecording = name("stopRecording")
 
     /// Posted by keyboard extension to request OuisprApp cancel recording (keyboard -> app).
-    public static let cancelRecording = "com.pivi.ouispr.cancelRecording" as CFString
+    public static let cancelRecording = name("cancelRecording")
 
     /// Posted by OuisprApp when waveform energy data is written to App Group (app -> keyboard).
-    public static let waveformUpdate = "com.pivi.ouispr.waveformUpdate" as CFString
+    public static let waveformUpdate = name("waveformUpdate")
 
     /// Posted by keyboard extension to request OuisprApp start recording (keyboard -> app).
     /// Used when the app is already running in background — avoids opening the app via URL.
     /// Fallback: if app doesn't respond within 500ms, keyboard opens ouispr://dictate URL.
-    public static let startRecording = "com.pivi.ouispr.startRecording" as CFString
+    public static let startRecording = name("startRecording")
 
     /// Posted by OuisprApp when AVAudioSession is interrupted (phone call, Siri, etc.)
     /// or when media services were reset by the OS. Consumers tear down dependent
     /// state — Live Activity ends, in-flight transcription is cancelled, the keyboard
     /// can show a "session interrupted" indicator if desired (issue #106).
-    public static let audioSessionInterrupted = "com.pivi.ouispr.audioSessionInterrupted" as CFString
+    public static let audioSessionInterrupted = name("audioSessionInterrupted")
 
     /// Posted by the keyboard extension when a polish engine is about to run
     /// (keyboard -> app, issue #361).
@@ -40,7 +49,7 @@ public enum DarwinNotificationName {
     /// the LLM stage. It fires only once a model is really about to run, for the
     /// reason #267 established — the pass-through paths return in about a
     /// millisecond and a stage announced for them is a flicker.
-    public static let polishWillRun = "com.pivi.ouispr.polishWillRun" as CFString
+    public static let polishWillRun = name("polishWillRun")
 
     /// Posted by the keyboard extension when the tail of a dictation is finished —
     /// polished or not, inserted or refused (keyboard -> app, issue #361).
@@ -48,28 +57,28 @@ public enum DarwinNotificationName {
     /// OuisprApp defers `endWithResult` until this arrives, so the Live Activity
     /// ends on the real end of the dictation rather than on the App Group write that
     /// hands it over. A 10 s watchdog covers the keyboard never getting here.
-    public static let polishDidFinish = "com.pivi.ouispr.polishDidFinish" as CFString
+    public static let polishDidFinish = name("polishDidFinish")
 
     /// Posted by OuisprApp when the warm-state engine is released after the idle
     /// timeout (issue #106 Phase B). Consumers should treat the next dictation
     /// request as a cold start. Used to dismiss the Dynamic Island standby indicator
     /// so the UI no longer suggests "ready to dictate" when the engine is asleep.
-    public static let warmStateReleased = "com.pivi.ouispr.warmStateReleased" as CFString
+    public static let warmStateReleased = name("warmStateReleased")
 
     /// Share extension -> OuisprApp: a voice note was dropped in the App Group inbox
     /// (#620). Only a live app receives it, which is the point — see `VoiceNoteHandoff`.
-    public static let voiceNoteQueued = "com.pivi.ouispr.voiceNoteQueued" as CFString
+    public static let voiceNoteQueued = name("voiceNoteQueued")
 
     /// OuisprApp -> share extension: the queued note was taken, and transcription
     /// starts in the background (#620's warm path).
-    public static let voiceNoteAccepted = "com.pivi.ouispr.voiceNoteAccepted" as CFString
+    public static let voiceNoteAccepted = name("voiceNoteAccepted")
 
     /// OuisprApp -> keyboard: a voice note transcript was written to the keyboard
     /// delivery directory (#637). Payload-free and best-effort: a suspended keyboard
     /// misses it, so the keyboard rereads the directory on every appearance anyway.
     /// The post only shortens the wait for a keyboard that is already on screen.
     /// Never `transcriptionReady`: that one means "insert this dictation now".
-    public static let voiceNoteResultReady = "com.pivi.ouispr.voiceNoteResultReady" as CFString
+    public static let voiceNoteResultReady = name("voiceNoteResultReady")
 
     /// Keyboard -> OuisprApp: the keyboard just wrote a voice note receipt — a note
     /// shown in the reader, or inserted (#639). A live OuisprApp reconciles at once,
@@ -77,7 +86,7 @@ public enum DarwinNotificationName {
     /// the keyboard, without waiting for the app's next foreground. Payload-free and
     /// best-effort like every Darwin signal: a suspended app misses it, and every
     /// app entry point reconciles anyway.
-    public static let voiceNoteKeyboardReceipt = "com.pivi.ouispr.voiceNoteKeyboardReceipt" as CFString
+    public static let voiceNoteKeyboardReceipt = name("voiceNoteKeyboardReceipt")
 }
 
 /// Global callback registry for Darwin notifications.

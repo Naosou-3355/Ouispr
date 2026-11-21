@@ -16,6 +16,17 @@ import OuisprCore
 /// grouped rows with section headers and footers.
 struct SettingsView: View {
 
+    /// The model manager, when the settings are the way to the models.
+    ///
+    /// Since design V2 the app has no tab bar: the models, which had their own tab,
+    /// are a row of this screen. Optional so a preview or a test can show the
+    /// settings alone; the row is then absent.
+    private let modelManager: ModelManager?
+
+    init(modelManager: ModelManager? = nil) {
+        self.modelManager = modelManager
+    }
+
     @EnvironmentObject var proStatus: ProStatusManager
 
     /// The saved dictations, for the destructive row below (#70).
@@ -254,6 +265,16 @@ struct SettingsView: View {
                             listDisclosureIndicator
                         }
                     }
+                }
+            }
+
+            // The models, which were a tab of their own before design V2.
+            if let modelManager {
+                Section {
+                    NavigationLink("Models") {
+                        ModelManagerView(modelManager: modelManager)
+                    }
+                    .accessibilityIdentifier("settings.models")
                 }
             }
 

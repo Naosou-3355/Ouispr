@@ -368,6 +368,7 @@ public enum KnownAppSchemes {
         // Ours. The keyboard can be its own host — a text field in OuisprApp — and
         // returning the user to the app they are already in would be a no-op at best.
         "com.pivi.dictus",
+        OuisprVariant.beta.bundlePrefix,
 
         // Safari, deliberately. It is not that no scheme opens it — several do — but that
         // every one of them *acts*: `x-web-search://` opens an empty search and
