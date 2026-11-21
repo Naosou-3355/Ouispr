@@ -81,7 +81,7 @@ public enum FirstDictationStage: Equatable, Sendable {
     }
 
     /// The prefix every Ouispr bundle identifier shares.
-    static let ouisprBundlePrefix = "com.pivi.dictus"
+    static let ouisprBundlePrefix = OuisprVariant.current.bundlePrefix
 
     /// Shortest text that completes the step.
     ///

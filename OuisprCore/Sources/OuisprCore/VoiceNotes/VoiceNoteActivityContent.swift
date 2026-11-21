@@ -70,7 +70,7 @@ public struct VoiceNoteActivityContent: Codable, Hashable, Sendable {
     /// Where a tap goes: the voice note screen, which opens on the oldest unread note.
     public var url: URL? {
         var components = URLComponents()
-        components.scheme = "ouispr"
+        components.scheme = OuisprVariant.current.urlScheme
         components.host = VoiceNoteURL.host
         return components.url
     }
@@ -85,7 +85,7 @@ public enum VoiceNoteURL {
     /// The link to one note, as the share extension opens it on the cold path.
     public static func url(for id: UUID?) -> URL? {
         var components = URLComponents()
-        components.scheme = "ouispr"
+        components.scheme = OuisprVariant.current.urlScheme
         components.host = host
         if let id { components.queryItems = [URLQueryItem(name: idItem, value: id.uuidString)] }
         return components.url
@@ -93,7 +93,7 @@ public enum VoiceNoteURL {
 
     /// Nil when `url` is not a voice note link; `.some(nil)` for the screen itself.
     public static func target(of url: URL) -> UUID?? {
-        guard url.scheme == "ouispr", url.host == host else { return nil }
+        guard url.scheme == OuisprVariant.current.urlScheme, url.host == host else { return nil }
         let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first { $0.name == idItem }?.value
         return .some(value.flatMap(UUID.init(uuidString:)))

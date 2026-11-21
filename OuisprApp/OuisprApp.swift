@@ -692,7 +692,7 @@ struct OuisprApp: App {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "ouispr" else { return }
+        guard url.scheme == OuisprVariant.current.urlScheme else { return }
 
         // Before anything this URL raises: the island's link opens the voice note
         // cards, and `onOpenURL` may run before the `.active` transition that also

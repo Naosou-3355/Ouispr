@@ -5,8 +5,9 @@ import Security
 #endif
 
 public enum AppGroup {
-    /// The App Group declared in the four `.entitlements` files.
-    public static let baseIdentifier = "group.solutions.pivi.dictus"
+    /// The App Group declared in the four `.entitlements` files. The trial app has
+    /// its own, so it never reads or writes the everyday app's data (`OuisprVariant`).
+    public static let baseIdentifier = OuisprVariant.current.appGroupBase
 
     /// The App Group this process is actually in.
     ///
