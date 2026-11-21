@@ -22,7 +22,7 @@ public enum OuisprKeyboardPresence: Equatable, Sendable {
     case unreadable
 
     /// The fragment every Ouispr keyboard identifier contains (`com.pivi.dictus.keyboard`).
-    public static let identifierFragment = "com.pivi.dictus"
+    public static let identifierFragment = OuisprVariant.current.bundlePrefix
 
     /// Reads the presence from the identifiers of the active input modes.
     public init(inputModeIdentifiers identifiers: [String]) {

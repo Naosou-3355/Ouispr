@@ -114,6 +114,88 @@ jobs:
           path: Ouispr.ipa
           retention-days: 30
 
+      # "Ouispr Beta": the same code under its own name, icon, identifiers and App
+      # Group, so it installs NEXT TO Ouispr and shares no data with it (see
+      # scripts/apply-beta-variant.py and OuisprVariant.swift). It is how a pull
+      # request is tried on the iPhone without replacing the app that works, so it is
+      # built for pull requests and manual runs only, never published as a release.
+      # It reuses the build above: only what the new identifiers touch is redone.
+      - name: Build Ouispr Beta for iPhone (Release, unsigned)
+        if: github.event_name != 'push'
+        run: |
+          set -eo pipefail
+          python3 scripts/apply-beta-variant.py
+          # The bundle above carries the everyday identifiers and an ad-hoc signature.
+          rm -rf build/DerivedData/Build/Products/Release-iphoneos/OuisprApp.app
+          xcodebuild build \
+            -project Ouispr.xcodeproj \
+            -scheme OuisprApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY="" \
+            | xcbeautify --renderer github-actions
+
+      # The Beta ships the app and the keyboard only. A free Apple ID may register
+      # 10 identifiers a week and every extension costs one; the share sheet and the
+      # widgets are not what the Beta is for, and the widgets' links open "ouispr://",
+      # which belongs to the everyday app.
+      - name: Package OuisprBeta.ipa (app and keyboard only)
+        if: github.event_name != 'push'
+        run: |
+          set -euo pipefail
+          APP=build/DerivedData/Build/Products/Release-iphoneos/OuisprApp.app
+          test -d "$APP"
+          rm -rf "$APP/PlugIns/OuisprShare.appex" "$APP/PlugIns/OuisprWidgets.appex" \
+                 "$APP/Extensions/OuisprShare.appex" "$APP/Extensions/OuisprWidgets.appex"
+          KEYBOARD="$APP/PlugIns/OuisprKeyboard.appex"
+          test -d "$KEYBOARD"
+          REMAINING=$(find "$APP" -name '*.appex' | wc -l | tr -d ' ')
+          [ "$REMAINING" = "1" ] || { echo "::error::Expected the keyboard only, found $REMAINING extensions"; exit 1; }
+
+          expect() { # expect <plist> <key> <value>
+            local found
+            found=$(/usr/libexec/PlistBuddy -c "Print :$2" "$1")
+            [ "$found" = "$3" ] || { echo "::error::$1 $2 is '$found', expected '$3'"; exit 1; }
+          }
+          expect "$APP/Info.plist" CFBundleIdentifier com.pivi.ouisprbeta
+          expect "$APP/Info.plist" CFBundleDisplayName "Ouispr Beta"
+          expect "$APP/Info.plist" CFBundleURLTypes:0:CFBundleURLSchemes:0 ouisprbeta
+          expect "$KEYBOARD/Info.plist" CFBundleIdentifier com.pivi.ouisprbeta.keyboard
+          expect "$KEYBOARD/Info.plist" CFBundleDisplayName "Ouispr Beta"
+
+          sign_nested_code() {
+            find "$1" -maxdepth 2 \( -name '*.framework' -o -name '*.dylib' \) -path '*/Frameworks/*' -print0 |
+              while IFS= read -r -d '' f; do codesign -f -s - "$f"; done
+          }
+          sign_nested_code "$KEYBOARD"
+          codesign -f -s - --entitlements OuisprKeyboard/OuisprKeyboard.entitlements "$KEYBOARD"
+          sign_nested_code "$APP"
+          codesign -f -s - --entitlements OuisprApp/OuisprApp.entitlements "$APP"
+          for B in "$APP" "$KEYBOARD"; do
+            ENTITLEMENTS_XML=$(codesign -d --entitlements - --xml "$B" 2>/dev/null)
+            grep -q '<string>group.solutions.pivi.ouisprbeta</string>' <<<"$ENTITLEMENTS_XML" \
+              || { echo "::error::No Beta App Group entitlement in $B"; exit 1; }
+            if grep -q '<string>group.solutions.pivi.dictus</string>' <<<"$ENTITLEMENTS_XML"; then
+              echo "::error::$B still claims the everyday App Group"; exit 1
+            fi
+          done
+
+          mkdir -p ipa-beta/Payload
+          cp -R "$APP" ipa-beta/Payload/
+          (cd ipa-beta && zip -qry ../OuisprBeta.ipa Payload)
+          ls -lh OuisprBeta.ipa
+
+      - name: Upload OuisprBeta.ipa
+        if: github.event_name != 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: OuisprBeta-ipa
+          path: OuisprBeta.ipa
+          retention-days: 30
+
       # A fixed release whose Ouispr.ipa link never changes, so AltStore on the
       # iPhone can download it directly (artifacts need a GitHub login and come zipped).
       - name: Publish to the "latest" release
