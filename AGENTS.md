@@ -88,3 +88,5 @@ Single-context — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily b
 Boot, build, install, launch, capture, and what a simulator cannot show. See `docs/agents/simulator.md`.
 
 **Smoke test:** `scripts/simulator-smoke-test.sh` runs the app → keyboard → app path headlessly in about two minutes and ends with `SMOKE PASS` or `SMOKE FAIL step N`. Run it while verifying any change to OuisprApp, OuisprKeyboard, onboarding or the App Group hand-off, and before a TestFlight cut. A pass is not a device validation. See `docs/agents/simulator-smoke-test.md`.
+
+**Design loop:** `scripts/design-loop.sh` builds, installs on the kept `Ouispr Loop` simulator and captures a screen in light/dark, largest text and Reduce Motion, with video filmstrips and a per-frame motion profile, ending with `LOOP DONE <dir>`. Use it to iterate on motion, UI and UX without installing on the iPhone; it does not judge feel or performance. See `docs/agents/design-loop.md`.
