@@ -156,18 +156,20 @@ private enum MeshSphereRenderer {
                 wires[bucket].addLine(to: point(second))
             }
         }
-        let wireWidth = max(0.5, side * MeshSphereStyle.wireFraction)
+        let wireWidth = max(0.5, side * MeshSphereStyle.wireFraction * (dark ? 1 : 1.3))
         for (bucket, path) in wires.enumerated() where !path.isEmpty {
             context.stroke(
                 path,
-                with: .color(color(band: bucket, maximumOpacity: dark ? 0.5 : 0.55, dark: dark)),
+                with: .color(color(band: bucket, maximumOpacity: dark ? 0.5 : 0.8, dark: dark)),
                 lineWidth: wireWidth
             )
         }
 
         // Then the points, as tiny squares: at this size a square and a disc look the
         // same, and a square is cheaper to fill.
-        let dot = max(0.5, side * MeshSphereStyle.dotFraction * (dark ? 1.05 : 1))
+        // Larger on a light background, where a point lays colour on white instead of
+        // adding light to a dark ground, and so reads thinner.
+        let dot = max(0.5, side * MeshSphereStyle.dotFraction * (dark ? 1.05 : 1.3))
         var dots = [Path](repeating: Path(), count: colourBands * opacityBands)
         for vertex in vertices where vertex.opacity > 0.01 {
             let centre = point(vertex)
