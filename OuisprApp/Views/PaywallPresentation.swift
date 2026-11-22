@@ -30,6 +30,8 @@ extension View {
             NavigationStack {
                 PaywallView(trialEnd: trialEnd)
             }
+            // A paywall hides whatever is under it, Home's sphere included.
+            .coversHomeSphere()
         }
     }
 }

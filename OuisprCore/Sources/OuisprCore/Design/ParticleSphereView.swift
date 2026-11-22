@@ -68,7 +68,8 @@ public struct ParticleSphereView: View {
                 mood: mood,
                 voiceLevel: voiceLevel,
                 reduceMotion: reduceMotion,
-                dark: dark
+                dark: dark,
+                advancing: !paused
             )
             Canvas { context, size in
                 MeshSphereRenderer.draw(
@@ -220,8 +221,17 @@ private final class ParticleSphereDriver {
         mood: ParticleSphereMood,
         voiceLevel: Double,
         reduceMotion: Bool,
-        dark: Bool
+        dark: Bool,
+        advancing: Bool = true
     ) -> [MeshSphereVertex] {
+        // A paused sphere redraws its last frame rather than computing one: a parent
+        // that re-renders (an observed object publishing) re-runs a paused timeline's
+        // content, and each run cost a full mesh of about 6,600 points (audit, 22 Nov
+        // 2026, finding 7). With a shared simulation it would also step the other
+        // sphere's state with this one's mood.
+        if !advancing, dark == lastFrameDark, !lastFrame.isEmpty {
+            return lastFrame
+        }
         if date == lastDate, dark == lastFrameDark, !lastFrame.isEmpty {
             return lastFrame
         }

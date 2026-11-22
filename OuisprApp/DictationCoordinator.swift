@@ -29,11 +29,11 @@ class DictationCoordinator: ObservableObject {
     /// lives in `DictationErrorChannel`.
     @Published var lastResult: String?
 
-    /// Forwarded from UnifiedAudioEngine for waveform visualization in RecordingView.
-    @Published var bufferEnergy: [Float] = []
-
-    /// Forwarded from UnifiedAudioEngine for elapsed time display in RecordingView.
-    @Published var bufferSeconds: Double = 0
+    /// The levels and elapsed time, forwarded from UnifiedAudioEngine for the recording
+    /// screen. Published by their own object, not by the coordinator: they change about
+    /// twelve times a second, and every view observing the coordinator re-rendered on
+    /// each change (audit, 22 Nov 2026, finding 7).
+    let levels = DictationLevels()
 
     // MARK: - Private
 
@@ -364,7 +364,7 @@ class DictationCoordinator: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] energy in
                 guard let self else { return }
-                self.bufferEnergy = energy
+                self.levels.energy = energy
                 // Only forward to Dynamic Island when user is actively recording
                 guard self.audioEngine.isRecording else { return }
                 LiveActivityManager.shared.updateWaveform(levels: energy)
@@ -372,7 +372,7 @@ class DictationCoordinator: ObservableObject {
         secondsCancellable = audioEngine.$bufferSeconds
             .receive(on: DispatchQueue.main)
             .sink { [weak self] seconds in
-                self?.bufferSeconds = seconds
+                self?.levels.seconds = seconds
             }
 
         // Observe keyboard-initiated stop/cancel signals via Darwin notifications.
@@ -617,8 +617,8 @@ class DictationCoordinator: ObservableObject {
         // And the previous dictation's "text is in the Ouispr app" banner (#860): a new
         // dictation is the user moving on. The keyboard clears it at its own mic tap too.
         RecoveredTranscriptionChannel.clear()
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         // Cancel any polish still running from the previous dictation (#141).
         PolishCoordinator.shared.cancelInflight()
         polishPrewarmTask?.cancel()
@@ -1117,8 +1117,8 @@ class DictationCoordinator: ObservableObject {
         _ = audioEngine.collectSamples()
 
         // Reset all state
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         cleanupRecordingKeys()
         // Nothing is coming back from the keyboard for a dictation that is over (#361).
         endPolishHandoff(abandonedAs: "cancelled")
@@ -1238,7 +1238,7 @@ class DictationCoordinator: ObservableObject {
         if let data = try? JSONEncoder().encode(cappedEnergy) {
             defaults.set(data, forKey: SharedKeys.waveformEnergy)
         }
-        defaults.set(bufferSeconds, forKey: SharedKeys.recordingElapsedSeconds)
+        defaults.set(levels.seconds, forKey: SharedKeys.recordingElapsedSeconds)
         defaults.synchronize()
 
         DarwinNotificationCenter.post(DarwinNotificationName.waveformUpdate)
@@ -2024,8 +2024,8 @@ extension DictationCoordinator {
         isTranscribingInFlight = false
         stopStageWatchdog()
 
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         cleanupRecordingKeys()
         endPolishHandoff(abandonedAs: "interrupted")
 

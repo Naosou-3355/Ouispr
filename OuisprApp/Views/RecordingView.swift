@@ -308,17 +308,21 @@ struct RecordingView: View {
     @ViewBuilder
     private var stageLabelContent: some View {
         if displayedStatus == .recording {
-            stageLabelRow(dot: .ouisprRecording, text: "Listening", detail: formattedTime)
+            stageLabelRow(dot: .ouisprRecording, text: "Listening", showsElapsedTime: true)
         } else if displayedStatus == .transcribing {
-            stageLabelRow(dot: .ouisprAccent, text: "Transcribing...", detail: nil)
+            stageLabelRow(dot: .ouisprAccent, text: "Transcribing...")
         } else if displayedStatus == .processing {
-            stageLabelRow(dot: .ouisprAccent, text: "Cleaning up", detail: nil)
+            stageLabelRow(dot: .ouisprAccent, text: "Cleaning up")
         } else if showResult {
-            stageLabelRow(dot: .ouisprSuccess, text: "Finished", detail: nil)
+            stageLabelRow(dot: .ouisprSuccess, text: "Finished")
         }
     }
 
-    private func stageLabelRow(dot: Color, text: LocalizedStringKey, detail: String?) -> some View {
+    private func stageLabelRow(
+        dot: Color,
+        text: LocalizedStringKey,
+        showsElapsedTime: Bool = false
+    ) -> some View {
         HStack(spacing: 8) {
             Circle()
                 .fill(dot)
@@ -326,10 +330,8 @@ struct RecordingView: View {
                 .accessibilityHidden(true)
             Text(text)
                 .foregroundStyle(Color.ouisprTextSecondary)
-            if let detail {
-                Text(verbatim: detail)
-                    .monospacedDigit()
-                    .foregroundStyle(Color.ouisprTextTertiary)
+            if showsElapsedTime {
+                ElapsedTimeText(levels: coordinator.levels)
             }
         }
         .font(.ouisprStageLabel)
@@ -370,7 +372,12 @@ struct RecordingView: View {
                 slot: slot.frame(in: .global),
                 atHome: sphereAtHome
             )
-            ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel, sharesMotion: mode == .standalone)
+            LevelDrivenSphere(
+                levels: coordinator.levels,
+                mood: sphereMood,
+                listening: displayedStatus == .recording,
+                sharesMotion: mode == .standalone
+            )
                 .frame(width: frame.width, height: frame.height)
                 .position(x: frame.midX, y: frame.midY)
                 .opacity(sphereOpacity)
@@ -386,17 +393,6 @@ struct RecordingView: View {
         case .idle, .requested, .ready, .failed:
             return showResult ? .done : .resting
         }
-    }
-
-    /// The loudest of the most recent levels, 0 to 1.
-    ///
-    /// WHY the last few and not the last one: the coordinator publishes a waveform
-    /// snapshot, a row of buckets whose newest end is on the right. One bucket is one
-    /// short slice of sound; taking the peak of a few is what makes a syllable reach
-    /// the sphere whole.
-    private var voiceLevel: Double {
-        guard displayedStatus == .recording else { return 0 }
-        return Double(coordinator.bufferEnergy.suffix(4).max() ?? 0)
     }
 
     // MARK: - Text Zone
@@ -739,18 +735,40 @@ struct RecordingView: View {
             break
         }
     }
-
-    // MARK: - Helpers
-
-    private var formattedTime: String {
-        let totalSeconds = Int(coordinator.bufferSeconds)
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
-    }
 }
 
 #Preview("Recording - Idle") {
     RecordingView(mode: .standalone)
         .environmentObject(DictationCoordinator.shared)
+}
+
+/// The sphere, reading the microphone level itself.
+///
+/// WHY a view of its own: the level changes about twelve times a second. Observed here,
+/// only this view re-renders; read in `RecordingView`'s body, the whole screen did
+/// (audit, 22 Nov 2026, finding 7).
+private struct LevelDrivenSphere: View {
+    @ObservedObject var levels: DictationLevels
+    let mood: ParticleSphereMood
+    let listening: Bool
+    let sharesMotion: Bool
+
+    var body: some View {
+        ParticleSphereView(
+            mood: mood,
+            voiceLevel: listening ? levels.recentPeak : 0,
+            sharesMotion: sharesMotion
+        )
+    }
+}
+
+/// The elapsed time next to "Listening", reading it itself for the same reason.
+private struct ElapsedTimeText: View {
+    @ObservedObject var levels: DictationLevels
+
+    var body: some View {
+        Text(verbatim: levels.elapsedLabel)
+            .monospacedDigit()
+            .foregroundStyle(Color.ouisprTextTertiary)
+    }
 }

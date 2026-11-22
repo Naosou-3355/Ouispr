@@ -246,6 +246,7 @@ struct MainTabView: View {
                         VoiceNoteStackView(request: request)
                             // A new request is a new screen, never the previous one kept.
                             .id(request.id)
+                            .coversHomeSphere()
                     }
                 }
                 .tint(.ouisprAccent)
@@ -262,7 +263,10 @@ struct MainTabView: View {
                 .sheet(
                     item: $trialCoordinator.announcement,
                     onDismiss: { trialCoordinator.announcementDismissed() },
-                    content: { announcement in ProTrialAnnouncementView(announcement: announcement) }
+                    content: { announcement in
+                        ProTrialAnnouncementView(announcement: announcement)
+                            .coversHomeSphere()
+                    }
                 )
                 .paywallCover(
                     isPresented: $trialCoordinator.showsEndOfTrialPaywall,

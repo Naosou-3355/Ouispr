@@ -70,6 +70,9 @@ struct HomeView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Whether a sheet or a cover hides this screen, which pauses the sphere.
+    @ObservedObject private var sphereCover = SphereCover.shared
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Observed so a Smart Mode switch flipped in the Pro hub moves the badge and the
@@ -191,26 +194,30 @@ struct HomeView: View {
             modelManager.loadState()
             refreshSmartMode()
         }, content: { presented in
-            switch presented {
-            case .history:
-                // The store is handed over explicitly rather than left to the ambient
-                // environment: a sheet is presented from a different part of the view
-                // tree, and an `@EnvironmentObject` that resolves today because the root
-                // happens to publish it is a crash waiting for someone to move it.
-                HistoryView()
+            Group {
+                switch presented {
+                case .history:
+                    // The store is handed over explicitly rather than left to the ambient
+                    // environment: a sheet is presented from a different part of the view
+                    // tree, and an `@EnvironmentObject` that resolves today because the root
+                    // happens to publish it is a crash waiting for someone to move it.
+                    HistoryView()
+                        .environmentObject(history)
+                        .environmentObject(proStatus)
+                case .settings:
+                    secondarySheet {
+                        SettingsView(modelManager: modelManager)
+                    }
                     .environmentObject(history)
                     .environmentObject(proStatus)
-            case .settings:
-                secondarySheet {
-                    SettingsView(modelManager: modelManager)
-                }
-                .environmentObject(history)
-                .environmentObject(proStatus)
-            case .models:
-                secondarySheet {
-                    ModelManagerView(modelManager: modelManager)
+                case .models:
+                    secondarySheet {
+                        ModelManagerView(modelManager: modelManager)
+                    }
                 }
             }
+            // While a sheet is up, Home's sphere is hidden: it stops drawing.
+            .coversHomeSphere()
         })
         .paywallCover(isPresented: $showPaywall)
         .onAppear {
@@ -318,7 +325,12 @@ struct HomeView: View {
             // room (seen cut at the largest size on the design loop, 22 Nov 2026).
             let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
             let sphereAway = coordinator.status != .idle
-            ParticleSphereView(mood: .resting, isPaused: sphereAway, sharesMotion: true)
+            ParticleSphereView(
+                mood: .resting,
+                // Also paused, though still drawn, under a sheet or a cover.
+                isPaused: sphereAway || sphereCover.isCovered,
+                sharesMotion: true
+            )
                 .frame(width: sphereSide, height: sphereSide)
                 .reportsHomeSphere()
                 .opacity(sphereAway ? 0 : 1)

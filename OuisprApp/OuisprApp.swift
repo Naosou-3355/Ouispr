@@ -521,6 +521,8 @@ struct OuisprApp: App {
                         .environmentObject(coordinator)
                         .environmentObject(proStatus)
                         .environmentObject(subscriptionManager)
+                        // Home mounts behind onboarding: its sphere must not draw there.
+                        .coversHomeSphere()
                 }
         }
     }
