@@ -309,18 +309,23 @@ struct HomeView: View {
     /// The sphere, what it says, the last transcription and the Pro card.
     private var dashboardCards: some View {
         VStack(spacing: 24) {
-            // The app's face. Paused while a dictation covers this screen: the
-            // recording screen draws its own, and a hidden sphere must not ask for
-            // sixty frames a second. Hidden too, so that during the glide the eye
-            // follows the recording screen's sphere only (`SphereHero`).
+            // The app's face. While a dictation is up, the recording screen carries
+            // this same sphere: it draws the same simulation (`sharesMotion`) and flies
+            // from this spot to its own and back (`HomeSphereAnchor`). This copy is
+            // then hidden and paused, so the two are never seen at once and a hidden
+            // one asks for no frames.
             // Smaller at the accessibility text sizes, so the text below keeps its
             // room (seen cut at the largest size on the design loop, 22 Nov 2026).
             let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
-            ParticleSphereView(mood: .resting, isPaused: coordinator.status != .idle, sharesMotion: true)
-                .opacity(coordinator.status == .idle ? 1 : 0)
-                // Inside the fixed frame, so the glide never moves Home's layout.
-                .sphereHero(.home)
+            let sphereAway = coordinator.status != .idle
+            ParticleSphereView(mood: .resting, isPaused: sphereAway, sharesMotion: true)
                 .frame(width: sphereSide, height: sphereSide)
+                .reportsHomeSphere()
+                .opacity(sphereAway ? 0 : 1)
+                // No animation: the hand-over back is invisible only because the
+                // recording screen's sphere has just landed on this spot. Reduce Motion
+                // has no flight, so there this one fades back in instead of popping.
+                .animation(reduceMotion ? .easeOut(duration: 0.25) : nil, value: sphereAway)
                 // Room for the halo, which is drawn outside the sphere's frame.
                 .padding(.vertical, 16)
 

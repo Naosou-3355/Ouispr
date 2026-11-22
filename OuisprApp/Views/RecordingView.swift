@@ -50,6 +50,11 @@ struct RecordingView: View {
     @State private var errorMessage: String?
     /// Brief "Copié !" feedback when user taps the transcription result.
     @State private var showCopiedFeedback = false
+    /// Two-step dismissal: animate out first, then reset coordinator status.
+    @State private var isDismissing = false
+    /// The screen's content on its way out, which goes faster than the sphere, so the
+    /// error or the result does not linger over Home's text.
+    @State private var contentLeaving = false
 
     /// The stage this screen draws, which trails `coordinator.status` by up to
     /// `TranscribingStageHold.minimumDisplayDuration` (#309).
@@ -69,6 +74,32 @@ struct RecordingView: View {
     /// Where Home's mic is on screen, which the button below lines up on (#788).
     @ObservedObject private var micAnchor = PrimaryMicAnchor.shared
 
+    /// Where Home's sphere is, which this screen carries: its sphere flies from there to
+    /// its own spot on the way in and back on the way out (audit of 22 Nov 2026).
+    @ObservedObject private var homeSphere = HomeSphereAnchor.shared
+
+    /// False on the first frame, then true for as long as the screen is up. What the
+    /// way in animates from.
+    @State private var appeared = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The way in: the sphere moves to its spot and the rest of the screen fades in.
+    /// A spring with a hint of bounce, so the sphere settles rather than stops.
+    private static let enterAnimation = Animation.spring(duration: 0.45, bounce: 0.1)
+
+    /// The content's way out: quicker than the sphere's, so nothing of this screen is
+    /// still readable over Home's text (audit, 22 Nov 2026).
+    private static let contentExitAnimation = Animation.easeOut(duration: 0.15)
+
+    /// The way out. A timing curve and not a spring: the hand-over to Home's sphere
+    /// happens when it ends, and a spring's "logically complete" leaves the sphere a
+    /// few points short of Home's spot, which would show as a jump.
+    private static let exitAnimation = Animation.timingCurve(0.3, 0, 0.2, 1, duration: 0.4)
+
+    /// A change of stage: the controls, the stage label and the error.
+    private static let stageAnimation = Animation.smooth(duration: 0.25)
+
     /// Height of the slot the mic / stop button is centred in.
     private static let micSlotHeight: CGFloat = 100
 
@@ -83,7 +114,9 @@ struct RecordingView: View {
 
     var body: some View {
         ZStack {
-            Color.ouisprBackground.ignoresSafeArea()
+            Color.ouisprBackground
+                .ignoresSafeArea()
+                .opacity(contentOpacity)
 
             // The reader is only there for the bottom edge of the safe area, in the window
             // coordinates Home's mic was reported in.
@@ -92,14 +125,17 @@ struct RecordingView: View {
                     topRow
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
+                        .opacity(contentOpacity)
 
                     // The same sphere as on Home, a little smaller to leave the text
                     // its room. It never leaves: only its mood changes.
-                    // It glides in from Home's place and back (`SphereHero`), and
-                    // shares its motion, so it arrives turned as Home's was.
-                    ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel, sharesMotion: true)
-                        .sphereHero(.recording)
+                    // It shares Home's motion, so it arrives turned as Home's was. The
+                    // slot keeps the layout; the sphere is drawn over it, so it can start
+                    // and end its flight on Home's spot.
+                    Color.clear
+                        .aspectRatio(1, contentMode: .fit)
                         .frame(maxWidth: 200, maxHeight: 200)
+                        .overlay { travellingSphere }
                         .padding(.top, 28)
                         .padding(.bottom, 16)
 
@@ -108,20 +144,21 @@ struct RecordingView: View {
                     // the sphere above and the controls below never move.
                     textZone
                         .frame(maxHeight: .infinity)
+                        .opacity(contentOpacity)
 
                     // MARK: - Feedback line ("Copied!")
                     feedbackText
                         .frame(height: 30)
                         .padding(.top, 8)
+                        .opacity(contentOpacity)
 
                     // MARK: - Controls (always in the same position)
                     controls
                         .frame(height: Self.micSlotHeight)
                         .padding(.top, 16)
-                        // Each stage's buttons fade into the next instead of popping
-                        // (audit, 22 Nov 2026). Short: the row is a control, not a scene.
-                        .animation(.smooth(duration: 0.25), value: displayedStatus)
-                        .animation(.smooth(duration: 0.25), value: shareableResult != nil)
+                        // Copy and share arrive with a result: fade them in too.
+                        .animation(Self.stageAnimation, value: shareableResult != nil)
+                        .opacity(contentOpacity)
 
                     // Whatever lifts the mic's centre to the height of Home's mic, so the
                     // one the user just tapped does not jump down when this screen covers it
@@ -174,6 +211,11 @@ struct RecordingView: View {
                 handleStatusChange(.failed)
             }
             advanceDisplayedStatus(to: coordinator.status)
+            // The way in. The first frame is drawn with `appeared` false: the sphere on
+            // Home's spot and the rest transparent, which is exactly what Home showed.
+            withAnimation(reduceMotion ? .easeOut(duration: 0.25) : Self.enterAnimation) {
+                appeared = true
+            }
         }
         .onDisappear {
             holdTask?.cancel()
@@ -256,8 +298,15 @@ struct RecordingView: View {
     /// Driven by `displayedStatus` rather than the coordinator's, so the label and the
     /// sphere change together (#309). The two post-recording stages keep their own
     /// words: naming the wrong stage is the complaint #267 exists to fix.
-    @ViewBuilder
     private var stageLabel: some View {
+        ZStack {
+            stageLabelContent
+                .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
+    private var stageLabelContent: some View {
         if displayedStatus == .recording {
             stageLabelRow(dot: .ouisprRecording, text: "Listening", detail: formattedTime)
         } else if displayedStatus == .transcribing {
@@ -288,6 +337,45 @@ struct RecordingView: View {
     }
 
     // MARK: - Sphere
+
+    /// Whether the sphere flies between Home's spot and its own. Only from Home, and
+    /// only once Home has drawn its sphere; Reduce Motion fades instead (HIG, Motion).
+    private var sphereFlies: Bool {
+        mode == .standalone && !reduceMotion && homeSphere.homeFrame != nil
+    }
+
+    /// Whether the sphere has to sit on Home's spot: the first frame, and the way out.
+    private var sphereAtHome: Bool {
+        sphereFlies && (!appeared || isDismissing)
+    }
+
+    /// Everything but the sphere: transparent on the first frame and on the way out,
+    /// so Home shows through while the sphere travels. Onboarding has no Home under it
+    /// and keeps the screen it always had.
+    private var contentOpacity: Double {
+        guard mode == .standalone else { return 1 }
+        return appeared && !contentLeaving ? 1 : 0
+    }
+
+    /// The sphere stays opaque while it flies: it is the one thing that does not fade.
+    /// Without a flight it fades with the rest.
+    private var sphereOpacity: Double {
+        sphereFlies ? 1 : contentOpacity
+    }
+
+    private var travellingSphere: some View {
+        GeometryReader { slot in
+            let frame = SphereFlight.frame(
+                home: homeSphere.homeFrame,
+                slot: slot.frame(in: .global),
+                atHome: sphereAtHome
+            )
+            ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel, sharesMotion: mode == .standalone)
+                .frame(width: frame.width, height: frame.height)
+                .position(x: frame.midX, y: frame.midY)
+                .opacity(sphereOpacity)
+        }
+    }
 
     private var sphereMood: ParticleSphereMood {
         switch displayedStatus {
@@ -368,6 +456,7 @@ struct RecordingView: View {
                     .padding(.top, 8)
                 }
             }
+            .transition(stageTransition)
         } else {
             // Nothing to read yet. The zone keeps its height.
             Color.clear
@@ -395,8 +484,23 @@ struct RecordingView: View {
     /// The control row, which changes with the stage and never moves.
     /// WHY always present: Prevents layout jumps. The mic is the visual anchor
     /// of the screen, at the height of Home's own (#788).
-    @ViewBuilder
     private var controls: some View {
+        // A ZStack so the outgoing row and the incoming one share the slot while they
+        // cross-fade, instead of one leaving in a frame (audit, 22 Nov 2026).
+        ZStack {
+            controlsContent
+                .transition(stageTransition)
+        }
+    }
+
+    /// How a stage's content comes and goes: a fade with a slight scale, or a fade
+    /// alone under Reduce Motion.
+    private var stageTransition: AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96))
+    }
+
+    @ViewBuilder
+    private var controlsContent: some View {
         if displayedStatus == .recording {
             HStack(spacing: 28) {
                 sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
@@ -497,13 +601,28 @@ struct RecordingView: View {
     /// Leave: cancel a dictation in flight, or close the screen on a result.
     private func cancelOrClose() {
         HapticFeedback.recordingStopped()
-        // Standalone, the reset takes the screen down, and `MainTabView` animates that:
-        // the screen fades while its sphere glides back to Home's. Onboarding keeps this
-        // screen up: only the dictation goes.
-        //
-        // WHY no fade of its own any more: it hid the screen before the reset, so the
-        // sphere had nothing left to glide with (audit, 22 Nov 2026: two spheres seen).
-        coordinator.resetStatus()
+        guard mode == .standalone else {
+            // Onboarding keeps this screen up: only the dictation goes.
+            coordinator.resetStatus()
+            return
+        }
+        // Step 1: everything but the sphere fades out, the error and the result with it,
+        // while the sphere flies back to Home's spot.
+        // Step 2: when it lands, reset the status. That takes this screen down and shows
+        // Home's sphere in the same frame, on the same spot, drawing the same simulation:
+        // the hand-over has nothing to see.
+        // Generation guard (issue #60): if a new dictation started while the
+        // dismiss animation ran, this stale reset must not tear it down.
+        let generation = coordinator.dictationGeneration
+        withAnimation(Self.contentExitAnimation) {
+            contentLeaving = true
+        }
+        withAnimation(reduceMotion ? .easeOut(duration: 0.25) : Self.exitAnimation) {
+            isDismissing = true
+        } completion: {
+            guard coordinator.dictationGeneration == generation else { return }
+            coordinator.resetStatus()
+        }
     }
 
     private func copyToPasteboard(_ result: String) {
@@ -555,14 +674,18 @@ struct RecordingView: View {
         case .draw(let drawn):
             holdTask?.cancel()
             holdTask = nil
-            displayedStatus = drawn
+            withAnimation(Self.stageAnimation) {
+                displayedStatus = drawn
+            }
         case .hold(_, let interval):
             holdTask?.cancel()
             holdTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(interval))
                 guard !Task.isCancelled else { return }
                 if case .draw(let drawn) = hold.release(now: Date()) {
-                    displayedStatus = drawn
+                    withAnimation(Self.stageAnimation) {
+                        displayedStatus = drawn
+                    }
                 }
             }
         }
@@ -595,7 +718,6 @@ struct RecordingView: View {
                 }
             }
         case .failed:
-            showError = true
             // The reason the app itself recorded, not the transcription property (#320).
             // `lastResult` only ever holds transcribed text and `startDictation` nils it
             // on every entry path, so reading it here was reading nil one hundred percent
@@ -606,7 +728,13 @@ struct RecordingView: View {
             // failure we cannot explain, and the honest sentence for that is the one that
             // explains nothing. Every cause we *can* name already writes its own message
             // at its own call site.
-            errorMessage = DictationErrorChannel.current ?? String(localized: "The dictation failed.")
+            let message = DictationErrorChannel.current ?? String(localized: "The dictation failed.")
+            // Both in one animated change: the error is drawn only once it has a message,
+            // so a message set outside the animation would make it pop in a frame.
+            withAnimation(Self.stageAnimation) {
+                errorMessage = message
+                showError = true
+            }
         default:
             break
         }

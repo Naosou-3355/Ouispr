@@ -227,8 +227,10 @@ private final class ParticleSphereDriver {
         }
         // The simulation clamps the step, so a sphere back from a pause resumes where
         // it stopped instead of jumping by the time it was hidden.
-        let elapsed = lastDate.map { date.timeIntervalSince($0) } ?? 0
-        lastDate = date
+        // Never backwards: a sphere coming back from a pause can ask with its timeline's
+        // last date, older than the other sphere's last frame.
+        let elapsed = max(0, lastDate.map { date.timeIntervalSince($0) } ?? 0)
+        lastDate = max(date, lastDate ?? date)
         simulation.advance(
             mood: mood,
             voiceLevel: voiceLevel,
