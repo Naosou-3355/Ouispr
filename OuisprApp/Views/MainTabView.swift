@@ -30,6 +30,14 @@ struct MainTabView: View {
     /// Tracks whether the app was opened from the keyboard for cold start dictation.
     @State private var isColdStartMode: Bool
 
+    /// Shared by Home's sphere and the recording screen's, so one glides into the other.
+    @Namespace private var sphereNamespace
+
+    /// The recording screen is up. Named, because the animation and the sphere both key on it.
+    private var recordingShown: Bool {
+        coordinator.status != .idle && !isColdStartMode
+    }
+
     /// Active model preparation shown without starting a recording. The overlay dismisses
     /// itself after its contextual ready state.
     ///
@@ -277,10 +285,18 @@ struct MainTabView: View {
             // WHY not shown in cold start mode: During cold start, the recording runs
             // in the background while the user sees the SwipeBackOverlayView. Showing
             // RecordingView would cover the swipe-back instructions.
-            if coordinator.status != .idle && !isColdStartMode {
+            if recordingShown {
                 RecordingView(mode: .standalone)
+                    // The screen fades in while its sphere glides up from Home's, and
+                    // fades out while it glides back (audit, 22 Nov 2026: a one-frame cut).
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
+        // WHY an implicit animation: the status is published by the coordinator, outside
+        // any `withAnimation`, so the change has to be animated where it lands.
+        .animation(.smooth(duration: 0.45), value: recordingShown)
+        .environment(\.sphereHero, SphereHero(namespace: sphereNamespace, recordingShown: recordingShown))
         // Detect cold start directly from URL params. MainTabView's onOpenURL fires
         // BEFORE OuisprApp's (SwiftUI propagates inner-to-outer), so we can't rely
         // on OuisprApp having set the AppGroup flag yet.

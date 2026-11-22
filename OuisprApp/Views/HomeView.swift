@@ -311,11 +311,15 @@ struct HomeView: View {
         VStack(spacing: 24) {
             // The app's face. Paused while a dictation covers this screen: the
             // recording screen draws its own, and a hidden sphere must not ask for
-            // sixty frames a second.
+            // sixty frames a second. Hidden too, so that during the glide the eye
+            // follows the recording screen's sphere only (`SphereHero`).
             // Smaller at the accessibility text sizes, so the text below keeps its
             // room (seen cut at the largest size on the design loop, 22 Nov 2026).
             let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
-            ParticleSphereView(mood: .resting, isPaused: coordinator.status != .idle)
+            ParticleSphereView(mood: .resting, isPaused: coordinator.status != .idle, sharesMotion: true)
+                .opacity(coordinator.status == .idle ? 1 : 0)
+                // Inside the fixed frame, so the glide never moves Home's layout.
+                .sphereHero(.home)
                 .frame(width: sphereSide, height: sphereSide)
                 // Room for the halo, which is drawn outside the sphere's frame.
                 .padding(.vertical, 16)

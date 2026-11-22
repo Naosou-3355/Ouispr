@@ -21,7 +21,7 @@ public struct ParticleSphereView: View {
     private let voiceLevel: Double
     private let isPaused: Bool
 
-    @State private var driver = ParticleSphereDriver()
+    @State private var driver: ParticleSphereDriver
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -32,10 +32,20 @@ public struct ParticleSphereView: View {
     ///   - voiceLevel: the microphone level, 0 to 1. Only read while listening.
     ///   - isPaused: true when something covers the sphere. A paused sphere stops
     ///     asking for frames, which is what keeps a hidden one from costing battery.
-    public init(mood: ParticleSphereMood, voiceLevel: Double = 0, isPaused: Bool = false) {
+    ///   - sharesMotion: true for the spheres that stand for the same object on two
+    ///     screens (Home and the recording screen). They share one simulation, so the
+    ///     one that appears carries on the turn and the swell of the one it replaces
+    ///     instead of starting from its first frame.
+    public init(
+        mood: ParticleSphereMood,
+        voiceLevel: Double = 0,
+        isPaused: Bool = false,
+        sharesMotion: Bool = false
+    ) {
         self.mood = mood
         self.voiceLevel = voiceLevel
         self.isPaused = isPaused
+        _driver = State(initialValue: sharesMotion ? ParticleSphereDriver.shared : ParticleSphereDriver())
     }
 
     /// 30 frames a second at rest, 60 while the sphere answers the voice or works.
@@ -189,8 +199,16 @@ private enum MeshSphereRenderer {
 /// pass, which would be a loop. A reference lets each frame advance the simulation
 /// without publishing anything. The timeline is what asks for the next frame.
 private final class ParticleSphereDriver {
+    /// The one simulation behind every sphere created with `sharesMotion`.
+    /// Only ever touched from a view's body, which runs on the main thread.
+    static let shared = ParticleSphereDriver()
+
     private var simulation = ParticleSphereSimulation()
     private var lastDate: Date?
+    /// The last frame, handed again to a second sphere that asks for the same instant:
+    /// two views sharing the simulation must not advance it twice.
+    private var lastFrame: [MeshSphereVertex] = []
+    private var lastFrameDark = false
     let geometry = MeshSphereGeometry.standard
 
     func wake() {
@@ -204,6 +222,11 @@ private final class ParticleSphereDriver {
         reduceMotion: Bool,
         dark: Bool
     ) -> [MeshSphereVertex] {
+        if date == lastDate, dark == lastFrameDark, !lastFrame.isEmpty {
+            return lastFrame
+        }
+        // The simulation clamps the step, so a sphere back from a pause resumes where
+        // it stopped instead of jumping by the time it was hidden.
         let elapsed = lastDate.map { date.timeIntervalSince($0) } ?? 0
         lastDate = date
         simulation.advance(
@@ -212,12 +235,14 @@ private final class ParticleSphereDriver {
             elapsed: elapsed,
             reduceMotion: reduceMotion
         )
-        return simulation.meshVertices(
+        lastFrame = simulation.meshVertices(
             geometry: geometry,
             mood: mood,
             reduceMotion: reduceMotion,
             dark: dark
         )
+        lastFrameDark = dark
+        return lastFrame
     }
 }
 

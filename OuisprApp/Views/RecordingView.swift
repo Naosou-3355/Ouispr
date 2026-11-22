@@ -50,8 +50,6 @@ struct RecordingView: View {
     @State private var errorMessage: String?
     /// Brief "Copié !" feedback when user taps the transcription result.
     @State private var showCopiedFeedback = false
-    /// Two-step dismissal: animate out first, then reset coordinator status.
-    @State private var isDismissing = false
 
     /// The stage this screen draws, which trails `coordinator.status` by up to
     /// `TranscribingStageHold.minimumDisplayDuration` (#309).
@@ -97,7 +95,10 @@ struct RecordingView: View {
 
                     // The same sphere as on Home, a little smaller to leave the text
                     // its room. It never leaves: only its mood changes.
-                    ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel)
+                    // It glides in from Home's place and back (`SphereHero`), and
+                    // shares its motion, so it arrives turned as Home's was.
+                    ParticleSphereView(mood: sphereMood, voiceLevel: voiceLevel, sharesMotion: true)
+                        .sphereHero(.recording)
                         .frame(maxWidth: 200, maxHeight: 200)
                         .padding(.top, 28)
                         .padding(.bottom, 16)
@@ -117,6 +118,10 @@ struct RecordingView: View {
                     controls
                         .frame(height: Self.micSlotHeight)
                         .padding(.top, 16)
+                        // Each stage's buttons fade into the next instead of popping
+                        // (audit, 22 Nov 2026). Short: the row is a control, not a scene.
+                        .animation(.smooth(duration: 0.25), value: displayedStatus)
+                        .animation(.smooth(duration: 0.25), value: shareableResult != nil)
 
                     // Whatever lifts the mic's centre to the height of Home's mic, so the
                     // one the user just tapped does not jump down when this screen covers it
@@ -127,7 +132,6 @@ struct RecordingView: View {
                 .frame(width: geo.size.width, height: geo.size.height)
             }
         }
-        .opacity(isDismissing ? 0 : 1)
         .animation(.easeOut(duration: 0.3), value: showResult)
         .animation(.easeOut(duration: 0.3), value: showCopiedFeedback)
         .onChange(of: coordinator.status) { newStatus in
@@ -493,23 +497,13 @@ struct RecordingView: View {
     /// Leave: cancel a dictation in flight, or close the screen on a result.
     private func cancelOrClose() {
         HapticFeedback.recordingStopped()
-        guard mode == .standalone else {
-            // Onboarding keeps this screen up: only the dictation goes.
-            coordinator.resetStatus()
-            return
-        }
-        // Step 1: animate RecordingView out
-        withAnimation(.easeOut(duration: 0.25)) {
-            isDismissing = true
-        }
-        // Step 2: after animation, reset status (no animation leak to HomeView).
-        // Generation guard (issue #60): if a new dictation started while the
-        // dismiss animation ran, this stale reset must not tear it down.
-        let generation = coordinator.dictationGeneration
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            guard coordinator.dictationGeneration == generation else { return }
-            coordinator.resetStatus()
-        }
+        // Standalone, the reset takes the screen down, and `MainTabView` animates that:
+        // the screen fades while its sphere glides back to Home's. Onboarding keeps this
+        // screen up: only the dictation goes.
+        //
+        // WHY no fade of its own any more: it hid the screen before the reset, so the
+        // sphere had nothing left to glide with (audit, 22 Nov 2026: two spheres seen).
+        coordinator.resetStatus()
     }
 
     private func copyToPasteboard(_ result: String) {
