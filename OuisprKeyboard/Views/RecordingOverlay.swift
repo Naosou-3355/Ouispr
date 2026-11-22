@@ -31,7 +31,8 @@ struct RecordingOverlay: View {
     let dictationStatus: DictationStatus
     let waveformEnergy: [Float]
     let elapsedSeconds: Double
-    @ObservedObject var waveformDriver: KeyboardWaveformDriver
+    /// Passed through to the waveform, which observes it; the overlay does not.
+    let waveformDriver: KeyboardWaveformDriver
     let onCancel: () -> Void
     let onStop: () -> Void
 

@@ -33,7 +33,12 @@ extension DefaultKeyboardLayer {
 struct KeyboardRootView: View {
     let controllerID: String
     @ObservedObject private var state = KeyboardState.shared
-    @ObservedObject private var waveformDriver = KeyboardWaveformDriver.shared
+    /// Not observed here: the driver publishes every frame while the waveform moves,
+    /// and an observing root re-ran its whole body (keyboard, toolbar, overlay) sixty
+    /// times a second in each of the ~9 live keyboard roots (audit, 22 Nov 2026,
+    /// finding 15). Only `KeyboardWaveformView`, the leaf that draws the bars,
+    /// observes it.
+    private let waveformDriver = KeyboardWaveformDriver.shared
     /// Everything Smart Mode: the armed mode's name, the discovery hint, and the
     /// fan while the mic is held. A second observed object beside `KeyboardState`,
     /// exactly as the waveform driver above is — see `KeyboardSmartModeState`.
