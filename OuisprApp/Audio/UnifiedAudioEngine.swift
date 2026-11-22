@@ -943,6 +943,9 @@ class UnifiedAudioEngine: ObservableObject {
             try startEngine(context: "startRecording")
         }
         purgeState()
+        // Each dictation hears a fake microphone's recording from its first word (no-op
+        // outside Debug simulator builds).
+        FakeMicrophoneInput.rewind()
         isRecording = true
         isRecordingFlag = true
 
@@ -1515,7 +1518,12 @@ class UnifiedAudioEngine: ObservableObject {
         // Extract Float32 samples from the converted buffer
         guard let channelData = outputBuffer.floatChannelData else { return }
         let frameLength = Int(outputBuffer.frameLength)
-        let samples = Array(UnsafeBufferPointer(start: channelData[0], count: frameLength))
+        var samples = Array(UnsafeBufferPointer(start: channelData[0], count: frameLength))
+        // In a Debug simulator build with `OUISPR_FAKE_MIC` set, a recorded voice replaces
+        // the silence the simulator gets from the Mac (`FakeMicrophone`). Same count, so it
+        // plays at the tap's pace and every step below treats it as the voice. A no-op
+        // everywhere else.
+        FakeMicrophoneInput.substitute(&samples)
 
         // Compute RMS energy for this buffer (0.0-1.0 range)
         let rms = sqrt(samples.reduce(0) { $0 + $1 * $1 } / Float(max(samples.count, 1)))
