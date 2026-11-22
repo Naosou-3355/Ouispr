@@ -407,6 +407,17 @@ struct OuisprApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                // Home mounts behind onboarding, and the cover is only presented once
+                // the root is on screen: without this backdrop a new user saw Home for
+                // about 0.3 s before onboarding covered it (audit, 22 Nov 2026, finding
+                // 5). The backdrop is onboarding's own background, so onboarding slides
+                // up over its own colour instead of over Home. It goes when onboarding
+                // is done, under the cover's dismissal, which reveals Home as before.
+                .overlay {
+                    if hasCompletedOnboarding == false {
+                        Color.ouisprBackground.ignoresSafeArea()
+                    }
+                }
                 .environmentObject(coordinator)
                 .environmentObject(proStatus)
                 .environmentObject(subscriptionManager)

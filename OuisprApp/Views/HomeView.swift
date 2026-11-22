@@ -297,6 +297,11 @@ struct HomeView: View {
     private func secondarySheet<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationStack {
             content()
+                // Inline, like History: a large title scrolled up under the leading
+                // close button before collapsing, and read "⌄glages" for a moment
+                // (audit, 22 Nov 2026, finding 9). A sheet with a close button carries
+                // its title in the bar from the start.
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
