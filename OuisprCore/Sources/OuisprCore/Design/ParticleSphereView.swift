@@ -38,11 +38,20 @@ public struct ParticleSphereView: View {
         self.isPaused = isPaused
     }
 
+    /// 30 frames a second at rest, 60 while the sphere answers the voice or works.
+    ///
+    /// WHY: the resting sphere is on screen whenever Home is, and turns slowly enough
+    /// that 30 frames read as smooth. It halves the cost of the screen people see most
+    /// (about a third of a core at 60 on the simulator, 22 Nov 2026).
+    private var frameInterval: Double {
+        mood == .resting ? 1.0 / 30.0 : 1.0 / 60.0
+    }
+
     public var body: some View {
         // No frames while the app is not in front: iOS keeps the run loop alive for
         // the audio session, and nobody is looking.
         let paused = isPaused || scenePhase != .active
-        TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: paused)) { timeline in
+        TimelineView(.animation(minimumInterval: frameInterval, paused: paused)) { timeline in
             let dark = colorScheme == .dark
             let vertices = driver.frame(
                 at: timeline.date,

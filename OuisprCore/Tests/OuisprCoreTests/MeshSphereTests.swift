@@ -69,11 +69,15 @@ final class MeshSphereTests: XCTestCase {
     }
 
     func testThePaletteRunsFromBlueToPink() {
-        let blue = MeshSphereStyle.rgb(at: 0, opacityBand: 0.5, dark: false)
+        // Mid opacity in dark mode: the palette itself, with no glow and no deepening.
+        let blue = MeshSphereStyle.rgb(at: 0, opacityBand: 0.5, dark: true)
         XCTAssertEqual(blue.red, Double(0x2F) / 255, accuracy: 1e-9)
         XCTAssertEqual(blue.blue, 1, accuracy: 1e-9)
-        let pink = MeshSphereStyle.rgb(at: 1, opacityBand: 0.5, dark: false)
+        let pink = MeshSphereStyle.rgb(at: 1, opacityBand: 0.5, dark: true)
         XCTAssertEqual(pink.red, Double(0xC8) / 255, accuracy: 1e-9)
+        // On a light background the palette is deeper, for contrast.
+        let lightBlue = MeshSphereStyle.rgb(at: 0, opacityBand: 0.5, dark: false)
+        XCTAssertLessThan(lightBlue.blue, blue.blue)
         // In dark mode the brightest band glows toward lilac.
         let glow = MeshSphereStyle.rgb(at: 0, opacityBand: 0.95, dark: true)
         XCTAssertGreaterThan(glow.red, blue.red)

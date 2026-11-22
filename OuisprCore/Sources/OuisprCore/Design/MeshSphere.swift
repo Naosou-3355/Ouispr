@@ -102,6 +102,13 @@ public enum MeshSphereStyle {
         var red = low.0 + (high.0 - low.0) * local
         var green = low.1 + (high.1 - low.1) * local
         var blue = low.2 + (high.2 - low.2) * local
+        if !dark {
+            // On a near-white background the lavender rim washed out (design loop,
+            // 22 Nov 2026): the light palette is 18 % deeper.
+            red *= 0.82
+            green *= 0.82
+            blue *= 0.82
+        }
         if dark {
             let glow = max(0, (opacityBand - 0.55) / 0.4) * 0.55
             red += (235 - red) * glow

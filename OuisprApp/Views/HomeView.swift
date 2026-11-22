@@ -70,6 +70,7 @@ struct HomeView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Observed so a Smart Mode switch flipped in the Pro hub moves the badge and the
     /// mic's face on the way back here: the switch writes the App Group, which publishes nothing.
@@ -311,8 +312,11 @@ struct HomeView: View {
             // The app's face. Paused while a dictation covers this screen: the
             // recording screen draws its own, and a hidden sphere must not ask for
             // sixty frames a second.
+            // Smaller at the accessibility text sizes, so the text below keeps its
+            // room (seen cut at the largest size on the design loop, 22 Nov 2026).
+            let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
             ParticleSphereView(mood: .resting, isPaused: coordinator.status != .idle)
-                .frame(width: 240, height: 240)
+                .frame(width: sphereSide, height: sphereSide)
                 // Room for the halo, which is drawn outside the sphere's frame.
                 .padding(.vertical, 16)
 
@@ -374,9 +378,13 @@ struct HomeView: View {
                     .font(.ouisprSubheading)
                     .foregroundStyle(Color.ouisprTextPrimary)
                     .multilineTextAlignment(.center)
+                    // Wraps instead of truncating at the largest text sizes.
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("Choose a model")
                     .font(.ouisprBody)
                     .foregroundColor(.ouisprAccent)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding()
