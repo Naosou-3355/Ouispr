@@ -130,6 +130,34 @@ final class ParticleSphereTests: XCTestCase {
         XCTAssertEqual(simulation.level, 0, accuracy: 0.01)
     }
 
+    /// The level arrives in steps, one audio packet about every 85 ms. A step must not
+    /// show as a kick: with one easing stage the level went from still to moving 0.09
+    /// a frame on the first frame after a step from silence to 0.35, which is what
+    /// read as pumping. Two stages make the motion build up instead.
+    func testAStepInTheVoiceDoesNotKickTheLevel() {
+        var simulation = ParticleSphereSimulation()
+        run(&simulation, mood: .listening, voiceLevel: 0, seconds: 0.5)
+        var before = simulation.level
+        var motion = 0.0
+        var largestKick = 0.0
+        for _ in 0..<6 {
+            simulation.advance(mood: .listening, voiceLevel: 0.35, elapsed: 1.0 / 60, reduceMotion: false)
+            let next = simulation.level - before
+            largestKick = max(largestKick, abs(next - motion))
+            motion = next
+            before = simulation.level
+        }
+        XCTAssertLessThan(largestKick, 0.02)
+    }
+
+    /// Smoothing must not cost the sense that the sphere hears: a held voice is mostly
+    /// reached within a quarter of a second.
+    func testAHeldVoiceIsReachedQuickly() {
+        var simulation = ParticleSphereSimulation()
+        run(&simulation, mood: .listening, voiceLevel: 1, seconds: 0.25)
+        XCTAssertGreaterThan(simulation.level, 0.7)
+    }
+
     // MARK: - Reduce Motion
 
     func testReduceMotionStopsTheRotationAndTheBounce() {

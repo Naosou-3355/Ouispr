@@ -118,6 +118,8 @@ public struct ParticleSphereSimulation: Equatable, Sendable {
     public private(set) var scale: Double = 1
     /// The eased voice level, 0 to 1.
     public private(set) var level: Double = 0
+    /// The voice level after the first easing stage, which `level` then follows.
+    private var voiceEnvelope: Double = 0
 
     private var scaleVelocity: Double = 0
     private var springDamping: Double = Self.restDamping
@@ -174,11 +176,18 @@ public struct ParticleSphereSimulation: Equatable, Sendable {
         current.ripple += (targets.ripple - current.ripple) * ease
         current.pulse += (targets.pulse - current.pulse) * ease
 
-        // The voice rises fast and falls slowly, so the surface does not flicker
-        // between two syllables.
+        // Two easing stages. The first rises fast and falls slowly, so the surface does
+        // not flicker between two syllables. The second rounds off what is left: the
+        // level arrives in steps, one audio packet about every 85 ms, and a single
+        // stage fast enough to feel live caught up with each step before the next one,
+        // so the sphere pumped about twelve times a second (audit, 22 Nov 2026, finding
+        // 8). The second stage takes the corner off each step instead of slowing the
+        // attack: on a recorded sentence it halves the motion above 6 Hz and keeps
+        // most of the motion below, for about 80 ms more lag.
         let clamped = min(max(voiceLevel, 0), 1)
-        let voiceEase = 1 - exp(-step * (clamped > level ? 18 : 6))
-        level += (clamped - level) * voiceEase
+        let envelopeEase = 1 - exp(-step * (clamped > voiceEnvelope ? 18 : 6))
+        voiceEnvelope += (clamped - voiceEnvelope) * envelopeEase
+        level += (voiceEnvelope - level) * (1 - exp(-step * 12))
 
         // The breathing reads the clock in both modes: under Reduce Motion it is the
         // brightness that breathes.
