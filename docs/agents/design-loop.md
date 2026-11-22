@@ -14,7 +14,7 @@ scripts/design-loop.sh --variants light,dark --video 3             # quick pass 
 ```
 
 It builds OuisprApp from `--src` (incremental, about 1 minute once `build/DerivedData`
-exists), installs it on the kept simulator **Ouispr Loop** (iPhone 17 Pro, iOS 26), skips
+exists), installs it on the kept simulator **Ouispr Loop <checkout folder>** (iPhone 17 Pro, iOS 26; one per checkout, one pass at a time each, so parallel sessions never reinstall over each other), skips
 onboarding, lets one-time sheets and boot notifications pass, then for each variant
 relaunches the app, opens the screen and captures it. The last line is
 `LOOP DONE <dir>`; everything lands in `~/dev/ouispr-evidence/design-loop/<dir>/`,

@@ -63,7 +63,9 @@ say() { echo "[design-loop] $*"; }
 
 APP_ID=${OUISPR_LOOP_APP_ID:-com.pivi.dictus}
 APP_GROUP=${OUISPR_LOOP_APP_GROUP:-group.solutions.pivi.dictus}
-DEVICE_NAME=${OUISPR_LOOP_DEVICE:-Ouispr Loop}
+# One simulator per source checkout: two sessions iterating on two checkouts never
+# reinstall over each other's app mid-pass.
+DEVICE_NAME=${OUISPR_LOOP_DEVICE:-Ouispr Loop $(basename "$SRC")}
 DEVICE_TYPE=com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
 # iOS 26 rather than 27: on 27 the system may mount no third-party keyboard
 # (docs/agents/simulator.md), and the keyboard screens are part of what this loop checks.
@@ -82,6 +84,19 @@ DIRTY=$([ -n "$(git -C "$SRC" status --porcelain -- Ouispr OuisprApp OuisprKeybo
   OuisprWidgets OuisprShare Ouispr.xcodeproj ':!*.xcstrings')" ] && echo "+dirty" || true)
 OUT="${OUISPR_LOOP_EVIDENCE:-$HOME/dev/ouispr-evidence/design-loop}/$(date +%Y%m%d-%H%M%S)-$SHA$DIRTY-$NAME"
 mkdir -p "$OUT"
+
+# --- Lock: one pass at a time per device ----------------------------------------
+LOCK="${TMPDIR:-/tmp}/ouispr-design-loop-$(printf '%s' "$DEVICE_NAME" | shasum | cut -c1-12).lock"
+for _ in $(seq 1 120); do
+  if mkdir "$LOCK" 2>/dev/null; then break; fi
+  # A lock left by a pass that died is taken over.
+  if ! kill -0 "$(cat "$LOCK/pid" 2>/dev/null || echo 0)" 2>/dev/null; then rm -rf "$LOCK"; continue; fi
+  [ "$_" = 1 ] && say "waiting for another pass on $DEVICE_NAME"
+  sleep 5
+done
+[ -d "$LOCK" ] || die "another pass holds $DEVICE_NAME for over 10 min"
+echo $$ >"$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT
 
 # --- Device: created once, kept, never erased ---------------------------------
 UDID=$(xcrun simctl list devices -j | python3 -c '
