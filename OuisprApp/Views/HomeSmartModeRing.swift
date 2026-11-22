@@ -86,15 +86,15 @@ enum HomeSmartModeRingStyle {
     /// The segments' spring as they come out of the mic, and their cascade: each row
     /// starts `segmentStagger` after the one nearer the top, so the band opens from the
     /// centre outward.
-    static let segmentSpring = Animation.spring(response: 0.36, dampingFraction: 0.74)
+    static let segmentSpring = Motion.snappy
     static let segmentStagger: Double = 0.045
     static let segmentHiddenScale: CGFloat = 0.6
 
     /// The mic's grow and the dial's close.
-    static let micSpring = Animation.spring(response: 0.3, dampingFraction: 0.68)
+    static let micSpring = Motion.snappy
 
     /// Reduce Motion: no spring, no scale, a short crossfade.
-    static let reducedMotionFade = Animation.easeOut(duration: 0.15)
+    static let reducedMotionFade = Animation.easeOut(duration: Motion.quick)
 
     // MARK: Resting arrows
 
@@ -140,7 +140,7 @@ private struct HomeSmartModeRingBackdrop: ViewModifier {
                         .allowsHitTesting(false)
                 }
             }
-            .animation(reduceMotion ? Style.reducedMotionFade : .easeOut(duration: 0.22), value: isRingOpen)
+            .animation(reduceMotion ? Style.reducedMotionFade : .easeOut(duration: Motion.standard), value: isRingOpen)
             .allowsHitTesting(!isRingOpen)
     }
 }
@@ -290,7 +290,7 @@ struct HomeSmartModeRing: View {
         .scaleEffect(appeared || reduceMotion ? 1 : Style.segmentHiddenScale)
         .opacity(appeared ? 1 : 0)
         .animation(entrance, value: appeared)
-        .animation(.easeOut(duration: 0.14), value: isLit)
+        .animation(.easeOut(duration: Motion.quick), value: isLit)
     }
 
     @ViewBuilder

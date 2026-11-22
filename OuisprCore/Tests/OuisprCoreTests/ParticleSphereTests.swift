@@ -150,6 +150,21 @@ final class ParticleSphereTests: XCTestCase {
         XCTAssertLessThan(largestKick, 0.02)
     }
 
+    /// Under Reduce Motion nothing loops: the working sphere used to breathe its
+    /// brightness, and now holds one frame.
+    func testReduceMotionHoldsTheWorkingSphereStill() {
+        var simulation = ParticleSphereSimulation()
+        run(&simulation, mood: .working, seconds: 0.3, reduceMotion: true)
+        let first = simulation.meshVertices(
+            geometry: .standard, mood: .working, reduceMotion: true, dark: true
+        )
+        run(&simulation, mood: .working, seconds: 0.5, reduceMotion: true)
+        let later = simulation.meshVertices(
+            geometry: .standard, mood: .working, reduceMotion: true, dark: true
+        )
+        XCTAssertEqual(first, later)
+    }
+
     /// Smoothing must not cost the sense that the sphere hears: a held voice is mostly
     /// reached within a quarter of a second.
     func testAHeldVoiceIsReachedQuickly() {

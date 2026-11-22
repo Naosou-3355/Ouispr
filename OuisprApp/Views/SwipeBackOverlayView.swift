@@ -21,6 +21,11 @@ struct SwipeBackOverlayView: View {
 
     @State private var isWaveformAnimating = false
     @State private var swipeProgress: CGFloat = 0
+    /// The swipe loop's timer, kept so it stops with the overlay: it used to repeat
+    /// for the rest of the process once the overlay had been shown.
+    @State private var swipeTimer: Timer?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -96,6 +101,12 @@ struct SwipeBackOverlayView: View {
             }
         }
         .onAppear {
+            // Under Reduce Motion nothing loops (audit, 22 Nov 2026, finding 14): the
+            // hand rests at the end of its swipe, and the text below gives the gesture.
+            guard !reduceMotion else {
+                swipeProgress = 1
+                return
+            }
             withAnimation(
                 .easeInOut(duration: 0.7)
                 .repeatForever(autoreverses: true)
@@ -103,6 +114,10 @@ struct SwipeBackOverlayView: View {
                 isWaveformAnimating = true
             }
             startSwipeLoop()
+        }
+        .onDisappear {
+            swipeTimer?.invalidate()
+            swipeTimer = nil
         }
     }
 
@@ -122,7 +137,8 @@ struct SwipeBackOverlayView: View {
     /// A Timer lets us: animate forward (1.2s) → pause (0.8s) → reset → repeat.
     private func startSwipeLoop() {
         animateSwipeForward()
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+        swipeTimer?.invalidate()
+        swipeTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
             DispatchQueue.main.async {
                 animateSwipeForward()
             }

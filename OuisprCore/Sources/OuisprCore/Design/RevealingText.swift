@@ -44,7 +44,7 @@ public struct RevealingText: View {
                     .lineSpacing(lineSpacing)
                     .multilineTextAlignment(.leading)
                     .opacity(isShown ? 1 : 0)
-                    .animation(.easeOut(duration: 0.3), value: isShown)
+                    .animation(.easeOut(duration: Motion.standard), value: isShown)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

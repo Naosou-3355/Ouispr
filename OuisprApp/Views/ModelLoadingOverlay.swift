@@ -217,7 +217,7 @@ struct ModelLoadingOverlay: View {
         .padding(.horizontal, Metrics.horizontalPadding)
         // Every text block above is a fixed slot: a phase change swaps what is in it, so
         // the fade is the only movement, and nothing slides.
-        .animation(.easeInOut(duration: 0.25), value: phase)
+        .animation(.easeInOut(duration: Motion.standard), value: phase)
     }
 
     // MARK: - Title and subtitle
@@ -605,7 +605,7 @@ struct ModelLoadingOverlay: View {
         // onboarding moves on by itself (#708: no Continue button).
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: Motion.emphasized)) {
                 isPresented = false
             }
         }

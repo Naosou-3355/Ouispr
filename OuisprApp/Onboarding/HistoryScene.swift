@@ -127,8 +127,8 @@ struct HistoryScene: View {
         }
         .background(Color.ouisprBackground)
         .sceneFinger(frame.finger)
-        .animation(.easeInOut(duration: 0.25), value: visible.map(\.id))
-        .animation(.easeOut(duration: 0.25), value: frame.isSearching)
+        .animation(.easeInOut(duration: Motion.standard), value: visible.map(\.id))
+        .animation(.easeOut(duration: Motion.standard), value: frame.isSearching)
     }
 
     /// iOS 26's search bar at the bottom of a `.searchable` screen: a glass capsule with

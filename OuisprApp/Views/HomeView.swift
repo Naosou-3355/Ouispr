@@ -342,7 +342,7 @@ struct HomeView: View {
                 // No animation: the hand-over back is invisible only because the
                 // recording screen's sphere has just landed on this spot. Reduce Motion
                 // has no flight, so there this one fades back in instead of popping.
-                .animation(reduceMotion ? .easeOut(duration: 0.25) : nil, value: sphereAway)
+                .animation(reduceMotion ? .easeOut(duration: Motion.standard) : nil, value: sphereAway)
                 // Room for the halo, which is drawn outside the sphere's frame.
                 .padding(.vertical, 16)
 
@@ -438,7 +438,7 @@ struct HomeView: View {
                     Text(showCopiedFeedback ? "Copied!" : "Last transcription")
                         .font(.ouisprCaption)
                         .foregroundColor(showCopiedFeedback ? .ouisprSuccess : .secondary)
-                        .animation(.easeOut(duration: 0.2), value: showCopiedFeedback)
+                        .animation(.easeOut(duration: Motion.quick), value: showCopiedFeedback)
                     Spacer()
                     Image(systemName: "doc.on.doc")
                         .font(.system(size: 13))

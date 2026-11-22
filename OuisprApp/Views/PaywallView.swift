@@ -217,7 +217,7 @@ struct PaywallView: View {
             // Celebrate instead of silently ejecting the user who just paid:
             // the thank-you screen takes over and Continue dismisses.
             if newState == .success {
-                withAnimation(.easeOut(duration: 0.25)) {
+                withAnimation(.easeOut(duration: Motion.standard)) {
                     showPurchaseSuccess = true
                 }
                 // Bought from the monthly offer: it steps aside for the thank-you
@@ -337,7 +337,7 @@ struct PaywallView: View {
     private var trialRecapActions: some View {
         VStack(spacing: 8) {
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: Motion.standard)) {
                     showsOffers = true
                 }
             } label: {
@@ -553,7 +553,7 @@ struct PaywallView: View {
     /// so the CTA never changes price behind a tap that did not mean to buy.
     private var seeAllPlansLink: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: Motion.standard)) {
                 showsAllPlans = true
             }
         } label: {
@@ -994,7 +994,7 @@ struct PaywallView: View {
                 .shadow(color: Color.ouisprSuccess.opacity(0.3), radius: 28)
                 .scaleEffect(successEntrance ? 1 : 0.4)
                 .opacity(successEntrance ? 1 : 0)
-                .animation(.spring(response: 0.45, dampingFraction: 0.6), value: successEntrance)
+                .animation(Motion.gentle, value: successEntrance)
 
             Text("Welcome to Ouispr Pro")
                 .font(.system(.title, design: .rounded, weight: .bold))
@@ -1008,7 +1008,7 @@ struct PaywallView: View {
                 .padding(.top, 28)
                 .opacity(successEntrance ? 1 : 0)
                 .offset(y: successEntrance ? 0 : 12)
-                .animation(.easeOut(duration: 0.35).delay(0.2), value: successEntrance)
+                .animation(.easeOut(duration: Motion.emphasized).delay(0.2), value: successEntrance)
 
             Text("All Pro features are now unlocked. Thank you for your support.")
                 .font(.ouisprBody)
@@ -1018,7 +1018,7 @@ struct PaywallView: View {
                 .padding(.horizontal, 24)
                 .opacity(successEntrance ? 1 : 0)
                 .offset(y: successEntrance ? 0 : 12)
-                .animation(.easeOut(duration: 0.35).delay(0.3), value: successEntrance)
+                .animation(.easeOut(duration: Motion.emphasized).delay(0.3), value: successEntrance)
 
             Spacer()
 
@@ -1037,7 +1037,7 @@ struct PaywallView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 32)
             .opacity(successEntrance ? 1 : 0)
-            .animation(.easeOut(duration: 0.35).delay(0.45), value: successEntrance)
+            .animation(.easeOut(duration: Motion.emphasized).delay(0.45), value: successEntrance)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.ouisprBackground.ignoresSafeArea())

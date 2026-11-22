@@ -100,7 +100,7 @@ struct ModelPreparationRingView: View {
             }
         }
         .frame(width: Metrics.ringDiameter, height: Metrics.ringDiameter)
-        .animation(.easeInOut(duration: 0.35), value: ring.arcEnd)
+        .animation(.easeInOut(duration: Motion.emphasized), value: ring.arcEnd)
         .onChange(of: ring) { oldValue, newValue in
             switch newValue {
             case .spinning where oldValue != .spinning:
@@ -111,7 +111,7 @@ struct ModelPreparationRingView: View {
                 // The close is the 0.35 s above; the colour waits for it.
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(350))
-                    withAnimation(.easeOut(duration: 0.2)) {
+                    withAnimation(.easeOut(duration: Motion.quick)) {
                         isGreen = true
                     }
                 }

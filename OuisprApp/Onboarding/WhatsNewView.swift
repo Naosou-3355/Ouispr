@@ -74,7 +74,7 @@ struct WhatsNewView: View {
                 .id(step)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: step)
+        .animation(.easeInOut(duration: Motion.standard), value: step)
         .onAppear { recordSeenIfOnScreen() }
         .onChange(of: scenePhase) { _, _ in recordSeenIfOnScreen() }
     }

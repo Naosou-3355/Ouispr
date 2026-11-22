@@ -187,7 +187,7 @@ struct MainTabView: View {
     /// What's new is done: Home comes back, and its `onAppear` raises the trial
     /// announcement in its existing-user form (#593, #685).
     private func finishWhatsNew() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(.easeInOut(duration: Motion.standard)) {
             whatsNewSteps = nil
         }
     }

@@ -261,7 +261,7 @@ public struct ParticleSphereSimulation: Equatable, Sendable {
     }
 
     /// With Reduce Motion the brightness carries what the motion no longer does: it
-    /// follows the voice while listening and breathes slowly while working.
+    /// follows the voice while listening and is held lower while working.
     private static func brightness(
         mood: ParticleSphereMood,
         voice: Double,
@@ -273,7 +273,9 @@ public struct ParticleSphereSimulation: Equatable, Sendable {
         case .listening:
             return 0.55 + 0.45 * voice
         case .working:
-            return 0.62 + 0.38 * (0.5 + 0.5 * breathing)
+            // Held, not breathing: under Reduce Motion no loop runs (audit, 22 Nov
+            // 2026, finding 14). Dimmer than at rest; the stage label says the rest.
+            return 0.81
         case .resting, .done:
             return 1
         }

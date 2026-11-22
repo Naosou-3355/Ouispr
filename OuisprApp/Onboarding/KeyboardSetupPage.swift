@@ -43,6 +43,7 @@ struct KeyboardSetupPage: View {
     @State private var ouisprToggleOn = false
     @State private var fullAccessToggleOn = false
     @State private var animationTimer: Timer?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The device's capabilities, read once: only the hardware identifier is used, and
     /// it cannot change while the page is on screen.
@@ -186,7 +187,7 @@ struct KeyboardSetupPage: View {
                 animationTimer?.invalidate()
                 animationTimer = nil
                 // Both switches on, nothing lit: the final success state.
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                withAnimation(Motion.snappy) {
                     litSettingsStep = 0
                     ouisprToggleOn = true
                     fullAccessToggleOn = true
@@ -202,7 +203,7 @@ struct KeyboardSetupPage: View {
                 startToggleAnimation()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: keyboardDetected)
+        .animation(.easeInOut(duration: Motion.standard), value: keyboardDetected)
     }
 
     // MARK: - Detection status
@@ -456,6 +457,14 @@ struct KeyboardSetupPage: View {
         // Resumed after the Full Access kill with the keyboard already there: the final
         // state is the whole picture, and a loop would switch the toggles back off.
         guard !keyboardDetected else { return }
+        // Under Reduce Motion the scene shows its final state and holds it: both
+        // switches on, nothing moving or looping (audit, 22 Nov 2026, finding 14).
+        guard !reduceMotion else {
+            litSettingsStep = 0
+            ouisprToggleOn = true
+            fullAccessToggleOn = true
+            return
+        }
         resetAnimationState()
         runAnimationCycle()
 
@@ -484,7 +493,7 @@ struct KeyboardSetupPage: View {
                 // The detection ends the loop on its final state; a step already scheduled
                 // must not switch a toggle back off or relight a badge after it.
                 guard !keyboardDetected else { return }
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                withAnimation(Motion.snappy) {
                     change()
                 }
             }
@@ -580,7 +589,7 @@ private struct DrawnSwitch: View {
                     .padding(-4)
                     .opacity(isLit ? 1 : 0)
             )
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isOn)
-            .animation(.easeInOut(duration: 0.25), value: isLit)
+            .animation(Motion.snappy, value: isOn)
+            .animation(.easeInOut(duration: Motion.standard), value: isLit)
     }
 }

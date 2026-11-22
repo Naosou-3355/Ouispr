@@ -337,7 +337,7 @@ private struct LayoutPreview: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Self.trayFill)
         )
-        .animation(.easeInOut(duration: 0.2), value: layout)
+        .animation(.easeInOut(duration: Motion.quick), value: layout)
         .accessibilityHidden(true)
     }
 

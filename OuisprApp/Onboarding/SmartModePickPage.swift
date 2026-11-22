@@ -242,7 +242,7 @@ struct SmartModePickPage: View {
     // MARK: - Actions
 
     private func toggle(_ identifier: String) {
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(.easeInOut(duration: Motion.quick)) {
             pick.toggle(identifier)
         }
     }

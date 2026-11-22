@@ -195,7 +195,9 @@ public extension ParticleSphereSimulation {
         case .listening:
             return 0.55 + 0.45 * voice
         case .working:
-            return 0.62 + 0.38 * (0.5 + 0.5 * breathing)
+            // Held, not breathing: under Reduce Motion no loop runs (audit, 22 Nov
+            // 2026, finding 14). Dimmer than at rest; the stage label says the rest.
+            return 0.81
         case .resting, .done:
             return 1
         }

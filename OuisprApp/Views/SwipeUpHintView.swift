@@ -82,7 +82,7 @@ struct SwipeUpHintView: View {
             // Turning the setting on mid-session has to stop the loop, not wait for
             // the next launch: the animation is already running with `repeatForever`.
             if isReduced || isLocked {
-                withAnimation(.easeOut(duration: 0.2)) { isBouncing = false }
+                withAnimation(.easeOut(duration: Motion.quick)) { isBouncing = false }
             } else {
                 startBouncing()
             }

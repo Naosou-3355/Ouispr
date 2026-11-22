@@ -86,19 +86,19 @@ struct RecordingView: View {
 
     /// The way in: the sphere moves to its spot and the rest of the screen fades in.
     /// A spring with a hint of bounce, so the sphere settles rather than stops.
-    private static let enterAnimation = Animation.spring(duration: 0.45, bounce: 0.1)
+    private static let enterAnimation = Motion.gentle
 
     /// The content's way out: quicker than the sphere's, so nothing of this screen is
     /// still readable over Home's text (audit, 22 Nov 2026).
-    private static let contentExitAnimation = Animation.easeOut(duration: 0.15)
+    private static let contentExitAnimation = Animation.easeOut(duration: Motion.quick)
 
     /// The way out. A timing curve and not a spring: the hand-over to Home's sphere
     /// happens when it ends, and a spring's "logically complete" leaves the sphere a
     /// few points short of Home's spot, which would show as a jump.
-    private static let exitAnimation = Animation.timingCurve(0.3, 0, 0.2, 1, duration: 0.4)
+    private static let exitAnimation = Animation.timingCurve(0.3, 0, 0.2, 1, duration: Motion.emphasized)
 
     /// A change of stage: the controls, the stage label and the error.
-    private static let stageAnimation = Animation.smooth(duration: 0.25)
+    private static let stageAnimation = Animation.smooth(duration: Motion.standard)
 
     /// Height of the slot the mic / stop button is centred in.
     private static let micSlotHeight: CGFloat = 100
@@ -169,8 +169,8 @@ struct RecordingView: View {
                 .frame(width: geo.size.width, height: geo.size.height)
             }
         }
-        .animation(.easeOut(duration: 0.3), value: showResult)
-        .animation(.easeOut(duration: 0.3), value: showCopiedFeedback)
+        .animation(.easeOut(duration: Motion.standard), value: showResult)
+        .animation(.easeOut(duration: Motion.standard), value: showCopiedFeedback)
         .onChange(of: coordinator.status) { newStatus in
             // `handleStatusChange` is deliberately still driven by the real status: it
             // does not draw a stage, it reveals the result text and the error, and a
@@ -213,7 +213,7 @@ struct RecordingView: View {
             advanceDisplayedStatus(to: coordinator.status)
             // The way in. The first frame is drawn with `appeared` false: the sphere on
             // Home's spot and the rest transparent, which is exactly what Home showed.
-            withAnimation(reduceMotion ? .easeOut(duration: 0.25) : Self.enterAnimation) {
+            withAnimation(reduceMotion ? .easeOut(duration: Motion.standard) : Self.enterAnimation) {
                 appeared = true
             }
         }
@@ -613,7 +613,7 @@ struct RecordingView: View {
         withAnimation(Self.contentExitAnimation) {
             contentLeaving = true
         }
-        withAnimation(reduceMotion ? .easeOut(duration: 0.25) : Self.exitAnimation) {
+        withAnimation(reduceMotion ? .easeOut(duration: Motion.standard) : Self.exitAnimation) {
             isDismissing = true
         } completion: {
             guard coordinator.dictationGeneration == generation else { return }
@@ -694,7 +694,7 @@ struct RecordingView: View {
         case .ready:
             if let result = coordinator.lastResult, !result.isEmpty {
                 transcriptionResult = result
-                withAnimation(.easeOut(duration: 0.4)) {
+                withAnimation(.easeOut(duration: Motion.emphasized)) {
                     showResult = true
                 }
                 // Auto-advance to success screen in onboarding mode

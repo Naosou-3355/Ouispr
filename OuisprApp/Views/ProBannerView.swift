@@ -54,7 +54,7 @@ struct ProBannerView: View {
                 memberCard(activeFeatures: activeFeatures)
             }
         }
-        .animation(.easeOut(duration: 0.3), value: content)
+        .animation(.easeOut(duration: Motion.standard), value: content)
     }
 
     /// The subscriber's card: same family as Home's model status card (glass, no

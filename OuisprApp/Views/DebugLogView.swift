@@ -170,7 +170,7 @@ struct DebugLogView: View {
     /// Scroll to the last entry (newest log).
     private func scrollToBottom(proxy: ScrollViewProxy) {
         guard let last = entries.last else { return }
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(.easeOut(duration: Motion.quick)) {
             proxy.scrollTo(last.id, anchor: .bottom)
         }
     }

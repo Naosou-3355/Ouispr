@@ -53,7 +53,7 @@ public struct GlassPressStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? pressedScale : 1.0)
             .opacity(configuration.isPressed ? pressedOpacity : 1.0)
-            .animation(.easeOut(duration: 0.14), value: configuration.isPressed)
+            .animation(.easeOut(duration: Motion.quick), value: configuration.isPressed)
     }
 }
 

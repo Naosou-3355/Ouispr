@@ -73,6 +73,7 @@ struct AppleIntelligencePage: View {
     @State private var screen: DrawnScreen = .root
     @State private var litStep = 0
     @State private var animationTimer: Timer?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// True while the loop goes back to the root: a crossfade, not a push from the trailing
     /// edge, which would read as a fourth screen.
     @State private var isRewinding = false
@@ -150,7 +151,7 @@ struct AppleIntelligencePage: View {
                 checklist.markComplete()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: state.phase)
+        .animation(.easeInOut(duration: Motion.standard), value: state.phase)
     }
 
     // MARK: - Instructions (first visit) and ready
@@ -495,6 +496,14 @@ struct AppleIntelligencePage: View {
     /// 7.0 s → restart
     private func startAnimation() {
         animationTimer?.invalidate()
+        // Under Reduce Motion the scene shows its last step and holds it: nothing
+        // moves or loops (audit, 22 Nov 2026, finding 14).
+        guard !reduceMotion else {
+            animationTimer = nil
+            screen = .languages
+            litStep = 3
+            return
+        }
         runAnimationCycle()
         animationTimer = Timer.scheduledTimer(withTimeInterval: 7.0, repeats: true) { _ in
             runAnimationCycle()
@@ -503,7 +512,7 @@ struct AppleIntelligencePage: View {
 
     private func runAnimationCycle() {
         isRewinding = true
-        withAnimation(.easeInOut(duration: 0.35)) {
+        withAnimation(.easeInOut(duration: Motion.emphasized)) {
             screen = .root
             litStep = 0
         }
@@ -519,7 +528,7 @@ struct AppleIntelligencePage: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 // Stopped with the page: a step already scheduled must not run after it.
                 guard animationTimer != nil else { return }
-                withAnimation(.easeInOut(duration: 0.35)) {
+                withAnimation(.easeInOut(duration: Motion.emphasized)) {
                     change()
                 }
             }

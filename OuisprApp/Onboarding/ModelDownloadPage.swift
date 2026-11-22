@@ -81,7 +81,7 @@ struct ModelDownloadPage: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: preparingModelID)
+        .animation(.easeInOut(duration: Motion.standard), value: preparingModelID)
         .onAppear {
             // Whether the model is already downloaded, and whether one is in flight.
             syncWithPreparationState()

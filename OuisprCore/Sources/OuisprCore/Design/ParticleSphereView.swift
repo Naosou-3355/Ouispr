@@ -59,26 +59,20 @@ public struct ParticleSphereView: View {
 
     public var body: some View {
         // No frames while the app is not in front: iOS keeps the run loop alive for
-        // the audio session, and nobody is looking.
-        let paused = isPaused || scenePhase != .active
-        TimelineView(.animation(minimumInterval: frameInterval, paused: paused)) { timeline in
-            let dark = colorScheme == .dark
-            let vertices = driver.frame(
-                at: timeline.date,
-                mood: mood,
-                voiceLevel: voiceLevel,
-                reduceMotion: reduceMotion,
-                dark: dark,
-                advancing: !paused
-            )
-            Canvas { context, size in
-                MeshSphereRenderer.draw(
-                    vertices,
-                    rings: driver.geometry.rings,
-                    dark: dark,
-                    in: &context,
-                    size: size
-                )
+        // the audio session, and nobody is looking. Under Reduce Motion the sphere
+        // stands still and only its brightness follows the voice, so it needs frames
+        // while listening and none otherwise.
+        let paused = isPaused || scenePhase != .active || (reduceMotion && mood != .listening)
+        // A paused sphere is drawn outside the timeline: a paused `TimelineView` does
+        // not run its content again when the mood changes, and under Reduce Motion the
+        // done stage kept the working stage's frame (seen on the simulator, 22 Nov 2026).
+        Group {
+            if paused {
+                mesh(at: Date(), advancing: false)
+            } else {
+                TimelineView(.animation(minimumInterval: frameInterval)) { timeline in
+                    mesh(at: timeline.date, advancing: true)
+                }
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -90,6 +84,27 @@ public struct ParticleSphereView: View {
             }
         }
         .accessibilityHidden(true)
+    }
+
+    private func mesh(at date: Date, advancing: Bool) -> some View {
+        let dark = colorScheme == .dark
+        let vertices = driver.frame(
+            at: date,
+            mood: mood,
+            voiceLevel: voiceLevel,
+            reduceMotion: reduceMotion,
+            dark: dark,
+            advancing: advancing
+        )
+        return Canvas { context, size in
+            MeshSphereRenderer.draw(
+                vertices,
+                rings: driver.geometry.rings,
+                dark: dark,
+                in: &context,
+                size: size
+            )
+        }
     }
 
     /// A light halo behind the sphere (bench 2), wider than the sphere itself.
@@ -210,6 +225,8 @@ private final class ParticleSphereDriver {
     /// two views sharing the simulation must not advance it twice.
     private var lastFrame: [MeshSphereVertex] = []
     private var lastFrameDark = false
+    private var lastFrameMood: ParticleSphereMood?
+    private var lastFrameReduceMotion = false
     let geometry = MeshSphereGeometry.standard
 
     func wake() {
@@ -229,8 +246,18 @@ private final class ParticleSphereDriver {
         // content, and each run cost a full mesh of about 6,600 points (audit, 22 Nov
         // 2026, finding 7). With a shared simulation it would also step the other
         // sphere's state with this one's mood.
-        if !advancing, dark == lastFrameDark, !lastFrame.isEmpty {
+        // The mood and Reduce Motion are part of the key: a sphere paused under Reduce
+        // Motion still has to show a new stage, in one frame.
+        let sameLook = dark == lastFrameDark && mood == lastFrameMood && reduceMotion == lastFrameReduceMotion
+        if !advancing, sameLook, !lastFrame.isEmpty {
             return lastFrame
+        }
+        // A paused sphere never steps the simulation. When its look differs from the
+        // last frame (a new stage under Reduce Motion, or Home's hidden copy while the
+        // recording sphere drives the shared simulation), it draws the current state
+        // in its own look, and leaves the cache to the sphere that is moving.
+        if !advancing, !lastFrame.isEmpty {
+            return simulation.meshVertices(geometry: geometry, mood: mood, reduceMotion: reduceMotion, dark: dark)
         }
         if date == lastDate, dark == lastFrameDark, !lastFrame.isEmpty {
             return lastFrame
@@ -254,6 +281,8 @@ private final class ParticleSphereDriver {
             dark: dark
         )
         lastFrameDark = dark
+        lastFrameMood = mood
+        lastFrameReduceMotion = reduceMotion
         return lastFrame
     }
 }

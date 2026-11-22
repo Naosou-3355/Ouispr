@@ -135,8 +135,8 @@ struct GlobeKeyTutorialPage: View {
                 }
                 .padding(.bottom, OnboardingMetrics.buttonBottomPadding)
         }
-        .animation(.easeInOut(duration: 0.3), value: stage)
-        .animation(.easeInOut(duration: 0.3), value: showsContinue)
+        .animation(.easeInOut(duration: Motion.standard), value: stage)
+        .animation(.easeInOut(duration: Motion.standard), value: showsContinue)
         .task {
             // The auto-focus fallback (#845): no focus a second after the request, ask for
             // a tap.
@@ -183,7 +183,7 @@ struct GlobeKeyTutorialPage: View {
             // "something is loading" on device. The field now turns green with a check
             // the moment the text lands, and the page leaves about 0.6 s later
             // (0.4 s here, then the 0.2 s keyboard dismissal in `advanceToSuccess`).
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            withAnimation(Motion.snappy) {
                 showSuccessCue = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -243,7 +243,7 @@ struct GlobeKeyTutorialPage: View {
                 .allowsHitTesting(false)
         }
         .overlay { successCue }
-        .animation(.easeInOut(duration: 0.2), value: isFieldFocused)
+        .animation(.easeInOut(duration: Motion.quick), value: isFieldFocused)
     }
 
     /// The "it worked" cue on the text field, shown between the text landing and the page
@@ -560,8 +560,8 @@ private struct KeyboardSwitchAnimation: View {
                 .opacity(finger == nil ? 0 : 1)
                 .position(finger == .ouispr ? Self.ouisprCentre : Self.globeCentre)
         }
-        .animation(.easeInOut(duration: 0.3), value: animationFrame)
-        .animation(.easeInOut(duration: 0.3), value: finger)
+        .animation(.easeInOut(duration: Motion.standard), value: animationFrame)
+        .animation(.easeInOut(duration: Motion.standard), value: finger)
         .allowsHitTesting(false)
     }
 

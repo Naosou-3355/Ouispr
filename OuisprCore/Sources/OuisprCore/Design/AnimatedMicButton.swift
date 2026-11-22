@@ -113,7 +113,6 @@ public struct AnimatedMicButton: View {
 
     // MARK: - Animation State
 
-    @State private var pulseScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.3
     @State private var shimmerOffset: CGFloat = -1.0
     @State private var showSuccessFlash: Bool = false
@@ -191,7 +190,6 @@ public struct AnimatedMicButton: View {
                     Image(systemName: "mic.fill")
                         .font(.system(size: isPill ? 14 : 24, weight: .medium))
                         .foregroundColor(.white)
-                        .scaleEffect(status == .recording ? pulseScale * 0.9 + 0.1 : 1.0)
                 }
 
                 // Armed Smart Mode, last so nothing draws over it
@@ -206,8 +204,9 @@ public struct AnimatedMicButton: View {
             previousStatus = newStatus
         }
         .onChange(of: reduceMotion) { _ in
-            guard isTappable else { return }
-            startIdleAnimation()
+            // Restart whatever the status runs, so a loop already going stops (or
+            // starts) when Reduce Motion changes.
+            handleStatusChange(from: status, to: status)
         }
         .onAppear {
             startIdleAnimation()
@@ -276,9 +275,10 @@ public struct AnimatedMicButton: View {
             OuisprHalo(isPill: isPill, color: .ouisprAccent, opacity: glowOpacity, lineWidth: 2)
 
         case .recording:
-            // Red pulse ring scaling 1.0-1.3 over 0.8s
+            // A still red ring. It used to swell 1.0-1.3 every 0.8 s, a beat tied to
+            // nothing the mic heard, next to a sphere and a waveform that follow the
+            // voice itself (audit, 22 Nov 2026, finding 12). The red says recording.
             OuisprHalo(isPill: isPill, color: .ouisprRecording, opacity: 0.5, lineWidth: 3)
-                .scaleEffect(pulseScale)
 
         case .transcribing, .processing, .requested:
             // Static glass ring during transcription and the LLM stage
@@ -352,7 +352,6 @@ public struct AnimatedMicButton: View {
         // Reset ALL animation state to concrete values WITHOUT animation first.
         // WHY: This cancels any existing repeating animations that could stack
         // with the new ones, causing jitter or incorrect visual state.
-        pulseScale = 1.0
         glowOpacity = 0.3
         shimmerOffset = -1.0
 
@@ -361,7 +360,7 @@ public struct AnimatedMicButton: View {
         // from true to false over 0.3s, eliminating the timer race condition.
         if (oldStatus == .transcribing || oldStatus == .processing) && newStatus == .ready {
             showSuccessFlash = true
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.easeOut(duration: Motion.standard)) {
                 showSuccessFlash = false
             }
         }
@@ -381,8 +380,6 @@ public struct AnimatedMicButton: View {
     }
 
     private func startIdleAnimation() {
-        pulseScale = 1.0
-
         guard animatesIdleGlow, !reduceMotion else {
             // 0.45 is the midpoint of the 0.3-0.6 range the animation sweeps, so the
             // static ring reads as the average of what was breathing there rather than
@@ -403,15 +400,14 @@ public struct AnimatedMicButton: View {
 
     private func startRecordingAnimation() {
         glowOpacity = 0.5
-        withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-            pulseScale = 1.3
-        }
     }
 
     private func startTranscribingAnimation() {
-        pulseScale = 1.0
         glowOpacity = 0.4
         shimmerOffset = -1.0
+        // Under Reduce Motion the shimmer does not sweep: the washed accent and the
+        // stage label already say the phone is working.
+        guard !reduceMotion else { return }
         withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
             shimmerOffset = 2.0
         }
