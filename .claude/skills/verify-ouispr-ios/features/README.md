@@ -186,6 +186,7 @@ Every ID in this map, in one table: the 18 features first, then their 116 sub-fe
 | `app.whats-new` | Gratuit | non |
 | `app.home` | Gratuit | non |
 | `app.recording` | Gratuit | non |
+| `app.recording.error` | Gratuit | non |
 | `app.history` | Pro | non |
 | `app.history.detail` | Pro | non |
 | `app.models` | Gratuit | non |

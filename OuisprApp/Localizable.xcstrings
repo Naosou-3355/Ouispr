@@ -5601,12 +5601,13 @@
         }
       }
     },
-    "The dictation failed." : {
+    "The dictation could not finish. Try again in a moment." : {
+      "comment" : "Shown on the recording screen when a dictation fails for a reason the app cannot name, above a Retry button.",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La dictée a échoué."
+            "value" : "La dictée n’a pas pu aboutir. Réessayez dans un instant."
           }
         }
       }

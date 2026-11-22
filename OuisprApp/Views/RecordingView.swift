@@ -299,9 +299,15 @@ struct RecordingView: View {
     /// sphere change together (#309). The two post-recording stages keep their own
     /// words: naming the wrong stage is the complaint #267 exists to fix.
     private var stageLabel: some View {
+        // The old words leave before the new ones come: a crossfade laid "Écoute 0:04"
+        // and "Transcription en cours..." over each other for a moment, two lines of
+        // different widths in one place (audit, 22 Nov 2026).
         ZStack {
             stageLabelContent
-                .transition(.opacity)
+                .transition(.asymmetric(
+                    insertion: .opacity.animation(.easeOut(duration: Motion.quick).delay(Motion.quick)),
+                    removal: .opacity.animation(.easeOut(duration: Motion.quick))
+                ))
         }
     }
 
@@ -431,26 +437,33 @@ struct RecordingView: View {
             }
             .transition(.opacity)
         } else if showError, let error = errorMessage {
-            VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(.orange)
+            // Neutral, not alarming: a failed dictation is not a danger, and red is the
+            // colour this screen keeps for "recording" (audit, 22 Nov 2026). The reason,
+            // then the way forward.
+            VStack(spacing: 14) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(.system(size: 28, weight: .regular))
+                    .foregroundStyle(Color.ouisprTextSecondary)
+                    .accessibilityHidden(true)
                 Text(error)
-                    .font(.ouisprCaption)
-                    .foregroundColor(.ouisprRecording)
+                    .font(.ouisprBody)
+                    .foregroundStyle(Color.ouisprTextPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
-
-                if mode == .onboarding {
-                    Button("Retry") {
-                        errorMessage = nil
-                        showError = false
-                        showResult = false
+                Button(action: retryAfterError) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Retry")
+                            .font(.ouisprBody)
                     }
-                    .font(.ouisprBody)
-                    .foregroundColor(.ouisprAccent)
-                    .padding(.top, 8)
+                    .foregroundStyle(Color.ouisprAccent)
+                    .padding(.horizontal, 22)
+                    .frame(minHeight: 48)
+                    .ouisprGlassBar()
                 }
+                .buttonStyle(GlassPressStyle())
+                .padding(.top, 4)
             }
             .transition(stageTransition)
         } else {
@@ -630,6 +643,19 @@ struct RecordingView: View {
         }
     }
 
+    /// Onboarding goes back to its practice prompt; elsewhere the dictation starts again.
+    private func retryAfterError() {
+        guard mode != .onboarding else {
+            withAnimation(Self.stageAnimation) {
+                errorMessage = nil
+                showError = false
+                showResult = false
+            }
+            return
+        }
+        startRecording()
+    }
+
     private func startRecording() {
         // Asked BEFORE the result state is cleared (#484): a tap that ends on the preparation
         // screen has not started a dictation, and wiping the transcription the user is looking
@@ -724,7 +750,7 @@ struct RecordingView: View {
             // failure we cannot explain, and the honest sentence for that is the one that
             // explains nothing. Every cause we *can* name already writes its own message
             // at its own call site.
-            let message = DictationErrorChannel.current ?? String(localized: "The dictation failed.")
+            let message = DictationErrorChannel.current ?? String(localized: "The dictation could not finish. Try again in a moment.")
             // Both in one animated change: the error is drawn only once it has a message,
             // so a message set outside the animation would make it pop in a frame.
             withAnimation(Self.stageAnimation) {
@@ -765,10 +791,16 @@ private struct LevelDrivenSphere: View {
 /// The elapsed time next to "Listening", reading it itself for the same reason.
 private struct ElapsedTimeText: View {
     @ObservedObject var levels: DictationLevels
+    /// The last time shown while it ran. The count is reset to zero as the recording
+    /// stops, while this label is still fading out, and it read "0:00" for a moment.
+    @State private var held = "0:00"
 
     var body: some View {
-        Text(verbatim: levels.elapsedLabel)
+        Text(verbatim: levels.seconds > 0 ? levels.elapsedLabel : held)
             .monospacedDigit()
             .foregroundStyle(Color.ouisprTextTertiary)
+            .onChange(of: levels.elapsedLabel) { _, label in
+                if levels.seconds > 0 { held = label }
+            }
     }
 }

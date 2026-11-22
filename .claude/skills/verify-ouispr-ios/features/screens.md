@@ -23,6 +23,7 @@ Captures are in [`docs/agents/screens/`](../../../../docs/agents/screens/), one 
 | `app.whats-new` | What's new (existing user behind 2.0.0) | set-default ouispr.hasCompletedOnboarding -bool YES, then ouispr.lastVersionSeen -string 1.8.0 | onboarding | [oui](../../../../docs/agents/screens/app.whats-new.png) |
 | `app.home` | Tab Accueil (no model: « Télécharger un modèle pour commencer »; with a model, a round mic above the history hint) | launch.sh --skip-onboarding | dictation.in-app, history | [oui](../../../../docs/agents/screens/app.home.png) |
 | `app.recording` | Full-screen in-app recording | Accueil → round mic `home.newDictation` (needs a model; records the Mac's mic) | dictation.in-app | non |
+| `app.recording.error` | Recording screen after a failed dictation: neutral ⓘ, the reason (« Aucun mot détecté »), a « Réessayer » button that starts a new dictation | Debug simulator: fake mic on a silent file (docs/agents/simulator.md, section 8), mic, then ✓ | dictation.in-app | [oui](../../../../docs/agents/screens/app.recording.error.png) |
 | `app.history` | History sheet (empty state) | Pro on, Accueil → tap-label Historique | history | [oui](../../../../docs/agents/screens/app.history.png) |
 | `app.history.detail` | Transcription detail | History → a row (needs a transcription) | history, vocabulary | non |
 | `app.models` | Tab Modèles | tab Modèles | models.transcription | [oui](../../../../docs/agents/screens/app.models.png) |
