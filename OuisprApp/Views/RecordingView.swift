@@ -780,7 +780,7 @@ private struct LevelDrivenSphere: View {
     let sharesMotion: Bool
 
     var body: some View {
-        ParticleSphereView(
+        PersonaOrbView(
             mood: mood,
             voiceLevel: listening ? levels.recentPeak : 0,
             sharesMotion: sharesMotion

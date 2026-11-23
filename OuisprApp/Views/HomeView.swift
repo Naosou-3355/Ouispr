@@ -330,7 +330,7 @@ struct HomeView: View {
             // room (seen cut at the largest size on the design loop, 22 Nov 2026).
             let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
             let sphereAway = coordinator.status != .idle
-            ParticleSphereView(
+            PersonaOrbView(
                 mood: .resting,
                 // Also paused, though still drawn, under a sheet or a cover.
                 isPaused: sphereAway || sphereCover.isCovered,
