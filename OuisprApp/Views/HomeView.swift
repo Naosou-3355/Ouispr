@@ -330,7 +330,7 @@ struct HomeView: View {
             // room (seen cut at the largest size on the design loop, 22 Nov 2026).
             let sphereSide: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
             let sphereAway = coordinator.status != .idle
-            PersonaOrbView(
+            InkCharacterView(
                 mood: .resting,
                 // Also paused, though still drawn, under a sheet or a cover.
                 isPaused: sphereAway || sphereCover.isCovered,
@@ -343,7 +343,7 @@ struct HomeView: View {
                 // recording screen's sphere has just landed on this spot. Reduce Motion
                 // has no flight, so there this one fades back in instead of popping.
                 .animation(reduceMotion ? .easeOut(duration: Motion.standard) : nil, value: sphereAway)
-                // Room for the halo, which is drawn outside the sphere's frame.
+                // The spacing the orb had, kept so the screen below does not move.
                 .padding(.vertical, 16)
 
             if modelManager.isModelReady {

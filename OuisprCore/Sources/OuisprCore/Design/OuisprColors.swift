@@ -55,6 +55,12 @@ public extension Color {
         Color(light: Color(hex: 0x14161B), dark: Color(hex: 0xEDEFF3))
     }
 
+    /// The ink character's stroke: navy #14161B light / #F4F6FB dark (bench of
+    /// 24 Nov 2026). One ink, no shadow, no outline.
+    static var ouisprInk: Color {
+        Color(light: Color(hex: 0x14161B), dark: Color(hex: 0xF4F6FB))
+    }
+
     /// Secondary text, such as a subtitle or a stage label: #4A4F5A light / #A8AFBD dark.
     static var ouisprTextSecondary: Color {
         Color(light: Color(hex: 0x4A4F5A), dark: Color(hex: 0xA8AFBD))
