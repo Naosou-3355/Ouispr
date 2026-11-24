@@ -175,7 +175,18 @@ final class AOSPTrieEngine {
             prefix = nil
         }
 
-        guard let result = bridge.spellCheck(wordToCheck, maxEditDistance: 2.0) else {
+        // Touch-aware when the letters' tap points are known (SpatialTyping): the scorer
+        // then prices each letter from where the finger landed.
+        let spatialResult: AOSPTrieResult?
+        if let taps = SpatialTyping.shared.taps(for: wordToCheck) {
+            spatialResult = bridge.spellCheck(
+                wordToCheck, maxEditDistance: 2.0,
+                tapX: Self.floatData(taps.x), tapY: Self.floatData(taps.y)
+            )
+        } else {
+            spatialResult = bridge.spellCheck(wordToCheck, maxEditDistance: 2.0)
+        }
+        guard let result = spatialResult else {
             return nil
         }
 
@@ -192,6 +203,31 @@ final class AOSPTrieEngine {
         }
 
         return (fullCorrection, Array(alts))
+    }
+
+    // MARK: - Touch-aware typing
+
+    /// Install the rendered letter keys (key-width units). See `SpatialTyping.install`.
+    func setSpatialKeys(characters: [UInt16], centerX: [Float], centerY: [Float],
+                        keyWidth: Float, keyHeight: Float) {
+        let charactersData = characters.withUnsafeBufferPointer { Data(buffer: $0) }
+        if !bridge.setSpatialKeys(
+            characters: charactersData,
+            centerX: Self.floatData(centerX),
+            centerY: Self.floatData(centerY),
+            keyWidth: keyWidth, keyHeight: keyHeight
+        ) {
+            print("[AOSPTrieEngine] Rejected spatial keys (\(characters.count) keys)")
+        }
+    }
+
+    /// The key a touch most probably meant after `prefix`. See `SpatialTyping.resolve`.
+    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String) -> UInt16 {
+        bridge.resolveTouch(x: x, y: y, geometricKey: geometricKey, prefix: prefix)
+    }
+
+    private static func floatData(_ values: [Float]) -> Data {
+        values.withUnsafeBufferPointer { Data(buffer: $0) }
     }
 
     /// Whether a dictionary is loaded and ready for lookups.

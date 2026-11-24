@@ -7,6 +7,9 @@
 #include "ouispr_scorer.h"
 #include "ouispr_proximity.h"
 #include "ouispr_ngram.h"
+#include "ouispr_spatial.h"
+
+#include <cmath>
 
 #include <vector>
 
@@ -24,13 +27,29 @@
     ouispr::AccentCostTable _accentCosts;
     BOOL _loaded;
     ouispr::NgramEngine* _ngramEngine;
+    ouispr::SpatialModel _spatial;
+    ouispr::NextLetterModel _nextLetters;
 }
+
+// Spatial parameters, tuned on tools/typing-bench (see its README for the numbers).
+// lambda: how strongly a tap's distance to a key turns into edit cost.
+static constexpr float kTapCostLambda = 0.10f;
+// sigma: assumed spread of a touch around the aimed key centre, in key widths.
+static constexpr float kTouchSigma = 0.30f;
+// The most a key can grow, invisibly, on each side: a quarter of a key width.
+static constexpr float kMaxKeyStretch = 0.25f;
+// Share of a uniform prior mixed into the next-letter prediction, so rare letters and
+// words the dictionary does not know stay reachable from a border tap.
+static constexpr float kNextLetterSmoothing = 0.30f;
+// Trie nodes walked for an exact next-letter prediction before the letter-bigram fallback.
+static constexpr int kNextLetterNodeBudget = 4000;
 
 - (instancetype)init {
     self = [super init];
     if (self) {
         _loaded = NO;
         _ngramEngine = new ouispr::NgramEngine();
+        _spatial.setSigma(kTouchSigma);
         // Both tables are members with a stable address, so the scorer is wired to them
         // once here. Until OuisprCore installs their contents they are neutral: every
         // substitution costs 1.0 and no accent pair is related, which degrades to plain
@@ -52,6 +71,12 @@
 
     bool success = _trie.loadMmap([path UTF8String]);
     if (success) {
+        // Rebuilt per dictionary: the table describes one language. Built aside (~10 ms)
+        // then copied in, so a touch on the main thread never sees a freed table; at worst
+        // it reads a mix of two languages' floats for one keystroke.
+        ouispr::NextLetterModel next;
+        next.build(_trie);
+        _nextLetters = next;
         _loaded = YES;
     }
     return success ? YES : NO;
@@ -170,6 +195,81 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
                                  static_cast<const uint16_t *>(to.bytes),
                                  static_cast<const float *>(costs.bytes),
                                  (int)count) ? YES : NO;
+}
+
+// --- Touch-aware typing (spatial model) ---
+
+- (BOOL)setSpatialKeysWithCharacters:(NSData *)characters
+                             centerX:(NSData *)centerX
+                             centerY:(NSData *)centerY
+                            keyWidth:(float)keyWidth
+                           keyHeight:(float)keyHeight {
+    NSUInteger count = characters.length / sizeof(uint16_t);
+    if (count == 0 || centerX.length != count * sizeof(float) || centerY.length != count * sizeof(float)) {
+        return NO;
+    }
+    return _spatial.setKeys(static_cast<const uint16_t *>(characters.bytes),
+                            static_cast<const float *>(centerX.bytes),
+                            static_cast<const float *>(centerY.bytes),
+                            (int)count, keyWidth, keyHeight) ? YES : NO;
+}
+
+- (unichar)resolveTouchAtX:(float)x y:(float)y
+              geometricKey:(unichar)geometricKey
+               afterPrefix:(NSString *)prefix {
+    if (!_loaded || !_spatial.hasKeys() || !_nextLetters.isBuilt()) return geometricKey;
+
+    uint16_t prefixBuf[128];
+    int prefixLen = convertString(prefix, prefixBuf, 128);
+    float weights[ouispr::SUBSTITUTION_SLOT_COUNT];
+    if (!_nextLetters.weights(_trie, prefixBuf, prefixLen, kNextLetterNodeBudget, weights)) {
+        return geometricKey;
+    }
+    return _spatial.resolveTouch(x, y, geometricKey, weights, kMaxKeyStretch, kNextLetterSmoothing);
+}
+
+- (nullable AOSPTrieResult *)spellCheck:(NSString *)word
+                        maxEditDistance:(float)maxDist
+                                   tapX:(NSData *)tapX
+                                   tapY:(NSData *)tapY {
+    NSUInteger len = [word length];
+    if (!_loaded || len == 0 || len > 128 || !_spatial.hasKeys()
+        || tapX.length != len * sizeof(float) || tapY.length != len * sizeof(float)) {
+        return [self spellCheck:word maxEditDistance:maxDist];
+    }
+
+    uint16_t inputBuf[128];
+    int inputLen = convertString(word, inputBuf, 128);
+    const float *xs = static_cast<const float *>(tapX.bytes);
+    const float *ys = static_cast<const float *>(tapY.bytes);
+
+    std::vector<float> costs(inputLen * ouispr::SUBSTITUTION_SLOT_COUNT, -1.0f);
+    _spatial.tapCosts(xs, ys, inputLen, kTapCostLambda, 0.0f, costs.data());
+    // Letters with no tap say nothing: the proximity map prices them, as before.
+    for (int i = 0; i < inputLen; i++) {
+        if (std::isnan(xs[i]) || std::isnan(ys[i])) {
+            std::fill(costs.begin() + i * ouispr::SUBSTITUTION_SLOT_COUNT,
+                      costs.begin() + (i + 1) * ouispr::SUBSTITUTION_SLOT_COUNT, -1.0f);
+        }
+    }
+
+    std::vector<ouispr::Candidate> candidates = _scorer.correct(
+        _trie, inputBuf, inputLen, maxDist, 5, costs.data()
+    );
+    if (candidates.empty()) return nil;
+
+    NSString *firstWord = [NSString stringWithUTF8String:candidates[0].word];
+    if ([firstWord isEqualToString:word]) return nil;
+
+    AOSPTrieResult *result = [[AOSPTrieResult alloc] init];
+    result.correction = firstWord;
+    result.score = candidates[0].score;
+    NSMutableArray<NSString *> *alts = [NSMutableArray array];
+    for (size_t i = 1; i < candidates.size() && i <= 2; i++) {
+        [alts addObject:[NSString stringWithUTF8String:candidates[i].word]];
+    }
+    result.alternatives = [alts copy];
+    return result;
 }
 
 // --- N-gram prediction methods ---

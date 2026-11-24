@@ -110,16 +110,33 @@ static void insertCandidate(std::vector<Candidate>& results, const Candidate& c,
 struct CostModel {
     const ProximityMap* proximity;
     const AccentCostTable* accents;
+    /// Optional per-tap costs from SpatialModel::tapCosts, inputLen * SUBSTITUTION_SLOT_COUNT,
+    /// -1 where the spatial model has no key. Null when the touch points are unknown.
+    const float* taps;
 };
+
+// Floor on a spatial substitution: a tap exactly on a border makes the neighbour almost
+// free, but never strictly free, so a word that matches the produced keys still wins a tie.
+static constexpr float SPATIAL_SUBSTITUTION_FLOOR = 0.05f;
+
+// Spatial cost of reading the tap at `inputPos` as `to`, or -1 when unknown.
+static float tapCost(int inputPos, uint16_t to, const CostModel& costs) {
+    if (!costs.taps) return -1.0f;
+    int slot = substitutionSlot(to);
+    if (slot < 0) return -1.0f;
+    return costs.taps[inputPos * SUBSTITUTION_SLOT_COUNT + slot];
+}
 
 // Get substitution cost between two characters.
 // Accent relation first: an accent slip is cheaper than any keyboard near miss, and on a
 // layout where the accented key exists it would otherwise be scored by geometry alone.
-static float substitutionCost(uint16_t from, uint16_t to, const CostModel& costs) {
+static float substitutionCost(uint16_t from, uint16_t to, int inputPos, const CostModel& costs) {
     if (costs.accents) {
         float ac = costs.accents->cost(from, to);
         if (ac >= 0.0f) return ac;
     }
+    float spatial = tapCost(inputPos, to, costs);
+    if (spatial >= 0.0f) return std::max(SPATIAL_SUBSTITUTION_FLOOR, spatial);
     if (costs.proximity) return std::max(0.2f, costs.proximity->cost(from, to));
     return 1.0f;
 }
@@ -145,16 +162,19 @@ static void searchRecursive(const Trie& trie,
         std::memcpy(&trieChar, &node.chars[nodeCharPos], 2);
 
         // 1. MATCH: input char == trie char
+        // With touch points, a match still pays what the tap says about that key: a key
+        // produced by a border tap is not certain.
         if (inputPos < inputLen && input[inputPos] == trieChar) {
+            float mc = std::max(0.0f, tapCost(inputPos, trieChar, costs));
             wordBuf[wordLen] = trieChar;
             searchRecursive(trie, node, input, inputLen, inputPos + 1,
-                            wordBuf, wordLen + 1, cost, maxEditDist,
+                            wordBuf, wordLen + 1, cost + mc, maxEditDist,
                             results, maxResults, costs, nodeCharPos + 1);
         }
 
         // 2. SUBSTITUTION: input char != trie char
         if (inputPos < inputLen && input[inputPos] != trieChar) {
-            float sc = substitutionCost(input[inputPos], trieChar, costs);
+            float sc = substitutionCost(input[inputPos], trieChar, inputPos, costs);
             if (cost + sc <= maxEditDist) {
                 wordBuf[wordLen] = trieChar;
                 searchRecursive(trie, node, input, inputLen, inputPos + 1,
@@ -242,12 +262,13 @@ static void searchRecursive(const Trie& trie,
 std::vector<Candidate> Scorer::correct(const Trie& trie,
                                         const uint16_t* input, int inputLen,
                                         float maxEditDist,
-                                        int maxResults) const {
+                                        int maxResults,
+                                        const float* tapCosts) const {
     std::vector<Candidate> results;
     if (inputLen <= 0 || !trie.rootData()) return results;
 
     uint16_t wordBuf[128];
-    CostModel costs{proximityMap_, accentCostTable_};
+    CostModel costs{proximityMap_, accentCostTable_, tapCosts};
 
     // Root children start at HEADER_SIZE with known count from header.
     uint32_t offset = HEADER_SIZE;

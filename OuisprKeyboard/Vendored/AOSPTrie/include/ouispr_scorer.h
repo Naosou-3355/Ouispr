@@ -68,11 +68,15 @@ public:
     /// input: UTF-16 code units, inputLen: number of code units.
     /// maxEditDist: maximum cumulative edit cost (default 2.0).
     /// maxResults: maximum candidates to return (default 5).
+    /// tapCosts: optional SpatialModel::tapCosts output for this input (inputLen rows of
+    /// SUBSTITUTION_SLOT_COUNT). When given, substitutions and matches are priced from
+    /// where the finger landed instead of from the proximity map.
     /// Returns candidates sorted by score descending.
     std::vector<Candidate> correct(const Trie& trie,
                                    const uint16_t* input, int inputLen,
                                    float maxEditDist = 2.0f,
-                                   int maxResults = 5) const;
+                                   int maxResults = 5,
+                                   const float* tapCosts = nullptr) const;
 
 private:
     const ProximityMap* proximityMap_;

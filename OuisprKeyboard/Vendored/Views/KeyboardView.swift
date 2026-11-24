@@ -69,6 +69,13 @@ final internal class GiellaKeyboardView: UIView,
 
     weak var delegate: (GiellaKeyboardViewDelegate & GiellaKeyboardViewKeyboardKeyDelegate)?
 
+    /// Where the finger is on the active key, in collection view coordinates (SpatialTyping).
+    private var activeTouchPoint: CGPoint?
+    /// The key physically under the finger, before hidden resizing (SpatialTyping).
+    private var activeGeometricIndexPath: IndexPath?
+    /// Bounds and page the letter geometry was last installed for.
+    private var spatialGeometrySignature: String?
+
     private var ghostKeyView: GhostKeyView?
 
     private var currentPage: [[KeyDefinition]] {
@@ -707,9 +714,7 @@ final internal class GiellaKeyboardView: UIView,
 
         if let key = activeKey?.key {
             if key.type.triggersOnTouchUp {
-                if let delegate = delegate {
-                    delegate.didTriggerKey(key)
-                }
+                triggerKey(key)
             }
             activeKey = nil
         }
@@ -726,8 +731,15 @@ final internal class GiellaKeyboardView: UIView,
     private func handleTouches(_ touches: Set<UITouch>) {
         for touch in touches {
             let touchPoint = clampedPoint(touch.location(in: collectionView))
-            if let indexPath = collectionView.indexPathForItem(at: touchPoint) {
-                let key = currentPage[indexPath.section][indexPath.row]
+            if let geometricIndexPath = collectionView.indexPathForItem(at: touchPoint) {
+                // Hidden key resizing: a border tap may go to the neighbour the dictionary
+                // expects next. Keys look the same; see SpatialTyping.
+                let (key, indexPath) = spatiallyResolved(
+                    currentPage[geometricIndexPath.section][geometricIndexPath.row],
+                    at: geometricIndexPath, point: touchPoint
+                )
+                activeTouchPoint = touchPoint
+                activeGeometricIndexPath = geometricIndexPath
 
                 // Click on finger contact, in step with the haptic fired above (#286).
                 // This is the only point where a touch resolves to a key, so it is also
@@ -771,6 +783,86 @@ final internal class GiellaKeyboardView: UIView,
                 }
             }
         }
+    }
+
+    // MARK: - Touch-aware typing (SpatialTyping)
+
+    /// Trigger `key`, telling SpatialTyping where a letter was tapped so the correction
+    /// can price it from the touch point rather than from the key it produced.
+    private func triggerKey(_ key: KeyDefinition) {
+        if let letter = Self.letter(of: key), let point = activeTouchPoint {
+            SpatialTyping.shared.notePendingTap(letter: letter, at: point)
+        }
+        delegate?.didTriggerKey(key)
+        SpatialTyping.shared.clearPendingTap()
+    }
+
+    /// The letter a key types, or nil for anything else (digits, punctuation, the
+    /// adaptive accent key, the emoji key).
+    private static func letter(of key: KeyDefinition) -> Character? {
+        guard case .input(let character, let alternate) = key.type,
+              alternate != "accent",
+              character.count == 1,
+              let first = character.first,
+              first.isLetter else { return nil }
+        return first
+    }
+
+    /// The key a touch on `key` produces once hidden resizing has had its say: `key`
+    /// itself, or the neighbouring letter the dictionary expects next.
+    private func spatiallyResolved(_ key: KeyDefinition, at indexPath: IndexPath,
+                                   point: CGPoint) -> (KeyDefinition, IndexPath) {
+        guard let letter = Self.letter(of: key) else { return (key, indexPath) }
+        installSpatialGeometryIfNeeded()
+        let resolved = SpatialTyping.shared.resolve(letter, at: point)
+        guard resolved != (letter.lowercased().first ?? letter) else { return (key, indexPath) }
+        for (section, row) in currentPage.enumerated() {
+            for (item, candidate) in row.enumerated() {
+                guard let other = Self.letter(of: candidate),
+                      (other.lowercased().first ?? other) == resolved else { continue }
+                return (candidate, IndexPath(item: item, section: section))
+            }
+        }
+        return (key, indexPath)
+    }
+
+    /// Hand the letter keys' laid-out centres to SpatialTyping, once per layout.
+    private func installSpatialGeometryIfNeeded() {
+        let signature = "\(collectionView.bounds.size)|\(page)"
+        guard signature != spatialGeometrySignature else { return }
+
+        var centers: [Character: CGPoint] = [:]
+        var rowCenters: [CGFloat] = []
+        var pitches: [CGFloat] = []
+        for (section, row) in currentPage.enumerated() {
+            var previousX: CGFloat?
+            var rowY: CGFloat?
+            for (item, key) in row.enumerated() {
+                guard let letter = Self.letter(of: key),
+                      let attributes = collectionView.layoutAttributesForItem(
+                        at: IndexPath(item: item, section: section)) else {
+                    previousX = nil
+                    continue
+                }
+                centers[letter.lowercased().first ?? letter] = attributes.center
+                if let previousX { pitches.append(attributes.center.x - previousX) }
+                previousX = attributes.center.x
+                rowY = attributes.center.y
+            }
+            if let rowY { rowCenters.append(rowY) }
+        }
+        // Letter pages only: symbol pages have no letter rows to speak of.
+        guard centers.count >= 20, !pitches.isEmpty,
+              let firstRow = rowCenters.first, let lastRow = rowCenters.last,
+              rowCenters.count >= 2 else { return }
+        let pitch = pitches.sorted()[pitches.count / 2]
+        let rowPitch = (lastRow - firstRow) / CGFloat(rowCenters.count - 1)
+        guard pitch > 0, rowPitch > 0 else { return }
+
+        spatialGeometrySignature = signature
+        SpatialTyping.shared.install(
+            SpatialTyping.Geometry(pitch: pitch, centers: centers, rowPitch: rowPitch)
+        )
     }
 
     /// Clamp a touch point into the collection view's content area.
@@ -820,11 +912,21 @@ final internal class GiellaKeyboardView: UIView,
         if activeKey != nil {
             for touch in touches {
                 let movePoint = clampedPoint(touch.location(in: collectionView))
-                if let indexPath = collectionView.indexPathForItem(at: movePoint) {
-                    let key = currentPage[indexPath.section][indexPath.row]
+                if let geometricIndexPath = collectionView.indexPathForItem(at: movePoint) {
+                    activeTouchPoint = movePoint
+                    // Re-resolve only when the finger crosses into another key: a finger
+                    // resting on a border must not flicker between two letters.
+                    guard geometricIndexPath != activeGeometricIndexPath else { continue }
+                    activeGeometricIndexPath = geometricIndexPath
+                    let (key, indexPath) = spatiallyResolved(
+                        currentPage[geometricIndexPath.section][geometricIndexPath.row],
+                        at: geometricIndexPath, point: movePoint
+                    )
                     activeKey = ActiveKey(key: key, indexPath: indexPath)
                 } else {
                     activeKey = nil
+                    activeTouchPoint = nil
+                    activeGeometricIndexPath = nil
                 }
             }
         }
@@ -851,7 +953,7 @@ final internal class GiellaKeyboardView: UIView,
                     swipeKeyView.percentageAlternative > 0.5 {
                     delegate?.didSwipeKey(activeKey.key)
                 } else {
-                    delegate?.didTriggerKey(activeKey.key)
+                    triggerKey(activeKey.key)
                 }
             }
         }

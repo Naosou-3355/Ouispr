@@ -16,6 +16,8 @@
 - `typing.accents`: Long-press a letter for its accents.
 - `typing.dead-keys`: Dead keys compose accented letters.
 - `typing.autocorrect-toggle`: « Correction automatique » switch in Réglages → Clavier.
+- `typing.touch-aware-correction`: The correction prices each letter from where the finger landed (`SpatialTyping`, `ouispr_spatial.cpp`). Only letters tapped in the current word count; a pasted or dictated word is corrected as before. Measured on `tools/typing-bench`, invisible on screen. **iPhone** (needs real fingers).
+- `typing.hidden-key-resizing`: A tap in the outer quarter of a letter key may produce the neighbour the dictionary expects next ("bonj" + a tap on the o|i border gives `o`). Keys never change on screen; a tap well inside a key always gives that key. Off when autocorrect is off or the field refuses it. **iPhone** (needs real fingers).
 - `typing.contacts-and-replacements`: Contact names and iOS text replacements (#873). A contact name or a phrase-only replacement is never corrected, a lowercase contact name takes its casing (`zofiak` → `Zofiak`), a shortcut is replaced by its phrase with the undo chip (`qqc` → `Quelque chose` at sentence start).
 
 ## How to get to it (user POV)

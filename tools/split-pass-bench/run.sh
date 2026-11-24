@@ -59,6 +59,7 @@ xcrun swiftc -target "$TARGET" -sdk "$SDK" -swift-version 5 -O \
     -import-objc-header "$AOSP/bridge/AOSPTrieBridge.h" \
     "$ROOT/OuisprKeyboard/TextPrediction/TextPredictionEngine.swift" \
     "$ROOT/OuisprKeyboard/TextPrediction/AOSPTrieEngine.swift" \
+    "$ROOT/OuisprKeyboard/TouchHandling/SpatialTyping.swift" \
     "$ROOT/tools/split-pass-bench/main.swift" \
     "$BUILD"/obj/*.o -o "$BIN/split-pass-bench"
 

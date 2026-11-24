@@ -56,6 +56,39 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)setAccentCostsFrom:(NSData *)from to:(NSData *)to costs:(NSData *)costs
     NS_SWIFT_NAME(setAccentCosts(from:to:costs:));
 
+// --- Touch-aware typing (spatial model) ---
+
+/// Install the letter keys as rendered, for touch-aware correction and hidden key resizing.
+///
+/// Coordinates are in key widths on both axes (divide points by one key's pitch), measured
+/// on the keyboard actually on screen. `characters` holds UTF-16 code units, `centerX` and
+/// `centerY` one float each per key. Returns NO if the buffers disagree on size; the
+/// previous keys then stay installed.
+- (BOOL)setSpatialKeysWithCharacters:(NSData *)characters
+                             centerX:(NSData *)centerX
+                             centerY:(NSData *)centerY
+                            keyWidth:(float)keyWidth
+                           keyHeight:(float)keyHeight
+    NS_SWIFT_NAME(setSpatialKeys(characters:centerX:centerY:keyWidth:keyHeight:));
+
+/// Which letter a touch most probably meant, given the letters already typed in the word.
+/// Only border touches can move to a neighbour (see ouispr_spatial.h). Returns
+/// `geometricKey` unchanged when no dictionary or keys are loaded.
+- (unichar)resolveTouchAtX:(float)x y:(float)y
+              geometricKey:(unichar)geometricKey
+               afterPrefix:(NSString *)prefix
+    NS_SWIFT_NAME(resolveTouch(x:y:geometricKey:prefix:));
+
+/// `spellCheck:maxEditDistance:` priced from where each letter was tapped.
+/// `tapX` / `tapY` hold one float per UTF-16 code unit of `word`, in the coordinates of
+/// `setSpatialKeys`; NaN marks a letter with no tap (pasted, long-pressed). Falls back to
+/// the plain spell check if the buffers do not match the word.
+- (nullable AOSPTrieResult *)spellCheck:(NSString *)word
+                        maxEditDistance:(float)maxDist
+                                   tapX:(NSData *)tapX
+                                   tapY:(NSData *)tapY
+    NS_SWIFT_NAME(spellCheck(_:maxEditDistance:tapX:tapY:));
+
 // --- N-gram prediction methods ---
 
 /// Load n-gram binary file for next-word prediction.

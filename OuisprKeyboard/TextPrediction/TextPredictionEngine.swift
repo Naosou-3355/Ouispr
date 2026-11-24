@@ -68,6 +68,22 @@ class TextPredictionEngine {
         lexiconLock.unlock()
     }
 
+    // MARK: - Touch-aware typing (SpatialTyping)
+
+    /// Install the rendered letter keys, in key-width units.
+    func setSpatialKeys(characters: [UInt16], centerX: [Float], centerY: [Float],
+                        keyWidth: Float, keyHeight: Float) {
+        aospTrieEngine.setSpatialKeys(
+            characters: characters, centerX: centerX, centerY: centerY,
+            keyWidth: keyWidth, keyHeight: keyHeight
+        )
+    }
+
+    /// The letter a touch most probably meant after `prefix` (UTF-16 code unit).
+    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String) -> UInt16 {
+        aospTrieEngine.resolveTouch(x: x, y: y, geometricKey: geometricKey, prefix: prefix)
+    }
+
     /// The lexicon's verdict on `word`, or nil when the lexicon does not know it.
     func lexiconDecision(for word: String) -> SupplementaryLexicon.Decision? {
         lexiconLock.lock()
