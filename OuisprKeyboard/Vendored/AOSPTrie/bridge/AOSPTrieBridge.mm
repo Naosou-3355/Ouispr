@@ -45,6 +45,13 @@ static constexpr float kMaxKeyStretch = 0.25f;
 static constexpr float kNextLetterSmoothing = 0.30f;
 // Trie nodes walked for an exact next-letter prediction before the letter-bigram fallback.
 static constexpr int kNextLetterNodeBudget = 4000;
+// Share of the n-gram continuations after the previous word in the next-letter prior,
+// and the n-gram score unit as a natural log of a count. Measured on
+// tools/typing-bench/context_bench.cpp (36,922 words of French sentences): +0.05 /
+// +0.45 / +0.72 pt of words right at tap noise 0.20 / 0.30 / 0.40.
+static constexpr float kContextMix = 0.5f;
+static constexpr float kNgramLogPerScore = 20.0f / 65535.0f;
+static constexpr size_t kContextPredictions = 16;
 // How much better than a weak word typed exactly a candidate must score to replace it
 // (French long-tail vocabulary, see Trie::wordIsTrusted). 1.5 kept every gain of the
 // larger dictionary on real sentences and cost < 0.1 pt on isolated common words.
@@ -246,16 +253,54 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
 
 - (unichar)resolveTouchAtX:(float)x y:(float)y
               geometricKey:(unichar)geometricKey
-               afterPrefix:(NSString *)prefix {
+               afterPrefix:(NSString *)prefix
+              previousWord:(nullable NSString *)previousWord {
     if (!_loaded || !_spatial.hasKeys() || !_nextLetters.isBuilt()) return geometricKey;
 
     uint16_t prefixBuf[128];
     int prefixLen = convertString(prefix, prefixBuf, 128);
     float weights[ouispr::SUBSTITUTION_SLOT_COUNT];
-    if (!_nextLetters.weights(_trie, prefixBuf, prefixLen, kNextLetterNodeBudget, weights)) {
-        return geometricKey;
+    bool hasPrior = _nextLetters.weights(_trie, prefixBuf, prefixLen, kNextLetterNodeBudget, weights);
+    if ([self mixContextAfter:previousWord prefix:prefixBuf length:prefixLen hasPrior:hasPrior into:weights]) {
+        hasPrior = true;
     }
+    if (!hasPrior) return geometricKey;
     return _spatial.resolveTouch(x, y, geometricKey, weights, kMaxKeyStretch, kNextLetterSmoothing);
+}
+
+/// Mixes into `weights` the next letters of the words the n-gram model expects after
+/// `previousWord` that start with the typed prefix: (1 − kContextMix) of the dictionary's
+/// prior plus kContextMix of the context's. NO when there is no such continuation.
+- (BOOL)mixContextAfter:(nullable NSString *)previousWord
+                 prefix:(const uint16_t *)prefix
+                 length:(int)prefixLen
+               hasPrior:(bool)hasPrior
+                   into:(float *)weights {
+    if ([previousWord length] == 0 || !_ngramEngine->isLoaded()) return NO;
+    auto predictions = _ngramEngine->predictAfterWord([previousWord UTF8String], kContextPredictions);
+    float context[ouispr::SUBSTITUTION_SLOT_COUNT] = {};
+    float contextTotal = 0.0f;
+    for (const auto& prediction : predictions) {
+        NSString *word = [NSString stringWithUTF8String:prediction.word.c_str()];
+        uint16_t buffer[128];
+        int length = convertString(word, buffer, 128);
+        if (length <= prefixLen || !std::equal(prefix, prefix + prefixLen, buffer)) continue;
+        int slot = ouispr::substitutionSlot(buffer[prefixLen]);
+        if (slot < 0) continue;
+        float mass = std::exp(prediction.score * kNgramLogPerScore);
+        context[slot] += mass;
+        contextTotal += mass;
+    }
+    if (contextTotal <= 0.0f) return NO;
+    float dictionaryTotal = 0.0f;
+    if (hasPrior) {
+        for (int i = 0; i < ouispr::SUBSTITUTION_SLOT_COUNT; i++) dictionaryTotal += std::max(0.0f, weights[i]);
+    }
+    for (int i = 0; i < ouispr::SUBSTITUTION_SLOT_COUNT; i++) {
+        float dictionary = dictionaryTotal > 0.0f ? (1.0f - kContextMix) * std::max(0.0f, weights[i]) / dictionaryTotal : 0.0f;
+        weights[i] = dictionary + kContextMix * context[i] / contextTotal;
+    }
+    return YES;
 }
 
 - (nullable AOSPTrieResult *)spellCheck:(NSString *)word

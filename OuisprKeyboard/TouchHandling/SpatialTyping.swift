@@ -103,8 +103,11 @@ final class SpatialTyping {
         guard isResolutionEnabled(),
               let unit = lowered.spatialCodeUnit,
               let (x, y) = units(point) else { return lowered }
-        let prefix = Self.wordPrefix(in: contextBeforeCursor())
-        let resolved = engine.resolveTouch(x: x, y: y, geometricKey: unit, prefix: prefix)
+        let context = contextBeforeCursor()
+        let prefix = Self.wordPrefix(in: context)
+        let resolved = engine.resolveTouch(
+            x: x, y: y, geometricKey: unit, prefix: prefix, previousWord: Self.previousWord(in: context)
+        )
         guard let scalar = Unicode.Scalar(resolved) else { return lowered }
         return Character(scalar)
     }
@@ -119,6 +122,32 @@ final class SpatialTyping {
             letters.append(character)
             if letters.count >= 32 { break }
         }
+        return String(letters.reversed()).lowercased()
+    }
+
+    /// The word before the one being typed, lowercased, as the n-grams store it ("l'ai"
+    /// stays one token). Nil at the start of a sentence: only spaces may separate the two
+    /// words, so "Fin. Je" gives no context to "Je".
+    static func previousWord(in context: String?) -> String? {
+        guard let context else { return nil }
+        var index = context.endIndex
+        while index > context.startIndex, context[context.index(before: index)].isLetter {
+            index = context.index(before: index)
+        }
+        var sawSpace = false
+        while index > context.startIndex, context[context.index(before: index)] == " " {
+            index = context.index(before: index)
+            sawSpace = true
+        }
+        guard sawSpace else { return nil }
+        var letters: [Character] = []
+        while index > context.startIndex, letters.count < 32 {
+            let character = context[context.index(before: index)]
+            guard character.isLetter || character == "'" || character == "’" || character == "-" else { break }
+            letters.append(character == "’" ? "'" : character)
+            index = context.index(before: index)
+        }
+        guard letters.contains(where: \.isLetter) else { return nil }
         return String(letters.reversed()).lowercased()
     }
 

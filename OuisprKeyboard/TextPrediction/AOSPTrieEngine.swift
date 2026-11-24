@@ -221,9 +221,10 @@ final class AOSPTrieEngine {
         }
     }
 
-    /// The key a touch most probably meant after `prefix`. See `SpatialTyping.resolve`.
-    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String) -> UInt16 {
-        bridge.resolveTouch(x: x, y: y, geometricKey: geometricKey, prefix: prefix)
+    /// The key a touch most probably meant after `prefix`, in the word following
+    /// `previousWord`. See `SpatialTyping.resolve`.
+    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String, previousWord: String?) -> UInt16 {
+        bridge.resolveTouch(x: x, y: y, geometricKey: geometricKey, prefix: prefix, previousWord: previousWord)
     }
 
     private static func floatData(_ values: [Float]) -> Data {

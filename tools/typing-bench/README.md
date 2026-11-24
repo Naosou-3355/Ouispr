@@ -52,7 +52,8 @@ ported here as configs B, B2, B3) is removed: it cost 0.05 / 0.5 / 1.2 pt, almos
 it from reordering the trie's own candidates by bigram score (B2); adding the n-gram
 neighbours at edit distance 1 alone (B3) still cost 0.01 / 0.1 / 0.3 pt.
 
-Measured but not shipped (words right, on top of config A):
+The previous word in key resizing (C) ships (`kContextMix` in AOSPTrieBridge.mm); the
+real-word fix (D) does not yet. Words right, on top of config A:
 
 | tap noise | previous word in key resizing (C) | + real-word fix (D) |
 |---|---|---|

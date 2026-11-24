@@ -75,13 +75,15 @@ NS_ASSUME_NONNULL_BEGIN
                            keyHeight:(float)keyHeight
     NS_SWIFT_NAME(setSpatialKeys(characters:centerX:centerY:keyWidth:keyHeight:));
 
-/// Which letter a touch most probably meant, given the letters already typed in the word.
-/// Only border touches can move to a neighbour (see ouispr_spatial.h). Returns
-/// `geometricKey` unchanged when no dictionary or keys are loaded.
+/// Which letter a touch most probably meant, given the letters already typed in the word
+/// and, when the n-grams are loaded, the word before it (lowercased). Only border touches
+/// can move to a neighbour (see ouispr_spatial.h). Returns `geometricKey` unchanged when
+/// no dictionary or keys are loaded.
 - (unichar)resolveTouchAtX:(float)x y:(float)y
               geometricKey:(unichar)geometricKey
                afterPrefix:(NSString *)prefix
-    NS_SWIFT_NAME(resolveTouch(x:y:geometricKey:prefix:));
+              previousWord:(nullable NSString *)previousWord
+    NS_SWIFT_NAME(resolveTouch(x:y:geometricKey:prefix:previousWord:));
 
 /// `spellCheck:maxEditDistance:` priced from where each letter was tapped.
 /// `tapX` / `tapY` hold one float per UTF-16 code unit of `word`, in the coordinates of

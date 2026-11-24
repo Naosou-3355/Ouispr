@@ -79,9 +79,12 @@ class TextPredictionEngine {
         )
     }
 
-    /// The letter a touch most probably meant after `prefix` (UTF-16 code unit).
-    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String) -> UInt16 {
-        aospTrieEngine.resolveTouch(x: x, y: y, geometricKey: geometricKey, prefix: prefix)
+    /// The letter a touch most probably meant after `prefix` (UTF-16 code unit), in the
+    /// word following `previousWord`.
+    func resolveTouch(x: Float, y: Float, geometricKey: UInt16, prefix: String, previousWord: String?) -> UInt16 {
+        aospTrieEngine.resolveTouch(
+            x: x, y: y, geometricKey: geometricKey, prefix: prefix, previousWord: previousWord
+        )
     }
 
     /// The lexicon's verdict on `word`, or nil when the lexicon does not know it.
