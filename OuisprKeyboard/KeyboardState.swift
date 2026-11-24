@@ -876,7 +876,11 @@ class KeyboardState: ObservableObject {
     /// `UIInputViewController`. Reaching it means widening that surface across a
     /// subsystem boundary, which is more than the bracketing #548 is scoped to.
     /// Worth revisiting if a desync is ever traced to a dictation insert.
-    func insertDictation(_ transcription: String) {
+    func insertDictation(_ dictated: String) {
+        // The user's style (capitals and punctuation) is applied here, the one funnel
+        // every dictation goes through, so a polished, raw or recovered text all get it.
+        // The undo below is armed with the styled text, because that is what was typed.
+        let transcription = TranscriptionStyle.current(in: defaults).apply(to: dictated)
         controller?.textDocumentProxy.insertText(transcription)
         PersistentLog.log(.keyboardTextInserted)
         HapticFeedback.textInserted()

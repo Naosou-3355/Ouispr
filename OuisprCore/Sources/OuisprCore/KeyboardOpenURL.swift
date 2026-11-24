@@ -51,7 +51,7 @@ public enum KeyboardOpenIntent: String, Sendable, Equatable, CaseIterable {
 public enum KeyboardOpenURL {
 
     /// The scheme registered by OuisprApp in `CFBundleURLTypes`.
-    private static let scheme = "ouispr"
+    private static let scheme = OuisprVariant.current.urlScheme
 
     /// The host that carries a "bring the app to this screen" request.
     private static let host = "open"

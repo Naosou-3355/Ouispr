@@ -6907,7 +6907,97 @@
         }
       }
     },
-    "😊" : {}
+    "😊" : {},
+    "Transcription style" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style de retranscription"
+          }
+        }
+      }
+    },
+    "Formal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formel"
+          }
+        }
+      }
+    },
+    "Casual" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Décontracté"
+          }
+        }
+      }
+    },
+    "Very casual" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Très décontracté"
+          }
+        }
+      }
+    },
+    "Capitals and full punctuation" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Majuscules et ponctuation complète"
+          }
+        }
+      }
+    },
+    "Capitals, no period at the end" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Majuscules, sans point final"
+          }
+        }
+      }
+    },
+    "No capitals, no commas or periods" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans majuscules, sans virgules ni points"
+          }
+        }
+      }
+    },
+    "Only capitals and punctuation change. Your words stay the same." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seules les majuscules et la ponctuation changent. Vos mots restent les mêmes."
+          }
+        }
+      }
+    },
+    "Hey, are you free for lunch tomorrow? Let's do 12 if that works for you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salut, tu es libre demain midi ? On dit 12h si ça te va."
+          }
+        }
+      }
+    }
   },
   "version" : "1.1"
 }

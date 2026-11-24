@@ -37,7 +37,7 @@ public enum KeyboardOnboardingGate {
 
     /// OuisprApp's bundle identifier, as host resolution reports it when the keyboard's
     /// host is a text field inside the app.
-    public static let ouisprHostId = "com.pivi.dictus"
+    public static let ouisprHostId = OuisprVariant.current.bundlePrefix
 
     /// The decision for one keyboard action.
     ///
