@@ -355,21 +355,6 @@ final class OuisprKeyboardBridge: NSObject,
         controller?.handleInputModeList(from: sender, with: event)
     }
 
-    // MARK: - Touch-aware typing
-
-    /// Lets SpatialTyping ask whether keys may be resized right now, and read the word
-    /// being typed. Weak: SpatialTyping outlives this bridge across app switches.
-    func connectSpatialTyping() {
-        SpatialTyping.shared.isResolutionEnabled = { [weak self] in
-            guard let state = self?.suggestionState else { return false }
-            return state.autocorrectEnabled && state.hostPolicy.autocorrectAllowed
-        }
-        SpatialTyping.shared.contextBeforeCursor = { [weak self] in
-            self?.controller?.textDocumentProxy.documentContextBeforeInput
-        }
-        SpatialTyping.shared.reset()
-    }
-
     // MARK: - Host Field Policy (#200)
 
     /// Re-reads the host field's input traits and updates the cached policy on
@@ -1262,5 +1247,23 @@ final class OuisprKeyboardBridge: NSObject,
         default: // .none
             break
         }
+    }
+}
+
+// MARK: - Touch-aware typing
+
+// An extension rather than the class body: the body sits at SwiftLint's type length limit.
+extension OuisprKeyboardBridge {
+    /// Lets SpatialTyping ask whether keys may be resized right now, and read the word
+    /// being typed. Weak: SpatialTyping outlives this bridge across app switches.
+    func connectSpatialTyping() {
+        SpatialTyping.shared.isResolutionEnabled = { [weak self] in
+            guard let state = self?.suggestionState else { return false }
+            return state.autocorrectEnabled && state.hostPolicy.autocorrectAllowed
+        }
+        SpatialTyping.shared.contextBeforeCursor = { [weak self] in
+            self?.controller?.textDocumentProxy.documentContextBeforeInput
+        }
+        SpatialTyping.shared.reset()
     }
 }
