@@ -9,7 +9,9 @@
 #include "ouispr_ngram.h"
 #include "ouispr_spatial.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include <vector>
 
@@ -43,6 +45,10 @@ static constexpr float kMaxKeyStretch = 0.25f;
 static constexpr float kNextLetterSmoothing = 0.30f;
 // Trie nodes walked for an exact next-letter prediction before the letter-bigram fallback.
 static constexpr int kNextLetterNodeBudget = 4000;
+// How much better than a weak word typed exactly a candidate must score to replace it
+// (French long-tail vocabulary, see Trie::wordIsTrusted). 1.5 kept every gain of the
+// larger dictionary on real sentences and cost < 0.1 pt on isolated common words.
+static constexpr float kWeakWordMargin = 1.5f;
 
 - (instancetype)init {
     self = [super init];
@@ -118,6 +124,7 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
     // Check if first result matches the input (word is correct)
     NSString *firstWord = [NSString stringWithUTF8String:candidates[0].word];
     if ([firstWord isEqualToString:word]) return nil;
+    if ([self keepsWeakWord:word buffer:inputBuf length:inputLen candidates:candidates]) return nil;
 
     // Build result
     AOSPTrieResult *result = [[AOSPTrieResult alloc] init];
@@ -132,6 +139,21 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
     result.alternatives = [alts copy];
 
     return result;
+}
+
+/// A weak dictionary word typed exactly (see `wordIsTrusted:`) stays unless the best
+/// candidate outscores it by kWeakWordMargin. Words that are not weak: always NO.
+- (BOOL)keepsWeakWord:(NSString *)word
+               buffer:(const uint16_t *)buffer
+               length:(int)length
+           candidates:(const std::vector<ouispr::Candidate> &)candidates {
+    if (!_trie.wordExists(buffer, length) || _trie.wordIsTrusted(buffer, length)) return NO;
+    const char *utf8 = [word UTF8String];
+    float exact = 0.0f;
+    for (const auto &c : candidates) {
+        if (std::strcmp(c.word, utf8) == 0) exact = std::max(exact, c.score);
+    }
+    return candidates[0].score <= kWeakWordMargin * exact;
 }
 
 - (NSArray<NSString *> *)nearbyWords:(NSString *)word maxEditDistance:(float)maxDist maxResults:(NSUInteger)maxResults {
@@ -163,6 +185,14 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
     uint16_t buf[256];
     int len = convertString(word, buf, 256);
     return _trie.wordExists(buf, len) ? YES : NO;
+}
+
+- (BOOL)wordIsTrusted:(NSString *)word {
+    if (!_loaded || [word length] == 0) return NO;
+
+    uint16_t buf[256];
+    int len = convertString(word, buf, 256);
+    return _trie.wordIsTrusted(buf, len) ? YES : NO;
 }
 
 - (NSInteger)getFrequency:(NSString *)word {
@@ -260,6 +290,7 @@ static int convertString(NSString *str, uint16_t *buffer, int bufferSize) {
 
     NSString *firstWord = [NSString stringWithUTF8String:candidates[0].word];
     if ([firstWord isEqualToString:word]) return nil;
+    if ([self keepsWeakWord:word buffer:inputBuf length:inputLen candidates:candidates]) return nil;
 
     AOSPTrieResult *result = [[AOSPTrieResult alloc] init];
     result.correction = firstWord;

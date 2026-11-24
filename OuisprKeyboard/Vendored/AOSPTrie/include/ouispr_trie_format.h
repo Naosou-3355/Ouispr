@@ -14,6 +14,7 @@ static constexpr uint32_t HEADER_SIZE = 32;
 static constexpr uint8_t FLAG_CHILDREN_SIZE_MASK = 0xC0; // bits 7-6: children pointer size
 static constexpr uint8_t FLAG_MULTI_CHAR = 0x20;         // bit 5: has multiple characters
 static constexpr uint8_t FLAG_TERMINAL = 0x10;            // bit 4: is terminal (word end)
+static constexpr uint8_t FLAG_WEAK = 0x08;                // bit 3: terminal word not trusted as typed
 
 // Children pointer size encoding (bits 7-6)
 // 00 = no children (0 bytes), 01 = 2 bytes, 10 = 3 bytes, 11 = 4 bytes

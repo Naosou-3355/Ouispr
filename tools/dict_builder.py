@@ -6,7 +6,12 @@ Reads a frequency JSON file ({"word": count, ...}) and generates a binary .dict
 file with the DTRI format: 32-byte header + depth-first pre-order patricia trie nodes.
 
 Usage:
-    python3 tools/dict_builder.py INPUT.json OUTPUT.dict
+    python3 tools/dict_builder.py INPUT.json OUTPUT.dict [--weak WEAK.json]
+
+--weak adds the words of a second frequency JSON flagged weak (FLAG_WEAK, node flag
+bit 3): the keyboard knows them, but does not trust an exact typing of one as
+"already valid" (Trie::wordIsTrusted). A word in both files stays trusted. Without
+--weak the output is byte-identical to the builder's earlier versions.
 
 The binary format is designed for mmap-based read-only access from C++ on iOS,
 with no dynamic allocation needed for traversal.
@@ -34,23 +39,30 @@ class TrieNode:
     children: dict[int, "TrieNode"] = field(default_factory=dict)  # first char -> child
     is_terminal: bool = False
     frequency: int = 0  # raw frequency from JSON
+    weak: bool = False  # terminal word not trusted as typed (--weak)
 
     def child_list(self) -> list["TrieNode"]:
         """Children sorted by first character for deterministic output."""
         return [self.children[k] for k in sorted(self.children.keys())]
 
 
-def insert_word(root: TrieNode, word: str, freq: int) -> None:
+def insert_word(root: TrieNode, word: str, freq: int, weak: bool = False) -> None:
     """Insert a word into the patricia trie."""
     # Convert to UTF-16 code units
     code_units = [ord(c) for c in word]
-    _insert(root, code_units, freq)
+    _insert(root, code_units, freq, weak)
 
 
-def _insert(node: TrieNode, remaining: list[int], freq: int) -> None:
+def _mark_terminal(node: TrieNode, freq: int, weak: bool) -> None:
+    # A word inserted trusted once stays trusted.
+    node.weak = weak if not node.is_terminal else (node.weak and weak)
+    node.is_terminal = True
+    node.frequency = max(node.frequency, freq)
+
+
+def _insert(node: TrieNode, remaining: list[int], freq: int, weak: bool = False) -> None:
     if not remaining:
-        node.is_terminal = True
-        node.frequency = max(node.frequency, freq)
+        _mark_terminal(node, freq, weak)
         return
 
     first = remaining[0]
@@ -63,7 +75,7 @@ def _insert(node: TrieNode, remaining: list[int], freq: int) -> None:
 
         if common == len(child.chars):
             # Full match of child chars -- recurse into child
-            _insert(child, remaining[common:], freq)
+            _insert(child, remaining[common:], freq, weak)
         else:
             # Partial match -- split child
             # Create new intermediate node with the common prefix
@@ -75,15 +87,14 @@ def _insert(node: TrieNode, remaining: list[int], freq: int) -> None:
             node.children[first] = split
 
             if common == len(remaining):
-                split.is_terminal = True
-                split.frequency = max(split.frequency, freq)
+                _mark_terminal(split, freq, weak)
             else:
                 # Create new leaf for the remainder
-                new_leaf = TrieNode(chars=remaining[common:], is_terminal=True, frequency=freq)
+                new_leaf = TrieNode(chars=remaining[common:], is_terminal=True, frequency=freq, weak=weak)
                 split.children[remaining[common]] = new_leaf
     else:
         # No matching child -- create new leaf
-        node.children[first] = TrieNode(chars=remaining, is_terminal=True, frequency=freq)
+        node.children[first] = TrieNode(chars=remaining, is_terminal=True, frequency=freq, weak=weak)
 
 
 def compress_trie(node: TrieNode) -> int:
@@ -102,6 +113,7 @@ def compress_trie(node: TrieNode) -> int:
             child.children = grandchild.children
             child.is_terminal = grandchild.is_terminal
             child.frequency = grandchild.frequency
+            child.weak = grandchild.weak
             count -= 1  # merged away one node
 
     return count
@@ -208,6 +220,8 @@ def serialize_trie(root: TrieNode, max_freq: int) -> tuple[bytes, int, int]:
             flags |= 0x20
         if node.is_terminal:
             flags |= 0x10
+            if node.weak:
+                flags |= 0x08
 
         buf.append(flags)
         if multi_char:
@@ -231,31 +245,39 @@ def serialize_trie(root: TrieNode, max_freq: int) -> tuple[bytes, int, int]:
     return bytes(buf), node_count, word_count
 
 
-def build_dict(input_path: str, output_path: str) -> None:
-    """Build binary dictionary from frequency JSON."""
-    print(f"Reading {input_path}...")
-    with open(input_path, "r", encoding="utf-8") as f:
+def _read_filtered(path: str) -> dict[str, int]:
+    """Frequency JSON, lowercased, without spaces/hyphens or non-positive counts."""
+    print(f"Reading {path}...")
+    with open(path, "r", encoding="utf-8") as f:
         freq_data: dict[str, int] = json.load(f)
-
     print(f"  Loaded {len(freq_data)} words")
-
-    # Filter: lowercase, no spaces/hyphens, non-empty
-    filtered = {}
+    filtered: dict[str, int] = {}
     for word, count in freq_data.items():
         w = word.lower().strip()
         if not w or " " in w or "-" in w or count <= 0:
             continue
         filtered[w] = max(filtered.get(w, 0), count)
-
     print(f"  After filtering: {len(filtered)} words")
+    return filtered
 
-    max_freq = max(filtered.values()) if filtered else 1
+
+def build_dict(input_path: str, output_path: str, weak_path: Optional[str] = None) -> None:
+    """Build binary dictionary from frequency JSON (plus weak words, see --weak)."""
+    filtered = _read_filtered(input_path)
+    weak = _read_filtered(weak_path) if weak_path else {}
+    weak = {w: c for w, c in weak.items() if w not in filtered}
+    if weak_path:
+        print(f"  Weak words added: {len(weak)}")
+
+    max_freq = max(list(filtered.values()) + list(weak.values())) if (filtered or weak) else 1
 
     # Build patricia trie
     print("Building patricia trie...")
     root = TrieNode()
     for word, freq in filtered.items():
         insert_word(root, word, freq)
+    for word, freq in weak.items():
+        insert_word(root, word, freq, weak=True)
 
     # Compress
     print("Compressing (patricia merge)...")
@@ -282,14 +304,23 @@ def build_dict(input_path: str, output_path: str) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) < 3:
-        print("Usage: python3 dict_builder.py INPUT.json OUTPUT.dict")
+    args = sys.argv[1:]
+    weak_path = None
+    if "--weak" in args:
+        i = args.index("--weak")
+        if i + 1 >= len(args):
+            print("--weak needs a file")
+            sys.exit(1)
+        weak_path = args[i + 1]
+        del args[i:i + 2]
+    if len(args) < 2:
+        print("Usage: python3 dict_builder.py INPUT.json OUTPUT.dict [--weak WEAK.json]")
         print()
         print("Builds a compressed patricia trie binary dictionary from a")
         print("frequency JSON file (format: {\"word\": count, ...}).")
         sys.exit(1)
 
-    build_dict(sys.argv[1], sys.argv[2])
+    build_dict(args[0], args[1], weak_path)
 
 
 if __name__ == "__main__":

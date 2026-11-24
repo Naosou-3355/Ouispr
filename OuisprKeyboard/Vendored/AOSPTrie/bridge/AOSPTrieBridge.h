@@ -31,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Check if word exists in dictionary.
 - (BOOL)wordExists:(NSString *)word;
 
+/// Whether the word exists and is trusted as typed (not flagged weak in the
+/// dictionary). A weak word still goes through correction when typed.
+- (BOOL)wordIsTrusted:(NSString *)word;
+
 /// Get frequency of word (0 if not found).
 - (NSInteger)getFrequency:(NSString *)word;
 

@@ -17,8 +17,41 @@ host compiler: no simulator, no Xcode project, about a minute.
 A=OuisprKeyboard/Vendored/AOSPTrie
 clang++ -std=gnu++20 -O2 -I$A/include $A/src/*.cpp tools/typing-bench/bench.cpp -o /tmp/typing-bench
 /tmp/typing-bench OuisprKeyboard/Resources 20000
-# parameters: --lambda --sigma --stretch --smoothing --budget
+# parameters: --lambda --sigma --stretch --smoothing --budget --weakmargin
 ```
+
+## Context bench (real sentences)
+
+`context_bench.cpp` types every word of real French sentences, so the previous word
+and the vocabulary's coverage of real text both count. Sentences: Universal Dependencies
+French-GSD (CC BY-SA 4.0), downloaded at run time and never committed:
+
+```bash
+curl -LO https://raw.githubusercontent.com/UniversalDependencies/UD_French-GSD/master/fr_gsd-ud-test.conllu
+curl -LO https://raw.githubusercontent.com/UniversalDependencies/UD_French-GSD/master/fr_gsd-ud-dev.conllu
+clang++ -std=gnu++20 -O2 -I$A/include -Itools/typing-bench $A/src/*.cpp tools/typing-bench/context_bench.cpp -o /tmp/context-bench
+/tmp/context-bench OuisprKeyboard/Resources fr_gsd-ud-test.conllu fr_gsd-ud-dev.conllu
+```
+
+Capitalised words inside a sentence are left out (the keyboard keeps them as proper
+nouns). 1,892 sentences, 36,922 words. Results (24 Nov 2026, PR 19 pipeline, words right):
+
+| tap noise | 40,000 words (before) | 99,000 words, long tail weak | not in dictionary |
+|---|---|---|---|
+| 0.20 | 96.09 % | **97.63 %** | 4.75 % → 2.10 % |
+| 0.30 | 93.60 % | **95.25 %** | |
+| 0.40 | 89.86 % | **91.64 %** | |
+
+The isolated-word bench above moves by less than 0.1 pt with the larger dictionary.
+Why "weak": trusting all 59,600 added words as typed let typos of common words land on
+them and stay (isolated words: −0.5 pt at 0.30, −1.2 pt at 0.40). A weak word typed
+exactly is kept unless a neighbour outscores it 1.5 times (`kWeakWordMargin`).
+
+Measured but not shipped:
+- The bigram rerank already in the keyboard (ported here) costs 0.05 / 0.5 / 1.2 pt.
+  To confirm on the device before removing it.
+- Previous word in key resizing and real-word correction ("se" for "de"): within
+  ±0.1 pt at low and medium noise.
 
 ## Model
 
@@ -58,4 +91,5 @@ low noise).
   confirmed on the iPhone.
 - A slip that produces another valid word ("fais" for "vais") is never corrected
   (the "already-valid" guard): only resizing can prevent it, upstream.
-- The French dictionary holds 39,622 words.
+- The French dictionary held 39,622 words; 99,219 since the weak long tail
+  (`scripts/extend_fr_dictionary.py`).

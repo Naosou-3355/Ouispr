@@ -40,6 +40,11 @@ public:
     /// Get frequency of a word (0 if not found).
     uint16_t getFrequency(const uint16_t* chars, int len) const;
 
+    /// Whether the word exists and an exact typing of it is trusted (its node does not
+    /// carry FLAG_WEAK). A weak word is known to the dictionary, so it can be suggested
+    /// and kept, but a typo that lands on it still goes through correction.
+    bool wordIsTrusted(const uint16_t* chars, int len) const;
+
     /// Pointer to first node data (past header).
     const uint8_t* rootData() const;
 
@@ -64,7 +69,8 @@ private:
     int fd_;
 
     /// Traverse trie matching chars. Returns terminal node frequency, or 0.
-    uint16_t traverse(const uint16_t* chars, int len) const;
+    /// Frequency of the word (0 if absent); its node flags in `flagsOut` when given.
+    uint16_t traverse(const uint16_t* chars, int len, uint8_t* flagsOut = nullptr) const;
 };
 
 } // namespace ouispr

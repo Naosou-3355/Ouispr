@@ -360,6 +360,9 @@ class TextPredictionEngine {
         // This prevents aggressive corrections like "fais" → "vais".
         // Runs AFTER accent expansion so "tres" → "très" still works.
         if aospTrieEngine.wordExists(wordToCheck) {
+            if !aospTrieEngine.wordIsTrusted(wordToCheck) {
+                return weakWordCorrection(word, wordToCheck: wordToCheck, isAtSentenceStart: isAtSentenceStart)
+            }
             #if DEBUG
             AutocorrectDebugLog.autocorrectSkipped(word: word, reason: "already-valid")
             #endif
@@ -483,6 +486,35 @@ class TextPredictionEngine {
         }
         #endif
         return trieResult
+    }
+
+    /// A word the dictionary knows but flags weak (its long tail of rarer words): kept
+    /// when the trie scorer still ranks it first, replaced when a neighbour wins.
+    ///
+    /// WHY not trusted like the others: measured on tools/typing-bench, trusting the
+    /// 59,000 added words as typed lets typos of common words land on them and stay
+    /// ("already-valid"); running them through the scorer keeps every gain of the
+    /// larger vocabulary without that cost. Only the scorer runs here: the split and
+    /// contraction passes are for non-words.
+    private func weakWordCorrection(
+        _ word: String, wordToCheck: String, isAtSentenceStart: Bool
+    ) -> (correction: String, alternatives: [String])? {
+        if ProperNounGuard.isLikelyProperNoun(word: word, isAtSentenceStart: isAtSentenceStart) {
+            return nil
+        }
+        guard let result = aospTrieEngine.spellCheck(word),
+              result.correction.lowercased() != word.lowercased() else {
+            #if DEBUG
+            AutocorrectDebugLog.autocorrectSkipped(word: word, reason: "weak-word-kept")
+            #endif
+            return nil
+        }
+        #if DEBUG
+        AutocorrectDebugLog.autocorrectDecision(
+            original: word, corrected: result.correction, branch: "weak-word", prevWord: nil
+        )
+        #endif
+        return result
     }
 
     /// Predict next words based on context (1-2 previous words).

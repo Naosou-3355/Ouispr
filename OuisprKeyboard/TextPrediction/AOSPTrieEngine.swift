@@ -242,6 +242,14 @@ final class AOSPTrieEngine {
         return bridge.wordExists(word)
     }
 
+    /// Whether the word exists and an exact typing of it is trusted. The French
+    /// dictionary flags its long tail of rarer words weak (`tools/dict_builder.py --weak`):
+    /// they can be suggested and kept, but a typo landing on one is still corrected.
+    func wordIsTrusted(_ word: String) -> Bool {
+        guard bridge.isLoaded() else { return false }
+        return bridge.wordIsTrusted(word)
+    }
+
     /// Get the frequency of a word in the trie (0 if not found).
     func wordFrequency(_ word: String) -> UInt16 {
         guard bridge.isLoaded() else { return 0 }
