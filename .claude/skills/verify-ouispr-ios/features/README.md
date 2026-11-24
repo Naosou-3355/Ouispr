@@ -31,7 +31,7 @@ Out of the map on purpose: the "Developer" section of Réglages (Debug builds on
 
 ## All IDs
 
-Every ID in this map, in one table: the 18 features first, then their 116 sub-features (in the order of the feature files), then the 56 screens of [screens.md](screens.md) — 190 IDs in all. **Gratuit/Pro** is the tier of the feature the ID belongs to. **Spécifique iOS** is « oui » when the ID has no Android equivalent to compare against: the keyboard-to-app hand-off and Full Access (an iOS keyboard extension cannot record and must ask for Full Access), return to the host app, Apple Intelligence (polish), the Dynamic Island (Live Activity, stopping standby), and the App Group check.
+Every ID in this map, in one table: the 18 features first, then their 117 sub-features (in the order of the feature files), then the 57 screens of [screens.md](screens.md) — 192 IDs in all. **Gratuit/Pro** is the tier of the feature the ID belongs to. **Spécifique iOS** is « oui » when the ID has no Android equivalent to compare against: the keyboard-to-app hand-off and Full Access (an iOS keyboard extension cannot record and must ask for Full Access), return to the host app, Apple Intelligence (polish), the Dynamic Island (Live Activity, stopping standby), and the App Group check.
 
 | ID | Gratuit/Pro | Spécifique iOS |
 | --- | --- | --- |
@@ -169,6 +169,7 @@ Every ID in this map, in one table: the 18 features first, then their 116 sub-fe
 | `diagnostics.log-export` | Gratuit | non |
 | `diagnostics.app-group-check` | Gratuit | oui |
 | `diagnostics.about` | Gratuit | non |
+| `diagnostics.typing-bench` | Gratuit | non |
 | `app.onboarding.welcome` | Gratuit | non |
 | `app.onboarding.language` | Gratuit | non |
 | `app.onboarding.keyboard-setup` | Gratuit | oui |
@@ -196,6 +197,7 @@ Every ID in this map, in one table: the 18 features first, then their 116 sub-fe
 | `app.settings.diagnostic` | Gratuit | oui |
 | `app.settings.debug-logs` | Gratuit | non |
 | `app.settings.licences` | Gratuit | non |
+| `app.settings.typing-bench` | Gratuit | non |
 | `app.settings.polish-debug` | Gratuit | oui |
 | `app.pro.hub` | Pro | non |
 | `app.pro.smart-modes` | Pro | non |

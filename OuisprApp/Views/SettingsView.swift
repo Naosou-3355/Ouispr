@@ -519,6 +519,11 @@ struct SettingsView: View {
                     DictationCollectionView()
                 }
 
+                // Ouispr's keyboard against Apple's, on the same fixed phrases.
+                NavigationLink("Banc de frappe") {
+                    TypingBenchView()
+                }
+
                 NavigationLink("Licenses") {
                     LicensesView()
                 }

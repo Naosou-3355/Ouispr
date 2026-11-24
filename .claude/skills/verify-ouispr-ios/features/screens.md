@@ -33,6 +33,7 @@ Captures are in [`docs/agents/screens/`](../../../../docs/agents/screens/), one 
 | `app.settings.diagnostic` | Réglages → Diagnostic | Réglages, scroll to À propos, tap-label Diagnostic | diagnostics.logs | [oui](../../../../docs/agents/screens/app.settings.diagnostic.png) |
 | `app.settings.debug-logs` | Réglages → Debug Logs | … tap-label « Debug Logs » | diagnostics.logs | [oui](../../../../docs/agents/screens/app.settings.debug-logs.png) |
 | `app.settings.licences` | Réglages → Licences | … tap-label Licences | diagnostics.logs | [oui](../../../../docs/agents/screens/app.settings.licences.png) |
+| `app.settings.typing-bench` | Réglages → Banc de frappe | … tap-label « Banc de frappe » | diagnostics.logs | [oui](../../../../docs/agents/screens/app.settings.typing-bench.png) |
 | `app.settings.polish-debug` | Polish debug screen | Réglages → tap « Version » five times | polish | non |
 | `app.pro.hub` | Ouispr Pro hub | Pro on, Réglages → tap-label « Ouispr Pro, Pro actif » | pro.subscription | [oui](../../../../docs/agents/screens/app.pro.hub.png) |
 | `app.pro.smart-modes` | Pro → Mode intelligent (pinned modes) | hub → « Mode intelligent, … » | smart-modes | [oui](../../../../docs/agents/screens/app.pro.smart-modes.png) |
