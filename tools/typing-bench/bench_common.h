@@ -3,6 +3,7 @@
 #pragma once
 #include "ouispr_proximity.h"
 #include "ouispr_scorer.h"
+#include "ouispr_trie.h"
 
 #include <algorithm>
 #include <cmath>
@@ -31,6 +32,16 @@ inline std::u16string toU16(const std::string& s) {
 }
 
 // --- {"word": count, ...} reader (the keyboard's frequency files are flat) ---
+
+inline std::string toU8(const std::u16string& s) {
+    std::string out;
+    for (char16_t c : s) {
+        if (c < 0x80) out.push_back(static_cast<char>(c));
+        else if (c < 0x800) { out.push_back(0xC0 | (c >> 6)); out.push_back(0x80 | (c & 0x3F)); }
+        else { out.push_back(0xE0 | (c >> 12)); out.push_back(0x80 | ((c >> 6) & 0x3F)); out.push_back(0x80 | (c & 0x3F)); }
+    }
+    return out;
+}
 
 inline std::vector<std::pair<std::string, double>> readFrequency(const std::string& path) {
     std::ifstream f(path);
@@ -142,4 +153,42 @@ inline bool keepsWeakWord(const std::vector<Candidate>& cands, const std::u16str
     float exact = 0.0f;
     for (const auto& c : cands) if (toU16(c.word) == typed) exact = std::max(exact, c.score);
     return cands[0].score <= gWeakMargin * exact;
+}
+
+inline int editDistance(const std::u16string& a, const std::u16string& b) {
+    std::vector<int> prev(b.size() + 1), cur(b.size() + 1);
+    for (size_t j = 0; j <= b.size(); j++) prev[j] = j;
+    for (size_t i = 1; i <= a.size(); i++) {
+        cur[0] = i;
+        for (size_t j = 1; j <= b.size(); j++)
+            cur[j] = std::min({prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1)});
+        std::swap(prev, cur);
+    }
+    return prev[b.size()];
+}
+
+/// How a non-word's correction treats weak words (the dictionary's long tail).
+/// 0: the scorer's winner. 1: a trusted candidate wins unless the weak winner beats it
+/// by more than gWeakPickMargin. 2: a weak winner only at edit distance 1, else the best
+/// trusted candidate, else nothing. 3: 1, and a weak winner with no trusted rival only at
+/// edit distance 1.
+inline int gWeakPick = 0;
+inline float gWeakPickMargin = 1.5f;
+
+inline std::u16string pickCorrection(const Trie& trie, const std::vector<Candidate>& cands, const std::u16string& typed) {
+    if (cands.empty()) return typed;
+    std::u16string top = toU16(cands[0].word);
+    auto trusted = [&](const std::u16string& w) {
+        return trie.wordIsTrusted(reinterpret_cast<const uint16_t*>(w.data()), w.size());
+    };
+    if (gWeakPick == 0 || trusted(top)) return top;
+    const Candidate* bestTrusted = nullptr;
+    for (const auto& c : cands) { if (trusted(toU16(c.word))) { bestTrusted = &c; break; } }
+    if (gWeakPick == 2) {
+        if (editDistance(typed, top) <= 1) return top;
+        return bestTrusted ? toU16(bestTrusted->word) : typed;
+    }
+    if (bestTrusted && cands[0].score <= gWeakPickMargin * bestTrusted->score) return toU16(bestTrusted->word);
+    if (gWeakPick == 3 && !bestTrusted && editDistance(typed, top) > 1) return typed;
+    return top;
 }

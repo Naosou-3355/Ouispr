@@ -532,31 +532,27 @@ class TextPredictionEngine {
         return predictions
     }
 
-    /// Spell check with n-gram context boosting.
-    /// Uses two strategies to find context-appropriate corrections:
-    /// 1. Rerank existing spell corrections using bigram scores
-    /// 2. Check if n-gram predictions are close to the typed word (prediction-based)
+    /// Spell check with the previous word available.
     ///
-    /// Strategy 2 is the key insight: instead of asking "what are the corrections for sui?"
-    /// and hoping "suis" appears, we ask "what does the n-gram model predict after je?"
-    /// and check if any prediction (like "suis") is close to what was typed ("sui").
+    /// The previous word no longer reorders corrections. The bigram rerank that did
+    /// (trie candidates plus n-gram neighbours at edit distance 1, reordered by
+    /// bigram score) cost 0.05, 0.5 and 1.2 points of words right at tap noise
+    /// 0.20, 0.30 and 0.40 on 36,922 words of French sentences
+    /// (tools/typing-bench/context_bench.cpp): it overrode the tap evidence the
+    /// trie already weighs. `previousWord` stays in the signature for the
+    /// language overrides and lexicon verdicts, and for a context model that
+    /// beats the bench.
     func spellCheck(
         _ word: String,
         previousWord: String?,
         isAtSentenceStart: Bool = true
     ) -> (correction: String, alternatives: [String])? {
-        // Lexicon verdicts (#873) return before the bigram rerank, which could
-        // otherwise swap a replacement phrase or a kept name for a neighbour.
+        // Lexicon verdicts (#873) come first: they are authoritative.
         if let decision = lexiconDecision(for: word) {
             return lexiconResult(decision, for: word)
         }
 
-        // Language overrides are authoritative — return before the bigram
-        // rerank can replace them. Concrete failure this prevents (#222):
-        // "je lai" → override "l'ai", but the corpus tokenizes "j'ai" as ONE
-        // token so bigram("ai" after "je") = 0, while bigram("lui" after "je")
-        // is huge and "lui" sits at edit distance 1 of "lai" — the rerank
-        // replaced the override with "lui" ("je lai fais" → "je lui fais").
+        // Language overrides are authoritative too (#222: "je lai" → "l'ai").
         if let override = aospTrieEngine.languageOverride(for: word) {
             #if DEBUG
             AutocorrectDebugLog.autocorrectDecision(
@@ -567,143 +563,7 @@ class TextPredictionEngine {
             return override
         }
 
-        let result = spellCheck(word, isAtSentenceStart: isAtSentenceStart)
-
-        // If no previous word context or n-grams not loaded, return standard result
-        guard let prev = previousWord, !prev.isEmpty, aospTrieEngine.ngramsLoaded else {
-            return result
-        }
-
-        let lowered = word.lowercased()
-        let wordToCheck: String
-        let prefix: String?
-        if let apoIdx = lowered.lastIndex(of: "'") {
-            wordToCheck = String(lowered[lowered.index(after: apoIdx)...])
-            prefix = String(lowered[...apoIdx])
-        } else {
-            wordToCheck = lowered
-            prefix = nil
-        }
-
-        let prevLower = prev.lowercased()
-
-        // Get n-gram predictions close to the typed word (edit distance exactly 1).
-        // Only for words of 3+ characters — short words like "a", "à", "un" have too
-        // many neighbors at distance 1-2, causing false corrections (e.g., "a" → "la").
-        // Max distance 1 (not 2): distance 2 is too permissive even for longer words
-        // (e.g., "suis" → "vais" at distance 2 would be a false correction).
-        let closePredictions: [(String, UInt16)]
-        if wordToCheck.count >= 3 {
-            let predictions = aospTrieEngine.predictNextWords(after: [prevLower], maxResults: 8)
-            closePredictions = predictions.compactMap { prediction in
-                let dist = Self.editDistance(wordToCheck, prediction)
-                guard dist == 1 else { return nil }
-                let score = aospTrieEngine.bigramScore(for: prediction, after: prevLower)
-                return score > 0 ? (prediction, score) : nil
-            }
-        } else {
-            closePredictions = []
-        }
-
-        if let result = result {
-            // Have base corrections — merge with close predictions and rerank
-            var candidateSet: [String: UInt16] = [:]
-
-            // Score existing corrections
-            for candidate in [result.correction] + result.alternatives {
-                let lowerCandidate = candidate.lowercased()
-                let wordPart: String
-                if let apoIdx = lowerCandidate.lastIndex(of: "'") {
-                    wordPart = String(lowerCandidate[lowerCandidate.index(after: apoIdx)...])
-                } else {
-                    wordPart = lowerCandidate
-                }
-                candidateSet[candidate] = aospTrieEngine.bigramScore(for: wordPart, after: prevLower)
-            }
-
-            // Add close predictions (may introduce new candidates like "suis")
-            let isCapitalized = word.first?.isUppercase == true
-            for (prediction, score) in closePredictions {
-                // `prefix ?? ""` reproduces the nil branch exactly: prepending the
-                // empty string is the identity, which is what nil returned before.
-                let full = (prefix ?? "") + prediction
-                let display = isCapitalized ? full.capitalized : full
-                if let existing = candidateSet[display] {
-                    candidateSet[display] = max(existing, score)
-                } else {
-                    candidateSet[display] = score
-                }
-            }
-
-            // CRITICAL: if no candidate has ANY bigram evidence (all scores = 0),
-            // the rerank becomes a random pick based on Dictionary iteration order.
-            // This corrupted good trie corrections like "main" → "mais" with no
-            // real justification. In this case, keep the trie's original result.
-            let hasAnyBigramEvidence = candidateSet.values.contains { $0 > 0 }
-            guard hasAnyBigramEvidence else {
-                #if DEBUG
-                AutocorrectDebugLog.note(
-                    "bigram-rerank skipped (no evidence) for \"\(word)\" prev=\"\(prev)\", keeping \"\(result.correction)\""
-                )
-                #endif
-                return result
-            }
-
-            // CRITICAL: the rerank must not pick a candidate that's FARTHER from
-            // the typed input than the original trie winner. Example from debug
-            // logs: pejx → trie chose "peux" (ED 1), but bigram("veux" after "tu")
-            // = 49828 while bigram("peux" after "tu") = 0 (data gap, our corpus
-            // lacks common colloquial phrases). Rerank promoted "veux" (ED 2)
-            // over "peux" (ED 1), forcing the user to undo.
-            //
-            // Fix: filter candidates to those at ED ≤ original winner's ED. The
-            // rerank may still reorder within this set, but can never move to a
-            // less-proximal candidate. Prevents bigram data gaps from overriding
-            // the trie's proximity scoring.
-            let originalWordPart: String = {
-                let ol = result.correction.lowercased()
-                if let idx = ol.lastIndex(of: "'") {
-                    return String(ol[ol.index(after: idx)...])
-                } else {
-                    return ol
-                }
-            }()
-            let originalED = Self.editDistance(wordToCheck, originalWordPart)
-
-            let eligible = candidateSet.filter { candidate, _ in
-                let cl = candidate.lowercased()
-                let cWordPart: String
-                if let idx = cl.lastIndex(of: "'") {
-                    cWordPart = String(cl[cl.index(after: idx)...])
-                } else {
-                    cWordPart = cl
-                }
-                return Self.editDistance(wordToCheck, cWordPart) <= originalED
-            }
-            // Safety: if filter removed everything (shouldn't happen — original is always eligible),
-            // fall back to full set.
-            let candidates = eligible.isEmpty ? candidateSet : eligible
-
-            let reranked = candidates.sorted { $0.value > $1.value }
-            let newCorrection = reranked[0].key
-            let newAlternatives = reranked.dropFirst().map { $0.key }
-            #if DEBUG
-            if newCorrection != result.correction {
-                let beforeScore = candidateSet[result.correction] ?? 0
-                let afterScore = reranked[0].value
-                AutocorrectDebugLog.bigramRerank(
-                    word: word, prevWord: prev,
-                    before: (result.correction, beforeScore),
-                    after: (newCorrection, afterScore)
-                )
-            }
-            #endif
-            return (newCorrection, Array(newAlternatives.prefix(2)))
-        }
-
-        // Word is valid (spellCheck returned nil) — do not override with n-gram
-        // predictions. This prevents "je fais" → "je vais" when "fais" is valid.
-        return nil
+        return spellCheck(word, isAtSentenceStart: isAtSentenceStart)
     }
 
     /// Levenshtein edit distance between two strings. O(n*m) but strings are

@@ -47,11 +47,24 @@ Why "weak": trusting all 59,600 added words as typed let typos of common words l
 them and stay (isolated words: −0.5 pt at 0.30, −1.2 pt at 0.40). A weak word typed
 exactly is kept unless a neighbour outscores it 1.5 times (`kWeakWordMargin`).
 
-Measured but not shipped:
-- The bigram rerank already in the keyboard (ported here) costs 0.05 / 0.5 / 1.2 pt.
-  To confirm on the device before removing it.
-- Previous word in key resizing and real-word correction ("se" for "de"): within
-  ±0.1 pt at low and medium noise.
+The bigram rerank the keyboard shipped (`TextPredictionEngine.spellCheck(_:previousWord:)`,
+ported here as configs B, B2, B3) is removed: it cost 0.05 / 0.5 / 1.2 pt, almost all of
+it from reordering the trie's own candidates by bigram score (B2); adding the n-gram
+neighbours at edit distance 1 alone (B3) still cost 0.01 / 0.1 / 0.3 pt.
+
+Measured but not shipped (words right, on top of config A):
+
+| tap noise | previous word in key resizing (C) | + real-word fix (D) |
+|---|---|---|
+| 0.20 | +0.05 pt | +0.01 pt |
+| 0.30 | +0.45 pt | +0.50 pt |
+| 0.40 | +0.72 pt | +0.96 pt |
+
+`--weakpick 1|2|3` restricts a non-word's correction to a weak word (see
+`pickCorrection`). Mode 3 removes the missed-space regression of the 99,000-word
+dictionary on the split-pass corpus (5 of 150 glued cases) but costs 0.2 / 0.75 pt on
+sentences at 0.30 / 0.40; mode 2 costs 0.2 / 0.9 pt. Not shipped: typos outnumber
+missed spaces.
 
 ## Model
 

@@ -2,8 +2,8 @@
 //
 // bench.cpp scores isolated words. Here every word is typed inside its sentence, which
 // lets three uses of the previous word be measured:
-//   - the bigram rerank the keyboard already ships (TextPredictionEngine.spellCheck with
-//     previousWord), ported below;
+//   - the bigram rerank the keyboard shipped until this bench removed it
+//     (TextPredictionEngine.spellCheck with previousWord), ported below;
 //   - context-aware key resizing: the next-letter prior also counts the words the n-gram
 //     model expects after the previous word;
 //   - real-word correction: a slip that lands on another valid word ("se" for "de",
@@ -24,15 +24,6 @@
 
 // --- Text helpers ---
 
-static std::string toU8(const std::u16string& s) {
-    std::string out;
-    for (char16_t c : s) {
-        if (c < 0x80) out.push_back(static_cast<char>(c));
-        else if (c < 0x800) { out.push_back(0xC0 | (c >> 6)); out.push_back(0x80 | (c & 0x3F)); }
-        else { out.push_back(0xE0 | (c >> 12)); out.push_back(0x80 | ((c >> 6) & 0x3F)); out.push_back(0x80 | (c & 0x3F)); }
-    }
-    return out;
-}
 
 static char16_t lowerU16(char16_t c) {
     if (c >= 'A' && c <= 'Z') return c + 32;
@@ -80,17 +71,6 @@ static std::vector<std::vector<std::u16string>> readConllu(const std::vector<std
     return out;
 }
 
-static int editDistance(const std::u16string& a, const std::u16string& b) {
-    std::vector<int> prev(b.size() + 1), cur(b.size() + 1);
-    for (size_t j = 0; j <= b.size(); j++) prev[j] = j;
-    for (size_t i = 1; i <= a.size(); i++) {
-        cur[0] = i;
-        for (size_t j = 1; j <= b.size(); j++)
-            cur[j] = std::min({prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1)});
-        std::swap(prev, cur);
-    }
-    return prev[b.size()];
-}
 
 // --- Bench ---
 
@@ -104,7 +84,7 @@ struct Params {
 
 struct Config {
     const char* name;
-    bool rerank;          // shipped bigram rerank of non-words
+    int rerank;           // shipped bigram rerank of non-words: 0 off, 1 full, 2 trie candidates only, 3 n-gram neighbours only
     bool contextKeys;     // n-gram prior in hidden key resizing
     bool realWord;        // real-word correction from tap + context
 };
@@ -159,7 +139,7 @@ static bool contextWeights(const Engines& e, const std::u16string& prefix, const
 /// non-word: trie candidates plus n-gram predictions at edit distance 1, reranked by
 /// bigram score, never moving to a candidate farther than the trie's winner.
 static std::u16string rerank(const Engines& e, const std::u16string& typed, const std::vector<Candidate>& cands,
-                             const std::string& prev) {
+                             const std::string& prev, int mode = 1) {
     std::u16string top = toU16(cands[0].word);
     if (prev.empty()) return top;
     std::vector<std::pair<std::u16string, uint16_t>> set;
@@ -167,11 +147,11 @@ static std::u16string rerank(const Engines& e, const std::u16string& typed, cons
         for (auto& [k, v] : set) if (k == w) { v = std::max(v, s); return; }
         set.emplace_back(w, s);
     };
-    for (size_t i = 0; i < cands.size() && i < 3; i++) {
+    for (size_t i = 0; i < cands.size() && i < (mode == 3 ? 1u : 3u); i++) {
         std::u16string w = toU16(cands[i].word);
         add(w, e.ngrams->bigramScore(prev.c_str(), toU8(w).c_str()));
     }
-    if (typed.size() >= 3) {
+    if (typed.size() >= 3 && mode != 2) {
         for (const auto& r : e.ngrams->predictAfterWord(prev.c_str(), 8)) {
             std::u16string w = toU16(r.word);
             if (editDistance(typed, w) != 1) continue;
@@ -270,7 +250,7 @@ static Outcome run(const Engines& e, const std::vector<std::vector<std::u16strin
                     if (!hasTap[i]) std::fill(costs.begin() + i * SUBSTITUTION_SLOT_COUNT, costs.begin() + (i + 1) * SUBSTITUTION_SLOT_COUNT, -1.0f);
                 auto cands = e.scorer->correct(*e.trie, reinterpret_cast<const uint16_t*>(typed.data()), typed.size(), 2.0f, 5, costs.data());
                 if (typedValid && keepsWeakWord(cands, typed)) final = typed;
-                else if (!cands.empty()) final = cfg.rerank ? rerank(e, typed, cands, prev) : toU16(cands[0].word);
+                else if (!cands.empty()) final = cfg.rerank ? rerank(e, typed, cands, prev, cfg.rerank) : pickCorrection(*e.trie, cands, typed);
             } else if (cfg.realWord) {
                 final = realWord(e, typed, prev, tx, ty, hasTap, p);
             }
@@ -303,7 +283,7 @@ int main(int argc, char** argv) {
         if (a.rfind("--", 0) == 0 && i + 1 < argc) {
             float v = std::atof(argv[++i]);
             if (a == "--mix") p.contextMix = v; else if (a == "--logmax") p.logPerScore = v / 65535.0f;
-            else if (a == "--margin") p.realWordMargin = v; else if (a == "--weakmargin") gWeakMargin = v; else if (a == "--stretch") p.stretch = v;
+            else if (a == "--margin") p.realWordMargin = v; else if (a == "--weakmargin") gWeakMargin = v; else if (a == "--weakpick") gWeakPick = static_cast<int>(v); else if (a == "--weakpickmargin") gWeakPickMargin = v; else if (a == "--stretch") p.stretch = v;
             continue;
         }
         files.push_back(a);
@@ -339,10 +319,12 @@ int main(int argc, char** argv) {
                 p.contextMix, p.logPerScore * 65535.0f, p.realWordMargin, p.stretch);
 
     const Config configs[] = {
-        {"A PR 19, no context", false, false, false},
-        {"B PR 19 + shipped rerank", true, false, false},
-        {"C B + context keys", true, true, false},
-        {"D C + real-word fix", true, true, true},
+        {"A PR 19, no context", 0, false, false},
+        {"B PR 19 + shipped rerank", 1, false, false},
+        {"B2 rerank trie cands only", 2, false, false},
+        {"B3 n-gram neighbours only", 3, false, false},
+        {"C A + context keys", 0, true, false},
+        {"D C + real-word fix", 0, true, true},
     };
     for (float sigma : {0.20f, 0.30f, 0.40f}) {
         std::printf("== tap noise sigma %.2f ==\n", sigma);

@@ -110,7 +110,7 @@ static Outcome run(const Trie& trie, const Scorer& scorer, const SpatialModel& s
             o.correctUs += std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t0).count();
             o.corrections++;
             if (valid && keepsWeakWord(cands, typed)) final = typed;
-            else if (!cands.empty()) final = toU16(cands[0].word);
+            else if (!cands.empty()) final = pickCorrection(trie, cands, typed);
         }
         o.words++;
         if (final == target) o.wordsOk++;
@@ -130,6 +130,8 @@ int main(int argc, char** argv) {
         else if (k == "--budget") p.budget = static_cast<int>(v);
         else if (k == "--trusted") trustedPath = argv[i + 1];
         else if (k == "--weakmargin") gWeakMargin = v;
+        else if (k == "--weakpick") gWeakPick = static_cast<int>(v);
+        else if (k == "--weakpickmargin") gWeakPickMargin = v;
     }
 
     Trie trie;
