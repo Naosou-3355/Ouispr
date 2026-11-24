@@ -37,6 +37,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         BackgroundModelDownloadService.shared.restore()
+        // Dormant unless `devicectl` launched the app with `--device-bench`.
+        DeviceBenchRunner.startIfRequested()
         // A hint at the launch kind, one main-loop turn from now (#707). `background` alone
         // does not settle it: see `appLaunchState`.
         DispatchQueue.main.async {
