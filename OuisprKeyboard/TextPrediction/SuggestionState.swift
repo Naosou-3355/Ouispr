@@ -142,9 +142,10 @@ class SuggestionState: ObservableObject {
         currentWord = partial
 
         // Guard: skip spell correction for tokens containing digits (#74)
+        // Same for URLs, e-mail addresses and paths: no correction to offer.
         let containsDigit = partial.unicodeScalars.contains {
             CharacterSet.decimalDigits.contains($0)
-        }
+        } || LinkLikeToken.isAtCursor(context: context)
         if containsDigit {
             // Show completions only (no corrections) for numeric tokens
             let completions = engine.suggestions(for: partial)
@@ -239,9 +240,10 @@ class SuggestionState: ObservableObject {
             }
 
             // Guard: skip spell correction for tokens containing digits (#74)
+            // Same for URLs, e-mail addresses and paths: no correction to offer.
             let containsDigit = partial.unicodeScalars.contains {
                 CharacterSet.decimalDigits.contains($0)
-            }
+            } || LinkLikeToken.isAtCursor(context: context)
             if containsDigit {
                 let completions = self.engine.suggestions(for: partial)
                 DispatchQueue.main.async { [weak self] in

@@ -900,6 +900,11 @@ final class OuisprKeyboardBridge: NSObject,
         guard !freshWord.unicodeScalars.contains(where: { CharacterSet.decimalDigits.contains($0) })
         else { return false }
 
+        // Guard: never autocorrect inside a URL, an e-mail address or a path: the
+        // word is only its last letters, and correcting them breaks the link.
+        // Nothing is learned from it either.
+        guard !LinkLikeToken.isAtCursor(context: context) else { return false }
+
         // Extract previous word for n-gram context boost
         let previousWord: String? = {
             var words: [String] = []
