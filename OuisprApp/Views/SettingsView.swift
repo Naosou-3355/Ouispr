@@ -206,6 +206,37 @@ struct SettingsView: View {
     /// `layoutRevision` uses above and for the same reason.
     @State private var proEntitlementRevision = 0
 
+    /// The rows Home's mode menu offers, minus Ouispr Pro, or nil when it offers no
+    /// modes. Read once a visit: it asks Apple Intelligence about the device.
+    @State private var defaultModeChoices: [SmartModeFanEntry]? = SettingsView.resolveDefaultModeChoices()
+
+    /// Bumped by a pick, so the picker redraws: the value lives in the App Group.
+    @State private var defaultModeRevision = 0
+
+    private static func resolveDefaultModeChoices() -> [SmartModeFanEntry]? {
+        guard let picker = SmartModeHomePicker.current(), !picker.offersProUpgrade, picker.modesAreArmable else { return nil }
+        let entries = picker.entries.filter { $0 != .pro }
+        return entries.count > 1 ? entries : nil
+    }
+
+    private var defaultModeSelection: Binding<String> {
+        Binding(
+            get: {
+                _ = defaultModeRevision
+                // A default since unpinned reads as Normal here, as it does in Home.
+                let id = SmartModeDefault.identifier ?? SmartModeFanEntry.normal.id
+                return defaultModeChoices?.contains { $0.id == id } == true ? id : SmartModeFanEntry.normal.id
+            },
+            set: { id in
+                let mode = defaultModeChoices?.first { $0.id == id }?.smartMode
+                SmartModeDefault.set(mode)
+                // The next dictation starts from the new default, as a long press does.
+                SmartModeDefault.returnToDefault()
+                defaultModeRevision += 1
+            }
+        )
+    }
+
     /// The Developer section's forced-entitlement switch (#460).
     ///
     /// A `Binding` onto `PremiumFlags` rather than an `@AppStorage` on the same key:
@@ -298,6 +329,22 @@ struct SettingsView: View {
                         .environmentObject(proStatus)
                 }
                 .accessibilityIdentifier("settings.vocabulary")
+            }
+
+            // The mode Home's mode button returns to after each dictation, the same
+            // value a long press sets in Home's menu (« bouton mode » bench). Only where
+            // modes can be chosen at all.
+            if let modes = defaultModeChoices {
+                Section {
+                    Picker("Default mode", selection: defaultModeSelection) {
+                        ForEach(modes) { entry in
+                            Text(verbatim: HomeSmartModeCopy.shortName(of: entry)).tag(entry.id)
+                        }
+                    }
+                    .accessibilityIdentifier("settings.defaultMode")
+                } footer: {
+                    Text("The mode of the next dictation on Home goes back to this one after each dictation.")
+                }
             }
 
             // Section 1: Transcription

@@ -275,6 +275,10 @@ public enum SharedKeys {
     /// that one says whether the feature is switched on at all, this one says which
     /// mode the next dictation runs.
     public static let smartModeArmed = "ouispr.smartModeArmed"
+
+    /// The mode the app's next dictation returns to once one has run, or absent for
+    /// Normal. Set from Home's mode menu (long press) or from Settings.
+    public static let smartModeDefault = "ouispr.smartModeDefault"
     /// [String]: identifiers of the modes pinned to the keyboard's long-press fan,
     /// in the user's own order. Absent means they have never chosen, which seeds
     /// from `SmartModeCatalogue.defaultPinnedIdentifiers`; an empty array is a real

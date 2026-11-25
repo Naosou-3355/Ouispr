@@ -22,7 +22,7 @@ enum RecordingMode {
 /// Elements appearing/disappearing causes jarring layout shifts. The label, the sphere
 /// and the control row keep their place across all states — only what they show changes:
 /// - Idle: resting sphere, mic
-/// - Recording: "Listening", the sphere follows the voice, cancel / mic / validate
+/// - Recording: "Listening", the sphere follows the voice, cancel / stop
 /// - Transcribing, processing: "Cleaning up", the sphere breathes, cancel
 /// - Result: "Finished", calm sphere, the text comes into focus word by word,
 ///   copy / mic / share
@@ -63,6 +63,9 @@ struct RecordingView: View {
     @State private var pinnedHomeFrame: CGRect?
     /// « Terminé » is said, then leaves (Alex's « Murmure », 25 Nov 2026).
     @State private var finishedFaded = false
+    /// The stage words come in only once Home's « Prêt à dicter », drawn on the same
+    /// line, has gone: the two read over each other for a moment (Beta 45 feedback).
+    @State private var stageLabelShown = false
 
     /// The stage this screen draws, which trails `coordinator.status` by up to
     /// `TranscribingStageHold.minimumDisplayDuration` (#309).
@@ -79,7 +82,8 @@ struct RecordingView: View {
     /// Fires when a held stage becomes drawable. At most one is ever in flight.
     @State private var holdTask: Task<Void, Never>?
 
-    /// Where Home's mic is on screen, which the button below lines up on (#788).
+    /// Where Home's mic is on screen, which the button below starts from and goes back
+    /// to (#788).
     @ObservedObject private var micAnchor = PrimaryMicAnchor.shared
 
     /// Where Home's sphere is, which this screen carries: its sphere flies from there to
@@ -111,16 +115,29 @@ struct RecordingView: View {
     /// The top row with its padding: the close button's 44 pt and 8 pt above it.
     private static let topRowHeight: CGFloat = 52
 
-    /// From the bottom of Home's character frame to the top of its heading: the frame's
-    /// 16 pt of padding and the 24 pt spacing of Home's stack (`HomeView.dashboardCards`).
-    private static let homeHeadingGap: CGFloat = 40
+    /// From the bottom of Home's character square to the top of its heading. Home lays
+    /// the square out at three quarters of its height, so an eighth of it hangs below the
+    /// layout, and its stack's spacing is 16 pt (`HomeView.character`).
+    private static func homeHeadingGap(characterSide: CGFloat) -> CGFloat {
+        16 - characterSide / 8
+    }
 
     /// Height of the slot the mic / stop button is centred in.
     private static let micSlotHeight: CGFloat = 100
 
-    /// Space under that slot when there is no Home mic to line up on: onboarding, or a
-    /// launch that never drew Home. The layout this screen always had.
-    private static let defaultBottomSpacing: CGFloat = 40
+    /// Where the control row's centre sits, as a fraction of the screen's height from
+    /// the top: close to the text it acts on (Alex, Beta 45 feedback, 25 Nov 2026).
+    private static let controlsCentreFraction: CGFloat = 0.75
+
+    /// From the mic's centre to the centre of the pictograms on either side of it.
+    private static let sideControlDistance: CGFloat = 88
+
+    /// The pictograms come and go in a short fade: only the character's drop moves.
+    /// The one arriving waits for the one leaving, since ✕ and copy share a place.
+    private static let sideControlTransition = AnyTransition.asymmetric(
+        insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.15)),
+        removal: .opacity.animation(.easeOut(duration: 0.15))
+    )
 
     init(mode: RecordingMode, onComplete: (() -> Void)? = nil) {
         self.mode = mode
@@ -155,7 +172,7 @@ struct RecordingView: View {
                     // Home), the screen keeps its own 200 pt slot.
                     if let home = homeSpot {
                         Color.clear
-                            .frame(height: max(0, home.maxY + Self.homeHeadingGap - geo.frame(in: .global).minY - Self.topRowHeight))
+                            .frame(height: max(0, home.maxY + Self.homeHeadingGap(characterSide: home.height) - geo.frame(in: .global).minY - Self.topRowHeight))
                             .overlay { travellingSphere }
                     } else {
                         Color.clear
@@ -168,7 +185,7 @@ struct RecordingView: View {
 
                     stageLabel
                         .frame(height: 34)
-                        .opacity(contentOpacity)
+                        .opacity(stageLabelShown ? contentOpacity : 0)
 
                     // MARK: - Text zone (between the sphere and the controls)
                     // WHY flexible: it is the one zone allowed to give height back, so
@@ -184,16 +201,18 @@ struct RecordingView: View {
                         .opacity(contentOpacity)
 
                     // MARK: - Controls (always in the same position)
-                    controls
+                    controls(in: geo)
                         .frame(height: Self.micSlotHeight)
-                        .padding(.top, 16)
-                        .opacity(contentOpacity)
+                        .padding(.top, 8)
 
-                    // Whatever lifts the mic's centre to the height of Home's mic, so the
-                    // one the user just tapped does not jump down when this screen covers it
-                    // (#788). Every state of the row shares the slot, so all of them line up.
+                    // Puts the row's centre at three quarters of the screen. Every state
+                    // of the row shares the slot, so all of them line up.
                     Spacer()
-                        .frame(height: bottomSpacing(in: geo))
+                        .frame(height: PrimaryMicAnchor.bottomSpacing(
+                            containerHeight: geo.size.height,
+                            slotHeight: Self.micSlotHeight,
+                            centreFraction: Self.controlsCentreFraction
+                        ))
                 }
                 .frame(width: geo.size.width, height: geo.size.height)
             }
@@ -246,6 +265,10 @@ struct RecordingView: View {
             withAnimation(reduceMotion ? .easeOut(duration: Motion.standard) : Self.enterAnimation) {
                 appeared = true
             }
+            // After Home's own words have faded (`HomeView.readySection`, Motion.quick).
+            withAnimation(.easeOut(duration: Motion.quick).delay(mode == .standalone ? Motion.quick : 0)) {
+                stageLabelShown = true
+            }
         }
         .onDisappear {
             holdTask?.cancel()
@@ -262,25 +285,13 @@ struct RecordingView: View {
             // is what makes them disagree.
             hold = TranscribingStageHold()
             displayedStatus = .idle
+            stageLabelShown = false
         }
         .onChange(of: homeSphere.homeFrame) { _, frame in
             // Adopted only if Home had not reported its spot yet when this screen came up.
             if pinnedHomeFrame == nil { pinnedHomeFrame = frame }
         }
         .navigationBarHidden(true)
-    }
-
-    // MARK: - Button Height
-
-    /// Space under the button slot. Home's mic is only an anchor for the standalone screen,
-    /// the one Home opens; onboarding keeps its own layout.
-    private func bottomSpacing(in geo: GeometryProxy) -> CGFloat {
-        PrimaryMicAnchor.bottomSpacing(
-            anchorY: mode == .standalone ? micAnchor.centerY : nil,
-            containerMaxY: geo.frame(in: .global).maxY,
-            slotHeight: Self.micSlotHeight,
-            fallback: Self.defaultBottomSpacing
-        )
     }
 
     // MARK: - Top Row
@@ -532,77 +543,95 @@ struct RecordingView: View {
 
     // MARK: - Controls
 
-    /// The mic, alone in the middle of its slot, with its ink drops: the cancel cross
-    /// under it while a dictation runs, copy and share on either side of it with a
-    /// result. The mic never moves, at the height of Home's own (#788).
+    /// The mic in the middle, a bare pictogram on either side: cancel on its left while
+    /// a dictation runs, copy on its left and share on its right with a result.
     ///
-    /// One button stops a dictation: the ✓ beside the stop square did the same thing
-    /// and went (Alex, 25 Nov 2026). The drops come out of the mic and go back into it
-    /// (« Goutte », « Gouttes »); the tap targets are 44 pt buttons laid over their
-    /// resting places.
-    private var controls: some View {
-        let cancelOut = displayedStatus == .recording || isPostRecordingStage
+    /// The mic is the one filled shape; the pictograms are ink at half strength, with no
+    /// disc or circle, so nothing competes with it (Alex, Beta 45 feedback, 25 Nov 2026:
+    /// the black ✕ disc read as the main button). They fade in and out: the only drop
+    /// left on this screen is the character's, at the end of a dictation.
+    ///
+    /// From Home the mic starts on Home's own mic and travels up to this row, as the
+    /// character does, so the button the user tapped never jumps (#788).
+    private func controls(in geo: GeometryProxy) -> some View {
         let result = shareableResult
         return ZStack {
-            InkDrop(isOut: cancelOut, symbol: "xmark", direction: CGVector(dx: 0, dy: 1),
-                    distance: Self.cancelDropDistance, delay: 0.12)
-            InkDrop(isOut: result != nil, symbol: "doc.on.doc", direction: CGVector(dx: -1, dy: 0),
-                    distance: Self.sideDropDistance, delay: 0.15)
-            InkDrop(isOut: result != nil, symbol: "square.and.arrow.up", direction: CGVector(dx: 1, dy: 0),
-                    distance: Self.sideDropDistance, delay: 0.15)
+            Group {
+                if isDictationInFlight {
+                    sideControl(symbol: "xmark", label: "Cancel", action: cancelOrClose)
+                        .offset(x: -Self.sideControlDistance)
+                        .transition(Self.sideControlTransition)
+                }
+                if let result {
+                    sideControl(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
+                        .offset(x: -Self.sideControlDistance)
+                        .transition(Self.sideControlTransition)
+                    ShareLink(item: result) {
+                        sideControlGlyph("square.and.arrow.up")
+                    }
+                    .buttonStyle(GlassPressStyle())
+                    .accessibilityLabel("Share")
+                    .offset(x: Self.sideControlDistance)
+                    .transition(Self.sideControlTransition)
+                }
+            }
+            .opacity(contentOpacity)
 
             mic
-
-            if cancelOut {
-                dropTarget(label: "Cancel", action: cancelOrClose)
-                    .offset(y: Self.cancelDropDistance)
-            }
-            if let result {
-                dropTarget(label: "Copy") { copyToPasteboard(result) }
-                    .offset(x: -Self.sideDropDistance)
-                ShareLink(item: result) {
-                    Color.clear
-                        .frame(width: 44, height: 44)
-                        .contentShape(Circle())
-                }
-                .accessibilityLabel("Share")
-                .offset(x: Self.sideDropDistance)
-            }
+                .offset(y: micFlightOffset(in: geo))
+                .opacity(micFlies ? 1 : contentOpacity)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    /// From the mic's centre to the cancel drop's: under the mic with a 7 pt gap. Not
-    /// more: the mic sits at Home's height and the home indicator is close below.
-    private static let cancelDropDistance: CGFloat = 64
-    /// From the mic's centre to copy's and share's.
-    private static let sideDropDistance: CGFloat = 88
+    /// Whether the mic travels between Home's mic and this row. Reduce Motion fades.
+    private var micFlies: Bool {
+        mode == .standalone && !reduceMotion && micAnchor.centerY != nil
+    }
 
-    /// One mic for every stage, so its disc morphs into the stop square and back
-    /// instead of being replaced.
+    /// How far below its row the mic is drawn: on Home's mic on the first frame and on
+    /// the way out, on its row otherwise. Its row's centre is known from the layout
+    /// itself (`controlsCentreFraction`), so the first frame already has it.
+    private func micFlightOffset(in geo: GeometryProxy) -> CGFloat {
+        guard micFlies, !appeared || isDismissing else { return 0 }
+        let rowCentre = geo.frame(in: .global).minY + geo.size.height * Self.controlsCentreFraction
+        return PrimaryMicAnchor.flightOffset(anchorY: micAnchor.centerY, slotCentreY: rowCentre)
+    }
+
+    /// One mic for every stage: its disc stays, the stop square appears inside it.
     private var mic: some View {
-        let recording = displayedStatus == .recording
-        let phase: InkMicButton.Phase = recording ? .listening : isPostRecordingStage ? .working : .resting
+        let recording = displayedStatus == .recording && !isDismissing
+        let working = isPostRecordingStage && !isDismissing
+        let phase: InkMicButton.Phase = recording ? .listening : working ? .working : .resting
         return InkMicButton(phase: phase) {
-            if recording { stopRecording() } else if !isPostRecordingStage { startRecording() }
+            if recording { stopRecording() } else if !working { startRecording() }
         }
         .accessibilityLabel(recording ? Text("Stop recording") : Text("New dictation"))
-        .accessibilityHidden(isPostRecordingStage)
+        .accessibilityHidden(working)
+    }
+
+    /// A bare pictogram in half-strength ink, on a 44 pt target (Apple HIG, minimum
+    /// hit target).
+    private func sideControl(symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            sideControlGlyph(symbol)
+        }
+        .buttonStyle(GlassPressStyle())
+        .accessibilityLabel(label)
+    }
+
+    private func sideControlGlyph(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(Color.ouisprInk.opacity(0.5))
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
     }
 
     /// How a stage's content comes and goes: a fade with a slight scale, or a fade
     /// alone under Reduce Motion.
     private var stageTransition: AnyTransition {
         reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96))
-    }
-
-    /// A drop's tap target, over its resting place: the drop itself only draws.
-    private func dropTarget(label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Color.clear
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-        }
-        .accessibilityLabel(label)
     }
 
     /// The text the copy and share buttons act on: a result on screen, outside

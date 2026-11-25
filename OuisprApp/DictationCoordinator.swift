@@ -1053,6 +1053,11 @@ class DictationCoordinator: ObservableObject {
                 // polishing in place (decision 4).
                 switch dictationOrigin {
                 case .app:
+                    // The mode was for this dictation only: Home's mode button goes back
+                    // to Normal, or to the default the user set (« bouton mode » bench,
+                    // 25 Nov 2026). Here, once the mode is snapshotted and the audio is
+                    // transcribed: a dictation cancelled earlier keeps the user's pick.
+                    SmartModeDefault.returnToDefault()
                     // The skipped notice is deliberately not passed here: this
                     // target has no non-fatal notice surface, which is the gap
                     // `finishInApp` already documents against a Smart Mode refusal.

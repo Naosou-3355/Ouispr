@@ -15,6 +15,7 @@
 - `smart-modes.translate`: Traduction → FR / EN / ES / DE.
 - `smart-modes.pin`: Choose up to three modes shown in the keyboard (add, remove, reorder).
 - `smart-modes.toggle`: « Mode intelligent » on/off switch.
+- `smart-modes.home-menu`: In the app, Home's top-left button (`home.mode`) opens a glass menu: Aucun, the pinned modes, the Pro row. A tap arms a mode for the next dictation only; after it the mode returns to the default. A long press (0.5 s) on a row makes it the default, also set in Réglages → « Mode par défaut ».
 
 ## How to get to it (user POV)
 

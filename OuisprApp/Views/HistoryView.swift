@@ -1,9 +1,18 @@
 // OuisprApp/Views/HistoryView.swift
-// The saved dictations, newest first, reached by swiping up from the home screen.
+// The saved dictations as a drifting cloud of glass cards, sorted by period, reached from Home.
 import SwiftUI
 import OuisprCore
 
 /// The transcription history (#70): every saved dictation as a glass card.
+///
+/// From Home, a cloud of glass cards drifting slowly sideways (« Fiche historique et
+/// accueil V1 », Alex, 24 Nov 2026): four periods in a bar at the bottom, a search
+/// button beside it, a card that lifts open when tapped. No mic: one dictates from Home.
+/// The search shows its results as a list, with the free window's count of older
+/// matches (Pro offer, 25 Nov 2026).
+///
+/// Pushed from the Ouispr Pro hub (#216) it stays the list it was, under the feature's
+/// switch: that screen is about the feature, not about reading.
 ///
 /// WHY it is presented as a sheet by `HomeView` rather than pushed or given a tab:
 /// the issue asks for a vertical transition out of the home screen and a swipe-down
@@ -11,10 +20,9 @@ import OuisprCore
 /// interruptible drag that a hand-rolled transition would have to reimplement. The
 /// tab bar stays at three entries, which the brief is explicit about.
 ///
-/// WHY a `List` and not a `ScrollView` of cards: swipe-to-delete is the interaction
-/// the issue names, and `List` is the only thing on iOS that gives it — with the
-/// right hit area, the right rubber-banding and the right row-removal animation. The
-/// glass look survives it: clear row backgrounds, no separators, no list background.
+/// The search results and the hub's version are a `List`: swipe-to-delete is the
+/// interaction #70 names, and `List` is the only thing on iOS that gives it. In the
+/// cloud, a long press on a card offers Copy and Delete instead.
 struct HistoryView: View {
 
     @EnvironmentObject var history: TranscriptionHistoryStore
@@ -36,6 +44,19 @@ struct HistoryView: View {
 
     /// What the search field holds (#621). Empty shows every record.
     @State private var query = ""
+
+    /// Whether the search field replaces the period bar.
+    @State private var isSearching = false
+    @FocusState private var searchFocused: Bool
+
+    /// The period the cloud shows. Nil until the screen picks the newest one with cards.
+    @State private var period: DictationCloud.Period?
+
+    /// The card lifted open, if any.
+    @State private var openedCard: OpenedCardState?
+
+    @Namespace private var periodIndicator
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Opens the Ouispr Pro window from the "older dictations" row, on its history.
     @State private var showsPaywall = false
@@ -94,7 +115,7 @@ struct HistoryView: View {
             } else if history.records.isEmpty {
                 emptyState
             } else {
-                recordList
+                cloud
             }
         }
         .background(Color.ouisprBackground.ignoresSafeArea())
@@ -109,6 +130,214 @@ struct HistoryView: View {
             }
         }
         .paywallCover(isPresented: $showsPaywall, entry: .feature(.history))
+        .overlay {
+            if let openedCard {
+                OpenedDictationCard(
+                    record: openedCard.record,
+                    origin: openedCard.origin,
+                    onShowDetail: {
+                        self.openedCard = nil
+                        selection = openedCard.record
+                    },
+                    onClose: { self.openedCard = nil }
+                )
+                .ignoresSafeArea()
+            }
+        }
+    }
+
+    // MARK: - Cloud
+
+    /// The cards of one period, drifting, over the period bar; or, while a query is
+    /// typed, the search's results.
+    private var cloud: some View {
+        VStack(spacing: 0) {
+            if isSearching && !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                recordList
+            } else {
+                cloudField
+            }
+            periodBar
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+        }
+        .onAppear {
+            if period == nil { period = firstPeriodWithCards }
+        }
+        .onChange(of: history.records) { _, _ in
+            if let period, records(in: period).isEmpty { self.period = firstPeriodWithCards }
+        }
+    }
+
+    private var shownPeriod: DictationCloud.Period { period ?? firstPeriodWithCards }
+
+    private var firstPeriodWithCards: DictationCloud.Period {
+        DictationCloud.Period.allCases.first { !records(in: $0).isEmpty } ?? .today
+    }
+
+    private func records(in period: DictationCloud.Period) -> [TranscriptionRecord] {
+        let now = Date()
+        return history.records.filter { DictationCloud.Period.of($0.createdAt, now: now) == period }
+    }
+
+    /// Up to four rows, the newest cards at their heads, neighbours drifting opposite
+    /// ways. Rows past the screen's edge draw only the cards on screen (`DriftingCardRow`).
+    private var cloudField: some View {
+        let cards = records(in: shownPeriod)
+        // At least three cards a row, up to four rows: a row of one or two cards is
+        // narrower than the screen and would show its own cards twice.
+        let rowCount = max(1, min(4, cards.count / 3))
+        let rows = DictationCloud.cloudRows(cards, perRow: (cards.count + rowCount - 1) / rowCount)
+        return Group {
+            if cards.isEmpty {
+                Text("No dictations in this period")
+                    .font(.ouisprBody)
+                    .foregroundStyle(Color.ouisprTextSecondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: DictationCloudCard.gap) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                        DriftingCardRow(
+                            records: row,
+                            direction: index.isMultiple(of: 2) ? -1 : 1,
+                            speedFactor: index.isMultiple(of: 2) ? 1 : 0.8,
+                            isPaused: openedCard != nil,
+                            openID: openedCard?.record.id,
+                            onOpen: { record, frame in
+                                guard isAvailable else { return }
+                                HapticFeedback.keyTapped()
+                                openedCard = OpenedCardState(record: record, origin: frame)
+                            },
+                            menu: { record in AnyView(cardMenu(record)) }
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // A new period's cards come in together, their titles word by word.
+                .id(shownPeriod)
+                .transition(.opacity)
+            }
+        }
+    }
+
+    /// Copy and Delete, on a long press: the cloud's counterpart of the list's swipe.
+    @ViewBuilder
+    private func cardMenu(_ record: TranscriptionRecord) -> some View {
+        if isAvailable {
+            Button {
+                UIPasteboard.general.string = record.text
+                HapticFeedback.recordingStopped()
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            Button(role: .destructive) {
+                delete(record)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Period bar
+
+    /// « Une seule matière »: one glass capsule of periods, 52 pt tall, and the search
+    /// button in the same glass, 10 pt apart. A grey pill slides under the chosen period
+    /// on a spring with a slight overshoot (320 ms); the text keeps one weight so nothing
+    /// shifts. While searching, the capsule is the field.
+    private var periodBar: some View {
+        HStack(spacing: 10) {
+            if isSearching {
+                searchCapsule
+            } else {
+                periodCapsule
+            }
+            Button(action: toggleSearch) {
+                Image(systemName: isSearching ? "xmark" : "magnifyingglass")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .frame(width: 52, height: 52)
+                    .ouisprGlass(in: Circle())
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(GlassPressStyle())
+            .accessibilityLabel(isSearching ? Text("Close search") : Text("Search"))
+            .accessibilityIdentifier("history.search")
+        }
+    }
+
+    private var periodCapsule: some View {
+        HStack(spacing: 0) {
+            ForEach(DictationCloud.Period.allCases) { item in
+                let selected = item == shownPeriod
+                Button {
+                    withAnimation(reduceMotion ? .easeOut(duration: Motion.quick)
+                                               : .spring(response: 0.32, dampingFraction: 0.72)) {
+                        period = item
+                    }
+                } label: {
+                    Text(periodName(item))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(selected ? Color.ouisprTextPrimary : Color.ouisprTextSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .padding(.horizontal, 8)
+                        .frame(minWidth: 52, maxWidth: .infinity, minHeight: 44)
+                        .background {
+                            if selected {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.07))
+                                    .matchedGeometryEffect(id: "period", in: periodIndicator)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(GlassPressStyle())
+                .accessibilityAddTraits(selected ? .isSelected : [])
+                .accessibilityIdentifier("history.period.\(item.rawValue)")
+            }
+        }
+        .padding(4)
+        .frame(height: 52)
+        .ouisprGlass(in: Capsule())
+    }
+
+    private var searchCapsule: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Color.ouisprTextSecondary)
+            TextField("Search transcriptions", text: $query)
+                .focused($searchFocused)
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+        }
+        .font(.ouisprBody)
+        .padding(.horizontal, 18)
+        .frame(height: 52)
+        .frame(maxWidth: .infinity)
+        .ouisprGlass(in: Capsule())
+        .transition(.opacity)
+    }
+
+    private func toggleSearch() {
+        withAnimation(.easeOut(duration: Motion.quick)) {
+            isSearching.toggle()
+        }
+        if isSearching {
+            searchFocused = true
+        } else {
+            query = ""
+            searchFocused = false
+        }
+    }
+
+    private func periodName(_ period: DictationCloud.Period) -> LocalizedStringKey {
+        switch period {
+        case .today: return "Today"
+        case .yesterday: return "Yesterday"
+        case .week: return "This week"
+        case .older: return "Older"
+        }
     }
 
     /// The feature's switch, observed so the content dims and unlocks as it moves
@@ -124,21 +353,17 @@ struct HistoryView: View {
 
     // MARK: - List
 
-    /// WHY `.searchable` sits on the list and not on the whole screen: the field has
-    /// nothing to search on the locked and empty states, and a search bar above
-    /// "No transcriptions yet" would promise something the screen cannot do.
+    /// The search's results, while a query is typed in the period bar's field.
     ///
-    /// WHY the no-results state is an overlay on the empty `List` rather than a
-    /// view swapped in for it: swapping would tear down the view that owns the
-    /// search field, and the field would lose focus on the keystroke that empties
-    /// the results.
+    /// WHY the no-results state is an overlay on the empty `List` rather than a view
+    /// swapped in for it: the list keeps its place while the results come and go.
     private var recordList: some View {
         List {
             recordRows
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .searchable(text: $query, prompt: Text("Search transcriptions"))
+        .scrollDismissesKeyboard(.immediately)
         .overlay {
             if showsNoResults {
                 noResultsState
@@ -376,7 +601,7 @@ struct HistoryCard: View {
                     Image(systemName: ProFeature.voiceNotes.icon)
                         .accessibilityLabel(Text("Voice note"))
                 }
-                Text(dateLabel)
+                Text(record.shortDateLabel)
                 Text("·")
                 Text(record.languageBadge)
                 Text("·")
@@ -389,21 +614,6 @@ struct HistoryCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .ouisprGlass()
-    }
-
-    /// Today reads as a time, this year as a day and month, anything older carries
-    /// the year. Formatted by Foundation rather than by a string in the catalogue:
-    /// the order of the parts and the month's abbreviation are the user's locale's
-    /// business, not a translation.
-    private var dateLabel: String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(record.createdAt) {
-            return record.createdAt.formatted(date: .omitted, time: .shortened)
-        }
-        if calendar.isDate(record.createdAt, equalTo: Date(), toGranularity: .year) {
-            return record.createdAt.formatted(.dateTime.day().month(.abbreviated))
-        }
-        return record.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
     }
 }
 

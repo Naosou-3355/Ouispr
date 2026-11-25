@@ -17,6 +17,7 @@ import SwiftUI
 public struct RevealingText: View {
     private let text: String
     private let plan: WordRevealPlan
+    private let font: Font
 
     @State private var isShown = false
 
@@ -29,9 +30,15 @@ public struct RevealingText: View {
     /// line of the mock-ups at the default text size.
     @ScaledMetric(relativeTo: .title) private var lineSpacing: CGFloat = 1
 
-    public init(_ text: String) {
+    /// - Parameters:
+    ///   - font: the recording screen's dictation font by default; the cards of Home and
+    ///     the history pass their own, with the gap between words that goes with it.
+    public init(_ text: String, font: Font = .ouisprDictation, wordSpacing: CGFloat = 7, lineSpacing: CGFloat = 1) {
         self.text = text
         self.plan = WordRevealPlan(text: text)
+        self.font = font
+        _wordSpacing = ScaledMetric(wrappedValue: wordSpacing, relativeTo: .title)
+        _lineSpacing = ScaledMetric(wrappedValue: lineSpacing, relativeTo: .title)
     }
 
     public var body: some View {
@@ -40,7 +47,7 @@ public struct RevealingText: View {
                 words
             } else {
                 Text(verbatim: text)
-                    .font(.ouisprDictation)
+                    .font(font)
                     .lineSpacing(lineSpacing)
                     .multilineTextAlignment(.leading)
                     .opacity(isShown ? 1 : 0)
@@ -60,7 +67,7 @@ public struct RevealingText: View {
                 switch item.token {
                 case .word(let word):
                     Text(verbatim: word)
-                        .font(.ouisprDictation)
+                        .font(font)
                         .fixedSize(horizontal: false, vertical: true)
                         .opacity(isShown ? 1 : 0)
                         .blur(radius: isShown ? 0 : 6)

@@ -7,7 +7,7 @@
 
 ## Sub-features
 
-- `dictation.start-in-app`: The round mic at the bottom of Home (VoiceOver « Nouvelle dictée », #788) opens a full-screen recording.
+- `dictation.start-in-app`: The round ink mic on Home (VoiceOver « Nouvelle dictée », #788) opens a full-screen recording. The mic flies to the recording screen's control row, at 75 % of its height: ✕ on its left while it runs; copy on its left and share on its right with a result (bare ink pictograms on 44 pt targets). The mic is always a full disc; the stop square is drawn inside it.
 - `dictation.copy-last`: The last transcription card copies its text on tap.
 - `dictation.download-prompt`: Without a model, Home asks to download one instead of offering a dictation.
 - `dictation.from-widget`: A dictation started from the widget opens the same in-app recording.

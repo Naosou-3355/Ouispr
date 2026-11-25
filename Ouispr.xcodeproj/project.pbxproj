@@ -17,13 +17,14 @@
 		RT5930000001 /* ProTrialCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = RT5930100001 /* ProTrialCoordinator.swift */; };
 		SS000002 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS100002 /* PaywallView.swift */; };
 		AA361014 /* SmartModeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA361013 /* SmartModeListView.swift */; };
-		AA489002 /* HomeSmartModeRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA489001 /* HomeSmartModeRing.swift */; };
+		AA489002 /* HomeModeMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA489001 /* HomeModeMenu.swift */; };
 		AA800081 /* VocabularyListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA800181 /* VocabularyListView.swift */; };
 		AA512071 /* VocabularySuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA512171 /* VocabularySuggestionsView.swift */; };
 		AA512079 /* VocabularyPairReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA512179 /* VocabularyPairReviewView.swift */; };
 		AA512072 /* VocabularySuggestionDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA512172 /* VocabularySuggestionDictionary.swift */; };
 		SS000009 /* PaywallPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SS100009 /* PaywallPresentation.swift */; };
 		PS250000001 /* ProSheen.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS250100001 /* ProSheen.swift */; };
+		DC250000001 /* DictationCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC250100001 /* DictationCards.swift */; };
 		PS250000002 /* ProWindowSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS250100002 /* ProWindowSections.swift */; };
 		AA700070 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA700170 /* HistoryView.swift */; };
 		AA7C0071 /* DictationCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C0171 /* DictationCollectionView.swift */; };
@@ -430,13 +431,14 @@
 		RT5930100001 /* ProTrialCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProTrialCoordinator.swift; sourceTree = "<group>"; };
 		SS100002 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		AA361013 /* SmartModeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartModeListView.swift; sourceTree = "<group>"; };
-		AA489001 /* HomeSmartModeRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSmartModeRing.swift; sourceTree = "<group>"; };
+		AA489001 /* HomeModeMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModeMenu.swift; sourceTree = "<group>"; };
 		AA800181 /* VocabularyListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyListView.swift; sourceTree = "<group>"; };
 		AA512171 /* VocabularySuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularySuggestionsView.swift; sourceTree = "<group>"; };
 		AA512179 /* VocabularyPairReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyPairReviewView.swift; sourceTree = "<group>"; };
 		AA512172 /* VocabularySuggestionDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularySuggestionDictionary.swift; sourceTree = "<group>"; };
 		SS100009 /* PaywallPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallPresentation.swift; sourceTree = "<group>"; };
 		PS250100001 /* ProSheen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProSheen.swift; sourceTree = "<group>"; };
+		DC250100001 /* DictationCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCards.swift; sourceTree = "<group>"; };
 		PS250100002 /* ProWindowSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProWindowSections.swift; sourceTree = "<group>"; };
 		AA700170 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		AA7C0171 /* DictationCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCollectionView.swift; sourceTree = "<group>"; };
@@ -751,13 +753,14 @@
 				AA100484 /* ModelPreparationPresentation.swift */,
 				SS100002 /* PaywallView.swift */,
 				AA361013 /* SmartModeListView.swift */,
-				AA489001 /* HomeSmartModeRing.swift */,
+				AA489001 /* HomeModeMenu.swift */,
 				AA800181 /* VocabularyListView.swift */,
 				AA512171 /* VocabularySuggestionsView.swift */,
 				AA512179 /* VocabularyPairReviewView.swift */,
 				AA512172 /* VocabularySuggestionDictionary.swift */,
 				SS100009 /* PaywallPresentation.swift */,
 				PS250100001 /* ProSheen.swift */,
+				DC250100001 /* DictationCards.swift */,
 				PS250100002 /* ProWindowSections.swift */,
 				AA700170 /* HistoryView.swift */,
 				AA7C0171 /* DictationCollectionView.swift */,
@@ -1419,13 +1422,14 @@
 				RT5930000001 /* ProTrialCoordinator.swift in Sources */,
 				SS000002 /* PaywallView.swift in Sources */,
 				AA361014 /* SmartModeListView.swift in Sources */,
-				AA489002 /* HomeSmartModeRing.swift in Sources */,
+				AA489002 /* HomeModeMenu.swift in Sources */,
 				AA800081 /* VocabularyListView.swift in Sources */,
 				AA512071 /* VocabularySuggestionsView.swift in Sources */,
 				AA512079 /* VocabularyPairReviewView.swift in Sources */,
 				AA512072 /* VocabularySuggestionDictionary.swift in Sources */,
 				SS000009 /* PaywallPresentation.swift in Sources */,
 				PS250000001 /* ProSheen.swift in Sources */,
+				DC250000001 /* DictationCards.swift in Sources */,
 				PS250000002 /* ProWindowSections.swift in Sources */,
 				AA700070 /* HistoryView.swift in Sources */,
 				AA7C0071 /* DictationCollectionView.swift in Sources */,

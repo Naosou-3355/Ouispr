@@ -1,86 +1,70 @@
 #if os(iOS)
 // OuisprCore/Sources/OuisprCore/Design/InkMicButton.swift
-// The app's mic: an ink disc carrying the logo's three bars, which melt into a stop square while it listens.
+// The app's mic: an ink disc carrying the logo's three bars, and a stop square inside it while it listens.
 import SwiftUI
 
 /// The round mic of Home and the recording screen, in the ink character's ink.
 ///
 /// Chosen by Alex on the bench of 25 Nov 2026 (« Le logo dans le bouton »). The disc
 /// carries the logo's three bars, still: the app's signature, not a second face, so
-/// nothing repeats the character drawn larger above it. Since the second bench of the
-/// same day (« Anneau », without its ring) the disc itself shrinks into the stop square
-/// while it listens.
+/// nothing repeats the character drawn larger above it. While it listens the bars give
+/// way to a stop square drawn inside the disc; the disc itself never shrinks, so the
+/// main action stays the one full shape on screen (Alex, Beta 45 feedback, 25 Nov 2026).
 ///
 /// WHY a view apart from `AnimatedMicButton`: the keyboard's pill keeps that one, with
 /// its accent and its glow, and its own reasons (#79, #510). The app's two screens no
 /// longer draw a sphere, and this is the button that matches what they draw instead.
 ///
 /// Sources: Apple, WWDC18 « Designing Fluid Interfaces » (one object keeps its identity
-/// from state to state: the bars become the square), Material 3 Expressive (buttons
-/// that change shape with their state).
+/// from state to state), Apple Voice Memos (the stop square inside the record button).
 public struct InkMicButton: View {
     /// What the dictation behind the button is doing.
     public enum Phase: Equatable {
         /// Ready: the three bars. A tap starts a dictation.
         case resting
-        /// Recording: the stop square. A tap ends the dictation.
+        /// Recording: the stop square, inside the disc. A tap ends the dictation.
         case listening
         /// Transcribing or cleaning up: the bars, faded. Not tappable.
         case working
     }
 
     public let phase: Phase
-    /// The armed Smart Mode's mark on the disc's corner, as `AnimatedMicButton` draws it.
-    public let badge: SmartModeBadge?
-    /// A resting glyph replacing the bars: the armed mode's, on Home (#489).
-    public let face: AnimatedMicButton.MicFace?
     public let showsPressFeedback: Bool
     public let onTap: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The disc. The slot around it stays `OuisprHalo.size`, the 92 pt the Smart Mode
-    /// dial and the mic anchor (#788) are laid out on.
+    /// The disc. The slot around it stays `OuisprHalo.size`, the 92 pt the mic anchor
+    /// (#788) is laid out on.
     public static let diameter: CGFloat = 72
 
     public init(phase: Phase,
-                badge: SmartModeBadge? = nil,
-                face: AnimatedMicButton.MicFace? = nil,
                 showsPressFeedback: Bool = true,
                 onTap: @escaping () -> Void) {
         self.phase = phase
-        self.badge = badge
-        self.face = face
         self.showsPressFeedback = showsPressFeedback
         self.onTap = onTap
     }
 
     public var body: some View {
-        Button(action: onTap) {
+        // Read here, not inside the keyframe closure, which runs off the main actor.
+        let still = reduceMotion
+        return Button(action: onTap) {
             ZStack {
-                // The ground under the disc: while the disc shrinks into the stop
-                // square, what is drawn beneath the button (the recording screen's ink
-                // drops) never shows around it.
+                // Always the full disc: the button stays the screen's main action at
+                // every stage, and the stop square is drawn inside it (Alex, retour
+                // Beta 45, 25 Nov 2026). No ring around it.
                 Circle()
-                    .fill(Color.ouisprBackground)
-                    .frame(width: Self.diameter, height: Self.diameter)
-                // No ring around it: Alex kept the « Anneau »'s disc that becomes the stop
-                // square but asked for the extra circle to go (25 Nov 2026).
-                InkMicCore(morph: phase == .listening && face == nil ? 1 : 0)
                     .fill(Color.ouisprInk)
                     .frame(width: Self.diameter, height: Self.diameter)
-                    .animation(morphAnimation, value: phase)
                 glyph
                     .foregroundStyle(Color.ouisprBackground)
                     .opacity(phase == .working ? 0.4 : 1)
-                if let badge {
-                    badgeView(badge)
-                }
             }
             // The bars' squash and stretch, on the disc as a whole: a press of the
             // character's own anticipation, never a loop.
             .keyframeAnimator(initialValue: CGSize(width: 1, height: 1), trigger: phase) { content, scale in
-                content.scaleEffect(reduceMotion ? CGSize(width: 1, height: 1) : scale)
+                content.scaleEffect(still ? CGSize(width: 1, height: 1) : scale)
             } keyframes: { _ in
                 KeyframeTrack(\.height) {
                     CubicKeyframe(phase == .listening ? 0.9 : 1.06, duration: 0.09)
@@ -99,106 +83,46 @@ public struct InkMicButton: View {
         .disabled(phase == .working)
     }
 
-    @ViewBuilder
+    /// The bars give way to the stop square, both inside the disc.
     private var glyph: some View {
-        if phase == .resting, let face {
-            VStack(spacing: 1) {
-                Image(systemName: face.symbol)
-                    .font(.system(size: 22, weight: .medium))
-                if let caption = face.caption {
-                    Text(verbatim: caption)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .lineLimit(1)
-                }
-            }
-        } else {
-            // The disc itself is the stop square while it listens: the bars give way.
-            InkMicBars(morph: 0)
+        let listening = phase == .listening
+        return ZStack {
+            InkMicBars()
                 .frame(width: 24, height: 24)
-                .scaleEffect(0.85)
-                .opacity(phase == .listening ? 0 : 1)
-                .animation(reduceMotion ? .easeOut(duration: Motion.quick) : .easeOut(duration: 0.18), value: phase)
+                .scaleEffect(listening ? 0.6 : 0.85)
+                .opacity(listening ? 0 : 1)
+            RoundedRectangle(cornerRadius: Self.stopCornerRadius, style: .continuous)
+                .frame(width: Self.stopSide, height: Self.stopSide)
+                .scaleEffect(listening ? 1 : 0.5)
+                .opacity(listening ? 1 : 0)
         }
+        .animation(glyphAnimation, value: phase)
     }
 
-    private var morphAnimation: Animation {
-        reduceMotion ? .easeOut(duration: Motion.quick) : .spring(response: 0.38, dampingFraction: 0.62)
-    }
+    /// The stop square inside the disc: about a third of it, Apple's Voice Memos ratio.
+    static let stopSide: CGFloat = 24
+    static let stopCornerRadius: CGFloat = 6
 
-    private func badgeView(_ badge: SmartModeBadge) -> some View {
-        Group {
-            switch badge {
-            case .symbol(let name):
-                Image(systemName: name)
-                    .font(.system(size: 12.5, weight: .semibold))
-            case .text(let value):
-                Text(value)
-                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .foregroundStyle(Color.ouisprInk)
-        .frame(width: 24, height: 24)
-        .background(Circle().fill(Color.ouisprBackground))
-        .overlay(Circle().stroke(Color.ouisprInk, lineWidth: 1.5))
-        .offset(x: 25, y: 25)
+    private var glyphAnimation: Animation {
+        reduceMotion ? .easeOut(duration: Motion.quick) : .spring(response: 0.32, dampingFraction: 0.72)
     }
 }
 
-/// The mic's disc at `morph` 0, a 30 pt rounded stop square at 1.
-/// Animatable, so the disc shrinks and squares off in one movement.
-struct InkMicCore: Shape {
-    var morph: Double
-
-    var animatableData: Double {
-        get { morph }
-        set { morph = newValue }
-    }
-
+/// The logo's three bars (heights 18 / 42 / 27, capsule ends), in a 24 pt box.
+struct InkMicBars: Shape {
     func path(in rect: CGRect) -> Path {
-        // Past 1 under the spring's overshoot, held so the square never turns inside out.
-        let m = max(-0.1, min(1.1, morph))
-        let full = min(rect.width, rect.height)
-        let side = full + (30 - full) * m
-        let radius = max(2, side / 2 + (8 - side / 2) * min(1, max(0, m)))
-        let square = CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side)
-        return Path(roundedRect: square, cornerRadius: min(radius, side / 2), style: .continuous)
-    }
-}
-
-/// The logo's three bars (heights 18 / 42 / 27, capsule ends) at `morph` 0, the three
-/// thirds of a rounded stop square at 1. Animatable, so the bars slide and grow into
-/// the square rather than cross-fade.
-public struct InkMicBars: Shape {
-    public var morph: Double
-
-    public init(morph: Double) {
-        self.morph = morph
-    }
-
-    public var animatableData: Double {
-        get { morph }
-        set { morph = newValue }
-    }
-
-    public func path(in rect: CGRect) -> Path {
-        // In a 24 pt box: the logo's bars at 21.3 pt for the tallest, 5 pt wide,
-        // 9 pt apart; the square 18 pt, split in three overlapping thirds.
+        // The tallest bar 21.3 pt, 5 pt wide, 9 pt apart.
         let unit = min(rect.width, rect.height) / 24
         let heights = [9.1, 21.3, 13.7]
-        let restX = [-9.0, 0, 9.0]
-        let squareX = [-6.0, 0, 6.0]
-        let m = max(0, min(1.2, morph))
+        let offsets = [-9.0, 0, 9.0]
         var path = Path()
         for k in 0..<3 {
-            let height = (heights[k] + (18 - heights[k]) * m) * unit
-            let width = (5 + (6.6 - 5) * m) * unit
-            let x = rect.midX + (restX[k] + (squareX[k] - restX[k]) * m) * unit
-            let radius = (2.5 + (1.6 - 2.5) * min(1, m)) * unit
+            let height = heights[k] * unit
+            let width = 5 * unit
+            let x = rect.midX + offsets[k] * unit
             path.addRoundedRect(
                 in: CGRect(x: x - width / 2, y: rect.midY - height / 2, width: width, height: height),
-                cornerSize: CGSize(width: radius, height: radius)
+                cornerSize: CGSize(width: width / 2, height: width / 2)
             )
         }
         return path
