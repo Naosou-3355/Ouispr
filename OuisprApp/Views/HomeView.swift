@@ -59,6 +59,10 @@ struct HomeView: View {
 
     /// A card on its way out of the character to the head of the first row.
     @State private var arrival: Arrival?
+    /// The character's drop, played on Home when a dictation comes back with a result:
+    /// the recording screen holds it (`RecordingView.sphereMood`) so that the card is
+    /// seen leaving the character, and not behind the screen that covered Home.
+    @State private var dropsCard = false
 
     /// The card lifted open, if any.
     @State private var openedCard: OpenedCardState?
@@ -129,7 +133,10 @@ struct HomeView: View {
             }
         }
         .padding()
-        .background(Color.ouisprBackground.ignoresSafeArea())
+        // The mist stops while a sheet or the paywall covers Home. Not under the recording
+        // screen: that screen fades out over it, and both mists, read off the clock, are
+        // then in the same place; a paused one would jump as it resumed.
+        .background(OuisprMist(isPaused: sheet != nil || showPaywall))
         // Home pushes nothing and has no title: an empty navigation bar would only
         // take 44 pt from the top of the app's single screen.
         .toolbar(.hidden, for: .navigationBar)
@@ -198,7 +205,9 @@ struct HomeView: View {
         .onChange(of: coordinator.status) { _, status in
             guard status == .idle else { return }
             refreshSmartMode()
-            updateRecent(animated: true)
+            // The recording screen hands the character over still in its working pose
+            // when it showed a result: the drop is then Home's to play.
+            updateRecent(animated: true, afterDrop: InkCharacterDriver.shared.settled == .working)
         }
         .onChange(of: history.records) { _, _ in
             if coordinator.status == .idle && sheet == nil { updateRecent(animated: false) }
@@ -299,7 +308,7 @@ struct HomeView: View {
         let side: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
         let away = coordinator.status != .idle
         return InkCharacterView(
-            mood: .resting,
+            mood: dropsCard ? .done : .resting,
             isPaused: away || sphereCover.isCovered,
             sharesMotion: true
         )
@@ -393,12 +402,15 @@ struct HomeView: View {
     /// card or the menu.
     private var isDriftPaused: Bool {
         // Held while a new card flies in, so it lands where its row will draw it.
+        // And while a sheet or the paywall hides Home: nothing on screen to draw.
         coordinator.status != .idle || sphereCover.isCovered || openedCard != nil || modeMenu != nil
-            || arrival != nil
+            || arrival != nil || sheet != nil || showPaywall
     }
 
-    /// Show the latest five. A new head card arrives from the character when `animated`.
-    private func updateRecent(animated: Bool) {
+    /// Show the latest five. A new head card arrives from the character when `animated`;
+    /// `afterDrop`, it leaves at the moment the character's drop breaks (0.34 s into the
+    /// 0.8 s drop), and the row takes it in only then.
+    private func updateRecent(animated: Bool, afterDrop: Bool = false) {
         let latest = Array(history.records.prefix(5))
         guard latest.map(\.id) != recent.map(\.id) else {
             recent = latest
@@ -409,8 +421,23 @@ struct HomeView: View {
             recent = latest
             return
         }
-        recent = latest
-        arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
+        let launch = {
+            recent = latest
+            arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
+        }
+        guard afterDrop, !reduceMotion else {
+            launch()
+            return
+        }
+        dropsCard = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + InkGeometry.dropBreakTime) {
+            guard dropsCard else { return }
+            launch()
+        }
+        // The drop done, the laughing eyes close back into the resting ones.
+        DispatchQueue.main.asyncAfter(deadline: .now() + InkGeometry.dropDuration) {
+            dropsCard = false
+        }
     }
 
     /// The card coming out of the character, drawn over the screen until it lands on
@@ -507,7 +534,7 @@ struct HomeView: View {
         // VoiceOver hears the mode the dictation will run as the value (#397).
         .accessibilityLabel("New dictation")
         .accessibilityValue(smartModeMic.isOffered
-                            ? Text(HomeSmartModeCopy.spokenName(of: smartModeMic.effectiveMode))
+                            ? Text(HomeSmartModeCopy.name(of: smartModeMic.effectiveMode))
                             : Text(verbatim: ""))
         .accessibilityIdentifier("home.newDictation")
         // The recording screen's mic leaves from here and comes back here (#788).

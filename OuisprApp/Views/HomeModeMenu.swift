@@ -27,7 +27,7 @@ struct HomeModeButton: View {
         }
         .buttonStyle(GlassPressStyle())
         .accessibilityLabel("Dictation mode")
-        .accessibilityValue(Text(HomeSmartModeCopy.spokenName(of: mode)))
+        .accessibilityValue(Text(HomeSmartModeCopy.name(of: mode)))
         .accessibilityIdentifier("home.mode")
     }
 }
@@ -42,9 +42,9 @@ struct HomeModeButton: View {
 /// Anchored on the button's top-left corner, so it grows out of the button rather than
 /// appearing over it: a spring of 0.36 s, a fade under Reduce Motion.
 ///
-/// Not here, on purpose: the bench's « Style » selector at the foot (Formel, Décontracté,
-/// Très décontracté). The polish has no style to choose yet, and a selector that changes
-/// nothing would be a lie.
+/// At its foot, the transcription style (Formel, Décontracté, Très décontracté, #18):
+/// the same setting as Réglages → Style de transcription, drawn as the history's period
+/// bar. It applies to every dictation, the mode or none.
 struct HomeModeMenu: View {
     let picker: SmartModeHomePicker
     let defaultIdentifier: String?
@@ -52,6 +52,8 @@ struct HomeModeMenu: View {
     let onSetDefault: (SmartModeFanEntry) -> Void
     let onClose: () -> Void
 
+    @AppStorage(SharedKeys.transcriptionStyle, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var transcriptionStyle: TranscriptionStyle = .defaultStyle
     @State private var expanded = false
     /// The row just made the default, for the line that confirms it.
     @State private var confirmedDefault: SmartModeFanEntry?
@@ -76,6 +78,16 @@ struct HomeModeMenu: View {
                     row(entry)
                 }
                 footer
+                GlassSegmentedBar(
+                    items: TranscriptionStyle.allCases,
+                    selection: $transcriptionStyle,
+                    title: { Text(TranscriptionStylePicker.title(for: $0)) },
+                    identifier: { "home.style.\($0.rawValue)" },
+                    height: 48
+                )
+                .padding(.top, 4)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text("Transcription style"))
             }
             .padding(6)
             .frame(width: Self.width, alignment: .leading)
@@ -223,25 +235,24 @@ struct HomeModeLine: View {
 /// The words the mode button, its menu and the mic's VoiceOver value share.
 enum HomeSmartModeCopy {
 
-    /// A mode's short name, the fan's: "→ EN", "List", or "Normal".
+    /// A mode's name as Home and Réglages show it: « Rédigé », « Liste »,
+    /// « Traduire → EN », or « Aucun » for no mode.
+    ///
+    /// Not the fan's names: the keyboard's 46 pt rows keep « → EN » and « Normal »,
+    /// while a menu row has the width for a verb (validated sheet, 25 Nov 2026). Only
+    /// the display changes; the stored identifiers do not.
     static func name(of mode: SmartMode?) -> String {
-        mode?.localizedDisplayName
+        mode.map(SmartModeListView.listName(for:))
             ?? String(
-                localized: "Normal",
-                comment: "The Smart Mode fan row that clears the armed mode and returns to the free polish."
+                localized: "None",
+                comment: "Home's mode menu and Réglages: the row that arms no Smart Mode, so the dictation goes in as said."
             )
     }
 
-    /// A ring sector's name, the Ouispr Pro row included.
+    /// A menu row's name, the Ouispr Pro row included.
     static func shortName(of entry: SmartModeFanEntry) -> String {
         if case .pro = entry { return "Ouispr Pro" }
         return name(of: entry.smartMode)
-    }
-
-    /// The name VoiceOver reads: the mode list's, where a translation is "Translate → EN"
-    /// rather than an arrow and two letters.
-    static func spokenName(of mode: SmartMode?) -> String {
-        mode.map(SmartModeListView.listName(for:)) ?? name(of: nil)
     }
 
     /// The word a fan tag says. Nil for the effective row and for no tag.

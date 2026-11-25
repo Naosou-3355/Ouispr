@@ -107,6 +107,11 @@ struct DriftingCardRow: View {
     var menu: ((TranscriptionRecord) -> AnyView)?
 
     @State private var engine = DriftEngine()
+    /// Whether the finger is on the row, or its flick still runs: the frames then come at
+    /// the display's rate, so the row follows the finger.
+    @State private var isHandled = false
+    /// The last touch, so a release does not end the full rate of a later touch.
+    @State private var touchCount = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// VoiceOver cannot follow a card that moves under its cursor: the row stands still.
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -137,7 +142,11 @@ struct DriftingCardRow: View {
             let unit = max(layout.unit, 1)
             let copies = Int(((2 * unit + geo.size.width) / unit).rounded(.up)) + 1
             let still = isPaused || reduceMotion || voiceOver || scenePhase != .active
-            TimelineView(.animation(minimumInterval: nil, paused: still && !engine.isMoving)) { timeline in
+            // At rest the drift redraws 60 times a second, not at ProMotion's 120: at 10 pt/s
+            // a frame moves a sixth of a point either way, and Home stays on screen for
+            // minutes (Alex, 25 Nov 2026, after the Mac heated up under the simulators).
+            TimelineView(.animation(minimumInterval: isHandled ? nil : 1.0 / 60,
+                                    paused: still && !engine.isMoving && !isHandled)) { timeline in
                 let x = CGFloat(engine.offset(at: timeline.date.timeIntervalSinceReferenceDate,
                                               unit: Double(unit), direction: direction,
                                               speedFactor: speedFactor, drifting: !still))
@@ -201,11 +210,21 @@ struct DriftingCardRow: View {
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if !isHandled {
+                    isHandled = true
+                    touchCount += 1
+                }
                 engine.hold(translation: Double(value.translation.width))
             }
             .onEnded { value in
                 engine.release(velocity: Double(value.velocity.width),
                                now: Date().timeIntervalSinceReferenceDate)
+                // A flick dies down in about 2 s (`DriftTrack`'s decay); the full rate
+                // holds until then.
+                let touch = touchCount
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    if touchCount == touch { isHandled = false }
+                }
             }
     }
 }

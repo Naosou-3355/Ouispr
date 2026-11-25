@@ -55,7 +55,6 @@ struct HistoryView: View {
     /// The card lifted open, if any.
     @State private var openedCard: OpenedCardState?
 
-    @Namespace private var periodIndicator
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Opens the Ouispr Pro window from the "older dictations" row, on its history.
@@ -118,7 +117,7 @@ struct HistoryView: View {
                 cloud
             }
         }
-        .background(Color.ouisprBackground.ignoresSafeArea())
+        .background(OuisprMist(isPaused: selection != nil || showsPaywall))
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $selection) { record in
@@ -202,7 +201,7 @@ struct HistoryView: View {
                             records: row,
                             direction: index.isMultiple(of: 2) ? -1 : 1,
                             speedFactor: index.isMultiple(of: 2) ? 1 : 0.8,
-                            isPaused: openedCard != nil,
+                            isPaused: openedCard != nil || selection != nil || showsPaywall,
                             openID: openedCard?.record.id,
                             onOpen: { record, frame in
                                 guard isAvailable else { return }
@@ -267,39 +266,12 @@ struct HistoryView: View {
     }
 
     private var periodCapsule: some View {
-        HStack(spacing: 0) {
-            ForEach(DictationCloud.Period.allCases) { item in
-                let selected = item == shownPeriod
-                Button {
-                    withAnimation(reduceMotion ? .easeOut(duration: Motion.quick)
-                                               : .spring(response: 0.32, dampingFraction: 0.72)) {
-                        period = item
-                    }
-                } label: {
-                    Text(periodName(item))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(selected ? Color.ouisprTextPrimary : Color.ouisprTextSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .padding(.horizontal, 8)
-                        .frame(minWidth: 52, maxWidth: .infinity, minHeight: 44)
-                        .background {
-                            if selected {
-                                Capsule()
-                                    .fill(Color.primary.opacity(0.07))
-                                    .matchedGeometryEffect(id: "period", in: periodIndicator)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(GlassPressStyle())
-                .accessibilityAddTraits(selected ? .isSelected : [])
-                .accessibilityIdentifier("history.period.\(item.rawValue)")
-            }
-        }
-        .padding(4)
-        .frame(height: 52)
-        .ouisprGlass(in: Capsule())
+        GlassSegmentedBar(
+            items: DictationCloud.Period.allCases,
+            selection: Binding(get: { shownPeriod }, set: { period = $0 }),
+            title: { Text(periodName($0)) },
+            identifier: { "history.period.\($0.rawValue)" }
+        )
     }
 
     private var searchCapsule: some View {

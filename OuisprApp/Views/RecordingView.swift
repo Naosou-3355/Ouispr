@@ -146,8 +146,7 @@ struct RecordingView: View {
 
     var body: some View {
         ZStack {
-            Color.ouisprBackground
-                .ignoresSafeArea()
+            OuisprMist()
                 .opacity(contentOpacity)
 
             // The reader is only there for the bottom edge of the safe area, in the window
@@ -438,6 +437,9 @@ struct RecordingView: View {
                 levels: coordinator.levels,
                 mood: sphereMood,
                 listening: displayedStatus == .recording,
+                // Still while the result holds the working pose: a moving crest would
+                // read as « still working ».
+                isPaused: mode == .standalone && showResult,
                 sharesMotion: mode == .standalone
             )
                 .frame(width: frame.width, height: frame.height)
@@ -453,7 +455,11 @@ struct RecordingView: View {
         case .transcribing, .processing:
             return .working
         case .idle, .requested, .ready, .failed:
-            return showResult ? .done : .resting
+            // In the app, the result holds the working pose, still: the drop is played
+            // on Home once this screen has gone, where the new card is seen leaving the
+            // character (Alex, 25 Nov 2026). The onboarding stays here and drops here.
+            guard showResult else { return .resting }
+            return mode == .standalone ? .working : .done
         }
     }
 
@@ -813,12 +819,14 @@ private struct LevelDrivenSphere: View {
     @ObservedObject var levels: DictationLevels
     let mood: ParticleSphereMood
     let listening: Bool
+    var isPaused = false
     let sharesMotion: Bool
 
     var body: some View {
         InkCharacterView(
             mood: mood,
             voiceLevel: listening ? levels.recentPeak : 0,
+            isPaused: isPaused,
             sharesMotion: sharesMotion
         )
     }

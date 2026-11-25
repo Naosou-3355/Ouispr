@@ -628,10 +628,16 @@
     "Structured" : {
       "comment" : "Name of the Smart Mode that rewrites a long dictation as clear written paragraphs (#523).",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Written"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Structuré"
+            "value" : "Rédigé"
           }
         }
       }
