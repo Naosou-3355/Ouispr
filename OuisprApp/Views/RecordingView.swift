@@ -100,6 +100,13 @@ struct RecordingView: View {
     /// A change of stage: the controls, the stage label and the error.
     private static let stageAnimation = Animation.smooth(duration: Motion.standard)
 
+    /// The top row with its padding: the close button's 44 pt and 8 pt above it.
+    private static let topRowHeight: CGFloat = 52
+
+    /// From the bottom of Home's character frame to the top of its heading: the frame's
+    /// 16 pt of padding and the 24 pt spacing of Home's stack (`HomeView.dashboardCards`).
+    private static let homeHeadingGap: CGFloat = 40
+
     /// Height of the slot the mic / stop button is centred in.
     private static let micSlotHeight: CGFloat = 100
 
@@ -124,20 +131,36 @@ struct RecordingView: View {
                 VStack(spacing: 0) {
                     topRow
                         .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.top, Self.topRowHeight - 44)
                         .opacity(contentOpacity)
 
-                    // The same sphere as on Home, a little smaller to leave the text
-                    // its room. It never leaves: only its mood changes.
-                    // It shares Home's motion, so it arrives turned as Home's was. The
-                    // slot keeps the layout; the sphere is drawn over it, so it can start
-                    // and end its flight on Home's spot.
-                    Color.clear
-                        .aspectRatio(1, contentMode: .fit)
-                        .frame(maxWidth: 200, maxHeight: 200)
-                        .overlay { travellingSphere }
-                        .padding(.top, 28)
-                        .padding(.bottom, 16)
+                    // The character, and the stage written under it.
+                    //
+                    // From Home it stays exactly where Home drew it, at the same size, for
+                    // the whole dictation, and the stage takes the place of « Prêt à
+                    // dicter » (Alex, 25 Nov 2026: in the first build it climbed to the top
+                    // and shrank by 17 %, and the stage sat in the top bar). The slot runs
+                    // from under the top row to where Home's heading starts; the character
+                    // is drawn over it on Home's spot.
+                    //
+                    // Without a Home to line up on (onboarding, a launch that never drew
+                    // Home), the screen keeps its own 200 pt slot.
+                    if let home = homeSpot {
+                        Color.clear
+                            .frame(height: max(0, home.maxY + Self.homeHeadingGap - geo.frame(in: .global).minY - Self.topRowHeight))
+                            .overlay { travellingSphere }
+                    } else {
+                        Color.clear
+                            .aspectRatio(1, contentMode: .fit)
+                            .frame(maxWidth: 200, maxHeight: 200)
+                            .overlay { travellingSphere }
+                            .padding(.top, 28)
+                            .padding(.bottom, 16)
+                    }
+
+                    stageLabel
+                        .frame(height: 34)
+                        .opacity(contentOpacity)
 
                     // MARK: - Text zone (between the sphere and the controls)
                     // WHY flexible: it is the one zone allowed to give height back, so
@@ -251,17 +274,18 @@ struct RecordingView: View {
 
     // MARK: - Top Row
 
-    /// The close button on the left (standalone only) and the stage label, centred.
+    /// The close button on the left (standalone only). The stage label is no longer
+    /// here: it is written under the character, where Home writes « Prêt à dicter ».
     private var topRow: some View {
         ZStack {
             HStack {
                 if mode == .standalone {
                     Button(action: cancelOrClose) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color.ouisprTextPrimary)
+                            .font(.system(size: 19, weight: .medium))
+                            .foregroundStyle(Color.ouisprInk)
                             .frame(width: 44, height: 44)
-                            .ouisprGlass(in: Circle())
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(GlassPressStyle())
                     .accessibilityLabel("Close")
@@ -274,7 +298,6 @@ struct RecordingView: View {
                 }
                 Spacer()
             }
-            stageLabel
         }
         .frame(height: 44)
     }
@@ -335,12 +358,15 @@ struct RecordingView: View {
                 .frame(width: 8, height: 8)
                 .accessibilityHidden(true)
             Text(text)
-                .foregroundStyle(Color.ouisprTextSecondary)
+                .foregroundStyle(Color.ouisprTextPrimary)
             if showsElapsedTime {
                 ElapsedTimeText(levels: coordinator.levels)
             }
         }
-        .font(.ouisprStageLabel)
+        // Home's heading, since the label takes its place.
+        .font(.ouisprHeading)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
         .accessibilityElement(children: .combine)
     }
 
@@ -352,9 +378,17 @@ struct RecordingView: View {
         mode == .standalone && !reduceMotion && homeSphere.homeFrame != nil
     }
 
-    /// Whether the sphere has to sit on Home's spot: the first frame, and the way out.
+    /// Whether the sphere has to sit on Home's spot: always when there is one, since the
+    /// character no longer moves for a dictation; otherwise the first frame and the way
+    /// out.
     private var sphereAtHome: Bool {
-        sphereFlies && (!appeared || isDismissing)
+        homeSpot != nil || (sphereFlies && (!appeared || isDismissing))
+    }
+
+    /// Home's character frame, in window coordinates, when this screen lines up on it.
+    private var homeSpot: CGRect? {
+        guard mode == .standalone, let home = homeSphere.homeFrame, home.width > 0, home.height > 0 else { return nil }
+        return home
     }
 
     /// Everything but the sphere: transparent on the first frame and on the way out,
@@ -440,30 +474,27 @@ struct RecordingView: View {
             // Neutral, not alarming: a failed dictation is not a danger, and red is the
             // colour this screen keeps for "recording" (audit, 22 Nov 2026). The reason,
             // then the way forward.
-            VStack(spacing: 14) {
-                Image(systemName: "exclamationmark.circle")
-                    .font(.system(size: 28, weight: .regular))
-                    .foregroundStyle(Color.ouisprTextSecondary)
-                    .accessibilityHidden(true)
+            // One style, the screen's own: the reason in body text, the way forward as
+            // a word in ink. No icon, no tinted pill (Alex, 25 Nov 2026).
+            VStack(spacing: 10) {
                 Text(error)
                     .font(.ouisprBody)
                     .foregroundStyle(Color.ouisprTextPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
                 Button(action: retryAfterError) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 15, weight: .semibold))
                         Text("Retry")
-                            .font(.ouisprBody)
+                            .font(.ouisprBody.weight(.semibold))
                     }
-                    .foregroundStyle(Color.ouisprAccent)
-                    .padding(.horizontal, 22)
-                    .frame(minHeight: 48)
-                    .ouisprGlassBar()
+                    .foregroundStyle(Color.ouisprInk)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(GlassPressStyle())
-                .padding(.top, 4)
             }
             .transition(stageTransition)
         } else {
@@ -510,27 +541,24 @@ struct RecordingView: View {
 
     @ViewBuilder
     private var controlsContent: some View {
+        // One row in every stage, the mic in its centre, so nothing moves: only the
+        // glyphs beside it and the mic's own face change.
         if displayedStatus == .recording {
             HStack(spacing: 28) {
                 sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
-                listeningMicButton
+                InkMicButton(phase: .listening, onTap: stopRecording)
+                    .accessibilityLabel("Stop recording")
                 sideButton(symbol: "checkmark", label: "Stop recording", action: stopRecording)
             }
         } else if isPostRecordingStage {
-            // The cleaning stage can last several seconds: the way out stays in reach.
-            Button(action: cancelOrClose) {
-                HStack(spacing: 8) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .semibold))
-                    Text("Cancel")
-                        .font(.ouisprBody)
-                }
-                .foregroundStyle(Color.ouisprTextPrimary)
-                .padding(.horizontal, 22)
-                .frame(minHeight: 52)
-                .ouisprGlassBar()
+            // The cleaning stage can last several seconds: the way out stays in reach,
+            // as the same cross as while listening.
+            HStack(spacing: 28) {
+                sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
+                InkMicButton(phase: .working) {}
+                    .accessibilityHidden(true)
+                sideButtonPlaceholder
             }
-            .buttonStyle(GlassPressStyle())
         } else {
             // Idle / result state: mic button ready for (new) recording, with the
             // two things a result is for on either side of it.
@@ -540,7 +568,7 @@ struct RecordingView: View {
                 } else {
                     sideButtonPlaceholder
                 }
-                AnimatedMicButton(status: .idle) {
+                InkMicButton(phase: .resting) {
                     startRecording()
                 }
                 .accessibilityLabel("New dictation")
@@ -564,24 +592,6 @@ struct RecordingView: View {
         return transcriptionResult
     }
 
-    /// The mic while it listens: the sphere's gradient, and a tap ends the dictation,
-    /// as the checkmark next to it does.
-    private var listeningMicButton: some View {
-        Button(action: stopRecording) {
-            ZStack {
-                OuisprHalo(isPill: false, color: .ouisprRecording, opacity: 0.5, lineWidth: 2)
-                Circle()
-                    .fill(OuisprSphereGradient.linear)
-                    .frame(width: 72, height: 72)
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(.white)
-            }
-        }
-        .buttonStyle(GlassPressStyle())
-        .accessibilityLabel("Stop recording")
-    }
-
     private func sideButton(symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             sideButtonFace(symbol: symbol)
@@ -590,12 +600,14 @@ struct RecordingView: View {
         .accessibilityLabel(label)
     }
 
+    /// A bare glyph in ink, on a 52 pt target (Apple's minimum is 44): no disc, no
+    /// shadow, one style for every control beside the mic (Alex's 4A, 25 Nov 2026).
     private func sideButtonFace(symbol: String) -> some View {
         Image(systemName: symbol)
-            .font(.system(size: 19, weight: .medium))
-            .foregroundStyle(Color.ouisprTextPrimary)
+            .font(.system(size: 21, weight: .medium))
+            .foregroundStyle(Color.ouisprInk)
             .frame(width: 52, height: 52)
-            .ouisprGlass(in: Circle())
+            .contentShape(Rectangle())
     }
 
     /// Takes a side button's room, so the mic stays centred when there is none.

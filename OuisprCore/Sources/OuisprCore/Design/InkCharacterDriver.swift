@@ -150,7 +150,10 @@ public final class InkCharacterDriver {
             let base = InkGeometry.baseHeights[k] / 42
             let lag = [0.09, 0, 0.05][k]
             let wobble = 0.86 + 0.14 * sin(clock * [5.1, 6.3, 4.4][k] + Double(k) * 1.9)
-            let level = reduceMotion ? base * 0.8 : base * (0.5 + 0.8 * past(lag) * wobble)
+            // Alex's 2B (25 Nov 2026): the voice is amplified and its peaks softened, so
+            // the wave lies almost flat in silence and plainly rises with speech.
+            let voiced = pow(clamp01(1.5 * past(lag)), 0.75)
+            let level = reduceMotion ? base * 0.8 : base * (0.35 + 1.35 * voiced * wobble)
             levels[k].target = listening ? level : base * 0.5
             if onset > 0, k == 1, !reduceMotion { levels[k].kick(1.2 * onset) }
             if reduceMotion { levels[k].settle() } else { levels[k].step(dt) }

@@ -494,7 +494,9 @@ struct HomeView: View {
 
     /// The round mic that starts a dictation. Only shown when a model is ready.
     ///
-    /// WHY `AnimatedMicButton` (#788): the onboarding and the recording screen already
+    /// Since 25 Nov 2026 the ink mic (`InkMicButton`), the recording screen's own.
+    ///
+    /// WHY `AnimatedMicButton` at first (#788): the onboarding and the recording screen already
     /// draw their mic with it, so the home action is the same object the user taps on
     /// the next screen. Its status is pinned to `.idle`: as soon as a dictation starts,
     /// MainTabView covers this screen with the recording overlay, which carries the
@@ -511,8 +513,9 @@ struct HomeView: View {
     /// the pushed TestDictationView is still there with its nav bar visible.
     /// A Button just starts dictation — the MainTabView overlay handles the full UI.
     private var newDictationButton: some View {
-        AnimatedMicButton(
-            status: .idle,
+        // The ink mic, the recording screen's own (bench of 25 Nov 2026).
+        InkMicButton(
+            phase: .resting,
             badge: ringSession == nil ? smartModeMic.effectiveMode?.badge : nil,
             face: micFace,
             showsPressFeedback: ringSession == nil

@@ -23,8 +23,11 @@ struct InkCharacterView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
-    /// The size the bench validated the character at: wave 107 pt wide, stroke 8 pt.
-    private static let referenceSide: CGFloat = 240
+    /// The side at which the character is drawn at the bench's size. 200 and not 240:
+    /// in Home's 240 pt frame that is the bench's character 20 % larger, Alex's 1A of
+    /// 25 Nov 2026 (eyes 22 pt tall, wave 128 pt wide, stroke 9.6 pt), every proportion
+    /// kept.
+    private static let referenceSide: CGFloat = 200
 
     init(mood: ParticleSphereMood, voiceLevel: Double = 0, isPaused: Bool = false, sharesMotion: Bool = false) {
         self.mood = mood
