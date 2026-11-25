@@ -206,11 +206,6 @@ struct SettingsView: View {
         #endif
     }
 
-    #if DEBUG
-    /// Redraw trigger for the forced-entitlement switch below, the same shape
-    /// `layoutRevision` uses above and for the same reason.
-    @State private var proEntitlementRevision = 0
-
     /// The rows Home's mode menu offers, minus Ouispr Pro, or nil when it offers no
     /// modes. Read once a visit: it asks Apple Intelligence about the device.
     @State private var defaultModeChoices: [SmartModeFanEntry]? = SettingsView.resolveDefaultModeChoices()
@@ -241,6 +236,11 @@ struct SettingsView: View {
             }
         )
     }
+
+    #if DEBUG
+    /// Redraw trigger for the forced-entitlement switch below, the same shape
+    /// `layoutRevision` uses above and for the same reason.
+    @State private var proEntitlementRevision = 0
 
     /// The Developer section's forced-entitlement switch (#460).
     ///
