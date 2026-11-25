@@ -43,9 +43,32 @@ public enum PremiumFlags {
     /// keyboard's static reads, and `ProTrialEnvironment.live`), never in the pure rules
     /// the tests drive.
     ///
-    /// A `var` only so the tests can switch it off to reach the locked branches;
-    /// nothing in the app writes it.
-    public static var proUnlocked = true
+    /// Settable only so the tests can switch it off to reach the locked branches;
+    /// nothing in the app writes it. The app's one way to read it false is
+    /// `previewsFreeVersion`.
+    public static var proUnlocked: Bool {
+        get { forkUnlocksPro && !previewsFreeVersion }
+        set { forkUnlocksPro = newValue }
+    }
+
+    /// The fork's own answer, before the preview below. True in every build.
+    private static var forkUnlocksPro = true
+
+    /// Ouispr: show the app as a free user sees it, Pro window and 7-day search
+    /// included (Pro offer, 25 Nov 2026).
+    ///
+    /// WHY it exists: `proUnlocked` reads as paid in every build, so without this the
+    /// sales side of the Pro window and the free limits could never be seen on the
+    /// one iPhone that runs the fork. Read at launch, because `ProStatusManager`
+    /// captures `proUnlocked` in its environment: the Settings row asks for a relaunch.
+    public static var previewsFreeVersion: Bool {
+        get { AppGroup.defaults.bool(forKey: SharedKeys.previewFreeVersion) }
+        set {
+            AppGroup.defaults.set(newValue, forKey: SharedKeys.previewFreeVersion)
+            // The keyboard is another process, same reason as the debug flag below.
+            AppGroup.defaults.synchronize()
+        }
+    }
 
     /// Last day of the lifetime founder window, or `nil` while it is not
     /// scheduled (#350).

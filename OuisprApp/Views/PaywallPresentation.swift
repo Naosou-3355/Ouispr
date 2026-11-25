@@ -25,10 +25,15 @@ extension View {
     ///
     /// `trialEnd` is set for the one presentation the app makes on its own, at the end
     /// of the reverse trial (#593, #837); every entry point the user taps keeps nil.
-    func paywallCover(isPresented: Binding<Bool>, trialEnd: ProTrialEndPaywall? = nil) -> some View {
+    ///
+    /// `entry` is the feature the user just touched, which the window leads with (Pro
+    /// offer, 25 Nov 2026); Settings and the end of the trial keep `.settings`.
+    func paywallCover(isPresented: Binding<Bool>,
+                      trialEnd: ProTrialEndPaywall? = nil,
+                      entry: ProWindowEntry = .settings) -> some View {
         fullScreenCover(isPresented: isPresented) {
             NavigationStack {
-                PaywallView(trialEnd: trialEnd)
+                PaywallView(trialEnd: trialEnd, entry: entry)
             }
             // A paywall hides whatever is under it, Home's sphere included.
             .coversHomeSphere()

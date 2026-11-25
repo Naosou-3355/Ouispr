@@ -47,22 +47,15 @@ public enum ProHomeCard {
                                activeFeatures: Int) -> ProHomeCardContent {
         // The flag gates the whole card, the DEBUG force included (#236).
         guard paywallVisible else { return .hidden }
-        // The trial's last-days reminder stays exactly as #593 made it. The promotion
-        // only returns it for an unpaid user, so a subscriber never sees it.
+        // Pro offer of 25 Nov 2026: the home screen no longer carries a Pro card.
+        // Pro lives in Settings and opens where a Pro feature is touched. The one
+        // exception is the trial's last-days reminder, kept exactly as #593 made it:
+        // the Pro window's trial timeline promises that reminder, and the home screen
+        // is where it is seen. The promotion only returns it for an unpaid user.
         if case .trialEnding(let daysLeft) = promotion {
             return .trialEnding(daysLeft: daysLeft)
         }
-        // Pro in hand, by purchase, by a trial with days to spare (decision 16, as
-        // answered on 2026-10-05) or by the DEBUG force: the calm card. Shown on any
-        // device; it sells nothing, so #593 decision 2 does not apply.
-        if isPaid || isEntitled {
-            return .member(activeFeatures: activeFeatures)
-        }
-        switch promotion {
-        case .hidden: return .hidden
-        case .upgrade: return .upgrade
-        case .trialEnding(let daysLeft): return .trialEnding(daysLeft: daysLeft)
-        }
+        return .hidden
     }
     // swiftlint:enable function_parameter_count
 }

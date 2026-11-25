@@ -302,7 +302,7 @@ struct MainTabView: View {
         // still runs for it: it is what marks the URL handled, and re-asserting the same
         // state is a no-op. It remains the only path for every URL that arrives while the
         // process is already alive.
-        .paywallCover(isPresented: $showsPaywall)
+        .paywallCover(isPresented: $showsPaywall, entry: .feature(.smartMode))
         // The preparation screen and the cold-start overlay replace Home without
         // being sheets; the voice note stack waits for them to go.
         // What's new replaces it too (#685).

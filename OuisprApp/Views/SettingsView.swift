@@ -162,6 +162,14 @@ struct SettingsView: View {
     /// Drives the Ouispr Pro hub's cover, opened by the one Ouispr Pro row (#216).
     @State private var showPaywall = false
 
+    /// The free-version preview (`PremiumFlags.previewsFreeVersion`), mirrored so the
+    /// switch redraws: the flag lives in the App Group, which publishes nothing.
+    @State private var previewsFreeVersion = PremiumFlags.previewsFreeVersion
+
+    /// The preview as this process started with it. A `static let` is read once, on
+    /// first use, which is before the switch can have moved in this process.
+    private static let previewedFreeVersionAtLaunch = PremiumFlags.previewsFreeVersion
+
     /// Whether the Ouispr Pro row renders at all (#236, #577, #216).
     ///
     /// `paywallVisible` decides what may be **sold**; this decides whether a user
@@ -264,6 +272,9 @@ struct SettingsView: View {
                             // the rows around it.
                             listDisclosureIndicator
                         }
+                        // The Pro signature, once per visit (Pro bench V1.1).
+                        .proSheen()
+                        .clipped()
                     }
                 }
             }
@@ -276,6 +287,17 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.models")
                 }
+            }
+
+            // The user's own terms are free since the Pro offer of 25 Nov 2026, so
+            // they need a way in that is not the Pro hub. The suggestions inside stay
+            // Pro, and the screen says so where they are.
+            Section {
+                NavigationLink("Vocabulary") {
+                    VocabularyListView()
+                        .environmentObject(proStatus)
+                }
+                .accessibilityIdentifier("settings.vocabulary")
             }
 
             // Section 1: Transcription
@@ -538,6 +560,18 @@ struct SettingsView: View {
                 // Opt-in collection of the user's own dictations, for a test bench.
                 NavigationLink("Collecte de dictées") {
                     DictationCollectionView()
+                }
+
+                // Ouispr reads as Pro in every build; this is the one way to see what a
+                // free user sees (Pro offer, 25 Nov 2026). Read at launch.
+                Toggle("Preview the free version", isOn: $previewsFreeVersion)
+                    .onChange(of: previewsFreeVersion) { _, preview in
+                        PremiumFlags.previewsFreeVersion = preview
+                    }
+                if previewsFreeVersion != Self.previewedFreeVersionAtLaunch {
+                    Text("Relaunch Ouispr to apply.")
+                        .font(.ouisprCaption)
+                        .foregroundColor(.secondary)
                 }
 
                 NavigationLink("Licenses") {

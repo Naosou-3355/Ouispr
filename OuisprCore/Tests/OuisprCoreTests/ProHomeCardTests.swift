@@ -17,33 +17,24 @@ final class ProHomeCardTests: XCTestCase {
                             isEntitled: isEntitled, trial: trial, activeFeatures: activeFeatures)
     }
 
-    func testFreeAndTrialKeepTodaysCard() {
-        XCTAssertEqual(content(promotion: .upgrade), .upgrade)
+    func testTheHomeScreenOnlyKeepsTheTrialsLastDaysReminder() {
+        // Pro offer of 25 Nov 2026: Pro lives in Settings and opens where a Pro
+        // feature is touched. The reminder stays, because the Pro window's trial
+        // timeline promises it.
         XCTAssertEqual(content(promotion: .trialEnding(daysLeft: 2), isEntitled: true,
                                trial: .running(endsAt: now.addingTimeInterval(86_400))), .trialEnding(daysLeft: 2))
-        // Early trial: the calm card (decision 16, answered 2026-10-05).
-        XCTAssertEqual(content(promotion: .hidden, isEntitled: true,
-                               trial: .running(endsAt: now.addingTimeInterval(10 * 86_400)), activeFeatures: 4),
-                       .member(activeFeatures: 4))
-        // A device that can never run Smart Modes, nothing owned: no promotion (#593).
+    }
+
+    func testNoUpgradeCardAndNoMemberCardAnyMore() {
+        XCTAssertEqual(content(promotion: .upgrade), .hidden)
         XCTAssertEqual(content(promotion: .hidden), .hidden)
-    }
-
-    func testAPayingUserGetsTheCalmCard() {
-        XCTAssertEqual(content(promotion: .hidden, isPaid: true, isEntitled: true, activeFeatures: 3),
-                       .member(activeFeatures: 3))
-        // Paid during a trial: the plan wins, as in the hub.
-        XCTAssertEqual(content(promotion: .hidden, isPaid: true, isEntitled: true,
-                               trial: .running(endsAt: now.addingTimeInterval(86_400)), activeFeatures: 4),
-                       .member(activeFeatures: 4))
-    }
-
-    func testTheDebugForceShowsTheCalmCardOnlyWithTheFlagUp() {
-        XCTAssertEqual(content(promotion: .hidden, isEntitled: true), .member(activeFeatures: 4))
-        XCTAssertEqual(content(paywallVisible: false, promotion: .hidden, isEntitled: true), .hidden)
+        XCTAssertEqual(content(promotion: .hidden, isEntitled: true,
+                               trial: .running(endsAt: now.addingTimeInterval(10 * 86_400))), .hidden)
+        XCTAssertEqual(content(promotion: .hidden, isPaid: true, isEntitled: true, activeFeatures: 3), .hidden)
     }
 
     func testNothingWithThePaywallHidden() {
+        XCTAssertEqual(content(paywallVisible: false, promotion: .trialEnding(daysLeft: 1)), .hidden)
         XCTAssertEqual(content(paywallVisible: false, promotion: .upgrade, isPaid: true, isEntitled: true), .hidden)
     }
 }

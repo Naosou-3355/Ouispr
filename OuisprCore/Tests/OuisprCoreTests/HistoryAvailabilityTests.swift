@@ -83,4 +83,12 @@ final class HistoryAvailabilityTests: XCTestCase {
         // the gate reading a key nothing writes.
         XCTAssertEqual(ProFeature.history.settingsKey, SharedKeys.historyEnabled)
     }
+
+    // MARK: - Pro offer of 25 Nov 2026
+
+    func testTheHistoryIsFreeAndOnlyTheLongSearchIsPro() {
+        XCTAssertEqual(HistoryAvailability.isEntitled, FeatureGate.isEnabled(.history))
+        XCTAssertEqual(HistoryAvailability.searchIsUnlimited, FeatureGate.isAvailable(.history))
+        XCTAssertEqual(HistoryAvailability.freeSearchDays, 7)
+    }
 }

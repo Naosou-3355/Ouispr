@@ -219,7 +219,7 @@ struct HomeView: View {
             // While a sheet is up, Home's sphere is hidden: it stops drawing.
             .coversHomeSphere()
         })
-        .paywallCover(isPresented: $showPaywall)
+        .paywallCover(isPresented: $showPaywall, entry: .feature(.smartMode))
         .onAppear {
             // Refresh model state every time HomeView appears.
             modelManager.loadState()

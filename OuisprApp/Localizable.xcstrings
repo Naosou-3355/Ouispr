@@ -6964,7 +6964,373 @@
         }
       }
     },
-    "😊" : {}
+    "😊" : {},
+    "Modes" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): name of the modes feature (Polished, List, Translate).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modes"
+          }
+        }
+      }
+    },
+    "Unlimited history" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): name of the history feature, whose search past 7 days is Pro.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historique sans limite"
+          }
+        }
+      }
+    },
+    "Learns from you" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): name of the vocabulary feature: Ouispr learns from the user's corrections.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apprend de vous"
+          }
+        }
+      }
+    },
+    "Voice messages" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): name of the voice messages feature.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages vocaux"
+          }
+        }
+      }
+    },
+    "Polished, List, Translate" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): the three modes, by their names in the app.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rédigé, Liste, Traduire"
+          }
+        }
+      }
+    },
+    "Search all your dictations, not just the last 7 days" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): what unlimited history adds.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cherchez dans toutes vos dictées, pas seulement les 7 derniers jours"
+          }
+        }
+      }
+    },
+    "Suggestions drawn from your corrections and dictations" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): what the vocabulary feature does.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des suggestions tirées de vos corrections et de vos dictées"
+          }
+        }
+      }
+    },
+    "The modes" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): title of the block the window leads with when opened from a mode.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les modes"
+          }
+        }
+      }
+    },
+    "All your history" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): title of the block the window leads with when opened from a search.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout votre historique"
+          }
+        }
+      }
+    },
+    "Your vocabulary" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): title of the block the window leads with when opened from the vocabulary suggestions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre vocabulaire"
+          }
+        }
+      }
+    },
+    "Choose the shape before you speak: a polished text, a list of who does what, or a translation." : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): sentence under 'The modes'.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la forme avant de parler : un texte rédigé, une liste de qui fait quoi, ou une traduction."
+          }
+        }
+      }
+    },
+    "Free search covers the last 7 days. With Pro, find any dictation, however old." : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): sentence under 'All your history'.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La recherche gratuite couvre 7 jours. Avec Pro, retrouvez n’importe quelle dictée, même ancienne."
+          }
+        }
+      }
+    },
+    "Ouispr suggests the words it gets wrong, from your corrections and your dictations. Nothing is added without you." : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): sentence under 'Your vocabulary'.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouispr vous propose les mots qu’il écrit mal, d’après vos corrections et vos dictées. Rien n’est ajouté sans vous."
+          }
+        }
+      }
+    },
+    "Share a voice message with Ouispr and read it instead of listening to it." : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): sentence under 'Voice messages'.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partagez un message vocal avec Ouispr et lisez-le au lieu de l’écouter."
+          }
+        }
+      }
+    },
+    "Today" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): first step of the trial timeline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd’hui"
+          }
+        }
+      }
+    },
+    "Day %lld" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): a later step of the trial timeline, e.g. Day 12.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jour %lld"
+          }
+        }
+      }
+    },
+    "All of Pro, free" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): what happens on the first day of the trial.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout le Pro, gratuitement"
+          }
+        }
+      }
+    },
+    "A reminder in the app" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): what happens two days before the trial ends.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un rappel dans l’app"
+          }
+        }
+      }
+    },
+    "Back to free, nothing charged" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): what happens when the trial ends.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour au gratuit, sans prélèvement"
+          }
+        }
+      }
+    },
+    "Ouispr learns from you" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): the window's subtitle, the promise of Pro.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouispr apprend de vous"
+          }
+        }
+      }
+    },
+    "Also included" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): label over the other features, under the one the user touched.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inclus aussi"
+          }
+        }
+      }
+    },
+    "Try %lld days free" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): button that starts the free trial.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer %lld jours gratuitement"
+          }
+        }
+      }
+    },
+    "Then subscribe if you wish." : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): line under the trial button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ensuite, abonnez-vous si vous le souhaitez."
+          }
+        }
+      }
+    },
+    "See the plans" : {
+      "comment" : "Ouispr Pro window (Pro offer, 25 Nov 2026): link under the trial button that shows the paid plans.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir les formules"
+          }
+        }
+      }
+    },
+    "Search your whole history with Ouispr Pro" : {
+      "comment" : "History search: line under the count of older matches, opens the Pro window.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cherchez dans tout votre historique avec Ouispr Pro"
+          }
+        }
+      }
+    },
+    "Preview the free version" : {
+      "comment" : "Settings > About (Ouispr fork): shows the app as a free user sees it.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperçu de la version gratuite"
+          }
+        }
+      }
+    },
+    "Relaunch Ouispr to apply." : {
+      "comment" : "Settings > About: under the free-version preview switch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relancez Ouispr pour l’appliquer."
+          }
+        }
+      }
+    },
+    "%lld older dictations match" : {
+      "comment" : "History search: older dictations matching the query, past the free 7-day window.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld older dictation matches"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld older dictations match"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dictée plus ancienne correspond"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dictées plus anciennes correspondent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "version" : "1.1"
 }

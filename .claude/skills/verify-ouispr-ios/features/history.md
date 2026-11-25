@@ -1,14 +1,14 @@
 # History of transcriptions
 
 - **ID:** `history`
-- **Tier:** Pro
+- **Tier:** Free, search past 7 days Pro (Pro offer, 25 Nov 2026)
 - **Targets:** OuisprApp + OuisprCore
 - **Screens:** `app.history`, `app.pro.history`, `app.history.detail` (not captured) — see [screens.md](screens.md)
 
 ## Sub-features
 
 - `history.list`: The last 200 dictations, kept on the phone only.
-- `history.search`: « Rechercher dans les transcriptions ».
+- `history.search`: « Rechercher dans les transcriptions ». Free: the last 7 days, then a row « N dictées plus anciennes correspondent » that opens the Pro window on its history. Pro: everything. An empty query lists the whole history for everyone.
 - `history.delete`: Delete one entry (swipe or context menu).
 - `history.detail`: An entry's detail: copy, share, add a word to the vocabulary.
 - `history.clear`: « Effacer l'historique » in Réglages → Transcription.
@@ -17,7 +17,7 @@
 
 ## How to get to it (user POV)
 
-1. With Pro, open Ouispr → Accueil.
+1. Open Ouispr → Accueil.
 2. Tap « Historique » (or swipe up) to see past dictations; tap one for details.
 
 ## Driving it with axe + Argent

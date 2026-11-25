@@ -42,6 +42,33 @@ public enum TranscriptionSearch {
         return records.filter { contains($0.text, needle) }
     }
 
+    /// What a search finds once the free window applies (Pro offer, 25 Nov 2026).
+    public struct Result: Equatable {
+        /// The records shown, newest first.
+        public let found: [TranscriptionRecord]
+        /// How many older records also match but sit outside the free window.
+        /// Zero when the search is unlimited or the query is empty.
+        public let olderMatches: Int
+    }
+
+    /// `filter`, limited to the records of the last `windowDays` days unless
+    /// `unlimited`.
+    ///
+    /// WHY an empty query is never limited: clearing the field must restore the
+    /// whole list. The history itself is free; only searching it far back is Pro.
+    /// The older matches are counted, not dropped silently, so the screen can say
+    /// what Pro would find.
+    public static func search(_ records: [TranscriptionRecord], query: String,
+                              now: Date, windowDays: Int, unlimited: Bool) -> Result {
+        let found = filter(records, query: query)
+        guard !unlimited, !normalized(query).isEmpty else {
+            return Result(found: found, olderMatches: 0)
+        }
+        let cutoff = now.addingTimeInterval(-TimeInterval(windowDays) * 86_400)
+        let recent = found.filter { $0.createdAt >= cutoff }
+        return Result(found: recent, olderMatches: found.count - recent.count)
+    }
+
     /// The apostrophes a search field can receive, folded to the straight one.
     ///
     /// WHY: `.diacriticInsensitive` does not treat them as the same character, and

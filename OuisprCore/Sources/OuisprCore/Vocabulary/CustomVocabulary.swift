@@ -19,7 +19,17 @@ public enum VocabularyAvailability {
     ///
     /// Turning it off stops the replacements. It does not delete anything — see
     /// `VocabularyStore`, where removal is ungated.
+    ///
+    /// **Since the Pro offer of 25 Nov 2026 the user's own list is free**: the terms
+    /// typed by hand and the replacements they drive need only the Vocabulary switch.
+    /// What Pro adds is the learning, the suggestions drawn from the history and the
+    /// keyboard (`suggestionsAreUnlocked`).
     public static var isEntitled: Bool {
+        FeatureGate.isEnabled(.vocabulary)
+    }
+
+    /// Whether "Analyze my transcriptions" runs: Pro, with Vocabulary switched on.
+    public static var suggestionsAreUnlocked: Bool {
         FeatureGate.isAvailable(.vocabulary)
     }
 }

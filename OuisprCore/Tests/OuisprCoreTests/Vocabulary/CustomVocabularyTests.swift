@@ -26,12 +26,11 @@ final class CustomVocabularyTests: XCTestCase {
         )
     }
 
-    func testTheVocabularyGateIsTheProFeatureToggleAndNotJustTheSubscription() {
-        // Same shape as `HistoryAvailability.isEntitled`: a subscriber who switched
-        // the feature off in Settings has said what they want.
+    func testTheOwnListIsFreeAndTheSuggestionsArePro() {
+        // Pro offer of 25 Nov 2026: the terms typed by hand need only the switch;
+        // the learning (suggestions) needs Pro as well.
         XCTAssertEqual(ProFeature.vocabulary.settingsKey, SharedKeys.vocabularyEnabled)
-        XCTAssertEqual(
-            VocabularyAvailability.isEntitled, FeatureGate.isAvailable(.vocabulary)
-        )
+        XCTAssertEqual(VocabularyAvailability.isEntitled, FeatureGate.isEnabled(.vocabulary))
+        XCTAssertEqual(VocabularyAvailability.suggestionsAreUnlocked, FeatureGate.isAvailable(.vocabulary))
     }
 }

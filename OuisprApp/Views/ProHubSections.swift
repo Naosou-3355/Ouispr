@@ -129,13 +129,25 @@ struct ProFeatureSwitchSection: View {
                 get: { switches.isOn(feature) },
                 set: { switches.set(feature, isOn: $0) }
             )) {
-                Text(LocalizedStringKey(feature.displayName))
+                switchTitle
             }
             .tint(.ouisprAccent)
         } footer: {
             if !isOn {
                 offFooter
             }
+        }
+    }
+
+    /// What the switch turns off, which for two features is more than the Pro part
+    /// the hub card sells (Pro offer, 25 Nov 2026): History off stops saving any
+    /// dictation, Vocabulary off stops the user's own terms too. So those two switches
+    /// carry the feature's plain name, not "Unlimited history" or "Learns from you".
+    private var switchTitle: Text {
+        switch feature {
+        case .history: return Text("History")
+        case .vocabulary: return Text("Vocabulary")
+        case .smartMode, .voiceNotes: return Text(LocalizedStringKey(feature.displayName))
         }
     }
 

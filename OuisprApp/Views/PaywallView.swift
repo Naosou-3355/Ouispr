@@ -28,6 +28,20 @@ struct PaywallView: View {
     /// how it is framed (#837); nil for every entry point the user chose.
     var trialEnd: ProTrialEndPaywall?
 
+    /// Where the window was opened from (Pro offer, 25 Nov 2026): it leads with the
+    /// feature the user just touched. `.settings` shows the four evenly.
+    var entry: ProWindowEntry = .settings
+
+    /// Set by "See the plans" under the trial button: the plans join it.
+    @State private var showsPlansUnderTrial = false
+
+    /// Whether the window offers the reverse trial: never started, and this device
+    /// and account may have it (`ProTrialPolicy.mayStart`). The end of the trial
+    /// never offers it: that trial is the one that just ended.
+    private var offersTrial: Bool {
+        framing == .standard && proStatus.mayStartTrial
+    }
+
     /// Why this paywall is up. `.trialEnded` only for the end-of-trial framing; a
     /// reinstall over an ended trial gets the ordinary one (#837).
     private var framing: PaywallFraming {
@@ -113,20 +127,22 @@ struct PaywallView: View {
                     TrialEndedHeader(usage: proStatus.trialUsage)
                 }
 
-                // Feature cards (3 cards: Smart Mode, History, Vocabulary): active for
-                // anyone who has Pro, informational for everyone being sold it.
-                VStack(spacing: 10) {
-                    ForEach(ProFeature.allCases, id: \.self) { feature in
-                        if cardsAreActive {
+                // Active cards for anyone who has Pro; for everyone being sold it, the
+                // touched feature on top and the others in one grouped card (Pro bench V1).
+                if cardsAreActive {
+                    VStack(spacing: 10) {
+                        ForEach(ProWindowLayout.order, id: \.self) { feature in
                             ProHubFeatureCard(
                                 feature: feature,
                                 isAvailable: isAvailable(feature),
                                 open: { openedFeature = feature }
                             )
-                        } else {
-                            featureCard(feature)
                         }
                     }
+                } else {
+                    ProWindowFeatureList(
+                        layout: ProWindowLayout.layout(for: framing == .trialEnded ? .settings : entry)
+                    )
                 }
 
                 // The recap sells nothing itself: its button leads here.
@@ -138,14 +154,23 @@ struct PaywallView: View {
                         if case .offers(let endsAt?, let daysLeft) = hubBlock {
                             TrialRunningNotice(endsAt: endsAt, daysLeft: daysLeft)
                         }
-                        // Plan selector: yearly (preselected) and lifetime, monthly behind a link
-                        planSelector
-                        // Subscribe CTA following the selected plan
-                        subscribeCTA
-                        // Reassurance following the selected plan
-                        reassuranceLabel
-                            .font(.ouisprCaption)
-                            .foregroundColor(.secondary)
+                        // The trial first, when this user can still have it: nothing is
+                        // charged, so it is the one decision the window asks for.
+                        if offersTrial {
+                            ProTrialOfferSection(showsPlans: $showsPlansUnderTrial) {
+                                proStatus.startTrialIfEligible()
+                            }
+                        }
+                        if !offersTrial || showsPlansUnderTrial {
+                            // Plan selector: yearly (preselected) and lifetime, monthly behind a link
+                            planSelector
+                            // Subscribe CTA following the selected plan
+                            subscribeCTA
+                            // Reassurance following the selected plan
+                            reassuranceLabel
+                                .font(.ouisprCaption)
+                                .foregroundColor(.secondary)
+                        }
 
                         if framing == .trialEnded {
                             continueForFreeButton
@@ -343,11 +368,7 @@ struct PaywallView: View {
             } label: {
                 Text("Keep Ouispr Pro")
                     .font(.ouisprSubheading)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.ouisprAccent)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .inkCTALabel()
             }
             .buttonStyle(GlassPressStyle())
 
@@ -381,120 +402,29 @@ struct PaywallView: View {
     /// kit) with a blue glow, and the tagline. The screen title comes from
     /// the navigation bar, so the hero repeats no text.
     /// Glow uses the double-shadow pattern (tight + wide) from SwipeBackOverlayView.
+    ///
+    /// Since the Pro offer of 25 Nov 2026 the hero is the ink character alone, as on
+    /// Home, then the title in ink and the offer's one promise.
     private var heroSection: some View {
-        VStack(spacing: 12) {
-            // The tile is the app icon itself (square, continuous corners, same
-            // ratios); only the glow below belongs to this screen.
-            OuisprIconTile(logoHeight: 48)
-                .shadow(color: Color.ouisprAccent.opacity(0.7), radius: 10)
-                .shadow(color: Color.ouisprAccent.opacity(0.4), radius: 20)
+        VStack(spacing: 8) {
+            InkCharacterView(mood: .resting)
+                .frame(width: 120, height: 120)
+                .accessibilityHidden(true)
 
             Text("Ouispr Pro")
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.ouisprGradientStart, .ouisprGradientEnd],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .foregroundStyle(Color.ouisprInk)
 
             // The end-of-trial header below carries this screen's sentence, and a
             // tagline above it would say a second, unrelated thing.
             if !showsTrialRecap {
-                Text("Your voice, unlimited")
+                Text("Ouispr learns from you")
                     .font(.ouisprBody)
                     .foregroundColor(.secondary)
             }
         }
         .padding(.top, 8)
         .accessibilityElement(children: .combine)
-    }
-
-    // MARK: - Feature Card
-
-    /// Feature card with SF Symbol icon, title, and description.
-    /// Non-interactive (informational only per UI-SPEC). Compact metrics so
-    /// the plan cards stay above the fold on a 6.1-inch screen.
-    private func featureCard(_ feature: ProFeature) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: feature.icon)
-                .font(.title3)
-                .foregroundColor(iconColor(for: feature))
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(LocalizedStringKey(feature.displayName))
-                    .font(.ouisprBody.weight(.semibold))
-                Text(LocalizedStringKey(feature.paywallDescription))
-                    .font(.ouisprCaption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-
-                if !feature.isSupportedByThisDevice {
-                    unsupportedNotice
-                }
-            }
-
-            Spacer()
-        }
-        .padding(12)
-        .ouisprGlass()
-        // Dimmed, not hidden, and not disabled: the card is still a truthful part of
-        // what Pro contains, and the sentence under it is the point.
-        .opacity(feature.isSupportedByThisDevice ? 1 : 0.7)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel(for: feature))
-    }
-
-    /// The line that makes a paywall honest on a device that cannot run the feature
-    /// (#79).
-    ///
-    /// **This is a review risk before it is a UX one.** Apple Foundation Models needs
-    /// an iPhone 15 Pro or later on iOS 26; Ouispr supports iOS 17 up, so most of the
-    /// installed base is in this state permanently, and #268 closed the only
-    /// alternative backend `wontfix`. A reviewer on a device without Apple
-    /// Intelligence, facing a paywall that advertises a feature their hardware cannot
-    /// deliver, is a rejection for misleading metadata — and the App Review device on
-    /// #207 was an iPad Air.
-    ///
-    /// WHY the card is marked rather than removed, which #79 left open: a paywall
-    /// that silently contains different things on different phones is one nobody can
-    /// screenshot for review or reason about in a support thread, and a user who
-    /// upgrades their iPhone would never learn the feature had been there all along.
-    /// Marking says the same true thing to everyone. Pro still sells on History and
-    /// Vocabulary, which is exactly what #79 decided.
-    private var unsupportedNotice: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 10))
-
-            Text("Requires Apple Intelligence (iPhone 15 Pro or later, iOS 26)")
-                .font(.ouisprCaption)
-                .lineLimit(2)
-        }
-        .foregroundColor(.secondary)
-        .padding(.top, 2)
-    }
-
-    /// Each part goes through the catalog first (#279): `ProFeature`'s strings are
-    /// English keys, and `accessibilityLabel(_:)` reads a `String` verbatim, so the
-    /// combined label was the one English line on a French paywall.
-    private func accessibilityLabel(for feature: ProFeature) -> String {
-        let name = String(localized: String.LocalizationValue(feature.displayName))
-        let description = String(localized: String.LocalizationValue(feature.paywallDescription))
-        guard let notice = feature.unsupportedNotice else {
-            return "\(name): \(description)"
-        }
-        return "\(name): \(description). \(String(localized: String.LocalizationValue(notice)))"
-    }
-
-    /// Icon color per feature (Smart Mode = accent, others = accent highlight; #789).
-    private func iconColor(for feature: ProFeature) -> Color {
-        switch feature {
-        case .smartMode: return .ouisprAccent
-        case .history, .vocabulary, .voiceNotes: return .ouisprAccentHighlight
-        }
     }
 
     // MARK: - Plan Selector
@@ -791,17 +721,13 @@ struct PaywallView: View {
             Group {
                 if subscriptionManager.purchaseState == .purchasing {
                     ProgressView()
-                        .tint(.white)
+                        .tint(Color.ouisprSurface)
                 } else {
                     ctaLabel
                         .font(.ouisprSubheading)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.ouisprAccent)
-            .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .inkCTALabel()
         }
         .buttonStyle(GlassPressStyle())
         .disabled(selectedProduct == nil || subscriptionManager.purchaseState == .purchasing)

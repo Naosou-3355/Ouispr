@@ -165,6 +165,12 @@ public enum SharedKeys {
     public static let debugVoiceNoteAutoOpenDisabled = "ouispr.debugVoiceNoteAutoOpenDisabled"
     #endif
 
+    // Free-version preview (Ouispr fork, Pro offer of 25 Nov 2026).
+    /// Bool: when true, `PremiumFlags.proUnlocked` reads false, so the app shows what a
+    /// free user sees: the Pro window's sales state, the 7-day search, locked modes.
+    /// Absent reads false. Set from Settings > About; read at launch.
+    public static let previewFreeVersion = "ouispr.previewFreeVersion"
+
     // Live Activity preference
     /// Whether Live Activity (Dynamic Island + Lock Screen) is enabled, default true
     public static let liveActivityEnabled = "ouispr.liveActivityEnabled"

@@ -37,10 +37,31 @@ struct HistoryView: View {
     /// What the search field holds (#621). Empty shows every record.
     @State private var query = ""
 
-    /// The records the query finds, newest first. Recomputed on every body pass,
-    /// which is a linear scan of a capped in-memory list; see `TranscriptionSearch`.
+    /// Opens the Ouispr Pro window from the "older dictations" row, on its history.
+    @State private var showsPaywall = false
+
+    /// What the query finds: free, the last `HistoryAvailability.freeSearchDays`
+    /// days, with a count of the older matches; with Pro, everything (Pro offer,
+    /// 25 Nov 2026). An empty query lists the whole history for everyone.
+    ///
+    /// Recomputed on every body pass, a linear scan of an in-memory list; see
+    /// `TranscriptionSearch`. The Pro status and the switch are touched first so the
+    /// window widens the moment either moves: the gate reads the App Group.
+    private var searchResult: TranscriptionSearch.Result {
+        _ = proStatus.isProActive
+        _ = switches.isOn(.history)
+        return TranscriptionSearch.search(
+            history.records,
+            query: query,
+            now: Date(),
+            windowDays: HistoryAvailability.freeSearchDays,
+            unlimited: HistoryAvailability.searchIsUnlimited
+        )
+    }
+
+    /// The records the query finds, newest first.
     private var visibleRecords: [TranscriptionRecord] {
-        TranscriptionSearch.filter(history.records, query: query)
+        searchResult.found
     }
 
     var body: some View {
@@ -68,9 +89,7 @@ struct HistoryView: View {
 
     private var content: some View {
         Group {
-            if !hasPro {
-                lockedState
-            } else if isPushed {
+            if isPushed {
                 pushedList
             } else if history.records.isEmpty {
                 emptyState
@@ -89,21 +108,7 @@ struct HistoryView: View {
                 TranscriptionDetailView(record: record)
             }
         }
-    }
-
-    /// Whether the user has Ouispr Pro at all. Without it the screen is locked.
-    ///
-    /// WHY Pro and not `HistoryAvailability.isEntitled`, which also folds in the
-    /// feature's switch (#216): a subscriber who switched History off is not being
-    /// sold anything, and "History is part of Ouispr Pro" would be false to them.
-    /// Switched off, the records stay on screen, dimmed and locked, under the switch
-    /// that brings them back.
-    ///
-    /// Touching the observed Pro status is what makes this react: `FeatureGate` reads
-    /// the App Group, which publishes nothing. Same device as `HomeView.entryPoint`.
-    private var hasPro: Bool {
-        _ = proStatus.isProActive
-        return FeatureGate.isProActive
+        .paywallCover(isPresented: $showsPaywall, entry: .feature(.history))
     }
 
     /// The feature's switch, observed so the content dims and unlocks as it moves
@@ -115,34 +120,6 @@ struct HistoryView: View {
         _ = switches.isOn(.history)
         _ = proStatus.isProActive
         return HistoryAvailability.isEntitled
-    }
-
-    // MARK: - Locked
-
-    /// What a lapsed subscriber sees if this screen is open when the entitlement
-    /// goes away, or if it is ever reached without one.
-    ///
-    /// **It names the way out.** Locking the reading of the history is the point of
-    /// the gate; locking someone out of deleting a plaintext record of everything
-    /// they have dictated is not, and a locked screen that said only "subscribe"
-    /// would be exactly that. Settings keeps the destructive row for as long as
-    /// there is anything to delete (`HistoryAvailability.clearRowIsVisible`), and
-    /// this sentence is how the user learns it is there.
-    private var lockedState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "lock.fill")
-                .font(.system(size: 40))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
-            Text("History is part of Ouispr Pro")
-                .font(.ouisprSubheading)
-                .multilineTextAlignment(.center)
-            Text("Your saved transcriptions stay on this device and are never sent anywhere. You can delete them at any time from Settings.")
-                .font(.ouisprCaption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - List
@@ -163,7 +140,7 @@ struct HistoryView: View {
         .scrollContentBackground(.hidden)
         .searchable(text: $query, prompt: Text("Search transcriptions"))
         .overlay {
-            if visibleRecords.isEmpty {
+            if showsNoResults {
                 noResultsState
             }
         }
@@ -199,7 +176,7 @@ struct HistoryView: View {
         .scrollContentBackground(.hidden)
         .modifier(HistorySearchField(isEnabled: pushedSearchIsEnabled, query: $query))
         .overlay {
-            if pushedSearchIsEnabled && visibleRecords.isEmpty {
+            if pushedSearchIsEnabled && showsNoResults {
                 noResultsState
             }
         }
@@ -208,6 +185,12 @@ struct HistoryView: View {
         .onChange(of: pushedSearchIsEnabled) { _, enabled in
             if !enabled { query = "" }
         }
+    }
+
+    /// Nothing found at all. With older matches past the free window the list is not
+    /// empty in truth, and the row that says so stays visible instead.
+    private var showsNoResults: Bool {
+        visibleRecords.isEmpty && searchResult.olderMatches == 0
     }
 
     /// Whether the pushed history offers its search field: records to search, and
@@ -270,8 +253,50 @@ struct HistoryView: View {
                     }
                 }
             }
+
+            if searchResult.olderMatches > 0 && PremiumFlags.paywallVisible {
+                olderMatchesRow(count: searchResult.olderMatches)
+            }
         }
         .proFeatureContent(isAvailable: isAvailable)
+    }
+
+    /// Says how many older dictations match, under the free window's results, and
+    /// opens the Pro window on its history.
+    ///
+    /// WHY a row and not a silent cut: a search that hides what it found reads as a
+    /// broken search. Stating the count is what makes the 7-day limit an offer.
+    private func olderMatchesRow(count: Int) -> some View {
+        Button {
+            showsPaywall = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: ProFeature.history.icon)
+                    .font(.title3)
+                    .foregroundColor(.ouisprAccent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(count) older dictations match")
+                        .font(.ouisprBody.weight(.semibold))
+                        .foregroundColor(.primary)
+                    Text("Search your whole history with Ouispr Pro")
+                        .font(.ouisprCaption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding()
+            .ouisprGlass()
+        }
+        .buttonStyle(GlassPressStyle(pressedScale: 0.98))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 
     private func delete(_ record: TranscriptionRecord) {
