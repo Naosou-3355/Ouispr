@@ -82,6 +82,11 @@ uint16_t Trie::getFrequency(const uint16_t* chars, int len) const {
     return traverse(chars, len);
 }
 
+bool Trie::wordIsTrusted(const uint16_t* chars, int len) const {
+    uint8_t flags = 0;
+    return traverse(chars, len, &flags) > 0 && !(flags & FLAG_WEAK);
+}
+
 const uint8_t* Trie::rootData() const {
     return data_ ? data_ + HEADER_SIZE : nullptr;
 }
@@ -156,7 +161,7 @@ TrieNode Trie::readNode(uint32_t pos) const {
     return node;
 }
 
-uint16_t Trie::traverse(const uint16_t* chars, int len) const {
+uint16_t Trie::traverse(const uint16_t* chars, int len, uint8_t* flagsOut) const {
     if (!data_ || len <= 0) return 0;
 
     // Root is virtual (not stored). Root child count is in header byte 20.
@@ -196,6 +201,7 @@ uint16_t Trie::traverse(const uint16_t* chars, int len) const {
                 inputPos += matchLen;
                 if (inputPos == len) {
                     // Consumed all input -- check if terminal
+                    if (flagsOut) *flagsOut = node.flags;
                     return (node.flags & FLAG_TERMINAL) ? node.frequency : 0;
                 }
                 // Continue into children

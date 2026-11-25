@@ -406,6 +406,9 @@ final class OuisprKeyboardBridge: NSObject,
         let mirrorBefore = mirrorLength()
         controller?.textDocumentProxy.insertText(character)
         observeMirror(before: mirrorBefore, inserted: character.count)
+        // After the insert, and after the punctuation autocorrect above: a non-letter
+        // ends the word whose taps the correction just used.
+        SpatialTyping.shared.recordInsertion(character)
         secondToLastInsertedCharacter = lastInsertedCharacter
         lastInsertedCharacter = character
 
@@ -451,6 +454,7 @@ final class OuisprKeyboardBridge: NSObject,
         let mirrorBefore = mirrorLength()
         controller?.textDocumentProxy.deleteBackward()
         observeMirror(before: mirrorBefore, deleted: 1)
+        SpatialTyping.shared.recordDeletion()
         secondToLastInsertedCharacter = nil
         lastInsertedCharacter = nil
 
@@ -493,6 +497,8 @@ final class OuisprKeyboardBridge: NSObject,
     /// delete everything from cursor back to that boundary.
     private func handleWordDelete() {
         suggestionState?.pendingUndo = nil
+        // A whole word goes: the taps recorded so far describe nothing on screen.
+        SpatialTyping.shared.reset()
         guard let proxy = controller?.textDocumentProxy,
               let before = proxy.documentContextBeforeInput, !before.isEmpty else {
             // Fallback: single character delete if no text context.
@@ -565,6 +571,8 @@ final class OuisprKeyboardBridge: NSObject,
     /// behavior -- corrections appear only when the user finishes the word (space/return).
     /// Correcting mid-word would be disorienting as the text changes while typing.
     private func handleSpace() {
+        // The word's taps serve the autocorrect below, then the word is over.
+        defer { SpatialTyping.shared.reset() }
         secondToLastInsertedCharacter = lastInsertedCharacter
         learnWordMovedPast()
         closeUndoWindowAtSpace()
@@ -661,6 +669,7 @@ final class OuisprKeyboardBridge: NSObject,
     /// After inserting newline, recheck autocapitalization -- many apps use
     /// .sentences autocap which should capitalize after a newline.
     private func handleReturn() {
+        defer { SpatialTyping.shared.reset() }
         learnWordMovedPast()
         suggestionState?.pendingUndo = nil
         // Return ends the word before it, like a punctuation mark (#872).
@@ -890,6 +899,11 @@ final class OuisprKeyboardBridge: NSObject,
         // has its own branch for them; a punctuation mark just inserts itself.
         guard !freshWord.unicodeScalars.contains(where: { CharacterSet.decimalDigits.contains($0) })
         else { return false }
+
+        // Guard: never autocorrect inside a URL, an e-mail address or a path: the
+        // word is only its last letters, and correcting them breaks the link.
+        // Nothing is learned from it either.
+        guard !LinkLikeToken.isAtCursor(context: context) else { return false }
 
         // Extract previous word for n-gram context boost
         let previousWord: String? = {
@@ -1238,5 +1252,23 @@ final class OuisprKeyboardBridge: NSObject,
         default: // .none
             break
         }
+    }
+}
+
+// MARK: - Touch-aware typing
+
+// An extension rather than the class body: the body sits at SwiftLint's type length limit.
+extension OuisprKeyboardBridge {
+    /// Lets SpatialTyping ask whether keys may be resized right now, and read the word
+    /// being typed. Weak: SpatialTyping outlives this bridge across app switches.
+    func connectSpatialTyping() {
+        SpatialTyping.shared.isResolutionEnabled = { [weak self] in
+            guard let state = self?.suggestionState else { return false }
+            return state.autocorrectEnabled && state.hostPolicy.autocorrectAllowed
+        }
+        SpatialTyping.shared.contextBeforeCursor = { [weak self] in
+            self?.controller?.textDocumentProxy.documentContextBeforeInput
+        }
+        SpatialTyping.shared.reset()
     }
 }

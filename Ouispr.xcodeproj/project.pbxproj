@@ -170,6 +170,7 @@
 		AA00P207 /* PolishDebugExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10P207 /* PolishDebugExporter.swift */; };
 		AA0000F6 /* StopStandbyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB100005 /* StopStandbyIntent.swift */; };
 		AA0000G0 /* KeyTapSignposter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000G0 /* KeyTapSignposter.swift */; };
+		AA0000G1 /* SpatialTyping.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000G1 /* SpatialTyping.swift */; };
 		AA000P10 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA100P10 /* PrivacyInfo.xcprivacy */; };
 		AA000P20 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA100P20 /* PrivacyInfo.xcprivacy */; };
 		BB000001 /* OuisprWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB100001 /* OuisprWidgetBundle.swift */; };
@@ -181,6 +182,7 @@
 		EE000001 /* ouispr_trie.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE100001 /* ouispr_trie.cpp */; };
 		EE000002 /* ouispr_scorer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE100002 /* ouispr_scorer.cpp */; };
 		EE000003 /* ouispr_proximity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE100003 /* ouispr_proximity.cpp */; };
+		EE00000B /* ouispr_spatial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE100010 /* ouispr_spatial.cpp */; };
 		EE000004 /* AOSPTrieBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = EE100004 /* AOSPTrieBridge.mm */; };
 		EE000005 /* AOSPTrieEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE100005 /* AOSPTrieEngine.swift */; };
 		EE000006 /* fr_spellcheck.dict in Resources */ = {isa = PBXBuildFile; fileRef = EE100006 /* fr_spellcheck.dict */; };
@@ -417,6 +419,7 @@
 		AA10P205 /* PolishDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolishDebugView.swift; sourceTree = "<group>"; };
 		AA10P207 /* PolishDebugExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolishDebugExporter.swift; sourceTree = "<group>"; };
 		AA1000G0 /* KeyTapSignposter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyTapSignposter.swift; sourceTree = "<group>"; };
+		AA1000G1 /* SpatialTyping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialTyping.swift; sourceTree = "<group>"; };
 		SS100001 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		RT5930100004 /* ProTrialDebugSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProTrialDebugSection.swift; sourceTree = "<group>"; };
 		RT5930100003 /* ProTrialPaywallSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProTrialPaywallSections.swift; sourceTree = "<group>"; };
@@ -472,6 +475,8 @@
 		EE100001 /* ouispr_trie.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ouispr_trie.cpp; sourceTree = "<group>"; };
 		EE100002 /* ouispr_scorer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ouispr_scorer.cpp; sourceTree = "<group>"; };
 		EE100003 /* ouispr_proximity.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ouispr_proximity.cpp; sourceTree = "<group>"; };
+		EE100010 /* ouispr_spatial.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ouispr_spatial.cpp; sourceTree = "<group>"; };
+		EE100011 /* ouispr_spatial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ouispr_spatial.h; sourceTree = "<group>"; };
 		EE100004 /* AOSPTrieBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AOSPTrieBridge.mm; sourceTree = "<group>"; };
 		EE100005 /* AOSPTrieEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AOSPTrieEngine.swift; sourceTree = "<group>"; };
 		EE100006 /* fr_spellcheck.dict */ = {isa = PBXFileReference; lastKnownFileType = "compiled"; path = fr_spellcheck.dict; sourceTree = "<group>"; };
@@ -883,6 +888,7 @@
 			isa = PBXGroup;
 			children = (
 				AA1000G0 /* KeyTapSignposter.swift */,
+				AA1000G1 /* SpatialTyping.swift */,
 			);
 			path = TouchHandling;
 			sourceTree = "<group>";
@@ -928,6 +934,7 @@
 				EE10000A /* ouispr_trie.h */,
 				EE10000B /* ouispr_scorer.h */,
 				EE10000C /* ouispr_proximity.h */,
+				EE100011 /* ouispr_spatial.h */,
 				EE10000D /* ouispr_trie_format.h */,
 				EE10000E /* ouispr_ngram.h */,
 				EE10000F /* ouispr_ngram_format.h */,
@@ -941,6 +948,7 @@
 				EE100001 /* ouispr_trie.cpp */,
 				EE100002 /* ouispr_scorer.cpp */,
 				EE100003 /* ouispr_proximity.cpp */,
+				EE100010 /* ouispr_spatial.cpp */,
 				EE100008A /* ouispr_ngram.cpp */,
 			);
 			path = src;
@@ -1467,6 +1475,7 @@
 				AA0000D1 /* SuggestionState.swift in Sources */,
 				AA0000D4 /* SuggestionBarView.swift in Sources */,
 				AA0000G0 /* KeyTapSignposter.swift in Sources */,
+				AA0000G1 /* SpatialTyping.swift in Sources */,
 				CC000030 /* KeyboardMetrics.swift in Sources */,
 				CC000050 /* KeySoundPolicy.swift in Sources */,
 				CC000010 /* KeyboardLayouts.swift in Sources */,
@@ -1489,6 +1498,7 @@
 				EE000001 /* ouispr_trie.cpp in Sources */,
 				EE000002 /* ouispr_scorer.cpp in Sources */,
 				EE000003 /* ouispr_proximity.cpp in Sources */,
+				EE00000B /* ouispr_spatial.cpp in Sources */,
 				EE000004 /* AOSPTrieBridge.mm in Sources */,
 				EE000005 /* AOSPTrieEngine.swift in Sources */,
 				EE000008 /* ouispr_ngram.cpp in Sources */,

@@ -203,6 +203,7 @@ class KeyboardViewController: UIInputViewController {
         keyBridge.onEmojiToggle = { [weak self] in
             self?.toggleEmojiPicker()
         }
+        keyBridge.connectSpatialTyping()
         self.bridge = keyBridge
         self.giellaKeyboard = keyboard
 
