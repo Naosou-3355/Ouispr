@@ -1,5 +1,5 @@
 // OuisprApp/Views/HomeSmartModeRing.swift
-// The home mic's Smart Mode dial: the half-ring drawn around the mic, its resting hint and
+// The home mic's Smart Mode dial: the half-ring drawn around the mic and
 // the line under it (issue #489).
 import SwiftUI
 import OuisprCore
@@ -95,20 +95,6 @@ enum HomeSmartModeRingStyle {
 
     /// Reduce Motion: no spring, no scale, a short crossfade.
     static let reducedMotionFade = Animation.easeOut(duration: Motion.quick)
-
-    // MARK: Resting arrows
-
-    /// The keyboard's discovery hint (`ToolbarView.driftingHint`): its breath, 2 s
-    /// `easeInOut` autoreversed, the same curve as the mic's idle glow; its far end of 3;
-    /// its arrow reaching 2.2 times that; its opacity rising from 0.62 by 0.13 per point.
-    static let arrowBreath = Animation.easeInOut(duration: 2).repeatForever(autoreverses: true)
-    static let arrowBreathEnd: CGFloat = 3
-    static let arrowReach: CGFloat = 2.2
-    static let arrowBaseOpacity: Double = 0.62
-    static let arrowOpacityPerPoint: Double = 0.13
-
-    /// The space between each arrow's tip and the mic's halo.
-    static let arrowGapToHalo: CGFloat = 14
 }
 
 extension View {
@@ -142,80 +128,6 @@ private struct HomeSmartModeRingBackdrop: ViewModifier {
             }
             .animation(reduceMotion ? Style.reducedMotionFade : .easeOut(duration: Motion.standard), value: isRingOpen)
             .allowsHitTesting(!isRingOpen)
-    }
-}
-
-// MARK: - Resting hint
-
-/// What the mic says at rest about the dial behind it: an arrow on each side pointing at
-/// the mic, breathing toward it the way the keyboard's "Hold the mic for Smart Modes" arrow
-/// breathes toward the pill. No text: the gesture is the accelerator, and VoiceOver has
-/// its own way in. Still with Reduce Motion.
-struct HomeSmartModeRestHint: View {
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// 0 at rest, `arrowBreathEnd` at the far end of the breath. One value for the reach
-    /// and the opacity, as in the keyboard, so the two cannot drift apart.
-    @State private var drift: CGFloat = 0
-
-    private typealias Style = HomeSmartModeRingStyle
-
-    var body: some View {
-        // Drawn as shapes, not SF Symbols: inside the mic's background VoiceOver read
-        // symbols there as « Retour » and « Suivant », hidden or not (simulator,
-        // 2026-10-24). A shape is never an accessibility element.
-        HStack(spacing: OuisprHalo.size(isPill: false).width + 2 * Style.arrowGapToHalo) {
-            RestArrow(pointsRight: true)
-                .offset(x: drift * Style.arrowReach)
-            RestArrow(pointsRight: false)
-                .offset(x: -drift * Style.arrowReach)
-        }
-        .foregroundStyle(.secondary)
-        .opacity(Style.arrowBaseOpacity + Double(drift) * Style.arrowOpacityPerPoint)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear(perform: breathe)
-        .onChange(of: reduceMotion) { _, _ in breathe() }
-    }
-
-    private func breathe() {
-        guard !reduceMotion else {
-            withAnimation(nil) { drift = 0 }
-            return
-        }
-        withAnimation(Style.arrowBreath) { drift = Style.arrowBreathEnd }
-    }
-}
-
-/// One resting arrow, the shape of SF Symbols' `arrow.right` / `arrow.left`: a shaft and
-/// an open head, 14 × 10 pt.
-private struct RestArrow: View {
-
-    let pointsRight: Bool
-
-    var body: some View {
-        RestArrowShape(pointsRight: pointsRight)
-            .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-            .frame(width: 14, height: 10)
-    }
-}
-
-private struct RestArrowShape: Shape {
-
-    let pointsRight: Bool
-
-    func path(in rect: CGRect) -> Path {
-        let tipX = pointsRight ? rect.maxX : rect.minX
-        let tailX = pointsRight ? rect.minX : rect.maxX
-        let headX = pointsRight ? rect.maxX - rect.height / 2 : rect.minX + rect.height / 2
-        var path = Path()
-        path.move(to: CGPoint(x: tailX, y: rect.midY))
-        path.addLine(to: CGPoint(x: tipX, y: rect.midY))
-        path.move(to: CGPoint(x: headX, y: rect.minY))
-        path.addLine(to: CGPoint(x: tipX, y: rect.midY))
-        path.addLine(to: CGPoint(x: headX, y: rect.maxY))
-        return path
     }
 }
 

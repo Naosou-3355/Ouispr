@@ -459,17 +459,18 @@ struct HomeView: View {
 
     // MARK: - New Dictation Button
 
-    /// The mic, centred, with the Smart Mode dial's resting hint around it (#489).
+    /// The mic, centred, with the Smart Mode dial behind it (#489). No resting hint since
+    /// 25 Nov 2026: Alex asked for the arrows around the mic to go.
     ///
     /// Everything Smart Mode draws here is an overlay or a background on the mic: the
-    /// chevrons, the ring, the line under it. None of it owns layout, so the mic is
+    /// ring, the line under it. None of it owns layout, so the mic is
     /// exactly where #788 put it whatever the dial is doing, and the recording screen,
     /// which lines its own button up on this one, sees no difference.
     private var micRow: some View {
         newDictationButton
-            // The ring and the resting hint behind the mic, so the mic draws over both.
+            // The ring behind the mic, so the mic draws over it.
             // Outside the button's accessibility modifiers on purpose: inside them, the
-            // resting hint's symbols inherited the mic's identifier and read as more mics.
+            // ring's symbols inherited the mic's identifier and read as more mics.
             .background {
                 if let ringSession {
                     HomeSmartModeRing(session: ringSession)
@@ -478,8 +479,6 @@ struct HomeView: View {
                         .transition(reduceMotion
                                     ? .opacity
                                     : .opacity.combined(with: .scale(scale: HomeSmartModeRingStyle.segmentHiddenScale)))
-                } else if smartModeMic.isOffered {
-                    HomeSmartModeRestHint()
                 }
             }
             .overlay(alignment: .top) {
