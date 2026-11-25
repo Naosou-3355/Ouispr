@@ -8,8 +8,8 @@ import SwiftUI
 /// Chosen by Alex on the bench of 25 Nov 2026 (« Le logo dans le bouton »). The disc
 /// carries the logo's three bars, still: the app's signature, not a second face, so
 /// nothing repeats the character drawn larger above it. Since the second bench of the
-/// same day (« Anneau ») the disc sits inside a thin ring, like a shutter, and while it
-/// listens the disc itself shrinks into the stop square.
+/// same day (« Anneau », without its ring) the disc itself shrinks into the stop square
+/// while it listens.
 ///
 /// WHY a view apart from `AnimatedMicButton`: the keyboard's pill keeps that one, with
 /// its accent and its glow, and its own reasons (#79, #510). The app's two screens no
@@ -43,11 +43,6 @@ public struct InkMicButton: View {
     /// dial and the mic anchor (#788) are laid out on.
     public static let diameter: CGFloat = 72
 
-    /// The ring and the disc inside it, Alex's « Anneau » (bench of 25 Nov 2026): a
-    /// 2.5 pt ring, then a 4.5 pt gap, then the 58 pt disc that becomes the stop square.
-    static let ringWidth: CGFloat = 2.5
-    static let coreDiameter: CGFloat = 58
-
     public init(phase: Phase,
                 badge: SmartModeBadge? = nil,
                 face: AnimatedMicButton.MicFace? = nil,
@@ -63,17 +58,17 @@ public struct InkMicButton: View {
     public var body: some View {
         Button(action: onTap) {
             ZStack {
-                // The ground under the ring: what is drawn beneath the button (the
-                // recording screen's ink drops) never shows through the gap.
+                // The ground under the disc: while the disc shrinks into the stop
+                // square, what is drawn beneath the button (the recording screen's ink
+                // drops) never shows around it.
                 Circle()
                     .fill(Color.ouisprBackground)
                     .frame(width: Self.diameter, height: Self.diameter)
-                Circle()
-                    .strokeBorder(Color.ouisprInk, lineWidth: Self.ringWidth)
-                    .frame(width: Self.diameter, height: Self.diameter)
+                // No ring around it: Alex kept the « Anneau »'s disc that becomes the stop
+                // square but asked for the extra circle to go (25 Nov 2026).
                 InkMicCore(morph: phase == .listening && face == nil ? 1 : 0)
                     .fill(Color.ouisprInk)
-                    .frame(width: Self.coreDiameter, height: Self.coreDiameter)
+                    .frame(width: Self.diameter, height: Self.diameter)
                     .animation(morphAnimation, value: phase)
                 glyph
                     .foregroundStyle(Color.ouisprBackground)
@@ -151,7 +146,7 @@ public struct InkMicButton: View {
     }
 }
 
-/// The disc inside the mic's ring at `morph` 0, a 30 pt rounded stop square at 1.
+/// The mic's disc at `morph` 0, a 30 pt rounded stop square at 1.
 /// Animatable, so the disc shrinks and squares off in one movement.
 struct InkMicCore: Shape {
     var morph: Double
