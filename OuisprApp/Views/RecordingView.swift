@@ -55,6 +55,14 @@ struct RecordingView: View {
     /// The screen's content on its way out, which goes faster than the sphere, so the
     /// error or the result does not linger over Home's text.
     @State private var contentLeaving = false
+    /// Home's character frame as it was when this screen came up. Home lays itself out
+    /// again behind this screen as soon as a result exists (its « last transcription »
+    /// card appears), which moved its character about 50 pt up; following it live made
+    /// this whole screen jump as the text appeared (Alex's video, 25 Nov 2026). Only the
+    /// way out follows Home's new spot, so the hand-over back still lands on it.
+    @State private var pinnedHomeFrame: CGRect?
+    /// « Terminé » is said, then leaves (Alex's « Murmure », 25 Nov 2026).
+    @State private var finishedFaded = false
 
     /// The stage this screen draws, which trails `coordinator.status` by up to
     /// `TranscribingStageHold.minimumDisplayDuration` (#309).
@@ -179,8 +187,6 @@ struct RecordingView: View {
                     controls
                         .frame(height: Self.micSlotHeight)
                         .padding(.top, 16)
-                        // Copy and share arrive with a result: fade them in too.
-                        .animation(Self.stageAnimation, value: shareableResult != nil)
                         .opacity(contentOpacity)
 
                     // Whatever lifts the mic's centre to the height of Home's mic, so the
@@ -234,6 +240,7 @@ struct RecordingView: View {
                 handleStatusChange(.failed)
             }
             advanceDisplayedStatus(to: coordinator.status)
+            pinnedHomeFrame = homeSphere.homeFrame
             // The way in. The first frame is drawn with `appeared` false: the sphere on
             // Home's spot and the rest transparent, which is exactly what Home showed.
             withAnimation(reduceMotion ? .easeOut(duration: Motion.standard) : Self.enterAnimation) {
@@ -255,6 +262,10 @@ struct RecordingView: View {
             // is what makes them disagree.
             hold = TranscribingStageHold()
             displayedStatus = .idle
+        }
+        .onChange(of: homeSphere.homeFrame) { _, frame in
+            // Adopted only if Home had not reported its spot yet when this screen came up.
+            if pinnedHomeFrame == nil { pinnedHomeFrame = frame }
         }
         .navigationBarHidden(true)
     }
@@ -337,34 +348,34 @@ struct RecordingView: View {
     @ViewBuilder
     private var stageLabelContent: some View {
         if displayedStatus == .recording {
-            stageLabelRow(dot: .ouisprRecording, text: "Listening", showsElapsedTime: true)
+            stageLabelRow(text: "Listening", showsElapsedTime: true)
         } else if displayedStatus == .transcribing {
-            stageLabelRow(dot: .ouisprAccent, text: "Transcribing...")
+            stageLabelRow(text: "Transcribing...")
         } else if displayedStatus == .processing {
-            stageLabelRow(dot: .ouisprAccent, text: "Cleaning up")
+            stageLabelRow(text: "Cleaning up")
         } else if showResult {
-            stageLabelRow(dot: .ouisprSuccess, text: "Finished")
+            stageLabelRow(text: "Finished")
+                .opacity(finishedFaded ? 0 : 1)
+                .task {
+                    finishedFaded = false
+                    try? await Task.sleep(for: .seconds(1.5))
+                    withAnimation(.easeOut(duration: 0.6)) { finishedFaded = true }
+                }
         }
     }
 
-    private func stageLabelRow(
-        dot: Color,
-        text: LocalizedStringKey,
-        showsElapsedTime: Bool = false
-    ) -> some View {
+    /// The stage, murmured: 13 pt in half ink, no dot and no colour. The character above
+    /// already shows the stage; the words only confirm it (Alex's « Murmure », bench of
+    /// 25 Nov 2026; Apple HIG, Feedback: unobtrusive but easy to check).
+    private func stageLabelRow(text: LocalizedStringKey, showsElapsedTime: Bool = false) -> some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(dot)
-                .frame(width: 8, height: 8)
-                .accessibilityHidden(true)
             Text(text)
-                .foregroundStyle(Color.ouisprTextPrimary)
             if showsElapsedTime {
                 ElapsedTimeText(levels: coordinator.levels)
             }
         }
-        // Home's heading, since the label takes its place.
-        .font(.ouisprHeading)
+        .font(.system(size: 13))
+        .foregroundStyle(Color.ouisprInk.opacity(0.5))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .accessibilityElement(children: .combine)
@@ -387,7 +398,7 @@ struct RecordingView: View {
 
     /// Home's character frame, in window coordinates, when this screen lines up on it.
     private var homeSpot: CGRect? {
-        guard mode == .standalone, let home = homeSphere.homeFrame, home.width > 0, home.height > 0 else { return nil }
+        guard mode == .standalone, let home = pinnedHomeFrame ?? homeSphere.homeFrame, home.width > 0, home.height > 0 else { return nil }
         return home
     }
 
@@ -408,7 +419,7 @@ struct RecordingView: View {
     private var travellingSphere: some View {
         GeometryReader { slot in
             let frame = SphereFlight.frame(
-                home: homeSphere.homeFrame,
+                home: contentLeaving ? homeSphere.homeFrame : (pinnedHomeFrame ?? homeSphere.homeFrame),
                 slot: slot.frame(in: .global),
                 atHome: sphereAtHome
             )
@@ -521,16 +532,61 @@ struct RecordingView: View {
 
     // MARK: - Controls
 
-    /// The control row, which changes with the stage and never moves.
-    /// WHY always present: Prevents layout jumps. The mic is the visual anchor
-    /// of the screen, at the height of Home's own (#788).
+    /// The mic, alone in the middle of its slot, with its ink drops: the cancel cross
+    /// under it while a dictation runs, copy and share on either side of it with a
+    /// result. The mic never moves, at the height of Home's own (#788).
+    ///
+    /// One button stops a dictation: the ✓ beside the stop square did the same thing
+    /// and went (Alex, 25 Nov 2026). The drops come out of the mic and go back into it
+    /// (« Goutte », « Gouttes »); the tap targets are 44 pt buttons laid over their
+    /// resting places.
     private var controls: some View {
-        // A ZStack so the outgoing row and the incoming one share the slot while they
-        // cross-fade, instead of one leaving in a frame (audit, 22 Nov 2026).
-        ZStack {
-            controlsContent
-                .transition(stageTransition)
+        let cancelOut = displayedStatus == .recording || isPostRecordingStage
+        let result = shareableResult
+        return ZStack {
+            InkDrop(isOut: cancelOut, symbol: "xmark", direction: CGVector(dx: 0, dy: 1),
+                    distance: Self.cancelDropDistance, delay: 0.12)
+            InkDrop(isOut: result != nil, symbol: "doc.on.doc", direction: CGVector(dx: -1, dy: 0),
+                    distance: Self.sideDropDistance, delay: 0.15)
+            InkDrop(isOut: result != nil, symbol: "square.and.arrow.up", direction: CGVector(dx: 1, dy: 0),
+                    distance: Self.sideDropDistance, delay: 0.15)
+
+            mic
+
+            if cancelOut {
+                dropTarget(label: "Cancel", action: cancelOrClose)
+                    .offset(y: Self.cancelDropDistance)
+            }
+            if let result {
+                dropTarget(label: "Copy") { copyToPasteboard(result) }
+                    .offset(x: -Self.sideDropDistance)
+                ShareLink(item: result) {
+                    Color.clear
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
+                }
+                .accessibilityLabel("Share")
+                .offset(x: Self.sideDropDistance)
+            }
         }
+    }
+
+    /// From the mic's centre to the cancel drop's: under the mic with a 7 pt gap. Not
+    /// more: the mic sits at Home's height and the home indicator is close below.
+    private static let cancelDropDistance: CGFloat = 64
+    /// From the mic's centre to copy's and share's.
+    private static let sideDropDistance: CGFloat = 88
+
+    /// One mic for every stage, so its disc morphs into the stop square and back
+    /// instead of being replaced.
+    private var mic: some View {
+        let recording = displayedStatus == .recording
+        let phase: InkMicButton.Phase = recording ? .listening : isPostRecordingStage ? .working : .resting
+        return InkMicButton(phase: phase) {
+            if recording { stopRecording() } else if !isPostRecordingStage { startRecording() }
+        }
+        .accessibilityLabel(recording ? Text("Stop recording") : Text("New dictation"))
+        .accessibilityHidden(isPostRecordingStage)
     }
 
     /// How a stage's content comes and goes: a fade with a slight scale, or a fade
@@ -539,50 +595,14 @@ struct RecordingView: View {
         reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96))
     }
 
-    @ViewBuilder
-    private var controlsContent: some View {
-        // One row in every stage, the mic in its centre, so nothing moves: only the
-        // glyphs beside it and the mic's own face change.
-        if displayedStatus == .recording {
-            HStack(spacing: 28) {
-                sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
-                InkMicButton(phase: .listening, onTap: stopRecording)
-                    .accessibilityLabel("Stop recording")
-                sideButton(symbol: "checkmark", label: "Stop recording", action: stopRecording)
-            }
-        } else if isPostRecordingStage {
-            // The cleaning stage can last several seconds: the way out stays in reach,
-            // as the same cross as while listening.
-            HStack(spacing: 28) {
-                sideButton(symbol: "xmark", label: "Cancel", action: cancelOrClose)
-                InkMicButton(phase: .working) {}
-                    .accessibilityHidden(true)
-                sideButtonPlaceholder
-            }
-        } else {
-            // Idle / result state: mic button ready for (new) recording, with the
-            // two things a result is for on either side of it.
-            HStack(spacing: 28) {
-                if let result = shareableResult {
-                    sideButton(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
-                } else {
-                    sideButtonPlaceholder
-                }
-                InkMicButton(phase: .resting) {
-                    startRecording()
-                }
-                .accessibilityLabel("New dictation")
-                if let result = shareableResult {
-                    ShareLink(item: result) {
-                        sideButtonFace(symbol: "square.and.arrow.up")
-                    }
-                    .buttonStyle(GlassPressStyle())
-                    .accessibilityLabel("Share")
-                } else {
-                    sideButtonPlaceholder
-                }
-            }
+    /// A drop's tap target, over its resting place: the drop itself only draws.
+    private func dropTarget(label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Color.clear
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
         }
+        .accessibilityLabel(label)
     }
 
     /// The text the copy and share buttons act on: a result on screen, outside
@@ -590,31 +610,6 @@ struct RecordingView: View {
     private var shareableResult: String? {
         guard mode == .standalone, showResult else { return nil }
         return transcriptionResult
-    }
-
-    private func sideButton(symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            sideButtonFace(symbol: symbol)
-        }
-        .buttonStyle(GlassPressStyle())
-        .accessibilityLabel(label)
-    }
-
-    /// A bare glyph in ink, on a 52 pt target (Apple's minimum is 44): no disc, no
-    /// shadow, one style for every control beside the mic (Alex's 4A, 25 Nov 2026).
-    private func sideButtonFace(symbol: String) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: 21, weight: .medium))
-            .foregroundStyle(Color.ouisprInk)
-            .frame(width: 52, height: 52)
-            .contentShape(Rectangle())
-    }
-
-    /// Takes a side button's room, so the mic stays centred when there is none.
-    private var sideButtonPlaceholder: some View {
-        Color.clear
-            .frame(width: 52, height: 52)
-            .accessibilityHidden(true)
     }
 
     // MARK: - Actions
@@ -810,7 +805,6 @@ private struct ElapsedTimeText: View {
     var body: some View {
         Text(verbatim: levels.seconds > 0 ? levels.elapsedLabel : held)
             .monospacedDigit()
-            .foregroundStyle(Color.ouisprTextTertiary)
             .onChange(of: levels.elapsedLabel) { _, label in
                 if levels.seconds > 0 { held = label }
             }

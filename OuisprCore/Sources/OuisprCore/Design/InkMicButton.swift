@@ -7,9 +7,9 @@ import SwiftUI
 ///
 /// Chosen by Alex on the bench of 25 Nov 2026 (« Le logo dans le bouton »). The disc
 /// carries the logo's three bars, still: the app's signature, not a second face, so
-/// nothing repeats the character drawn larger above it. When a dictation starts the
-/// bars squash with the character's eyes, then melt into a stop square for as long as
-/// it listens; they stand up again when the dictation ends.
+/// nothing repeats the character drawn larger above it. Since the second bench of the
+/// same day (« Anneau ») the disc sits inside a thin ring, like a shutter, and while it
+/// listens the disc itself shrinks into the stop square.
 ///
 /// WHY a view apart from `AnimatedMicButton`: the keyboard's pill keeps that one, with
 /// its accent and its glow, and its own reasons (#79, #510). The app's two screens no
@@ -43,6 +43,11 @@ public struct InkMicButton: View {
     /// dial and the mic anchor (#788) are laid out on.
     public static let diameter: CGFloat = 72
 
+    /// The ring and the disc inside it, Alex's « Anneau » (bench of 25 Nov 2026): a
+    /// 2.5 pt ring, then a 4.5 pt gap, then the 58 pt disc that becomes the stop square.
+    static let ringWidth: CGFloat = 2.5
+    static let coreDiameter: CGFloat = 58
+
     public init(phase: Phase,
                 badge: SmartModeBadge? = nil,
                 face: AnimatedMicButton.MicFace? = nil,
@@ -58,9 +63,18 @@ public struct InkMicButton: View {
     public var body: some View {
         Button(action: onTap) {
             ZStack {
+                // The ground under the ring: what is drawn beneath the button (the
+                // recording screen's ink drops) never shows through the gap.
                 Circle()
-                    .fill(Color.ouisprInk)
+                    .fill(Color.ouisprBackground)
                     .frame(width: Self.diameter, height: Self.diameter)
+                Circle()
+                    .strokeBorder(Color.ouisprInk, lineWidth: Self.ringWidth)
+                    .frame(width: Self.diameter, height: Self.diameter)
+                InkMicCore(morph: phase == .listening && face == nil ? 1 : 0)
+                    .fill(Color.ouisprInk)
+                    .frame(width: Self.coreDiameter, height: Self.coreDiameter)
+                    .animation(morphAnimation, value: phase)
                 glyph
                     .foregroundStyle(Color.ouisprBackground)
                     .opacity(phase == .working ? 0.4 : 1)
@@ -103,12 +117,17 @@ public struct InkMicButton: View {
                 }
             }
         } else {
-            InkMicBars(morph: phase == .listening ? 1 : 0)
+            // The disc itself is the stop square while it listens: the bars give way.
+            InkMicBars(morph: 0)
                 .frame(width: 24, height: 24)
-                .animation(reduceMotion ? .easeOut(duration: Motion.quick)
-                                        : .spring(response: 0.38, dampingFraction: 0.62),
-                           value: phase)
+                .scaleEffect(0.85)
+                .opacity(phase == .listening ? 0 : 1)
+                .animation(reduceMotion ? .easeOut(duration: Motion.quick) : .easeOut(duration: 0.18), value: phase)
         }
+    }
+
+    private var morphAnimation: Animation {
+        reduceMotion ? .easeOut(duration: Motion.quick) : .spring(response: 0.38, dampingFraction: 0.62)
     }
 
     private func badgeView(_ badge: SmartModeBadge) -> some View {
@@ -129,6 +148,27 @@ public struct InkMicButton: View {
         .background(Circle().fill(Color.ouisprBackground))
         .overlay(Circle().stroke(Color.ouisprInk, lineWidth: 1.5))
         .offset(x: 25, y: 25)
+    }
+}
+
+/// The disc inside the mic's ring at `morph` 0, a 30 pt rounded stop square at 1.
+/// Animatable, so the disc shrinks and squares off in one movement.
+struct InkMicCore: Shape {
+    var morph: Double
+
+    var animatableData: Double {
+        get { morph }
+        set { morph = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        // Past 1 under the spring's overshoot, held so the square never turns inside out.
+        let m = max(-0.1, min(1.1, morph))
+        let full = min(rect.width, rect.height)
+        let side = full + (30 - full) * m
+        let radius = max(2, side / 2 + (8 - side / 2) * min(1, max(0, m)))
+        let square = CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side)
+        return Path(roundedRect: square, cornerRadius: min(radius, side / 2), style: .continuous)
     }
 }
 
