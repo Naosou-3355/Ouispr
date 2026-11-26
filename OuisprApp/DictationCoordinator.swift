@@ -735,9 +735,7 @@ class DictationCoordinator: ObservableObject {
                     // The microphone first, the listening state once it delivers audio
                     // (audit of 26 Nov 2026): the screen used to say « listening » over
                     // an engine that had not captured its first buffer yet.
-                    try audioEngine.startRecording()
-                    _ = try await awaitFirstAudio(from: audioEngine)
-                    guard mayReport(session, "warm start first audio") else { return }
+                    guard try await startsListening(audioEngine, session: session, "warm start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
                     PersistentLog.log(.audioEngineStarted)
@@ -786,10 +784,8 @@ class DictationCoordinator: ObservableObject {
                     // Checks `mayReport(session, "cold start")` first, then makes sure the
                     // session is up before the engine waits on its route (#775).
                     guard try await activateSessionForColdStart(after: firstActivation, engine: audioEngine, session: session, origin: origin) else { return }
-                    try audioEngine.startRecording()
                     // Same order as the warm start: listening is shown over live audio.
-                    _ = try await awaitFirstAudio(from: audioEngine)
-                    guard mayReport(session, "cold start first audio") else { return }
+                    guard try await startsListening(audioEngine, session: session, "cold start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
                     PersistentLog.log(.audioEngineStarted)
@@ -2014,24 +2010,14 @@ extension DictationCoordinator {
 
         let samples = audioEngine.currentSampleCount
         let decision = InterruptedDictationPolicy.decide(
-            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration,
-            capturedPeak: audioEngine.capturedPeak
+            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration, capturedPeak: audioEngine.capturedPeak
         )
         PersistentLog.log(.recordingInterrupted(status: status.rawValue, samples: samples, decision: decision))
 
         // Nothing has been said yet: the microphone comes back and the recording goes on.
         // A call still holding the microphone makes `startRecording` throw (its call
         // guard), and the recording then ends the way it did before the guard existed.
-        if decision == .keepListening {
-            do {
-                try audioEngine.startRecording()
-                PersistentLog.log(.dictationDeferred(reason: "interruption during the opening silence: kept listening"))
-                return
-            } catch {
-                PersistentLog.log(.dictationFailed(
-                    error: "keep listening refused: \(DictationFailureMessage.diagnostic(for: error))"))
-            }
-        }
+        if decision == .keepListening, resumesListening(audioEngine) { return }
 
         guard decision == .fail else {
             // The stop path collects the samples and gives a clip under the minimum

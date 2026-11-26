@@ -37,6 +37,30 @@ extension DictationCoordinator {
         return true
     }
 
+    /// Start the microphone, then wait for its first audio and check the session is
+    /// still current: what a start does before it shows the listening state.
+    func startsListening(_ engine: UnifiedAudioEngine, session: Int, _ what: String) async throws -> Bool {
+        try engine.startRecording()
+        _ = try await awaitFirstAudio(from: engine)
+        return mayReport(session, what)
+    }
+
+    /// After an interruption during the opening silence, the microphone comes back and
+    /// the recording goes on. A call still holding the microphone makes `startRecording`
+    /// throw (its call guard), and the recording then ends the way it did before.
+    ///
+    /// - Returns: whether the recording goes on.
+    func resumesListening(_ engine: UnifiedAudioEngine) -> Bool {
+        do {
+            try engine.startRecording()
+            PersistentLog.log(.dictationDeferred(reason: "interruption during the opening silence: kept listening"))
+            return true
+        } catch {
+            PersistentLog.log(.dictationFailed(error: "keep listening refused: \(DictationFailureMessage.diagnostic(for: error))"))
+            return false
+        }
+    }
+
     /// One line per stop: what ended the recording and what it held. The peak, never the
     /// audio or the words, is what tells "stopped before speaking" from "spoke, heard
     /// nothing".
@@ -47,5 +71,12 @@ extension DictationCoordinator {
         OuisprLogger.app.notice(
             "Dictation stopped: cause=\(cause.rawValue, privacy: .public) duration=\(durationMs, privacy: .public)ms peak=\(peak, privacy: .public)"
         )
+    }
+}
+
+extension UnifiedAudioEngine {
+    /// The loudest sample of a clip, as a fraction of full scale.
+    static func peak(of samples: [Float]) -> Float {
+        samples.reduce(0) { max($0, abs($1)) }
     }
 }

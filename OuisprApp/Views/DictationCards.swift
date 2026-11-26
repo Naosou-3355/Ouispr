@@ -397,10 +397,14 @@ struct DriftingCardRow: View {
                 Task { @MainActor in
                     // Back to the cruise once the flick has died down and the drift is at
                     // full speed again (about 2 s), not before: the cruise has one speed.
+                    // Bounded: a row taken off screen mid-flick draws no frames, so its
+                    // engine never settles, and the check must not poll forever.
+                    var checks = 0
                     repeat {
                         try? await Task.sleep(for: .milliseconds(250))
                         guard touchCount == touch, manual else { return }
-                    } while !engine.isSettled(drifting: !still)
+                        checks += 1
+                    } while !engine.isSettled(drifting: !still) && checks < 40
                     let x = engine.x ?? currentX(unit: unit)
                     manual = false
                     restX = x

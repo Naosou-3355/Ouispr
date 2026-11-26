@@ -174,11 +174,6 @@ class UnifiedAudioEngine: ObservableObject {
     /// recording from a voice (`InterruptedDictationPolicy.silencePeak`).
     var capturedPeak: Float { Self.peak(of: audioSamples) }
 
-    /// The loudest sample of a clip, as a fraction of full scale.
-    static func peak(of samples: [Float]) -> Float {
-        samples.reduce(0) { max($0, abs($1)) }
-    }
-
     /// What AVAudioSession actually reports for the system-haptics allowance.
     ///
     /// WHY this is read rather than tracked: `setAllowHapticsAndSystemSoundsDuringRecording`
