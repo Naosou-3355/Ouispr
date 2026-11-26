@@ -145,6 +145,9 @@ public enum PolishPostpass {
 
         switch language {
         case .french:
+            // « le écoute » → « l'écoute » (audit of 26 Nov 2026, n°13), before the
+            // spacing below so no rule sees the unelided pair.
+            out = FrenchElision.apply(out)
             // NBSP before ? ! ; :. Pattern matches ONE ASCII space (U+0020)
             // immediately preceding the mark; any existing NBSP (U+00A0)
             // stays untouched. `[ ]` is the literal space character class
