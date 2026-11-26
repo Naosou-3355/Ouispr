@@ -412,7 +412,7 @@ struct HomeView: View {
     /// The character's drop is played on the recording screen, over the result (audit of
     /// 26 Nov 2026), so the card leaves a character already at rest.
     private func updateRecent(animated: Bool) {
-        let latest = Array(history.records.prefix(5))
+        let latest = Array(DictationCloud.droppingRepeats(history.records) { $0.text }.prefix(5))
         guard latest.map(\.id) != recent.map(\.id) else {
             recent = latest
             return
@@ -422,6 +422,9 @@ struct HomeView: View {
             recent = latest
             return
         }
+        // The flying card carries its words from the start: a chip never travels empty
+        // and fills on landing (audit of 26 Nov 2026, n°3).
+        RevealedTitles.markSeen(head.id)
         recent = latest
         arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
     }

@@ -103,8 +103,9 @@ private struct DictationTitleReveal: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 4) {
                 ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                    // From a faint blur, never from nothing: a card is never an empty chip.
                     Text(verbatim: word)
-                        .opacity(shown ? 1 : 0)
+                        .opacity(shown ? 1 : 0.25)
                         .blur(radius: shown || reduceMotion ? 0 : 6)
                         .animation(.easeOut(duration: WordRevealPlan.wordDuration)
                                     .delay(reduceMotion ? 0 : Double(index) * 0.11), value: shown)
@@ -114,7 +115,7 @@ private struct DictationTitleReveal: View {
             Text(verbatim: title)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .opacity(shown ? 1 : 0)
+                .opacity(shown ? 1 : 0.25)
                 .animation(.easeOut(duration: WordRevealPlan.wordDuration), value: shown)
         }
         .font(.system(size: 16, weight: .medium))
@@ -130,8 +131,11 @@ private struct DictationTitleReveal: View {
 
 /// The cards whose title has already come in word by word.
 @MainActor
-private enum RevealedTitles {
-    static var seen = Set<UUID>()
+enum RevealedTitles {
+    fileprivate static var seen = Set<UUID>()
+
+    /// A card whose words must show at once, such as the one flying in from the character.
+    static func markSeen(_ id: UUID) { seen.insert(id) }
 }
 
 // MARK: - Drifting row
@@ -235,7 +239,10 @@ struct DriftingCardRow: View {
             .contentShape(Rectangle())
             .simultaneousGesture(dragGesture(unit: unit), including: loops ? .all : .subviews)
             .onAppear { place(unit: unit) }
-            .onChange(of: unit) { place(unit: unit) }
+            // A card that comes or goes moves the others along rather than making them jump.
+            .onChange(of: unit) {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) { place(unit: unit) }
+            }
             .onChange(of: still) { place(unit: unit) }
         }
         .frame(height: DictationCloudCard.height)
@@ -322,8 +329,24 @@ struct DriftingCardRow: View {
             }
             .buttonStyle(GlassPressStyle())
             .opacity(openID == record.id ? 0 : 1)
+            // The native preview with the whole dictation, sized to its text, instead of
+            // the card lifted with one line over an empty area (audit of 26 Nov 2026, n°6).
             .contextMenu {
-                if let menu { menu(record) }
+                if let menu {
+                    menu(record)
+                } else {
+                    Button {
+                        UIPasteboard.general.string = record.text
+                        HapticFeedback.keyTapped()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    ShareLink(item: record.text) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                }
+            } preview: {
+                DictationPreview(record: record)
             }
         }
         .frame(width: width, height: DictationCloudCard.height)
@@ -389,6 +412,27 @@ struct DriftingCardRow: View {
                     place(unit: unit)
                 }
             }
+    }
+}
+
+/// A card's long-press preview: the whole dictation and its date, as wide as the text
+/// needs up to 320 pt.
+private struct DictationPreview: View {
+    let record: TranscriptionRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: record.shortDateLabel)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.ouisprTextSecondary)
+            Text(verbatim: record.text)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.ouisprTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(18)
+        .frame(width: 320, alignment: .leading)
+        .background(Color.ouisprSurface)
     }
 }
 

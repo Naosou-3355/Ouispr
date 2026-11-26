@@ -58,3 +58,14 @@ final class DriftCruiseTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(pan.duration, 6)
     }
 }
+
+final class DictationCloudRepeatsTests: XCTestCase {
+    func testConsecutiveRepeatsAreOneCard() {
+        let texts = ["C'est pas mal", "c'est pas mal.", "Bonjour", "C'est pas mal"]
+        XCTAssertEqual(DictationCloud.droppingRepeats(texts) { $0 }, ["C'est pas mal", "Bonjour", "C'est pas mal"])
+    }
+
+    func testEmptyTextsAreNotMerged() {
+        XCTAssertEqual(DictationCloud.droppingRepeats(["", ""]) { $0 }.count, 2)
+    }
+}

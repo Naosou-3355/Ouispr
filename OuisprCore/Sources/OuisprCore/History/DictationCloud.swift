@@ -76,6 +76,22 @@ public enum DictationCloud {
     // MARK: - Rows
 
     /// Home's two rows: three cards then two, the newest first.
+    /// The items without the repeats that follow each other: the same words dictated
+    /// twice in a row are one card, the newest (audit of 26 Nov 2026, n°9, two « C'est pas
+    /// mal » side by side). Compared without case, surrounding spaces or final punctuation.
+    public static func droppingRepeats<T>(_ items: [T], text: (T) -> String) -> [T] {
+        var kept: [T] = []
+        var previous: String?
+        for item in items {
+            let key = text(item)
+                .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+                .lowercased()
+            if key != previous || key.isEmpty { kept.append(item) }
+            previous = key
+        }
+        return kept
+    }
+
     public static func homeRows<T>(_ items: [T]) -> [[T]] {
         let recent = Array(items.prefix(5))
         return [Array(recent.prefix(3)), Array(recent.dropFirst(3))].filter { !$0.isEmpty }
