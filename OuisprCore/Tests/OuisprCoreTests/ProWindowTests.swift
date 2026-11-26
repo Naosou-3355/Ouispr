@@ -40,6 +40,5 @@ final class ProWindowTests: XCTestCase {
         let steps = ProTrialTimeline.steps()
         XCTAssertEqual(steps.map(\.day), [0, ProTrial.durationDays - ProTrial.reminderLeadDays, ProTrial.durationDays])
         XCTAssertEqual(steps.map(\.day), [0, 12, 14])
-        XCTAssertEqual(steps[1].title, "Day 12")
     }
 }

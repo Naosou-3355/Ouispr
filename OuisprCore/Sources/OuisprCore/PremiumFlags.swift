@@ -47,20 +47,25 @@ public enum PremiumFlags {
     /// nothing in the app writes it. The app's one way to read it false is
     /// `previewsFreeVersion`.
     public static var proUnlocked: Bool {
-        get { forkUnlocksPro && !previewsFreeVersion }
+        get { forkUnlocksPro && !previewedFreeVersionAtLaunch }
         set { forkUnlocksPro = newValue }
     }
 
     /// The fork's own answer, before the preview below. True in every build.
     private static var forkUnlocksPro = true
 
+    /// The preview as it stood when this process started: every Pro gate reads this one
+    /// value, so a toggle mid-session cannot leave some gates free and others paid until
+    /// the relaunch the Settings row asks for.
+    private static let previewedFreeVersionAtLaunch = previewsFreeVersion
+
     /// Ouispr: show the app as a free user sees it, Pro window and 7-day search
     /// included (Pro offer, 25 Nov 2026).
     ///
     /// WHY it exists: `proUnlocked` reads as paid in every build, so without this the
     /// sales side of the Pro window and the free limits could never be seen on the
-    /// one iPhone that runs the fork. Read at launch, because `ProStatusManager`
-    /// captures `proUnlocked` in its environment: the Settings row asks for a relaunch.
+    /// one iPhone that runs the fork. Applied at the next launch
+    /// (`previewedFreeVersionAtLaunch`): the Settings row asks for a relaunch.
     public static var previewsFreeVersion: Bool {
         get { AppGroup.defaults.bool(forKey: SharedKeys.previewFreeVersion) }
         set {

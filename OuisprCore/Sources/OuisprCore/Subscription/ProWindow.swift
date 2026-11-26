@@ -88,8 +88,9 @@ public enum ProTrialTimeline {
     public struct Step: Equatable, Sendable {
         /// Day the step happens on, counted from the start (0 is today).
         public let day: Int
-        /// English source strings, translated in the app's catalogue.
-        public let title: String
+        /// English source string, translated in the app's catalogue. The day's title
+        /// (« Aujourd'hui », « Jour 12 ») is the view's: a format with the day as its
+        /// argument, so the catalogue translates one sentence rather than one per day.
         public let detail: String
     }
 
@@ -100,10 +101,9 @@ public enum ProTrialTimeline {
     public static func steps(durationDays: Int = ProTrial.durationDays,
                              reminderLeadDays: Int = ProTrial.reminderLeadDays) -> [Step] {
         [
-            Step(day: 0, title: "Today", detail: "All of Pro, free"),
-            Step(day: durationDays - reminderLeadDays, title: "Day \(durationDays - reminderLeadDays)",
-                 detail: "A reminder in the app"),
-            Step(day: durationDays, title: "Day \(durationDays)", detail: "Back to free, nothing charged")
+            Step(day: 0, detail: "All of Pro, free"),
+            Step(day: durationDays - reminderLeadDays, detail: "A reminder in the app"),
+            Step(day: durationDays, detail: "Back to free, nothing charged")
         ]
     }
 }
