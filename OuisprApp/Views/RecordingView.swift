@@ -136,9 +136,11 @@ struct RecordingView: View {
 
     /// From the mic's centre to the centre of the pictograms on either side of it.
     private static let sideControlDistance: CGFloat = 88
+    /// Between the centres of copy and share, side by side right of the mic: their two
+    /// 44 pt targets and 8 pt of air.
+    private static let sideControlSpacing: CGFloat = 52
 
-    /// The pictograms come and go in a short fade: only the character's drop moves.
-    /// The one arriving waits for the one leaving, since ✕ and copy share a place.
+    /// Copy and share come and go in a short fade: only the character's drop moves.
     private static let sideControlTransition = AnyTransition.asymmetric(
         insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.15)),
         removal: .opacity.animation(.easeOut(duration: 0.15))
@@ -300,32 +302,11 @@ struct RecordingView: View {
 
     // MARK: - Top Row
 
-    /// The close button on the left (standalone only). The stage label is no longer
-    /// here: it is written under the character, where Home writes « Prêt à dicter ».
+    /// The room the top bar used to take, kept so nothing below moves. The ✕ is in the
+    /// control row now, beside the mic, at every stage (validated design, audit of
+    /// 26 Nov 2026); the stage words are under the character.
     private var topRow: some View {
-        ZStack {
-            HStack {
-                if mode == .standalone {
-                    Button(action: cancelOrClose) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 19, weight: .medium))
-                            .foregroundStyle(Color.ouisprInk)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(GlassPressStyle())
-                    .accessibilityLabel("Close")
-                    // While a dictation is in flight the control row carries the way
-                    // out, labelled as what it is: a cancel. Hidden rather than
-                    // removed, so nothing in this row moves.
-                    .opacity(isDictationInFlight ? 0 : 1)
-                    .disabled(isDictationInFlight)
-                    .accessibilityHidden(isDictationInFlight)
-                }
-                Spacer()
-            }
-        }
-        .frame(height: 44)
+        Color.clear.frame(height: 44)
     }
 
     /// Whether the pipeline is recording or working on the audio, as drawn.
@@ -590,21 +571,26 @@ struct RecordingView: View {
         let result = shareableResult
         return ZStack {
             Group {
-                if isDictationInFlight {
-                    sideControl(symbol: "xmark", label: "Cancel", action: cancelOrClose)
-                        .offset(x: -Self.sideControlDistance)
-                        .transition(Self.sideControlTransition)
+                // One ✕, always in the same place, named for what it does at the time.
+                // The onboarding has no way out of this screen but its own pages.
+                if mode == .standalone {
+                    sideControl(
+                        symbol: "xmark",
+                        label: isDictationInFlight ? "Cancel" : "Close",
+                        action: cancelOrClose
+                    )
+                    .offset(x: -Self.sideControlDistance)
                 }
                 if let result {
                     sideControl(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
-                        .offset(x: -Self.sideControlDistance)
+                        .offset(x: Self.sideControlDistance)
                         .transition(Self.sideControlTransition)
                     ShareLink(item: result) {
                         sideControlGlyph("square.and.arrow.up")
                     }
                     .buttonStyle(GlassPressStyle())
                     .accessibilityLabel("Share")
-                    .offset(x: Self.sideControlDistance)
+                    .offset(x: Self.sideControlDistance + Self.sideControlSpacing)
                     .transition(Self.sideControlTransition)
                 }
             }
