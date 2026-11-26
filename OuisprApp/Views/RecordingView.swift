@@ -50,6 +50,7 @@ struct RecordingView: View {
     @State private var errorMessage: String?
     /// Brief "Copié !" feedback when user taps the transcription result.
     @State private var showCopiedFeedback = false
+    @State private var copiedReset: Task<Void, Never>?
     /// Two-step dismissal: animate out first, then reset coordinator status.
     @State private var isDismissing = false
     /// The screen's content on its way out, which goes faster than the sphere, so the
@@ -374,13 +375,13 @@ struct RecordingView: View {
         return plan.animatesWordByWord && !reduceMotion ? plan.totalDuration : Motion.standard
     }
 
-    /// The stage, murmured: 13 pt in half ink, no dot and no colour. The character above
-    /// already shows the stage; the words only confirm it (Alex's « Murmure », bench of
-    /// 25 Nov 2026; Apple HIG, Feedback: unobtrusive but easy to check).
+    /// The stage, murmured: 13 pt, no dot and no colour. The character above already
+    /// shows the stage; the words only confirm it (Alex's « Murmure », bench of 25 Nov
+    /// 2026; Apple HIG, Feedback: unobtrusive but easy to check).
     private func stageLabelRow(text: LocalizedStringKey, showsElapsedTime: Bool = false) -> some View {
-        // Quieter than before (Alex, 26 Nov 2026: « les secondes sont trop présentes »):
-        // 12 pt, the word at 45 % ink (about 3:1, still legible), the seconds at 32 %,
-        // a detail one finds when looking for it.
+        // Quieter than the bench's half ink (Alex, 26 Nov 2026: « les secondes sont trop
+        // présentes »), at the validated 13 pt: the word at 45 % ink (about 3:1, still
+        // legible), the seconds at 32 %, a detail one finds when looking for it.
         HStack(spacing: 8) {
             Text(text)
                 .foregroundStyle(Color.ouisprInk.opacity(0.45))
@@ -389,7 +390,7 @@ struct RecordingView: View {
                     .foregroundStyle(Color.ouisprInk.opacity(0.32))
             }
         }
-        .font(.system(size: 12))
+        .font(.system(size: 13))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .accessibilityElement(children: .combine)
@@ -633,8 +634,12 @@ struct RecordingView: View {
         let recording = displayedStatus == .recording && !isDismissing
         let working = isPostRecordingStage && !isDismissing
         let phase: InkMicButton.Phase = recording ? .listening : working ? .working : .resting
+        // While the start waits for the microphone's first audio (`.requested`, 1.5 s at
+        // most) a tap does nothing: starting again would begin a second dictation over
+        // the one already on its way.
+        let starting = coordinator.status == .requested
         return InkMicButton(phase: phase) {
-            if recording { stopRecording() } else if !working { startRecording() }
+            if recording { stopRecording() } else if !working && !starting { startRecording() }
         }
         .accessibilityLabel(recording ? Text("Stop recording") : Text("New dictation"))
         .accessibilityHidden(working)
@@ -704,7 +709,12 @@ struct RecordingView: View {
         UIPasteboard.general.string = result
         showCopiedFeedback = true
         HapticFeedback.recordingStopped()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // Cancellable: a second copy restarts the 1.5 s rather than being cut short by
+        // the first one's reset.
+        copiedReset?.cancel()
+        copiedReset = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
             showCopiedFeedback = false
         }
     }
@@ -786,9 +796,9 @@ struct RecordingView: View {
         case .ready:
             if let result = coordinator.lastResult, !result.isEmpty {
                 transcriptionResult = result
-                withAnimation(.easeOut(duration: Motion.emphasized)) {
-                    showResult = true
-                }
+                // Animated by the screen's own `.animation(value: showResult)`, which
+                // would override a `withAnimation` here anyway.
+                showResult = true
                 // Auto-advance to success screen in onboarding mode
                 // Shows transcription result for 1.5s then triggers onComplete
                 if mode == .onboarding {
