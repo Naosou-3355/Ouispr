@@ -16,6 +16,14 @@ extension DictationCoordinator {
     /// still settling (a headset just connected) can take a few hundred.
     static let firstAudioTimeout: Duration = .milliseconds(1500)
 
+    /// How a wait for the first audio ended.
+    enum FirstAudio {
+        case arrived
+        case timedOut
+        /// The start's task was cancelled: the user stopped, or a newer start replaced it.
+        case cancelled
+    }
+
     /// Wait until the engine has delivered its first samples, so the listening state is
     /// never shown over a microphone that is not capturing yet.
     ///
@@ -23,25 +31,32 @@ extension DictationCoordinator {
     /// timeout passes with nothing, the caller goes on to `verifyAudioFlow`, whose zombie
     /// recovery restarts the engine; failing here would only duplicate it, sooner.
     ///
-    /// - Returns: whether audio arrived before the timeout. Throws only on cancellation.
-    func awaitFirstAudio(from engine: UnifiedAudioEngine) async throws -> Bool {
+    /// WHY not `try await Task.sleep`: its `CancellationError` would reach the start's
+    /// catch and show a failure for a dictation the user stopped (the trap of PR #777,
+    /// see `sleepUnlessCancelled`). A cancel is reported as such.
+    func awaitFirstAudio(from engine: UnifiedAudioEngine) async -> FirstAudio {
         let clock = ContinuousClock()
         let deadline = clock.now + Self.firstAudioTimeout
         while engine.currentSampleCount == 0 {
+            guard !Task.isCancelled else { return .cancelled }
             guard clock.now < deadline else {
                 PersistentLog.log(.dictationDeferred(reason: "no audio 1.5 s after start: listening shown anyway"))
-                return false
+                return .timedOut
             }
-            try await Task.sleep(for: .milliseconds(20))
+            try? await Task.sleep(for: .milliseconds(20))
         }
-        return true
+        return .arrived
     }
 
     /// Start the microphone, then wait for its first audio and check the session is
-    /// still current: what a start does before it shows the listening state.
+    /// still current: what a start does before it shows the listening state. False when
+    /// the start was stopped or replaced meanwhile: the caller then returns quietly.
     func startsListening(_ engine: UnifiedAudioEngine, session: Int, _ what: String) async throws -> Bool {
         try engine.startRecording()
-        _ = try await awaitFirstAudio(from: engine)
+        guard await awaitFirstAudio(from: engine) != .cancelled else {
+            PersistentLog.log(.dictationDeferred(reason: "\(what): cancelled while waiting for the first audio"))
+            return false
+        }
         return mayReport(session, what)
     }
 
