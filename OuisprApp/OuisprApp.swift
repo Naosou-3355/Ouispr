@@ -839,7 +839,7 @@ struct OuisprApp: App {
             }
         case "stop":
             // Stop recording from Dynamic Island expanded view button.
-            coordinator.stopDictation()
+            coordinator.stopDictation(cause: .liveActivity)
         case VoiceNoteURL.host:
             // A tap on the Live Activity's voice note (#620): its result, or the list.
             if case .some(let target) = VoiceNoteURL.target(of: url) {

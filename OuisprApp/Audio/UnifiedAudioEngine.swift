@@ -170,6 +170,15 @@ class UnifiedAudioEngine: ObservableObject {
     /// Current accumulated sample count (for zombie engine health check).
     var currentSampleCount: Int { audioSamples.count }
 
+    /// The loudest sample captured so far (0...1): what tells the opening silence of a
+    /// recording from a voice (`InterruptedDictationPolicy.silencePeak`).
+    var capturedPeak: Float { Self.peak(of: audioSamples) }
+
+    /// The loudest sample of a clip, as a fraction of full scale.
+    static func peak(of samples: [Float]) -> Float {
+        samples.reduce(0) { max($0, abs($1)) }
+    }
+
     /// What AVAudioSession actually reports for the system-haptics allowance.
     ///
     /// WHY this is read rather than tracked: `setAllowHapticsAndSystemSoundsDuringRecording`

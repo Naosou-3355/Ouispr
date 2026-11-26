@@ -720,7 +720,7 @@ struct RecordingView: View {
 
     private func stopRecording() {
         HapticFeedback.recordingStopped()
-        coordinator.stopDictation()
+        coordinator.stopDictation(cause: .appButton)
     }
 
     // MARK: - Stage display (#309)

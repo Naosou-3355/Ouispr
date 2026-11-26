@@ -30,6 +30,38 @@ final class InterruptedDictationPolicyTests: XCTestCase {
         XCTAssertEqual(decide(.recording, seconds: 0), .discardTooShort)
     }
 
+    // MARK: - Opening silence (audit of 26 Nov 2026)
+
+    private func decideSilent(seconds: Double, peak: Float) -> InterruptedDictationDecision {
+        InterruptedDictationPolicy.decide(
+            status: .recording, cause: .interruption, capturedSeconds: seconds, minimum: minimum, capturedPeak: peak
+        )
+    }
+
+    func testSilentOpeningKeepsListening() {
+        XCTAssertEqual(decideSilent(seconds: 0, peak: 0), .keepListening)
+        XCTAssertEqual(decideSilent(seconds: 1, peak: 0.004), .keepListening)
+        XCTAssertEqual(decideSilent(seconds: 2.99, peak: 0.0099), .keepListening)
+    }
+
+    func testOpeningWithAVoiceIsNotProtected() {
+        XCTAssertEqual(decideSilent(seconds: 1, peak: 0.2), .transcribeCaptured)
+        XCTAssertEqual(decideSilent(seconds: 0.3, peak: 0.2), .discardTooShort)
+    }
+
+    func testSilenceAfterTheWindowEndsAsBefore() {
+        XCTAssertEqual(decideSilent(seconds: 3, peak: 0), .transcribeCaptured)
+    }
+
+    func testOpeningSilenceDoesNotSurviveAMediaServicesReset() {
+        XCTAssertEqual(
+            InterruptedDictationPolicy.decide(
+                status: .recording, cause: .mediaServicesReset, capturedSeconds: 1, minimum: minimum, capturedPeak: 0
+            ),
+            .fail
+        )
+    }
+
     // MARK: - After the recording
 
     func testTranscriptionAlreadyRunningIsLeftToFinish() {

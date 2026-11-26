@@ -732,9 +732,14 @@ class DictationCoordinator: ObservableObject {
                     // capturing for a dictation the user called off -- the orphaned
                     // engine of #60, arrived at from the other end.
                     guard mayReport(session, "warm start") else { return }
+                    // The microphone first, the listening state once it delivers audio
+                    // (audit of 26 Nov 2026): the screen used to say « listening » over
+                    // an engine that had not captured its first buffer yet.
+                    try audioEngine.startRecording()
+                    _ = try await awaitFirstAudio(from: audioEngine)
+                    guard mayReport(session, "warm start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
-                    try audioEngine.startRecording()
                     PersistentLog.log(.audioEngineStarted)
                     schedulePolishPrewarm()
                     await verifyAudioFlow()
@@ -782,6 +787,9 @@ class DictationCoordinator: ObservableObject {
                     // session is up before the engine waits on its route (#775).
                     guard try await activateSessionForColdStart(after: firstActivation, engine: audioEngine, session: session, origin: origin) else { return }
                     try audioEngine.startRecording()
+                    // Same order as the warm start: listening is shown over live audio.
+                    _ = try await awaitFirstAudio(from: audioEngine)
+                    guard mayReport(session, "cold start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
                     PersistentLog.log(.audioEngineStarted)
@@ -884,7 +892,9 @@ class DictationCoordinator: ObservableObject {
     ///     (#851): the stop sound would play over the call that cut it.
     ///   - stopTrace: the keyboard's stop tap, when a tap is what stopped it. Each step
     ///     up to the start of transcription logs its delay from that tap (#862).
-    func stopDictation(playsStopSound: Bool = true, stopTrace: StopTimingTrace? = nil) {
+    ///   - cause: what ended the recording, written in the log with what it held. No
+    ///     default on purpose: every way in names itself (audit of 26 Nov 2026).
+    func stopDictation(cause: DictationStopCause, playsStopSound: Bool = true, stopTrace: StopTimingTrace? = nil) {
         // Issue #144 re-entry guard: refuse if a transcription is already in flight.
         // Without this, tapping stop multiple times during a long model swap (e.g.
         // turbo load) spawned 3+ concurrent transcribe() calls that cancelled each
@@ -911,6 +921,7 @@ class DictationCoordinator: ObservableObject {
                 // mutes its input (#430), so there is no separate engine-stop step.
                 let samples = audioEngine.collectSamples()
                 stopTrace?.log("samplesCollected")
+                logStop(cause: cause, samples: samples)
 
                 guard !samples.isEmpty else {
                     // Logged before the session gate, like `recordingTooShort` below:
@@ -1182,7 +1193,7 @@ class DictationCoordinator: ObservableObject {
                 // (#868): a process started before first unlock can read it false forever.
                 guard self.mayActOnKeyboardSignal(.stop, flagKey: SharedKeys.stopRequested) else { return }
                 stopTrace?.log("appMainHop")
-                self.stopDictation(stopTrace: stopTrace)
+                self.stopDictation(cause: .keyboard, stopTrace: stopTrace)
             }
         }
 
@@ -2003,9 +2014,24 @@ extension DictationCoordinator {
 
         let samples = audioEngine.currentSampleCount
         let decision = InterruptedDictationPolicy.decide(
-            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration
+            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration,
+            capturedPeak: audioEngine.capturedPeak
         )
         PersistentLog.log(.recordingInterrupted(status: status.rawValue, samples: samples, decision: decision))
+
+        // Nothing has been said yet: the microphone comes back and the recording goes on.
+        // A call still holding the microphone makes `startRecording` throw (its call
+        // guard), and the recording then ends the way it did before the guard existed.
+        if decision == .keepListening {
+            do {
+                try audioEngine.startRecording()
+                PersistentLog.log(.dictationDeferred(reason: "interruption during the opening silence: kept listening"))
+                return
+            } catch {
+                PersistentLog.log(.dictationFailed(
+                    error: "keep listening refused: \(DictationFailureMessage.diagnostic(for: error))"))
+            }
+        }
 
         guard decision == .fail else {
             // The stop path collects the samples and gives a clip under the minimum
@@ -2015,7 +2041,7 @@ extension DictationCoordinator {
             // Timed like a tap (#862), from this handler and under `sessionID=interruption`:
             // the main-thread stalls logged after an interruption fall in this window.
             if decision != .letTranscriptionFinish {
-                stopDictation(playsStopSound: false, stopTrace: .tapped(sessionID: "interruption"))
+                stopDictation(cause: .interruption, playsStopSound: false, stopTrace: .tapped(sessionID: "interruption"))
             }
             return
         }
