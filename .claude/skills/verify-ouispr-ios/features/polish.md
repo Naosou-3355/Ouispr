@@ -8,7 +8,7 @@
 ## Sub-features
 
 - `polish.toggle`: « Polir la transcription » switch in Réglages → Transcription.
-- `polish.clean-up`: After transcription, fillers and punctuation are cleaned up without changing the meaning.
+- `polish.clean-up`: After transcription, fillers and punctuation are cleaned up without changing the meaning. In French, elision is restored in code before and after the engine (« le écoute » → « l'écoute », for le, la, de, que, je, ne, se, me, te; never before an aspirated h, next to a URL, an email address or code): `FrenchElision`, tested in OuisprCore, so it is checked by `swift test`, not on the simulator.
 - `polish.in-keyboard`: The same clean-up runs for dictations made from the keyboard.
 - `polish.debug`: A hidden debug screen (tap « Version » five times).
 

@@ -19,7 +19,7 @@
 - `onboarding.stop-standby`: How to stop Ouispr from the Dynamic Island.
 - `onboarding.completion`: « C'est prêt ».
 - `onboarding.resume`: An interrupted onboarding resumes at the same step.
-- `onboarding.whats-new`: An existing user sees the new Pro scenes once.
+- `onboarding.whats-new`: An existing user sees the new scenes once. The first is Home's mode button (« Choisissez le mode avant de parler »: tap = mode of the next dictation, long press on a row = default), not the keyboard's Smart Modes fan, which only the onboarding plays.
 
 ## How to get to it (user POV)
 
