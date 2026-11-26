@@ -89,12 +89,9 @@ public enum InkGeometry {
 
     /// The drop « nette »: neck spread, the moment it breaks, the recoil's damping.
     static let dropNeckSpread = 5.0
-    public static let dropBreak = 0.42
+    static let dropBreak = 0.42
     static let dropRecoilDamping = 0.38
     public static let dropDuration = 0.8
-    /// Seconds from the drop's start to the moment the bridge breaks: when Home's new
-    /// card leaves the character.
-    public static var dropBreakTime: Double { dropBreak * dropDuration }
 
     // MARK: - Held states
 

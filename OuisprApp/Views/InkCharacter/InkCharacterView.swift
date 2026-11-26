@@ -37,10 +37,25 @@ struct InkCharacterView: View {
     }
 
     var body: some View {
+        if reduceMotion {
+            // Under Reduce Motion each mood is a held shape, and one fades into the next
+            // (Apple HIG, Motion: a dissolve in place of the movement).
+            ZStack {
+                character
+                    .id(mood)
+                    .transition(.opacity)
+            }
+            .animation(.easeOut(duration: Motion.standard), value: mood)
+        } else {
+            character
+        }
+    }
+
+    private var character: some View {
         // No frames while hidden, in the background, or under Reduce Motion, where each
         // mood is shown in its held shape and redrawn only when it changes.
         let paused = isPaused || scenePhase != .active || reduceMotion
-        TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
+        return TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
             Canvas { context, size in
                 let frame = driver.frame(
                     at: timeline.date.timeIntervalSinceReferenceDate,

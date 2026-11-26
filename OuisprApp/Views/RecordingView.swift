@@ -61,8 +61,13 @@ struct RecordingView: View {
     /// this whole screen jump as the text appeared (Alex's video, 25 Nov 2026). Only the
     /// way out follows Home's new spot, so the hand-over back still lands on it.
     @State private var pinnedHomeFrame: CGRect?
-    /// « Terminé » is said, then leaves (Alex's « Murmure », 25 Nov 2026).
+    /// « Terminé » is said once the last word has come into focus, then leaves (Alex's
+    /// « Murmure », 25 Nov 2026; audit of 26 Nov 2026).
+    @State private var finishedShown = false
     @State private var finishedFaded = false
+    /// The character's last step over a result: the drop and its laughing eyes, then the
+    /// resting face (audit of 26 Nov 2026: the wave used to stay frozen under the text).
+    @State private var resultRested = false
     /// The stage words come in only once Home's « Prêt à dicter », drawn on the same
     /// line, has gone: the two read over each other for a moment (Beta 45 feedback).
     @State private var stageLabelShown = false
@@ -365,13 +370,27 @@ struct RecordingView: View {
             stageLabelRow(text: "Cleaning up")
         } else if showResult {
             stageLabelRow(text: "Finished")
-                .opacity(finishedFaded ? 0 : 1)
-                .task {
+                .opacity(finishedShown && !finishedFaded ? 1 : 0)
+                // Keyed on the text: a polished text that replaces the raw one is a new
+                // reveal (#467), and « Terminé » waits for that one too.
+                .task(id: transcriptionResult) {
+                    finishedShown = false
                     finishedFaded = false
+                    try? await Task.sleep(for: .seconds(revealDuration))
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.easeOut(duration: Motion.quick)) { finishedShown = true }
                     try? await Task.sleep(for: .seconds(1.5))
+                    guard !Task.isCancelled else { return }
                     withAnimation(.easeOut(duration: 0.6)) { finishedFaded = true }
                 }
         }
+    }
+
+    /// How long the result's text takes to come into focus: the word-by-word reveal, or
+    /// its single fade under Reduce Motion or for a long text (`RevealingText`).
+    private var revealDuration: Double {
+        let plan = WordRevealPlan(text: transcriptionResult ?? "")
+        return plan.animatesWordByWord && !reduceMotion ? plan.totalDuration : Motion.standard
     }
 
     /// The stage, murmured: 13 pt in half ink, no dot and no colour. The character above
@@ -437,11 +456,18 @@ struct RecordingView: View {
                 levels: coordinator.levels,
                 mood: sphereMood,
                 listening: displayedStatus == .recording,
-                // Still while the result holds the working pose: a moving crest would
-                // read as « still working ».
-                isPaused: mode == .standalone && showResult,
                 sharesMotion: mode == .standalone
             )
+                // Over a result: the drop and the laughing eyes, held a moment, then the
+                // resting face. Under Reduce Motion the driver shows each held shape
+                // without the passages between them.
+                .task(id: showResult) {
+                    resultRested = false
+                    guard showResult else { return }
+                    try? await Task.sleep(for: .seconds(InkGeometry.dropDuration + Self.laughingHold))
+                    guard !Task.isCancelled else { return }
+                    resultRested = true
+                }
                 .frame(width: frame.width, height: frame.height)
                 .position(x: frame.midX, y: frame.midY)
                 .opacity(sphereOpacity)
@@ -455,13 +481,14 @@ struct RecordingView: View {
         case .transcribing, .processing:
             return .working
         case .idle, .requested, .ready, .failed:
-            // In the app, the result holds the working pose, still: the drop is played
-            // on Home once this screen has gone, where the new card is seen leaving the
-            // character (Alex, 25 Nov 2026). The onboarding stays here and drops here.
+            // The wave ends here, over its result: drop, laughing eyes, rest.
             guard showResult else { return .resting }
-            return mode == .standalone ? .working : .done
+            return resultRested ? .resting : .done
         }
     }
+
+    /// How long the laughing eyes stay before the resting face comes back.
+    static let laughingHold = 1.2
 
     // MARK: - Text Zone
 
@@ -819,14 +846,12 @@ private struct LevelDrivenSphere: View {
     @ObservedObject var levels: DictationLevels
     let mood: ParticleSphereMood
     let listening: Bool
-    var isPaused = false
     let sharesMotion: Bool
 
     var body: some View {
         InkCharacterView(
             mood: mood,
             voiceLevel: listening ? levels.recentPeak : 0,
-            isPaused: isPaused,
             sharesMotion: sharesMotion
         )
     }
