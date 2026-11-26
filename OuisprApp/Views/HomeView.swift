@@ -437,9 +437,9 @@ struct HomeView: View {
             recent = latest
             return
         }
-        // The flying card carries its words from the start: a chip never travels empty
-        // and fills on landing (audit of 26 Nov 2026, n°3).
-        RevealedTitles.markSeen(head.id)
+        // The flying card carries its words from the start, faint and blurred: a chip
+        // never travels empty (audit of 26 Nov 2026, n°3). They come into focus as it
+        // lands (`ArrivingCard`).
         arrivalTarget = nil
         recent = latest
         arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
@@ -637,11 +637,14 @@ private struct ArrivingCard: View {
     let onLanded: () -> Void
 
     @State private var landed = false
+    /// The words' reveal, played once the card has landed. Under Reduce Motion the card
+    /// only fades in, its words already sharp.
+    @State private var reveal = 0.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let at = landed || reduceMotion ? to : from
-        DictationCloudCard(record: record)
+        DictationCloudCard(record: record, reveal: reduceMotion ? nil : reveal)
             .scaleEffect(landed || reduceMotion ? 1 : 0.3)
             .opacity(landed ? 1 : 0)
             .position(at)
@@ -650,7 +653,15 @@ private struct ArrivingCard: View {
                                            : DictationCloudCard.spring) {
                     landed = true
                 } completion: {
-                    onLanded()
+                    guard !reduceMotion else { return onLanded() }
+                    // Linear: the renderer eases each word itself. The row takes the
+                    // card over once every word is sharp, drawn the same way.
+                    let duration = WordRevealPlan(text: DictationCloud.title(for: record.text)).totalDuration
+                    withAnimation(.linear(duration: duration)) {
+                        reveal = 1
+                    } completion: {
+                        onLanded()
+                    }
                 }
             }
     }

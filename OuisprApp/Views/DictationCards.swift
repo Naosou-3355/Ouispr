@@ -8,8 +8,8 @@ import OuisprCore
 /// One dictation as a cloud card: its short title in a glass pill, nothing else.
 ///
 /// « Fiche historique et accueil V1 » (Alex, 24 Nov 2026): real glass, a 2-3 word
-/// title, 96 pt tall, 30 pt corners. The words come in one by one, from blurred to
-/// sharp, the rule every dictated text follows.
+/// title, 96 pt tall, 30 pt corners. A new dictation's card brings its words in one by
+/// one, from blurred to sharp, the rule every dictated text follows.
 struct DictationCloudCard: View {
     let record: TranscriptionRecord
     let title: String
@@ -29,8 +29,13 @@ struct DictationCloudCard: View {
 
     /// Title and width are worked out once by the caller that has them (the drifting
     /// row's layout); a card on its own works them out here.
-    init(record: TranscriptionRecord, title: String? = nil, width: CGFloat? = nil) {
+    /// The word-by-word reveal's progress (0 to 1) for the card arriving from the
+    /// character; nil, a sharp title, for every other card.
+    var reveal: Double?
+
+    init(record: TranscriptionRecord, title: String? = nil, width: CGFloat? = nil, reveal: Double? = nil) {
         self.record = record
+        self.reveal = reveal
         let title = title ?? DictationCloud.title(for: record.text)
         self.title = title
         self.width = width ?? CGFloat(DictationCloud.cardWidth(forTitle: title))
@@ -38,7 +43,7 @@ struct DictationCloudCard: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-        DictationTitleReveal(title: title, id: record.id)
+        DictationTitleReveal(title: title, reveal: reveal)
             .padding(.horizontal, 18)
             .frame(width: width, height: Self.height)
             .modifier(CardGlass(shape: shape, faux: Self.usesFauxGlass))
@@ -64,52 +69,106 @@ private struct CardGlass<S: Shape>: ViewModifier {
     }
 }
 
-/// A card's title, from blurred to sharp in 0.35 s, on up to two lines.
+/// A card's title, on up to two lines: sharp, or coming into focus word by word.
 ///
-/// WHY the whole title at once and not word by word: in a drifting row the words after
-/// the first could stay blurred (audit of 26 Nov 2026, n°5): each word ran its own
-/// delayed animation, and a card drawn again by its row before the delays ran out kept
-/// the words that had not started. One animation has nothing left to interrupt.
+/// Only the card arriving from the character reveals its words, once, as it lands
+/// (`reveal` animated from 0 to 1 by its flight); every other card, in a row or the
+/// history, is sharp from the start (audit of 26 Nov 2026, n°5: a card's words must
+/// never stay blurred while it drifts).
+///
+/// WHY a text renderer and not a view per word: the words keep the exact layout of the
+/// plain title the row draws once the card has landed, so the hand-over does not move
+/// a letter; and one animated value drives every word, so nothing is left running once
+/// it reaches 1 (no per-word animation to interrupt or to keep alive).
 private struct DictationTitleReveal: View {
     let title: String
-    let id: UUID
-
-    /// Already shown sharp when this card's title came in before (`RevealedTitles`).
-    @State private var shown: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(title: String, id: UUID) {
-        self.title = title
-        self.id = id
-        _shown = State(initialValue: RevealedTitles.seen.contains(id))
-    }
+    /// The word-by-word reveal's progress, 0 to 1; nil for a sharp title.
+    let reveal: Double?
 
     var body: some View {
-        Text(verbatim: title)
+        styled(titleText)
+    }
+
+    private func styled(_ text: Text) -> some View {
+        text
             .lineLimit(2)
             .multilineTextAlignment(.center)
             .font(.system(size: 16, weight: .medium))
             .foregroundStyle(Color.ouisprTextPrimary)
-            // From a faint blur, never from nothing: a card is never an empty chip.
-            .opacity(shown ? 1 : 0.25)
-            .blur(radius: shown || reduceMotion ? 0 : 6)
-            .animation(.easeOut(duration: WordRevealPlan.wordDuration), value: shown)
-            .onAppear {
-                // Once per card and launch: a card drifting back into view, or drawn
-                // again by its row, is not a new dictation.
-                RevealedTitles.seen.insert(id)
-                shown = true
-            }
+            .modifier(WordRevealEffect(reveal: reveal, plan: WordRevealPlan(text: title)))
+    }
+
+    /// The title, each word tagged with its rank for the renderer.
+    private var titleText: Text {
+        guard reveal != nil, #available(iOS 18, *) else { return Text(verbatim: title) }
+        let words = title.split(separator: " ").map(String.init)
+        var text = Text(verbatim: "")
+        for (rank, word) in words.enumerated() {
+            let piece = Text(verbatim: word).customAttribute(WordRank(rank: rank))
+            text = rank == 0 ? piece : text + Text(verbatim: " ") + piece
+        }
+        return text
     }
 }
 
-/// The cards whose title has already come in word by word.
-@MainActor
-enum RevealedTitles {
-    fileprivate static var seen = Set<UUID>()
+/// The reveal applied to a title: the renderer on iOS 18, a fade before it.
+private struct WordRevealEffect: ViewModifier {
+    let reveal: Double?
+    let plan: WordRevealPlan
 
-    /// A card whose words must show at once, such as the one flying in from the character.
-    static func markSeen(_ id: UUID) { seen.insert(id) }
+    func body(content: Content) -> some View {
+        // The renderer stays in place at 1 as well: removed at the end value, it would
+        // leave the animation nothing to interpolate, and the words would jump to sharp.
+        // At 1 it draws every word plainly, and the arriving card is gone soon after.
+        if let reveal {
+            if #available(iOS 18, *) {
+                content.textRenderer(WordRevealRenderer(progress: reveal, plan: plan))
+            } else {
+                content.opacity(0.25 + 0.75 * reveal)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+/// A word's rank in its title, read by `WordRevealRenderer`.
+@available(iOS 18, *)
+private struct WordRank: TextAttribute {
+    let rank: Int
+}
+
+/// Draws each word from a faint blur to sharp, in reading order, on the dictated text's
+/// timing (`WordRevealPlan`): `progress` is the share of the whole reveal's time.
+@available(iOS 18, *)
+private struct WordRevealRenderer: TextRenderer, Animatable {
+    var progress: Double
+    let plan: WordRevealPlan
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        let time = progress * plan.totalDuration
+        for line in layout {
+            for run in line {
+                guard let rank = run[WordRank.self]?.rank else {
+                    context.draw(run)
+                    continue
+                }
+                let local = min(1, max(0, (time - plan.delay(forWordAt: rank)) / WordRevealPlan.wordDuration))
+                // Ease out, as the dictated text's words do.
+                let eased = 1 - (1 - local) * (1 - local)
+                var copy = context
+                // From a faint blur, never from nothing: a card is never an empty chip.
+                copy.opacity = 0.25 + 0.75 * eased
+                if eased < 1 { copy.addFilter(.blur(radius: 6 * (1 - eased))) }
+                copy.draw(run)
+            }
+        }
+    }
 }
 
 // MARK: - Date
