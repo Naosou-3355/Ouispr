@@ -568,10 +568,18 @@ struct OpenedDictationCard: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.ouisprTextPrimary)
                 Spacer(minLength: 8)
-                Text(verbatim: copied ? String(localized: "Copied!") : record.shortDateLabel)
-                    .font(.ouisprCaption)
-                    .foregroundStyle(copied ? Color.ouisprSuccess : Color.ouisprTextSecondary)
-                    .monospacedDigit()
+                if copied {
+                    // As visible as the title, not a caption in the date's place (n°15).
+                    Label("Copied!", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.ouisprSuccess)
+                        .transition(.scale(scale: 0.85).combined(with: .opacity))
+                } else {
+                    Text(verbatim: record.shortDateLabel)
+                        .font(.ouisprCaption)
+                        .foregroundStyle(Color.ouisprTextSecondary)
+                        .monospacedDigit()
+                }
             }
             ScrollView {
                 RevealingText(record.text, font: .system(size: 15), wordSpacing: 4)

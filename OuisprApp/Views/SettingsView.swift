@@ -163,6 +163,8 @@ struct SettingsView: View {
 
     /// Confirmation dialog for emptying the transcription history (#70).
     @State private var showClearHistoryConfirmation = false
+    /// The Ouispr Pro row's sheen has played since Settings opened (n°20).
+    @State private var proSheenPlayed = false
 
     /// Drives the Ouispr Pro hub's cover, opened by the one Ouispr Pro row (#216).
     @State private var showPaywall = false
@@ -308,8 +310,11 @@ struct SettingsView: View {
                             // the rows around it.
                             listDisclosureIndicator
                         }
-                        // The Pro signature, once per visit (Pro bench V1.1).
-                        .proSheen()
+                        // The Pro signature, once per opening of Settings and behind the
+                        // text: replayed on every reappearance of the row while scrolling,
+                        // and drawn over the words, it read as a flicker (audit of
+                        // 26 Nov 2026, n°20).
+                        .proSheen(behindContent: true, played: $proSheenPlayed)
                         .clipped()
                     }
                 }
@@ -348,7 +353,7 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.defaultMode")
                 } footer: {
-                    Text("The mode of the next dictation on Home goes back to this one after each dictation.")
+                    Text("Mode used at the start of every dictation.")
                 }
             }
 
@@ -371,7 +376,7 @@ struct SettingsView: View {
                     }
                 }
                 if isParakeetActive {
-                    Text("Parakeet automatically detects the spoken language. This setting only applies to Whisper models.")
+                    Text("The current model detects the spoken language by itself. This setting applies to the other models.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -411,7 +416,7 @@ struct SettingsView: View {
                 if transcriptionLanguage == TranscriptionLanguageMode.autoStoredValue {
                     VStack(alignment: .leading, spacing: 4) {
                         if describesWhisperAutoDetect {
-                            Text("Auto-detect lets you dictate in any language Whisper supports. Polish adapts to the language you speak.")
+                            Text("Auto-detect lets you dictate in nearly a hundred languages. Polish adapts to the language you speak.")
                         }
                         Text("Language support varies by model. Tap ⓘ on a model card in Models for details.")
                     }
@@ -709,19 +714,21 @@ struct SettingsView: View {
     /// inside a sentence has to agree with it in both languages, and "1
     /// transcriptions" is the bug that always ships. As a trailing detail it is a
     /// number next to a label, which is also how iOS writes it.
+    ///
+    /// The count has a row of its own, a plain one: next to the red label it read as a
+    /// setting of the button, « Effacer l'historique 30 » (audit of 26 Nov 2026, n°18).
+    @ViewBuilder
     private var clearHistoryRow: some View {
+        LabeledContent("Saved dictations") {
+            // `format:` rather than an interpolated literal: the latter would put a
+            // "%lld" key in the string catalogue for a number that has nothing to
+            // translate, and this way the digits group per the user's locale.
+            Text(history.count, format: .number)
+        }
         Button(role: .destructive) {
             showClearHistoryConfirmation = true
         } label: {
-            HStack {
-                Text("Clear history")
-                Spacer()
-                // `format:` rather than an interpolated literal: the latter would put
-                // a "%lld" key in the string catalogue for a number that has nothing
-                // to translate, and this way the digits group per the user's locale.
-                Text(history.count, format: .number)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Clear history")
         }
         .disabled(history.isEmpty)
         .confirmationDialog(

@@ -73,7 +73,7 @@ struct ModelLanguageDetailView: View {
                         // Ground the tiers honestly: numbers come from the
                         // large models; the small ones degrade further.
                         if index == support.tierGroups.count - 1 {
-                            Text("Quality measured on the large Whisper models. Smaller models are less accurate.")
+                            Text("Quality measured on the largest models. Smaller models are less accurate.")
                         }
                     }
                 }

@@ -653,9 +653,11 @@ struct ToolbarView: View {
             label
             if direction == .right { arrow }
         }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-        .opacity(0.62 + hintDrift * 0.13)
+        .font(.caption2.weight(.medium))
+        // The primary ink at 80 %, steady: `.secondary` breathing down to 62 % fell to
+        // about 2:1 on the keyboard's grey (audit of 26 Nov 2026, n°12). This is about
+        // 9:1 in light and dark; only the drift says it is a hint now.
+        .foregroundStyle(Color.primary.opacity(0.8))
         .offset(x: sign * hintDrift)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)

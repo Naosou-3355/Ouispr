@@ -545,9 +545,16 @@ struct RecordingView: View {
     @ViewBuilder
     private var feedbackText: some View {
         if showCopiedFeedback {
-            Text("Copied!")
-                .font(.ouisprCaption)
+            // A label one reads from arm's length, with the haptic of the tap (audit of
+            // 26 Nov 2026, n°15: the caption-sized « Copié ! » went unseen).
+            Label("Copied!", systemImage: "checkmark.circle.fill")
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.ouisprSuccess)
+                .padding(.horizontal, 14)
+                .frame(height: 30)
+                .background(Capsule().fill(Color.ouisprSuccess.opacity(0.12)))
+                .transition(.scale(scale: 0.85).combined(with: .opacity))
+                .accessibilityAddTraits(.updatesFrequently)
         } else {
             // Empty placeholder to maintain layout
             Text(" ")

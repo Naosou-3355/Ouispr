@@ -43,9 +43,11 @@ struct GlassSegmentedBar<Item: Hashable>: View {
             title(item)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(selected ? Color.ouisprTextPrimary : Color.ouisprTextSecondary)
-                .lineLimit(1)
-                // « Très décontracté » in a third of the 300 pt mode menu.
-                .minimumScaleFactor(0.7)
+                // « Très décontracté » wraps onto two lines in a third of the 300 pt mode
+                // menu rather than shrinking: every option keeps one size (audit of
+                // 26 Nov 2026, n°14).
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
                 .padding(.horizontal, 4)
                 .frame(minWidth: 44, maxWidth: .infinity, minHeight: 44)
                 .background {

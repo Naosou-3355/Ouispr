@@ -13,6 +13,12 @@ import OuisprCore
 /// WHY nothing under Reduce Motion: the sheen is decoration with no information in
 /// it, the case Apple's guidance on Reduce Motion asks to drop rather than replace.
 private struct ProSheen: ViewModifier {
+    /// Under the content rather than over it: the band never crosses the words.
+    var behindContent = false
+    /// Whether the pass has played, kept by the screen: the pass then plays once per
+    /// screen rather than at each appearance of the view (a List row reappears on every
+    /// scroll).
+    var played: Binding<Bool>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// 0 before the pass, 1 after it. Reset on each appearance.
@@ -29,35 +35,47 @@ private struct ProSheen: ViewModifier {
     ]
 
     func body(content: Content) -> some View {
-        content
-            .overlay {
-                GeometryReader { geometry in
-                    let width = geometry.size.width
-                    LinearGradient(colors: Self.band, startPoint: .leading, endPoint: .trailing)
-                        .frame(width: width * 0.6)
-                        .rotationEffect(.degrees(14))
-                        // From fully left of the view to fully right of it.
-                        .offset(x: -width * 0.7 + progress * width * 1.7)
-                }
-                .opacity(reduceMotion ? 0 : 1)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            }
-            .onAppear {
-                progress = 0
-                guard !reduceMotion else { return }
-                // A short wait, so the pass is seen after the screen has landed.
-                withAnimation(.easeInOut(duration: 1.1).delay(0.35)) {
-                    progress = 1
-                }
-            }
+        if behindContent {
+            content.background { band }
+                .onAppear(perform: start)
+        } else {
+            content.overlay { band }
+                .onAppear(perform: start)
+        }
+    }
+
+    private var band: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            LinearGradient(colors: Self.band, startPoint: .leading, endPoint: .trailing)
+                .frame(width: width * 0.6)
+                .rotationEffect(.degrees(14))
+                // From fully left of the view to fully right of it.
+                .offset(x: -width * 0.7 + progress * width * 1.7)
+        }
+        .opacity(reduceMotion || (played?.wrappedValue == true && progress == 0) ? 0 : 1)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func start() {
+        if let played {
+            guard !played.wrappedValue else { return }
+            played.wrappedValue = true
+        }
+        progress = 0
+        guard !reduceMotion else { return }
+        // A short wait, so the pass is seen after the screen has landed.
+        withAnimation(.easeInOut(duration: 1.1).delay(0.35)) {
+            progress = 1
+        }
     }
 }
 
 extension View {
     /// The Pro signature. Apply it before the view's `clipShape`, which keeps the band
     /// inside the button's corners.
-    func proSheen() -> some View {
-        modifier(ProSheen())
+    func proSheen(behindContent: Bool = false, played: Binding<Bool>? = nil) -> some View {
+        modifier(ProSheen(behindContent: behindContent, played: played))
     }
 }
