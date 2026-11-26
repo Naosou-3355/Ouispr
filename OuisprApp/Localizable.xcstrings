@@ -7566,6 +7566,28 @@
           }
         }
       }
+    },
+    "Choose the mode before you speak" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez le mode avant de parler"
+          }
+        }
+      }
+    },
+    "Tap the button at the top left: you choose the mode of the next dictation. Long press a mode: it becomes your default." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez le bouton en haut à gauche : vous choisissez le mode de la prochaine dictée. Un appui long sur un mode en fait votre mode par défaut."
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
