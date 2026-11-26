@@ -100,6 +100,13 @@ public final class InkCharacterDriver {
         reduceMotion: Bool,
         advancing: Bool = true
     ) -> InkFrame {
+        // A paused view shows its mood's held shape, open eyes looking ahead, never the
+        // frame it stopped on: frozen mid-blink or mid-passage, the same resting face read
+        // as two dashes or two dots depending on the screen (audit of 26 Nov 2026, n°21).
+        // Nothing is mutated, not even the clock or the target: the shared driver may be
+        // running on another screen, whose next step must not lose its time.
+        guard advancing else { return InkGeometry.held(mood, pose: pose) }
+
         // Home and the recording screen can both draw for a moment during the sphere's
         // flight back home, Home asking for rest while the recording screen still
         // shows the result. The screen that shows a dictation wins: a request for rest
@@ -107,21 +114,10 @@ public final class InkCharacterDriver {
         if mood != .resting { lastActiveRequest = time }
         if mood != .resting || time - lastActiveRequest > 0.1 { target = mood }
 
-        if advancing {
-            // A long gap (paused, backgrounded) resumes without a jump.
-            let dt = lastTime.map { min(max(time - $0, 0), 1.0 / 15.0) } ?? 0
-            lastTime = time
-            if dt > 0 { step(dt, reduceMotion: reduceMotion, voiceLevel: voiceLevel) }
-        } else {
-            lastTime = nil
-            if reduceMotion { snap() }
-            // A paused view shows the mood's held shape, open eyes looking ahead, never
-            // the frame it stopped on: frozen mid-blink or mid-passage, the same resting
-            // face read as two dashes or two dots depending on the screen (audit of
-            // 26 Nov 2026, n°21). Nothing is mutated: the shared driver may be running
-            // on another screen.
-            return InkGeometry.held(target, pose: pose)
-        }
+        // A long gap (paused, backgrounded) resumes without a jump.
+        let dt = lastTime.map { min(max(time - $0, 0), 1.0 / 15.0) } ?? 0
+        lastTime = time
+        if dt > 0 { step(dt, reduceMotion: reduceMotion, voiceLevel: voiceLevel) }
         return render()
     }
 

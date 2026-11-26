@@ -188,8 +188,19 @@ final class InkCharacterTests: XCTestCase {
 
     func testAPausedViewUnderReduceMotionStillShowsTheNewMood() {
         let driver = InkCharacterDriver()
-        _ = driver.frame(at: 1, mood: .working, voiceLevel: 0, reduceMotion: true, advancing: false)
-        XCTAssertEqual(driver.settled, .working)
+        let frame = driver.frame(at: 1, mood: .working, voiceLevel: 0, reduceMotion: true, advancing: false)
+        let held = InkGeometry.held(.working, pose: InkPose(levels: [0, 0, 0], phase: 0, clock: 0))
+        XCTAssertEqual(frame.shapes, held.shapes)
+    }
+
+    func testAPausedViewLeavesTheSharedDriverAlone() {
+        let driver = InkCharacterDriver()
+        var seen = Set<String>()
+        _ = run(driver, .listening, from: 0, for: 1.2, seen: &seen)
+        let settled = driver.settled
+        _ = driver.frame(at: 5, mood: .resting, voiceLevel: 0, reduceMotion: true, advancing: false)
+        XCTAssertEqual(driver.settled, settled)
+        XCTAssertFalse(driver.isMoving)
     }
 
     func testHomeAskingForRestDoesNotUndoTheRecordingScreensResult() {
