@@ -195,8 +195,12 @@ struct HomeModeMenu: View {
         withAnimation(.easeOut(duration: Motion.quick)) { confirmedDefault = entry }
     }
 
+    /// WHY `.logicallyComplete`: the default criterion waits for the spring's last
+    /// imperceptible wobble, which kept the menu up, and the mode button away, for about
+    /// half a second after it had visibly closed.
     private func close(then action: @escaping () -> Void) {
-        withAnimation(spring) {
+        guard expanded else { return }
+        withAnimation(spring, completionCriteria: .logicallyComplete) {
             expanded = false
         } completion: {
             action()

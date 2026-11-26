@@ -123,11 +123,14 @@ public struct DriftTrack: Equatable, Sendable {
     /// What a flick left, decaying.
     public private(set) var fling: Double = 0
 
-    public init(unit: Double, direction: Double, speedFactor: Double = 1, start: Double = 0) {
+    /// - Parameter speed: the drift speed already reached, for a row taken over while it
+    ///   cruises (`DriftingCardRow` hands the cruise to this track under the finger).
+    public init(unit: Double, direction: Double, speedFactor: Double = 1, start: Double = 0, speed: Double = 0) {
         self.unit = max(1, unit)
         self.direction = direction
         self.speedFactor = speedFactor
         self.x = start
+        self.speed = speed
         wrap()
     }
 
@@ -158,5 +161,101 @@ public struct DriftTrack: Equatable, Sendable {
     private mutating func wrap() {
         while x > 0 { x -= unit }
         while x <= -2 * unit { x += unit }
+    }
+}
+
+/// A row drifting at its cruise speed, animated by the render server rather than redrawn
+/// by the app (jank audit, 26 Nov 2026).
+///
+/// WHY: a row redrawn by a 60 Hz timeline costs the app a full update of every card on
+/// every frame, for a motion that is a constant translation. Handed to Core Animation as
+/// one linear, endlessly repeated move by exactly one period, it costs the app nothing
+/// between two touches, and the loop is seamless because a whole period changes nothing
+/// on screen. The motion being linear, where the row is at any moment is known without
+/// asking the render server: that is what lets the finger take it over.
+public struct DriftCruise: Hashable, Sendable {
+    /// Where the animated move starts, already placed so that the whole move keeps the
+    /// screen covered (see `init`).
+    public let start: Double
+    /// When the move started (seconds, any monotonic origin).
+    public let startTime: Double
+    /// Signed points per second.
+    public let velocity: Double
+    public let unit: Double
+
+    /// - Parameter x: where the row is now, in `DriftTrack`'s range `(-2 * unit, 0]`.
+    public init(from x: Double, at time: Double, unit: Double, direction: Double, speedFactor: Double) {
+        let unit = max(1, unit)
+        self.unit = unit
+        self.velocity = direction * DictationCloud.driftSpeed * speedFactor
+        self.startTime = time
+        // A rightward move covers one period to the right, so it starts a period further
+        // left than a leftward one: both stay within `(-2 * unit, 0]` from end to end.
+        var start = x
+        if direction >= 0 {
+            while start > -unit { start -= unit }
+            while start <= -2 * unit { start += unit }
+        } else {
+            while start > 0 { start -= unit }
+            while start <= -unit { start += unit }
+        }
+        self.start = start
+    }
+
+    /// Where the move ends: one period on, in the drift's direction.
+    public var end: Double { start + (velocity >= 0 ? unit : -unit) }
+
+    /// Seconds for one period at the cruise speed.
+    public var period: Double { unit / max(abs(velocity), 0.001) }
+
+    /// Where the row is at `time`, in `DriftTrack`'s range.
+    public func x(at time: Double) -> Double {
+        var x = start + velocity * max(0, time - startTime)
+        while x > 0 { x -= unit }
+        while x <= -2 * unit { x += unit }
+        return x
+    }
+
+    /// How many copies of the cards keep a `width`-wide screen covered for any offset in
+    /// `(-2 * unit, 0]`.
+    public static func copies(unit: Double, width: Double) -> Int {
+        Int((width / max(1, unit)).rounded(.up)) + 2
+    }
+
+    /// Whether a row loops. A row that does not is panned in place instead: looping it
+    /// would show one card twice at once, leaving on one edge while its copy comes in on
+    /// the other (audit of 26 Nov 2026, n°9). That needs a period wider than the screen
+    /// by at least its widest card.
+    public static func loops(unit: Double, widestCard: Double, width: Double) -> Bool {
+        unit >= width + widestCard
+    }
+}
+
+/// A row too short to loop, panned slowly from one side to the other and back.
+public struct DriftPan: Hashable, Sendable {
+    /// The two offsets the row swings between, the leftmost first.
+    public let from: Double
+    public let to: Double
+    /// Seconds for one way.
+    public let duration: Double
+
+    /// - Parameters:
+    ///   - rowWidth: the cards and the gaps between them, without a trailing gap.
+    ///   - margin: room kept clear at each edge.
+    public init(rowWidth: Double, width: Double, margin: Double) {
+        let room = width - rowWidth
+        if room >= 0 {
+            // Narrower than the screen: centred, swaying by at most 24 pt each way.
+            let centred = room / 2
+            let swing = min(24, centred)
+            from = centred - swing
+            to = centred + swing
+        } else {
+            // Wider: from its first card at the left margin to its last at the right one.
+            from = width - margin - rowWidth
+            to = margin
+        }
+        // At the drift's speed, and never quicker than a 6 s swing.
+        duration = max(6, (to - from) / DictationCloud.driftSpeed)
     }
 }

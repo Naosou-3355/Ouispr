@@ -17,6 +17,9 @@ struct InkCharacterView: View {
     let mood: ParticleSphereMood
     var voiceLevel: Double = 0
     var isPaused: Bool = false
+    /// Home's resting face: its gaze drifts and it blinks, nothing quicker, so 30 frames a
+    /// second are enough; ProMotion would draw it 120 times (jank audit, 26 Nov 2026).
+    var isAmbient = false
 
     @State private var driver: InkCharacterDriver
 
@@ -29,8 +32,10 @@ struct InkCharacterView: View {
     /// kept.
     private static let referenceSide: CGFloat = 200
 
-    init(mood: ParticleSphereMood, voiceLevel: Double = 0, isPaused: Bool = false, sharesMotion: Bool = false) {
+    init(mood: ParticleSphereMood, voiceLevel: Double = 0, isPaused: Bool = false, isAmbient: Bool = false,
+         sharesMotion: Bool = false) {
         self.mood = mood
+        self.isAmbient = isAmbient
         self.voiceLevel = voiceLevel
         self.isPaused = isPaused
         _driver = State(initialValue: sharesMotion ? InkCharacterDriver.shared : InkCharacterDriver())
@@ -55,7 +60,7 @@ struct InkCharacterView: View {
         // No frames while hidden, in the background, or under Reduce Motion, where each
         // mood is shown in its held shape and redrawn only when it changes.
         let paused = isPaused || scenePhase != .active || reduceMotion
-        return TimelineView(.animation(minimumInterval: nil, paused: paused)) { timeline in
+        return TimelineView(.animation(minimumInterval: isAmbient && mood == .resting ? 1.0 / 30 : nil, paused: paused)) { timeline in
             Canvas { context, size in
                 let frame = driver.frame(
                     at: timeline.date.timeIntervalSinceReferenceDate,

@@ -221,8 +221,14 @@ struct HomeView: View {
     private var topBar: some View {
         HStack {
             if smartModeMic.isOffered {
-                HomeModeButton(mode: smartModeMic.effectiveMode) { openModeMenu() }
-                    .opacity(modeMenu == nil ? 1 : 0)
+                // Removed while the menu stands in its place, not faded to 0: a glass view
+                // brought back from zero opacity could stay invisible after the menu closed
+                // (audit of 26 Nov 2026, n°7). The empty frame keeps the bar's layout.
+                if modeMenu == nil {
+                    HomeModeButton(mode: smartModeMic.effectiveMode) { openModeMenu() }
+                } else {
+                    Color.clear.frame(width: 44, height: 44)
+                }
             }
             Spacer()
             Button {
@@ -304,6 +310,7 @@ struct HomeView: View {
         return InkCharacterView(
             mood: .resting,
             isPaused: away || sphereCover.isCovered,
+            isAmbient: true,
             sharesMotion: true
         )
         .frame(width: side, height: side)
