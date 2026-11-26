@@ -65,6 +65,8 @@ struct HomeView: View {
 
     /// The first row's frame in window coordinates: where an arriving card lands.
     @State private var firstRowFrame: CGRect = .zero
+    /// Where the first row draws the arriving card, once it has laid it out.
+    @State private var arrivalTarget: CGRect?
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -96,9 +98,6 @@ struct HomeView: View {
     /// sits over the whole dashboard, including buttons and cards. A short flick while
     /// reaching for one of them must not open another screen.
     private let swipeUpThreshold: CGFloat = 60
-
-    /// The cards' spring, the fiche's « ressort carte » (0.32 s, damping 0.84).
-    private static let cardSpring = Animation.spring(response: 0.32, dampingFraction: 0.84)
 
     var body: some View {
         VStack(spacing: 16) {
@@ -395,7 +394,14 @@ struct HomeView: View {
                         speedFactor: index == 0 ? 1 : 0.8,
                         isPaused: isDriftPaused,
                         openID: openedCard?.record.id ?? arrival?.record.id,
-                        onOpen: { record, frame in open(record, from: frame) }
+                        onOpen: { record, frame in open(record, from: frame) },
+                        onOpenCardFrame: { frame in
+                            // A looping row draws its cards more than once: the copy on
+                            // screen is the one the new card lands on.
+                            guard index == 0, arrival != nil,
+                                  frame.minX >= -1, frame.maxX <= firstRowFrame.maxX + 1 else { return }
+                            arrivalTarget = frame
+                        }
                     )
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         if index == 0 { firstRowFrame = frame }
@@ -434,6 +440,7 @@ struct HomeView: View {
         // The flying card carries its words from the start: a chip never travels empty
         // and fills on landing (audit of 26 Nov 2026, n°3).
         RevealedTitles.markSeen(head.id)
+        arrivalTarget = nil
         recent = latest
         arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
     }
@@ -446,13 +453,15 @@ struct HomeView: View {
             GeometryReader { geo in
                 let space = geo.frame(in: .global)
                 let card = DictationCloudCard(record: arrival.record)
-                // A first row starts 14 pt inside the screen's edge (`DriftEngine`).
-                let target = CGPoint(x: firstRowFrame.minX + 14 + card.width / 2,
-                                     y: firstRowFrame.midY)
+                // Where the row draws it; until the row has laid it out, a first row's
+                // head, 14 pt inside the screen's edge (`DriftEngine`).
+                let target = arrivalTarget.map { CGPoint(x: $0.midX, y: $0.midY) }
+                    ?? CGPoint(x: firstRowFrame.minX + 14 + card.width / 2, y: firstRowFrame.midY)
                 ArrivingCard(record: arrival.record,
                              from: CGPoint(x: arrival.from.x - space.minX, y: arrival.from.y - space.minY),
                              to: CGPoint(x: target.x - space.minX, y: target.y - space.minY)) {
                     self.arrival = nil
+                    self.arrivalTarget = nil
                 }
             }
             .allowsHitTesting(false)
@@ -638,7 +647,7 @@ private struct ArrivingCard: View {
             .position(at)
             .onAppear {
                 withAnimation(reduceMotion ? .easeOut(duration: Motion.standard)
-                                           : .spring(response: 0.32, dampingFraction: 0.84)) {
+                                           : DictationCloudCard.spring) {
                     landed = true
                 } completion: {
                     onLanded()
