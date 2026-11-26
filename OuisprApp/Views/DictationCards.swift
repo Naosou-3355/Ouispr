@@ -81,51 +81,42 @@ private struct CardGlass<S: InsettableShape>: ViewModifier {
     }
 }
 
-/// A card's title, word by word: blurred 6 pt to sharp in 0.35 s, a word every 0.11 s
-/// (`WordRevealPlan`). Two lines at the largest text sizes, then an ellipsis.
+/// A card's title, from blurred to sharp in 0.35 s, on up to two lines.
+///
+/// WHY the whole title at once and not word by word: in a drifting row the words after
+/// the first could stay blurred (audit of 26 Nov 2026, n°5): each word ran its own
+/// delayed animation, and a card drawn again by its row before the delays ran out kept
+/// the words that had not started. One animation has nothing left to interrupt.
 private struct DictationTitleReveal: View {
     let title: String
-
     let id: UUID
 
     /// Already shown sharp when this card's title came in before (`RevealedTitles`).
     @State private var shown: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(title: String, id: UUID) {
         self.title = title
         self.id = id
         _shown = State(initialValue: RevealedTitles.seen.contains(id))
     }
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let words = title.split(separator: " ").map(String.init)
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 4) {
-                ForEach(Array(words.enumerated()), id: \.offset) { index, word in
-                    // From a faint blur, never from nothing: a card is never an empty chip.
-                    Text(verbatim: word)
-                        .opacity(shown ? 1 : 0.25)
-                        .blur(radius: shown || reduceMotion ? 0 : 6)
-                        .animation(.easeOut(duration: WordRevealPlan.wordDuration)
-                                    .delay(reduceMotion ? 0 : Double(index) * 0.11), value: shown)
-                }
+        Text(verbatim: title)
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(Color.ouisprTextPrimary)
+            // From a faint blur, never from nothing: a card is never an empty chip.
+            .opacity(shown ? 1 : 0.25)
+            .blur(radius: shown || reduceMotion ? 0 : 6)
+            .animation(.easeOut(duration: WordRevealPlan.wordDuration), value: shown)
+            .onAppear {
+                // Once per card and launch: a card drifting back into view, or drawn
+                // again by its row, is not a new dictation.
+                RevealedTitles.seen.insert(id)
+                shown = true
             }
-            .lineLimit(1)
-            Text(verbatim: title)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .opacity(shown ? 1 : 0.25)
-                .animation(.easeOut(duration: WordRevealPlan.wordDuration), value: shown)
-        }
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(Color.ouisprTextPrimary)
-        .onAppear {
-            // Once per card and launch: a card drifting back into view, or drawn again by
-            // its row, is not a new dictation.
-            RevealedTitles.seen.insert(id)
-            shown = true
-        }
     }
 }
 
@@ -163,6 +154,9 @@ struct DriftingCardRow: View {
     let onOpen: (TranscriptionRecord, CGRect) -> Void
     /// The long-press menu, when the screen offers one (the history's Copy and Delete).
     var menu: ((TranscriptionRecord) -> AnyView)?
+    /// Whether the cards show a two-line excerpt (the history) rather than a short title
+    /// (Home).
+    var showsExcerpt = false
 
     static let edgeFade: CGFloat = 20
 
@@ -195,8 +189,11 @@ struct DriftingCardRow: View {
     private var layout: RowLayout {
         var layout = RowLayout()
         for record in records {
-            let title = DictationCloud.title(for: record.text)
-            let width = CGFloat(DictationCloud.cardWidth(forTitle: title))
+            let title = showsExcerpt
+                ? DictationCloud.title(for: record.text, maxWords: DictationCloud.excerptWords)
+                : DictationCloud.title(for: record.text)
+            let width = CGFloat(showsExcerpt ? DictationCloud.cardWidth(forExcerpt: title)
+                                             : DictationCloud.cardWidth(forTitle: title))
             layout.titles.append(title)
             layout.widths.append(width)
             layout.starts.append(layout.unit)

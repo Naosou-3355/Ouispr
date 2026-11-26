@@ -79,9 +79,13 @@ struct HistoryView: View {
         )
     }
 
-    /// The records the query finds, newest first.
+    /// The records the query finds, newest first, in a stable order: a letter typed
+    /// narrows the list, it does not reshuffle it (audit of 26 Nov 2026, n°4).
     private var visibleRecords: [TranscriptionRecord] {
-        searchResult.found
+        searchResult.found.enumerated()
+            .sorted { $0.element.createdAt != $1.element.createdAt
+                ? $0.element.createdAt > $1.element.createdAt : $0.offset < $1.offset }
+            .map(\.element)
     }
 
     var body: some View {
@@ -151,7 +155,9 @@ struct HistoryView: View {
     /// typed, the search's results.
     private var cloud: some View {
         VStack(spacing: 0) {
-            if isSearching && !query.trimmingCharacters(in: .whitespaces).isEmpty {
+            // While searching, the list: the latest dictations while the field is empty,
+            // the matches once something is typed, never the period's empty state (n°4).
+            if isSearching {
                 recordList
             } else {
                 cloudField
@@ -172,21 +178,32 @@ struct HistoryView: View {
     private var shownPeriod: DictationCloud.Period { period ?? firstPeriodWithCards }
 
     private var firstPeriodWithCards: DictationCloud.Period {
-        DictationCloud.Period.allCases.first { !records(in: $0).isEmpty } ?? .today
+        periodsWithCards.first ?? .today
     }
 
+    /// The periods that hold a card: an empty one is not offered (n°16).
+    private var periodsWithCards: [DictationCloud.Period] {
+        DictationCloud.Period.allCases.filter { !records(in: $0).isEmpty }
+    }
+
+    /// A period's cards, newest first, without a card that would have no words (n°5) and
+    /// without a repeat of the one before it (n°9).
     private func records(in period: DictationCloud.Period) -> [TranscriptionRecord] {
         let now = Date()
-        return history.records.filter { DictationCloud.Period.of($0.createdAt, now: now) == period }
+        let inPeriod = history.records.filter {
+            DictationCloud.Period.of($0.createdAt, now: now) == period
+                && !DictationCloud.title(for: $0.text).isEmpty
+        }
+        return DictationCloud.droppingRepeats(inPeriod) { $0.text }
     }
 
     /// Up to four rows, the newest cards at their heads, neighbours drifting opposite
     /// ways. Rows past the screen's edge draw only the cards on screen (`DriftingCardRow`).
     private var cloudField: some View {
         let cards = records(in: shownPeriod)
-        // At least three cards a row, up to four rows: a row of one or two cards is
-        // narrower than the screen and would show its own cards twice.
-        let rowCount = max(1, min(4, cards.count / 3))
+        // Two cards a row, up to four rows: Today's two cards are two rows, not one
+        // lost in the middle of the screen (n°5).
+        let rowCount = DictationCloud.historyRowCount(cards: cards.count)
         let rows = DictationCloud.cloudRows(cards, perRow: (cards.count + rowCount - 1) / rowCount)
         return Group {
             if cards.isEmpty {
@@ -208,7 +225,8 @@ struct HistoryView: View {
                                 HapticFeedback.keyTapped()
                                 openedCard = OpenedCardState(record: record, origin: frame)
                             },
-                            menu: { record in AnyView(cardMenu(record)) }
+                            menu: { record in AnyView(cardMenu(record)) },
+                            showsExcerpt: true
                         )
                     }
                 }
@@ -252,12 +270,16 @@ struct HistoryView: View {
                 periodCapsule
             }
             Button(action: toggleSearch) {
-                Image(systemName: isSearching ? "xmark" : "magnifyingglass")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.ouisprTextPrimary)
-                    .frame(width: 52, height: 52)
-                    .ouisprGlass(in: Circle())
-                    .contentTransition(.symbolEffect(.replace))
+                // Two symbols crossfading, not one replaced: the replace effect drew a
+                // lone dot in the glass mid-way (audit of 26 Nov 2026, n°11).
+                ZStack {
+                    Image(systemName: "magnifyingglass").opacity(isSearching ? 0 : 1)
+                    Image(systemName: "xmark").opacity(isSearching ? 1 : 0)
+                }
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(Color.ouisprTextPrimary)
+                .frame(width: 52, height: 52)
+                .ouisprGlass(in: Circle())
             }
             .buttonStyle(GlassPressStyle())
             .accessibilityLabel(isSearching ? Text("Close search") : Text("Search"))
@@ -267,7 +289,7 @@ struct HistoryView: View {
 
     private var periodCapsule: some View {
         GlassSegmentedBar(
-            items: DictationCloud.Period.allCases,
+            items: periodsWithCards,
             selection: Binding(get: { shownPeriod }, set: { period = $0 }),
             title: { Text(periodName($0)) },
             identifier: { "history.period.\($0.rawValue)" }
@@ -515,11 +537,8 @@ struct HistoryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundColor(.ouisprAccent.opacity(0.7))
-            Text("No results")
+            Text("No results for “\(query.trimmingCharacters(in: .whitespacesAndNewlines))”")
                 .font(.ouisprSubheading)
-            Text("No transcription contains “\(query.trimmingCharacters(in: .whitespacesAndNewlines))”.")
-                .font(.ouisprCaption)
-                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(32)

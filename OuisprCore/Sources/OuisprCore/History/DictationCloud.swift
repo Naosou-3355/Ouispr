@@ -50,6 +50,24 @@ public enum DictationCloud {
         min(220, max(116, Double(title.count) * 8.5 + 36))
     }
 
+    /// The history's excerpt: up to eight words, on two lines when it needs them (audit
+    /// of 26 Nov 2026, n°5).
+    public static let excerptWords = 8
+
+    /// The width of a card whose text may take two lines: one line while it fits in
+    /// 220 pt, otherwise half its length plus a word's slack, at most 250 pt.
+    public static func cardWidth(forExcerpt excerpt: String) -> Double {
+        let oneLine = Double(excerpt.count) * 8.5 + 36
+        guard oneLine > 220 else { return max(116, oneLine) }
+        return min(250, max(180, oneLine / 2 + 18 + 40))
+    }
+
+    /// How many rows the history gives a period's cards: two cards a row, up to four.
+    /// A short row pans instead of looping, so a row of one or two cards is fine.
+    public static func historyRowCount(cards: Int) -> Int {
+        max(1, min(4, (cards + 1) / 2))
+    }
+
     // MARK: - Periods
 
     /// The history's four periods, the pills of its bar.
@@ -75,7 +93,6 @@ public enum DictationCloud {
 
     // MARK: - Rows
 
-    /// Home's two rows: three cards then two, the newest first.
     /// The items without the repeats that follow each other: the same words dictated
     /// twice in a row are one card, the newest (audit of 26 Nov 2026, n°9, two « C'est pas
     /// mal » side by side). Compared without case, surrounding spaces or final punctuation.
@@ -92,6 +109,7 @@ public enum DictationCloud {
         return kept
     }
 
+    /// Home's two rows: three cards then two, the newest first.
     public static func homeRows<T>(_ items: [T]) -> [[T]] {
         let recent = Array(items.prefix(5))
         return [Array(recent.prefix(3)), Array(recent.dropFirst(3))].filter { !$0.isEmpty }

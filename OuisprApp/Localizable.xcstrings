@@ -4180,17 +4180,6 @@
         }
       }
     },
-    "No transcription contains “%@”." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune transcription ne contient « %@ »."
-          }
-        }
-      }
-    },
     "No transcriptions yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7550,6 +7539,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "No results for “%@”" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun résultat pour « %@ »"
           }
         }
       }

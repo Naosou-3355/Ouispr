@@ -412,7 +412,8 @@ struct HomeView: View {
     /// The character's drop is played on the recording screen, over the result (audit of
     /// 26 Nov 2026), so the card leaves a character already at rest.
     private func updateRecent(animated: Bool) {
-        let latest = Array(DictationCloud.droppingRepeats(history.records) { $0.text }.prefix(5))
+        let worded = history.records.filter { !DictationCloud.title(for: $0.text).isEmpty }
+        let latest = Array(DictationCloud.droppingRepeats(worded) { $0.text }.prefix(5))
         guard latest.map(\.id) != recent.map(\.id) else {
             recent = latest
             return

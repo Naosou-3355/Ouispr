@@ -69,3 +69,19 @@ final class DictationCloudRepeatsTests: XCTestCase {
         XCTAssertEqual(DictationCloud.droppingRepeats(["", ""]) { $0 }.count, 2)
     }
 }
+
+final class HistoryLayoutTests: XCTestCase {
+    func testTwoCardsARowUpToFourRows() {
+        XCTAssertEqual(DictationCloud.historyRowCount(cards: 1), 1)
+        XCTAssertEqual(DictationCloud.historyRowCount(cards: 2), 1)
+        XCTAssertEqual(DictationCloud.historyRowCount(cards: 3), 2)
+        XCTAssertEqual(DictationCloud.historyRowCount(cards: 40), 4)
+    }
+
+    func testExcerptWidthStaysOnOneLineWhileItFits() {
+        XCTAssertEqual(DictationCloud.cardWidth(forExcerpt: "Courses"), DictationCloud.cardWidth(forTitle: "Courses"))
+        let long = "Rappelle-moi d'appeler le plombier demain matin"
+        XCTAssertLessThanOrEqual(DictationCloud.cardWidth(forExcerpt: long), 250)
+        XCTAssertGreaterThanOrEqual(DictationCloud.cardWidth(forExcerpt: long), 180)
+    }
+}
