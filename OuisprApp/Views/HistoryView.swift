@@ -60,6 +60,9 @@ struct HistoryView: View {
     /// Opens the Ouispr Pro window from the "older dictations" row, on its history.
     @State private var showsPaywall = false
 
+    /// The history's cards by period (`sortIntoPeriods`).
+    @State private var cardsByPeriod: [DictationCloud.Period: [TranscriptionRecord]] = [:]
+
     /// What the query finds: free, the last `HistoryAvailability.freeSearchDays`
     /// days, with a count of the older matches; with Pro, everything (Pro offer,
     /// 25 Nov 2026). An empty query lists the whole history for everyone.
@@ -168,9 +171,11 @@ struct HistoryView: View {
                 .padding(.bottom, 12)
         }
         .onAppear {
+            sortIntoPeriods()
             if period == nil { period = firstPeriodWithCards }
         }
         .onChange(of: history.records) { _, _ in
+            sortIntoPeriods()
             if let period, records(in: period).isEmpty { self.period = firstPeriodWithCards }
         }
     }
@@ -189,12 +194,19 @@ struct HistoryView: View {
     /// A period's cards, newest first, without a card that would have no words (n°5) and
     /// without a repeat of the one before it (n°9).
     private func records(in period: DictationCloud.Period) -> [TranscriptionRecord] {
+        cardsByPeriod[period] ?? []
+    }
+
+    /// Sorts the history into its periods, once per change of the history rather than
+    /// several times on every pass of the body (the period bar, the shown period and the
+    /// field each asked for every period).
+    private func sortIntoPeriods() {
         let now = Date()
-        let inPeriod = history.records.filter {
-            DictationCloud.Period.of($0.createdAt, now: now) == period
-                && !DictationCloud.title(for: $0.text).isEmpty
+        var buckets: [DictationCloud.Period: [TranscriptionRecord]] = [:]
+        for record in history.records where !DictationCloud.title(for: record.text).isEmpty {
+            buckets[DictationCloud.Period.of(record.createdAt, now: now), default: []].append(record)
         }
-        return DictationCloud.droppingRepeats(inPeriod) { $0.text }
+        cardsByPeriod = buckets.mapValues { DictationCloud.droppingRepeats($0) { $0.text } }
     }
 
     /// Up to four rows, the newest cards at their heads, neighbours drifting opposite
