@@ -208,4 +208,21 @@ final class InkCharacterTests: XCTestCase {
         XCTAssertEqual(driver.settled, .done)
         XCTAssertFalse(driver.isMoving)
     }
+
+    /// A paused screen shows open eyes looking ahead, whatever frame the clock stopped
+    /// on (audit of 26 Nov 2026, n°21).
+    func testPausedRestIsAlwaysTheHeldEyes() {
+        let held = InkGeometry.held(.resting, pose: InkPose(levels: [0, 0, 0], phase: 0, clock: 0)).shapes
+        // Stopped at many moments, some of them mid-blink or mid-glance.
+        for stop in stride(from: 2.0, through: 8.0, by: 0.05) {
+            let driver = InkCharacterDriver()
+            var time = 0.0
+            while time < stop {
+                time += 1.0 / 60
+                _ = driver.frame(at: time, mood: .resting, voiceLevel: 0, reduceMotion: false)
+            }
+            let paused = driver.frame(at: time, mood: .resting, voiceLevel: 0, reduceMotion: false, advancing: false)
+            XCTAssertEqual(paused.shapes, held, "stopped at \(stop) s")
+        }
+    }
 }

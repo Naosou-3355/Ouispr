@@ -115,6 +115,12 @@ public final class InkCharacterDriver {
         } else {
             lastTime = nil
             if reduceMotion { snap() }
+            // A paused view shows the mood's held shape, open eyes looking ahead, never
+            // the frame it stopped on: frozen mid-blink or mid-passage, the same resting
+            // face read as two dashes or two dots depending on the screen (audit of
+            // 26 Nov 2026, n°21). Nothing is mutated: the shared driver may be running
+            // on another screen.
+            return InkGeometry.held(target, pose: pose)
         }
         return render()
     }
@@ -140,7 +146,8 @@ public final class InkCharacterDriver {
         } else {
             advancePassage(dt)
         }
-        phase += reduceMotion ? 0 : dt * (listening ? 0.35 + 1.1 * v : 0.2)
+        // The glide a little livelier with the voice (26 Nov 2026, « onduler un peu plus »).
+        phase += reduceMotion ? 0 : dt * (listening ? 0.4 + 1.3 * v : 0.2)
 
         // Each ondulation keeps its own level, slightly behind the others, as in « Le
         // logo qui parle ».

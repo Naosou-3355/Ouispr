@@ -98,7 +98,9 @@ public enum InkGeometry {
     /// The wave while listening: five ondulations, the middle three as tall as the
     /// logo's bars and following the voice, the crests gliding.
     public static func wave(_ x: Double, _ pose: InkPose) -> Double {
-        let heights = (0..<3).map { 0.42 * max(9 * ondulationScale, 42 * ondulationScale * max(0, pose.levels[$0])) }
+        // 0.5 rather than the bench's 0.42 (Alex, 26 Nov 2026: « ça devrait onduler un
+        // peu plus »): about a fifth more height, the 128 pt width unchanged.
+        let heights = (0..<3).map { 0.5 * max(9 * ondulationScale, 42 * ondulationScale * max(0, pose.levels[$0])) }
         let glide = pose.phase * period * 2
         let lobes = [
             (-2 * period, 0.45 * heights[0]), (-period, heights[0]), (0, heights[1]),

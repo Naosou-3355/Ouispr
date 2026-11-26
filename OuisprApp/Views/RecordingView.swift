@@ -378,14 +378,18 @@ struct RecordingView: View {
     /// already shows the stage; the words only confirm it (Alex's « Murmure », bench of
     /// 25 Nov 2026; Apple HIG, Feedback: unobtrusive but easy to check).
     private func stageLabelRow(text: LocalizedStringKey, showsElapsedTime: Bool = false) -> some View {
+        // Quieter than before (Alex, 26 Nov 2026: « les secondes sont trop présentes »):
+        // 12 pt, the word at 45 % ink (about 3:1, still legible), the seconds at 32 %,
+        // a detail one finds when looking for it.
         HStack(spacing: 8) {
             Text(text)
+                .foregroundStyle(Color.ouisprInk.opacity(0.45))
             if showsElapsedTime {
                 ElapsedTimeText(levels: coordinator.levels)
+                    .foregroundStyle(Color.ouisprInk.opacity(0.32))
             }
         }
-        .font(.system(size: 13))
-        .foregroundStyle(Color.ouisprInk.opacity(0.5))
+        .font(.system(size: 12))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .accessibilityElement(children: .combine)
