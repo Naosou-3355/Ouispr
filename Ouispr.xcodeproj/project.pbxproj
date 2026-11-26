@@ -26,6 +26,7 @@
 		PS250000001 /* ProSheen.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS250100001 /* ProSheen.swift */; };
 		GS250000001 /* GlassSegmentedBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS250100001 /* GlassSegmentedBar.swift */; };
 		DC250000001 /* DictationCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC250100001 /* DictationCards.swift */; };
+		AA000F28 /* FauxCardGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100F28 /* FauxCardGlass.swift */; };
 		PS250000002 /* ProWindowSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS250100002 /* ProWindowSections.swift */; };
 		AA700070 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA700170 /* HistoryView.swift */; };
 		AA7C0071 /* DictationCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C0171 /* DictationCollectionView.swift */; };
@@ -445,6 +446,7 @@
 		PS250100001 /* ProSheen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProSheen.swift; sourceTree = "<group>"; };
 		GS250100001 /* GlassSegmentedBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSegmentedBar.swift; sourceTree = "<group>"; };
 		DC250100001 /* DictationCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCards.swift; sourceTree = "<group>"; };
+		AA100F28 /* FauxCardGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FauxCardGlass.swift; sourceTree = "<group>"; };
 		PS250100002 /* ProWindowSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProWindowSections.swift; sourceTree = "<group>"; };
 		AA700170 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		AA7C0171 /* DictationCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationCollectionView.swift; sourceTree = "<group>"; };
@@ -769,6 +771,7 @@
 				PS250100001 /* ProSheen.swift */,
 				GS250100001 /* GlassSegmentedBar.swift */,
 				DC250100001 /* DictationCards.swift */,
+				AA100F28 /* FauxCardGlass.swift */,
 				PS250100002 /* ProWindowSections.swift */,
 				AA700170 /* HistoryView.swift */,
 				AA7C0171 /* DictationCollectionView.swift */,
@@ -1442,6 +1445,7 @@
 				PS250000001 /* ProSheen.swift in Sources */,
 				GS250000001 /* GlassSegmentedBar.swift in Sources */,
 				DC250000001 /* DictationCards.swift in Sources */,
+				AA000F28 /* FauxCardGlass.swift in Sources */,
 				PS250000002 /* ProWindowSections.swift in Sources */,
 				AA700070 /* HistoryView.swift in Sources */,
 				AA7C0071 /* DictationCollectionView.swift in Sources */,

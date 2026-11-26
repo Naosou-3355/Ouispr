@@ -19,10 +19,10 @@ struct DictationCloudCard: View {
     static let cornerRadius: CGFloat = 30
     static let gap: CGFloat = 8
 
-    /// The drifting cards drawn in pre-rendered glass instead of live glass: an internal
-    /// switch for the jank audit of 26 Nov 2026 (launch argument `-OuisprFauxGlass YES`),
-    /// off by default until the device says which one Alex keeps.
-    static var usesFauxGlass: Bool { UserDefaults.standard.bool(forKey: "OuisprFauxGlass") }
+    /// The drifting cards are drawn in pre-rendered glass (`FauxCardGlass`), Alex's choice
+    /// of 26 Nov 2026. Live Liquid Glass stays behind an internal switch, to compare the
+    /// two: launch argument `-OuisprLiveGlass YES`.
+    static let usesFauxGlass = !UserDefaults.standard.bool(forKey: "OuisprLiveGlass")
 
     /// Title and width are worked out once by the caller that has them (the drifting
     /// row's layout); a card on its own works them out here.
@@ -47,34 +47,14 @@ struct DictationCloudCard: View {
     }
 }
 
-/// The card's material: Liquid Glass, or its pre-rendered stand-in.
-///
-/// WHY a stand-in exists: live glass samples and blurs what is behind it on every frame
-/// the card moves, and a drifting row moves every frame. The stand-in is a translucent
-/// fill and a hairline highlight (a `drawingGroup` cost the render server more, measured): moving it
-/// costs a translation, nothing is sampled.
-private struct CardGlass<S: InsettableShape>: ViewModifier {
+/// The card's material: the pre-rendered glass, or Liquid Glass behind the switch.
+private struct CardGlass<S: Shape>: ViewModifier {
     let shape: S
     let faux: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         if faux {
-            let dark = colorScheme == .dark
-            content
-                .background {
-                    shape
-                        .fill(Color.white.opacity(dark ? 0.09 : 0.55))
-                        .overlay {
-                            shape.strokeBorder(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(dark ? 0.28 : 0.9), Color.white.opacity(dark ? 0.06 : 0.25)],
-                                    startPoint: .top, endPoint: .bottom
-                                ),
-                                lineWidth: 0.8
-                            )
-                        }
-                }
+            content.background { FauxCardGlassBackground() }
         } else {
             content.ouisprGlass(in: shape)
         }
@@ -161,6 +141,9 @@ struct DriftingCardRow: View {
     static let edgeFade: CGFloat = 20
 
     @State private var engine = DriftEngine()
+    /// The caller's latest callbacks, read by the cards when tapped or pressed: the strip
+    /// of cards compares equal from one frame to the next without them.
+    @State private var callbacks = RowCallbacks()
     /// The finger holds the row, or its flick still runs.
     @State private var manual = false
     /// The running cruise, nil while the row stands still or is under the finger.
@@ -177,7 +160,7 @@ struct DriftingCardRow: View {
     @Environment(\.scenePhase) private var scenePhase
 
     /// Each card's width and where it starts in one period of the row.
-    private struct RowLayout {
+    fileprivate struct RowLayout: Equatable {
         var titles: [String] = []
         var widths: [CGFloat] = []
         var starts: [CGFloat] = []
@@ -208,7 +191,10 @@ struct DriftingCardRow: View {
     private static var now: Double { Date().timeIntervalSinceReferenceDate }
 
     var body: some View {
-        GeometryReader { geo in
+        // A plain store, not observed: a tap reads whatever the caller gave last.
+        callbacks.onOpen = onOpen
+        callbacks.menu = menu
+        return GeometryReader { geo in
             let layout = layout
             let width = geo.size.width
             let unit = Double(max(layout.unit, 1))
@@ -252,7 +238,12 @@ struct DriftingCardRow: View {
         if manual {
             TimelineView(.animation) { timeline in
                 let x = engine.offset(at: timeline.date.timeIntervalSinceReferenceDate, drifting: !still)
-                strip(layout, unit: unit, width: width, sweep: x...x)
+                // The cards drawn for a whole screen's width either side of where the row
+                // is: the strip is the same from one frame to the next until the finger
+                // takes the row a screen further, so its cards are not evaluated again.
+                let step = Double(max(width, 1))
+                let base = (x / step).rounded(.down) * step
+                strip(layout, unit: unit, width: width, sweep: (base - step)...(base + step))
                     .offset(x: CGFloat(x))
             }
         } else if let cruise {
@@ -269,23 +260,10 @@ struct DriftingCardRow: View {
         }
     }
 
-    /// Every copy of the cards that is on screen at some offset of `sweep`; only those are
-    /// drawn, a long period's row would otherwise hold hundreds of glass views.
     private func strip(_ layout: RowLayout, unit: Double, width: CGFloat, sweep: ClosedRange<Double>) -> some View {
-        let copies = DriftCruise.copies(unit: unit, width: Double(width))
-        return ZStack(alignment: .topLeading) {
-            ForEach(0..<copies, id: \.self) { copy in
-                ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
-                    let left = Double(copy) * unit + Double(layout.starts[index])
-                    if left + sweep.upperBound + Double(layout.widths[index]) > 0
-                        && left + sweep.lowerBound < Double(width) {
-                        card(record, title: layout.titles[index], width: layout.widths[index])
-                            .offset(x: CGFloat(left))
-                    }
-                }
-            }
-        }
-        .frame(width: width, height: DictationCloudCard.height, alignment: .topLeading)
+        CardStrip(records: records, layout: layout, copies: DriftCruise.copies(unit: unit, width: Double(width)),
+                  unit: unit, width: width, sweep: sweep, openID: openID, callbacks: callbacks)
+            .equatable()
     }
 
     // MARK: Panned
@@ -294,13 +272,10 @@ struct DriftingCardRow: View {
     private func pannedRow(_ layout: RowLayout, width: CGFloat) -> some View {
         let rowWidth = Double(layout.unit - DictationCloudCard.gap)
         let pan = DriftPan(rowWidth: rowWidth, width: Double(width), margin: Double(Self.edgeFade))
-        let cards = ZStack(alignment: .topLeading) {
-            ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
-                card(record, title: layout.titles[index], width: layout.widths[index])
-                    .offset(x: layout.starts[index])
-            }
-        }
-        .frame(width: width, height: DictationCloudCard.height, alignment: .topLeading)
+        let cards = CardStrip(records: records, layout: layout, copies: 1, unit: Double(layout.unit),
+                              width: width, sweep: -Double.infinity...Double.infinity,
+                              openID: openID, callbacks: callbacks)
+            .equatable()
         if still {
             cards.offset(x: CGFloat(rowWidth <= Double(width) ? (Double(width) - rowWidth) / 2 : pan.to))
         } else {
@@ -311,42 +286,6 @@ struct DriftingCardRow: View {
             }
             .id(pan)
         }
-    }
-
-    // MARK: Cards
-
-    /// One card. Title and width come from the row's layout, worked out once per change
-    /// of the records.
-    private func card(_ record: TranscriptionRecord, title: String, width: CGFloat) -> some View {
-        GeometryReader { proxy in
-            Button {
-                onOpen(record, proxy.frame(in: .global))
-            } label: {
-                DictationCloudCard(record: record, title: title, width: width)
-            }
-            .buttonStyle(GlassPressStyle())
-            .opacity(openID == record.id ? 0 : 1)
-            // The native preview with the whole dictation, sized to its text, instead of
-            // the card lifted with one line over an empty area (audit of 26 Nov 2026, n°6).
-            .contextMenu {
-                if let menu {
-                    menu(record)
-                } else {
-                    Button {
-                        UIPasteboard.general.string = record.text
-                        HapticFeedback.keyTapped()
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                    ShareLink(item: record.text) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                }
-            } preview: {
-                DictationPreview(record: record)
-            }
-        }
-        .frame(width: width, height: DictationCloudCard.height)
     }
 
     // MARK: Moving between modes
@@ -414,6 +353,90 @@ struct DriftingCardRow: View {
                 }
             }
     }
+}
+
+/// The callbacks a row's cards call, kept by the row so the cards always reach the
+/// caller's latest ones.
+@MainActor
+private final class RowCallbacks {
+    var onOpen: (TranscriptionRecord, CGRect) -> Void = { _, _ in }
+    var menu: ((TranscriptionRecord) -> AnyView)?
+}
+
+/// Every copy of a row's cards that is on screen at some offset of `sweep`; only those are
+/// drawn, a long period's row would otherwise hold hundreds of cards.
+///
+/// WHY Equatable: under the finger the row is drawn again on every frame, and a view
+/// holding closures never compares equal, so every card's body ran 120 times a second.
+/// Compared on what it draws, the strip is left alone while only its offset moves.
+private struct CardStrip: View, Equatable {
+    let records: [TranscriptionRecord]
+    let layout: DriftingCardRow.RowLayout
+    let copies: Int
+    let unit: Double
+    let width: CGFloat
+    let sweep: ClosedRange<Double>
+    let openID: UUID?
+    let callbacks: RowCallbacks
+
+    nonisolated static func == (lhs: CardStrip, rhs: CardStrip) -> Bool {
+        lhs.records == rhs.records && lhs.layout == rhs.layout && lhs.copies == rhs.copies
+            && lhs.unit == rhs.unit && lhs.width == rhs.width && lhs.sweep == rhs.sweep
+            && lhs.openID == rhs.openID && lhs.callbacks === rhs.callbacks
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(0..<copies, id: \.self) { copy in
+                ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
+                    let left = Double(copy) * unit + Double(layout.starts[index])
+                    if left + sweep.upperBound + Double(layout.widths[index]) > 0
+                        && left + sweep.lowerBound < Double(width) {
+                        card(record, title: layout.titles[index], width: layout.widths[index])
+                            .offset(x: CGFloat(left))
+                    }
+                }
+            }
+        }
+        .frame(width: width, height: DictationCloudCard.height, alignment: .topLeading)
+    }
+
+    // MARK: Cards
+
+    /// One card. Title and width come from the row's layout, worked out once per change
+    /// of the records.
+    private func card(_ record: TranscriptionRecord, title: String, width: CGFloat) -> some View {
+        GeometryReader { proxy in
+            Button {
+                callbacks.onOpen(record, proxy.frame(in: .global))
+            } label: {
+                DictationCloudCard(record: record, title: title, width: width)
+            }
+            .buttonStyle(GlassPressStyle())
+            .opacity(openID == record.id ? 0 : 1)
+            // The native preview with the whole dictation, sized to its text, instead of
+            // the card lifted with one line over an empty area (audit of 26 Nov 2026, n°6).
+            .contextMenu {
+                if let menu = callbacks.menu {
+                    menu(record)
+                } else {
+                    Button {
+                        UIPasteboard.general.string = record.text
+                        HapticFeedback.keyTapped()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    ShareLink(item: record.text) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                }
+            } preview: {
+                DictationPreview(record: record)
+            }
+        }
+        .frame(width: width, height: DictationCloudCard.height)
+    }
+
 }
 
 /// A card's long-press preview: the whole dictation and its date, as wide as the text
