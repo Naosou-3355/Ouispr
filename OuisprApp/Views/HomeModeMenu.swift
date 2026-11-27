@@ -1,175 +1,141 @@
 // OuisprApp/Views/HomeModeMenu.swift
-// Home's mode button (top left), the glass menu it stretches into, and the line under « Prêt à dicter ».
+// Home's mode button: the mode's name under the character, opening the system menu.
 import SwiftUI
 import OuisprCore
 
-// MARK: - Button
+// MARK: - Button and menu
 
-/// The mode of the next dictation, chosen before speaking (« bouton mode » bench,
-/// Alex, 24-25 Nov 2026). A neutral glyph at rest; the armed mode's glyph, in the accent
-/// blue, when one is armed.
+/// The mode of the next dictation, said under the character and chosen there
+/// (« Banc Ouispr épuré », Alex, 27 Nov 2026, « Le nom sous le personnage »): the glyph,
+/// the name and a small chevron are one button, and a tap opens iOS's own menu.
 ///
-/// It replaces the dial that opened on a long press of the mic (#489): one visible
-/// control, where the dial was a gesture nobody could see, and the mic stays a plain
-/// ink disc.
-struct HomeModeButton: View {
+/// It replaces the glass circle at the top left and the glass menu it stretched into.
+/// The mode was said twice, by the circle's glyph and by the line under « Prêt à
+/// dicter »; it is now said once, where the eye already is (Apple HIG, Pop-up buttons:
+/// the button shows the current choice).
+///
+/// The menu: Aucun, then the pinned modes, then the Ouispr Pro row for a non-subscriber —
+/// the keyboard fan's rows (`SmartModeHomePicker`) — then the default mode and the
+/// transcription style as submenus.
+///
+/// WHY the default is a submenu and no longer a long press on a row: the system menu
+/// gives its rows a tap and nothing else. A submenu is the system's way to set a second
+/// value from the same menu, and it is one more tap, not a hidden gesture.
+struct HomeModeMenu: View {
+    /// The rows, resolved by Home when it last read the App Group.
+    let picker: SmartModeHomePicker
+    /// The mode the next dictation runs, the button's label.
     let mode: SmartMode?
-    let action: () -> Void
+    let defaultIdentifier: String?
+    let onChoose: (SmartModeFanEntry) -> Void
+    let onSetDefault: (SmartModeFanEntry) -> Void
+
+    @AppStorage(SharedKeys.transcriptionStyle, store: UserDefaults(suiteName: AppGroup.identifier))
+    private var transcriptionStyle: TranscriptionStyle = .defaultStyle
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: mode?.icon ?? "slider.horizontal.3")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(mode == nil ? Color.ouisprTextPrimary : Color.ouisprAccent)
-                .frame(width: 44, height: 44)
-                .ouisprGlass(in: Circle())
-                .contentTransition(.symbolEffect(.replace))
+        Menu {
+            // The reason modes cannot run, as the section's title: a system menu draws a
+            // header, not a footer.
+            Section {
+                ForEach(picker.entries) { entry in
+                    row(entry)
+                }
+            } header: {
+                if let reason = picker.unavailableReason {
+                    Text(verbatim: HomeSmartModeCopy.reasonText(reason))
+                }
+            }
+
+            // At the menu's foot: the default the app returns to after each dictation,
+            // and the transcription style, which applies to every dictation.
+            Section {
+                if let choices = defaultChoices {
+                    Picker(selection: defaultSelection(in: choices)) {
+                        ForEach(choices) { entry in
+                            Text(verbatim: HomeSmartModeCopy.shortName(of: entry)).tag(entry.id)
+                        }
+                    } label: {
+                        Label("Default mode", systemImage: "pin")
+                    }
+                    .pickerStyle(.menu)
+                }
+                Picker(selection: $transcriptionStyle) {
+                    ForEach(TranscriptionStyle.allCases, id: \.self) { style in
+                        Text(TranscriptionStylePicker.title(for: style)).tag(style)
+                    }
+                } label: {
+                    Label("Transcription style", systemImage: "textformat")
+                }
+                .pickerStyle(.menu)
+            }
+        } label: {
+            label
         }
-        .buttonStyle(GlassPressStyle())
+        .menuOrder(.fixed)
         .accessibilityLabel("Dictation mode")
         .accessibilityValue(Text(HomeSmartModeCopy.name(of: mode)))
         .accessibilityIdentifier("home.mode")
     }
-}
 
-// MARK: - Menu
-
-/// The menu the button's glass stretches into: Normal, then the pinned modes, then the
-/// Ouispr Pro row for a non-subscriber — the keyboard fan's rows (`SmartModeHomePicker`).
-/// A tap chooses and closes; a long press makes the row the default the app returns to
-/// after each dictation (`SmartModeDefault`), which a grey line says.
-///
-/// Anchored on the button's top-left corner, so it grows out of the button rather than
-/// appearing over it: a spring of 0.36 s, a fade under Reduce Motion.
-///
-/// At its foot, the transcription style (Formel, Décontracté, Très décontracté, #18):
-/// the same setting as Réglages → Style de transcription, drawn as the history's period
-/// bar. It applies to every dictation, the mode or none.
-struct HomeModeMenu: View {
-    let picker: SmartModeHomePicker
-    let defaultIdentifier: String?
-    let onChoose: (SmartModeFanEntry) -> Void
-    let onSetDefault: (SmartModeFanEntry) -> Void
-    let onClose: () -> Void
-
-    @AppStorage(SharedKeys.transcriptionStyle, store: UserDefaults(suiteName: AppGroup.identifier))
-    private var transcriptionStyle: TranscriptionStyle = .defaultStyle
-    @State private var expanded = false
-    /// The row just made the default, for the line that confirms it.
-    @State private var confirmedDefault: SmartModeFanEntry?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    static let width: CGFloat = 300
-    static let cornerRadius: CGFloat = 28
-
-    private var spring: Animation {
-        reduceMotion ? .easeOut(duration: Motion.quick) : .spring(response: 0.36, dampingFraction: 0.82)
-    }
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.black.opacity(0.001)
-                .ignoresSafeArea()
-                .onTapGesture { close(then: onClose) }
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(picker.entries) { entry in
-                    row(entry)
-                }
-                footer
-                GlassSegmentedBar(
-                    items: TranscriptionStyle.allCases,
-                    selection: $transcriptionStyle,
-                    title: { Text(TranscriptionStylePicker.title(for: $0)) },
-                    identifier: { "home.style.\($0.rawValue)" },
-                    height: 48
-                )
-                .padding(.top, 4)
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel(Text("Transcription style"))
-            }
-            .padding(6)
-            .frame(width: Self.width, alignment: .leading)
-            .ouisprGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-            .scaleEffect(expanded || reduceMotion ? 1 : 0.15, anchor: .topLeading)
-            .opacity(expanded ? 1 : 0)
-            .accessibilityAddTraits(.isModal)
+    /// The glyph, the name and the chevron, on the line under the character.
+    private var label: some View {
+        HStack(spacing: 6) {
+            Image(systemName: mode?.icon ?? "circle")
+                .foregroundStyle(mode == nil ? Color.ouisprTextSecondary : Color.ouisprAccentText)
+            Text(verbatim: HomeSmartModeCopy.name(of: mode))
+                .foregroundStyle(Color.ouisprTextSecondary)
+            Image(systemName: "chevron.down")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.ouisprTextTertiary)
         }
-        .onAppear { withAnimation(spring) { expanded = true } }
+        .font(.subheadline.weight(.medium))
+        .padding(.horizontal, 12)
+        // Apple's 44 pt minimum touch target (HIG, Accessibility).
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 
     private func row(_ entry: SmartModeFanEntry) -> some View {
         let selected = picker.effectiveIdentifier == entry.id
-        let enabled = picker.canChoose(entry)
-        return HStack(spacing: 12) {
-            Image(systemName: icon(of: entry))
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(selected ? Color.ouisprAccent : Color.ouisprTextSecondary)
-                .frame(width: 22)
-            Text(verbatim: HomeSmartModeCopy.shortName(of: entry))
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.ouisprTextPrimary)
-            if isDefault(entry) {
-                Text("default")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Color.ouisprAccent)
-            }
-            Spacer(minLength: 8)
-            if let tag = HomeSmartModeCopy.tagLabel(picker.tag(for: entry)) {
-                Text(verbatim: tag)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.ouisprTextSecondary)
-            }
-            if selected {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.ouisprAccent)
+        return Button {
+            onChoose(entry)
+        } label: {
+            // The system menu draws the image on the row's trailing edge: the tick on
+            // the mode that runs, the mode's glyph on the others.
+            Label {
+                Text(verbatim: HomeSmartModeCopy.shortName(of: entry))
+                // A second text is the row's subtitle in a system menu.
+                if let tag = HomeSmartModeCopy.tagLabel(picker.tag(for: entry)) {
+                    Text(verbatim: tag)
+                }
+            } icon: {
+                Image(systemName: selected ? "checkmark" : icon(of: entry))
             }
         }
-        .padding(.horizontal, 12)
-        .frame(minHeight: 52)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(selected ? Color.primary.opacity(0.06) : .clear)
-        )
-        .contentShape(Rectangle())
-        .opacity(enabled ? 1 : 0.45)
-        .onTapGesture { close { onChoose(entry) } }
-        .onLongPressGesture(minimumDuration: 0.5) { setDefault(entry) }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityAction { close { onChoose(entry) } }
-        .accessibilityAction(named: Text("Set as default")) { setDefault(entry) }
+        .disabled(!picker.canChoose(entry))
     }
 
-    @ViewBuilder
-    private var footer: some View {
-        if let reason = picker.unavailableReason {
-            Text(verbatim: HomeSmartModeCopy.reasonText(reason))
-                .font(.system(size: 12.5))
-                .foregroundStyle(Color.ouisprTextSecondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .fixedSize(horizontal: false, vertical: true)
-        } else if !picker.offersProUpgrade {
-            HStack(spacing: 6) {
-                if let confirmedDefault {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.ouisprAccent)
-                    Text("\(HomeSmartModeCopy.shortName(of: confirmedDefault)) by default",
-                         comment: "Confirmation in Home's mode menu after a long press made this mode the default.")
-                } else {
-                    Text("Long press a mode: default",
-                         comment: "Hint at the foot of Home's mode menu: a long press on a row makes it the default mode.")
-                }
+    /// The rows a default may be: the armable ones, without Ouispr Pro. Nil when there
+    /// is nothing to choose between, the same rule as Réglages.
+    private var defaultChoices: [SmartModeFanEntry]? {
+        guard !picker.offersProUpgrade, picker.modesAreArmable else { return nil }
+        let entries = picker.entries.filter { $0 != .pro }
+        return entries.count > 1 ? entries : nil
+    }
+
+    private func defaultSelection(in choices: [SmartModeFanEntry]) -> Binding<String> {
+        Binding(
+            get: {
+                // A default since unpinned reads as Aucun, as in Réglages.
+                let id = defaultIdentifier ?? SmartModeFanEntry.normal.id
+                return choices.contains { $0.id == id } ? id : SmartModeFanEntry.normal.id
+            },
+            set: { id in
+                guard let entry = choices.first(where: { $0.id == id }) else { return }
+                onSetDefault(entry)
             }
-            .font(.system(size: 12.5))
-            .foregroundStyle(Color.ouisprTextSecondary)
-            .padding(.horizontal, 14)
-            .frame(minHeight: 32)
-        }
+        )
     }
 
     private func icon(of entry: SmartModeFanEntry) -> String {
@@ -178,59 +144,6 @@ struct HomeModeMenu: View {
         case .pro: return "sparkles"
         case .mode(let mode): return mode.icon
         }
-    }
-
-    private func isDefault(_ entry: SmartModeFanEntry) -> Bool {
-        switch entry {
-        case .normal: return defaultIdentifier == nil
-        case .pro: return false
-        case .mode(let mode): return defaultIdentifier == mode.id
-        }
-    }
-
-    private func setDefault(_ entry: SmartModeFanEntry) {
-        guard picker.canChoose(entry), entry != .pro else { return }
-        HapticFeedback.longPressRecognized()
-        onSetDefault(entry)
-        withAnimation(.easeOut(duration: Motion.quick)) { confirmedDefault = entry }
-    }
-
-    /// WHY `.logicallyComplete`: the default criterion waits for the spring's last
-    /// imperceptible wobble, which kept the menu up, and the mode button away, for about
-    /// half a second after it had visibly closed.
-    private func close(then action: @escaping () -> Void) {
-        guard expanded else { return }
-        withAnimation(spring, completionCriteria: .logicallyComplete) {
-            expanded = false
-        } completion: {
-            action()
-        }
-    }
-}
-
-// MARK: - Line under « Prêt à dicter »
-
-/// The armed mode, said under « Prêt à dicter »: its glyph and « Mode Liste », and
-/// « · par défaut » when it is the default. No pill around it.
-struct HomeModeLine: View {
-    let mode: SmartMode
-    let isDefault: Bool
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: mode.icon)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Color.ouisprAccent)
-            Text("Mode \(HomeSmartModeCopy.name(of: mode))",
-                 comment: "Under Ready to dictate on Home: the Smart Mode the next dictation runs.")
-                .foregroundStyle(Color.ouisprTextSecondary)
-            if isDefault {
-                Text("· default", comment: "Appended to the Home mode line when the armed mode is the default one.")
-                    .foregroundStyle(Color.ouisprTextTertiary)
-            }
-        }
-        .font(.system(size: 15, weight: .medium))
-        .accessibilityElement(children: .combine)
     }
 }
 

@@ -121,7 +121,8 @@ struct RecordingView: View {
     /// The top row with its padding: the close button's 44 pt and 8 pt above it.
     private static let topRowHeight: CGFloat = 52
 
-    /// From the bottom of Home's character square to the top of its heading. Home lays
+    /// From the bottom of Home's character square to the top of the mode line under it
+    /// (`HomeView.readySection`, 44 pt tall where this screen's stage is 34). Home lays
     /// the square out at three quarters of its height, so an eighth of it hangs below the
     /// layout, and its stack's spacing is 16 pt (`HomeView.character`).
     private static func homeHeadingGap(characterSide: CGFloat) -> CGFloat {
@@ -154,7 +155,7 @@ struct RecordingView: View {
 
     var body: some View {
         ZStack {
-            OuisprMist()
+            OuisprBackdrop()
                 .opacity(contentOpacity)
 
             // The reader is only there for the bottom edge of the safe area, in the window

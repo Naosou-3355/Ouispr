@@ -1,15 +1,15 @@
 // OuisprApp/Views/HomeView.swift
-// Home: the character, the five latest dictations drifting in two rows, the mic, and the mode and settings buttons.
+// Home: the character, the mode under it, the three latest dictations, the mic, and the settings.
 import SwiftUI
 import OuisprCore
 
 /// Home — the app's single screen, and the first one users see after onboarding.
 ///
-/// « Fiche historique et accueil V1 » (Alex, 24-25 Nov 2026), top to bottom: the mode of
-/// the next dictation (top left) and the settings (top right); the character and
-/// « Prêt à dicter »; « Récentes », the last five dictations as glass cards in two rows
-/// drifting opposite ways, with « Tout voir » for the history; the ink mic. A dictation
-/// that lands comes out of the character and slides to the head of the first row.
+/// « Banc Ouispr épuré » (Alex, 27 Nov 2026), top to bottom: the settings (top right);
+/// the character, and under it the mode of the next dictation, which is the button that
+/// changes it; « Récentes », the three latest dictations as flat rows, with « Tout voir »
+/// for the history; the ink mic. Nothing on it moves but the character: the background is
+/// a still veil (`OuisprBackdrop`), the rows stay where they are.
 ///
 /// The history is not Home: it opens from « Tout voir » or a swipe up (#70), and has no
 /// mic of its own. One dictates from here.
@@ -22,19 +22,29 @@ struct HomeView: View {
     /// Raises the model preparation screen when a tap arrives during a load (#484).
     @Environment(\.presentModelPreparation) private var presentModelPreparation
 
-    /// The sheet on screen, if any: the history (#70), the settings or the models.
+    /// The sheet on screen, if any: the history (#70), the settings, the models or a
+    /// recent dictation.
     ///
     /// WHY one optional and not a Boolean per sheet: two Booleans can both be true,
     /// and SwiftUI presents one sheet per view. An optional cannot name two.
     @State private var sheet: HomeSheet?
 
-    /// What the two buttons at the top, « Tout voir » and the "no model" card can open.
-    private enum HomeSheet: String, Identifiable {
+    /// What the settings button, « Tout voir », a recent row and the "no model" card
+    /// can open.
+    private enum HomeSheet: Identifiable {
         case history
         case settings
         case models
+        case record(TranscriptionRecord)
 
-        var id: String { rawValue }
+        var id: String {
+            switch self {
+            case .history: return "history"
+            case .settings: return "settings"
+            case .models: return "models"
+            case .record(let record): return "record.\(record.id)"
+            }
+        }
     }
 
     /// Drives the Ouispr Pro hub: from the Pro banner, the mode menu's Ouispr Pro row, or
@@ -47,26 +57,12 @@ struct HomeView: View {
     /// process and nothing publishes that write.
     @State private var smartModeMic = SmartModeHomeMic(isOffered: false, effectiveMode: nil)
 
-    /// The mode menu while it is open.
-    @State private var modeMenu: SmartModeHomePicker?
+    /// The mode menu's rows, read with `smartModeMic` so the menu opens on what the App
+    /// Group says now. Nil when modes are not offered.
+    @State private var modePicker: SmartModeHomePicker?
 
-    /// The default mode's identifier, as the menu and the line under « Prêt à dicter » say it.
+    /// The default mode's identifier, as the menu's « Mode par défaut » says it.
     @State private var defaultModeID: String?
-
-    /// The five cards on show. Trails `history.records` while a dictation is up, so the
-    /// new card arrives once Home can be seen again rather than behind the recording screen.
-    @State private var recent: [TranscriptionRecord] = []
-
-    /// A card on its way out of the character to the head of the first row.
-    @State private var arrival: Arrival?
-
-    /// The card lifted open, if any.
-    @State private var openedCard: OpenedCardState?
-
-    /// The first row's frame in window coordinates: where an arriving card lands.
-    @State private var firstRowFrame: CGRect = .zero
-    /// Where the first row draws the arriving card, once it has laid it out.
-    @State private var arrivalTarget: CGRect?
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -74,9 +70,6 @@ struct HomeView: View {
     /// Whether a sheet or a cover hides this screen, which pauses the character.
     @ObservedObject private var sphereCover = SphereCover.shared
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    /// Where the character is, which an arriving card leaves from.
-    @ObservedObject private var homeSphere = HomeSphereAnchor.shared
 
     /// Observed so a Smart Mode switch flipped in the Pro hub moves the mode button on
     /// the way back here: the switch writes the App Group, which publishes nothing.
@@ -110,10 +103,12 @@ struct HomeView: View {
             // every vertical drag that starts on it, which would take the swipe up to
             // the history (#70) away from most of the screen.
             ViewThatFits(in: .vertical) {
+                // Hung from the top, not centred: a third dictation adds a row under the
+                // others and moves nothing above it.
                 dashboard(showsProCard: true)
-                    .frame(maxHeight: .infinity)
+                    .frame(maxHeight: .infinity, alignment: .top)
                 dashboard(showsProCard: false)
-                    .frame(maxHeight: .infinity)
+                    .frame(maxHeight: .infinity, alignment: .top)
                 ScrollView {
                     dashboard(showsProCard: false)
                 }
@@ -127,21 +122,17 @@ struct HomeView: View {
                     .padding(.bottom, 24)
             }
         }
-        .padding()
-        // The mist stops while a sheet or the paywall covers Home. Not under the recording
-        // screen: that screen fades out over it, and both mists, read off the clock, are
-        // then in the same place; a paused one would jump as it resumed.
-        .background(OuisprMist(isPaused: sheet != nil || showPaywall))
+        // The system's margins (16 pt on most iPhones), not a value of Home's own.
+        .scenePadding(.horizontal)
+        .padding(.top, 8)
+        .background(OuisprBackdrop())
         // Home pushes nothing and has no title: an empty navigation bar would only
         // take 44 pt from the top of the app's single screen.
         .toolbar(.hidden, for: .navigationBar)
-        .overlay { arrivingCard }
-        .overlay { openedCardOverlay }
-        .overlay(alignment: .topLeading) { modeMenuOverlay }
         // The swipe up to the history. `.gesture` and not `.simultaneousGesture`: a
         // simultaneous drag would fire alongside the buttons underneath instead of
         // losing to their taps. With `minimumDistance` set, a tap never reaches here.
-        // Off where it leads nowhere, and while a card or the menu is open.
+        // Off where it leads nowhere.
         .gesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
@@ -150,14 +141,13 @@ struct HomeView: View {
                     guard travelled < -swipeUpThreshold else { return }
                     openHistory()
                 },
-            including: entryPoint == .hidden || openedCard != nil || modeMenu != nil ? .none : .all
+            including: entryPoint == .hidden ? .none : .all
         )
         .sheet(item: $sheet, onDismiss: {
             // Coming back from a sheet does not re-fire `onAppear`, and the models and
             // the settings are where the model, the modes and the default change.
             modelManager.loadState()
             refreshSmartMode()
-            updateRecent(animated: false)
         }, content: { presented in
             Group {
                 switch presented {
@@ -177,6 +167,15 @@ struct HomeView: View {
                     secondarySheet {
                         ModelManagerView(modelManager: modelManager)
                     }
+                case .record(let record):
+                    // A recent row opens the dictation's own screen, as in the history.
+                    secondarySheet {
+                        if record.source == .sharedFile {
+                            VoiceNoteResultView(noteID: record.id)
+                        } else {
+                            TranscriptionDetailView(record: record)
+                        }
+                    }
                 }
             }
             // While a sheet is up, Home's character is hidden: it stops drawing.
@@ -186,26 +185,31 @@ struct HomeView: View {
         .onAppear {
             modelManager.loadState()
             refreshSmartMode()
-            updateRecent(animated: false)
         }
         // The keyboard arms modes from another app, so the change lands while this
         // screen is in the background.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshSmartMode() }
         }
+        // A reason that clears by itself (Apple Intelligence downloading, or busy) is
+        // re-read every 30 s while Home is up: the menu builds its rows from the last
+        // read, and nothing announces the moment the reason goes.
+        .task(id: modePicker?.unavailableReason) {
+            while let reason = modePicker?.unavailableReason,
+                  reason == .modelNotReady || reason == .engineRefusing {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { return }
+                refreshSmartMode()
+            }
+        }
         .onChange(of: proStatus.isProActive) { _, _ in refreshSmartMode() }
         .onChange(of: switches.values) { _, _ in refreshSmartMode() }
         // Back from a dictation: the mode has returned to its default
-        // (`DictationCoordinator`), and the new card comes out of the character.
+        // (`DictationCoordinator`).
         .onChange(of: coordinator.status) { _, status in
             guard status == .idle else { return }
             refreshSmartMode()
-            updateRecent(animated: true)
         }
-        .onChange(of: history.records) { _, _ in
-            if coordinator.status == .idle && sheet == nil { updateRecent(animated: false) }
-        }
-        .onDisappear { modeMenu = nil }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OuisprOnboardingCompleted"))) { _ in
             // HomeView mounts behind the onboarding cover, so onAppear fires before the
             // model is downloaded, and does not fire again when the cover goes.
@@ -215,20 +219,10 @@ struct HomeView: View {
 
     // MARK: - Top Bar
 
-    /// The mode of the next dictation on the left, the settings on the right: two glass
-    /// circles, 44 pt.
+    /// The settings, top right: a glass circle of 44 pt, the screen's one control up
+    /// there. The mode is said and chosen under the character (`HomeModeMenu`).
     private var topBar: some View {
         HStack {
-            if smartModeMic.isOffered {
-                // Removed while the menu stands in its place, not faded to 0: a glass view
-                // brought back from zero opacity could stay invisible after the menu closed
-                // (audit of 26 Nov 2026, n°7). The empty frame keeps the bar's layout.
-                if modeMenu == nil {
-                    HomeModeButton(mode: smartModeMic.effectiveMode) { openModeMenu() }
-                } else {
-                    Color.clear.frame(width: 44, height: 44)
-                }
-            }
             Spacer()
             Button {
                 sheet = .settings
@@ -251,10 +245,11 @@ struct HomeView: View {
     private func secondarySheet<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationStack {
             content()
-                // Inline, like History: a large title scrolled up under the leading
-                // close button before collapsing, and read "⌄glages" for a moment
-                // (audit, 22 Nov 2026, finding 9). A sheet with a close button carries
-                // its title in the bar from the start.
+                // Inline: a large title scrolled up under the leading close button
+                // before collapsing, and read "⌄glages" for a moment (audit, 22 Nov 2026,
+                // finding 9). Tried large again for the « version épurée » (27 Nov 2026):
+                // under the opaque bar below, the large title drew washed out at rest on
+                // iOS 26.3. A sheet with a close button carries its title in the bar.
                 .navigationBarTitleDisplayMode(.inline)
                 // A bar that hides what scrolls under it: through the light material
                 // the rows stayed readable behind the title (audit of 26 Nov 2026, n°17).
@@ -280,7 +275,7 @@ struct HomeView: View {
 
     // MARK: - Dashboard
 
-    /// The character, what it says, the recent cards and, where it fits, the Pro card.
+    /// The character, the mode, the recent dictations and, where it fits, the Pro card.
     private func dashboard(showsProCard: Bool) -> some View {
         VStack(spacing: 16) {
             character
@@ -291,8 +286,10 @@ struct HomeView: View {
                 modelPromptCard
             }
 
+            let recent = recentRecords
             if !recent.isEmpty {
-                recentSection
+                recentSection(recent)
+                    .padding(.top, 8)
             }
 
             // The Home Pro card: the offer, the trial reminder, or a subscriber's way
@@ -309,7 +306,7 @@ struct HomeView: View {
     ///
     /// Drawn in a 240 pt square (Alex's 1A, the bench's character 20 % larger) laid out
     /// 180 pt tall: the ink is 160 × 120 pt in the middle of the square, so the 30 pt
-    /// above and below it are empty and give their room to the recent cards. The
+    /// above and below it are empty and give their room to the mode and the list. The
     /// recording screen knows this overlap (`RecordingView.homeHeadingGap`).
     private var character: some View {
         let side: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
@@ -332,28 +329,31 @@ struct HomeView: View {
 
     // MARK: - Ready Section
 
-    /// « Prêt à dicter », and under it the mode the next dictation runs, or the one
-    /// sentence that says how.
+    /// Under the character: the mode the next dictation runs, which is also the button
+    /// that changes it, or, where modes are not offered, the one sentence that says how.
     private var readySection: some View {
         VStack(spacing: 8) {
-            Text("Ready to dictate")
-                .font(.ouisprHeading)
-                .foregroundStyle(Color.ouisprTextPrimary)
             Group {
-                if let mode = smartModeMic.effectiveMode {
-                    HomeModeLine(mode: mode, isDefault: mode.id == defaultModeID)
+                if let modePicker {
+                    HomeModeMenu(
+                        picker: modePicker,
+                        mode: smartModeMic.effectiveMode,
+                        defaultIdentifier: defaultModeID,
+                        onChoose: choose,
+                        onSetDefault: setDefault
+                    )
                 } else {
                     Text("Tap the mic and speak.")
-                        .font(.ouisprBody)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.ouisprTextSecondary)
                 }
             }
-            .frame(minHeight: 22)
+            // One height either way, so the list under it never moves.
+            .frame(minHeight: 44)
             // During the reverse trial, the one indicator it gets on this screen
             // (#593): discreet, never a nag.
             if let daysLeft = proStatus.trialBadgeDaysLeft {
                 ProTrialBadge(daysLeft: daysLeft)
-                    .padding(.top, 4)
             }
         }
         .multilineTextAlignment(.center)
@@ -364,126 +364,55 @@ struct HomeView: View {
         .animation(.easeOut(duration: Motion.quick), value: coordinator.status == .idle)
     }
 
-    // MARK: - Recent cards
+    // MARK: - Recent dictations
 
-    /// « Récentes » with « Tout voir », then the five latest dictations: three cards,
-    /// then two, drifting opposite ways.
-    private var recentSection: some View {
-        VStack(spacing: 4) {
-            HStack {
+    /// The latest three dictations with words, without the repeats that follow each other.
+    private var recentRecords: [TranscriptionRecord] {
+        Array(DictationList.shown(history.records) { $0.text }.prefix(DictationList.homeCount))
+    }
+
+    /// « Récentes » with « Tout voir », then the three latest dictations as flat rows on
+    /// one plain surface (« Banc Ouispr épuré », 27 Nov 2026). Nothing moves: a new
+    /// dictation is a new first row, there when the recording screen leaves.
+    private func recentSection(_ records: [TranscriptionRecord]) -> some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
                 Text("Recent")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.ouisprTextPrimary)
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if entryPoint != .hidden {
                     Button("See all", action: openHistory)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.ouisprAccent)
+                        .font(.body)
+                        .foregroundStyle(Color.ouisprAccentText)
+                        // Apple's 44 pt minimum touch target.
                         .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                         .accessibilityIdentifier("home.history")
                 }
             }
-            .frame(height: 44)
-            .padding(.horizontal, 4)
+            .frame(minHeight: 44)
 
-            VStack(spacing: DictationCloudCard.gap) {
-                ForEach(Array(DictationCloud.homeRows(recent).enumerated()), id: \.offset) { index, row in
-                    DriftingCardRow(
-                        records: row,
-                        direction: index == 0 ? -1 : 1,
-                        speedFactor: index == 0 ? 1 : 0.8,
-                        isPaused: isDriftPaused,
-                        openID: openedCard?.record.id ?? arrival?.record.id,
-                        onOpen: { record, frame in open(record, from: frame) },
-                        onOpenCardFrame: { frame in
-                            // A looping row draws its cards more than once: the copy on
-                            // screen is the one the new card lands on.
-                            guard index == 0, arrival != nil,
-                                  frame.minX >= -1, frame.maxX <= firstRowFrame.maxX + 1 else { return }
-                            arrivalTarget = frame
-                        }
-                    )
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
-                        if index == 0 { firstRowFrame = frame }
+            VStack(spacing: 0) {
+                ForEach(records) { record in
+                    if record.id != records.first?.id {
+                        Divider().padding(.leading, 16)
                     }
+                    Button {
+                        sheet = .record(record)
+                    } label: {
+                        DictationRow(record: record)
+                            .padding(.horizontal, 16)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home.recent.\(record.id)")
                 }
             }
-            // The cards run to the screen's edges, past Home's 16 pt margins.
-            .padding(.horizontal, -16)
+            // Flat: a plain surface, the glass is for the controls (contrôle V1.1).
+            .background(Color.ouisprSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
-    }
-
-    /// The drift stops while anything else holds the eye: a dictation, a sheet, an open
-    /// card or the menu.
-    private var isDriftPaused: Bool {
-        // Held while a new card flies in, so it lands where its row will draw it.
-        // And while a sheet or the paywall hides Home: nothing on screen to draw.
-        coordinator.status != .idle || sphereCover.isCovered || openedCard != nil || modeMenu != nil
-            || arrival != nil || sheet != nil || showPaywall
-    }
-
-    /// Show the latest five. A new head card arrives from the character when `animated`.
-    /// The character's drop is played on the recording screen, over the result (audit of
-    /// 26 Nov 2026), so the card leaves a character already at rest.
-    private func updateRecent(animated: Bool) {
-        let worded = history.records.filter { !DictationCloud.title(for: $0.text).isEmpty }
-        let latest = Array(DictationCloud.droppingRepeats(worded) { $0.text }.prefix(5))
-        guard latest.map(\.id) != recent.map(\.id) else {
-            recent = latest
-            return
-        }
-        let isNew = latest.first.map { head in !recent.contains { $0.id == head.id } } ?? false
-        guard animated, isNew, !recent.isEmpty, let head = latest.first, let from = homeSphere.homeFrame else {
-            recent = latest
-            return
-        }
-        // The flying card carries its words from the start, faint and blurred: a chip
-        // never travels empty (audit of 26 Nov 2026, n°3). They come into focus as it
-        // lands (`ArrivingCard`).
-        arrivalTarget = nil
-        recent = latest
-        arrival = Arrival(record: head, from: CGPoint(x: from.midX, y: from.midY))
-    }
-
-    /// The card coming out of the character, drawn over the screen until it lands on
-    /// the first row's head, where its row draws it from then on.
-    @ViewBuilder
-    private var arrivingCard: some View {
-        if let arrival {
-            GeometryReader { geo in
-                let space = geo.frame(in: .global)
-                let card = DictationCloudCard(record: arrival.record)
-                // Where the row draws it; until the row has laid it out, a first row's
-                // head, 14 pt inside the screen's edge (`DriftEngine`).
-                let target = arrivalTarget.map { CGPoint(x: $0.midX, y: $0.midY) }
-                    ?? CGPoint(x: firstRowFrame.minX + 14 + card.width / 2, y: firstRowFrame.midY)
-                ArrivingCard(record: arrival.record,
-                             from: CGPoint(x: arrival.from.x - space.minX, y: arrival.from.y - space.minY),
-                             to: CGPoint(x: target.x - space.minX, y: target.y - space.minY)) {
-                    self.arrival = nil
-                    self.arrivalTarget = nil
-                }
-            }
-            .allowsHitTesting(false)
-            .ignoresSafeArea()
-        }
-    }
-
-    // MARK: - Opened card
-
-    @ViewBuilder
-    private var openedCardOverlay: some View {
-        if let openedCard {
-            OpenedDictationCard(record: openedCard.record, origin: openedCard.origin) {
-                self.openedCard = nil
-            }
-            .ignoresSafeArea()
-        }
-    }
-
-    private func open(_ record: TranscriptionRecord, from frame: CGRect) {
-        HapticFeedback.keyTapped()
-        openedCard = OpenedCardState(record: record, origin: frame)
     }
 
     private func openHistory() {
@@ -505,7 +434,7 @@ struct HomeView: View {
             VStack(spacing: 12) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                 Text("Download a model to get started")
                     .font(.ouisprSubheading)
                     .foregroundStyle(Color.ouisprTextPrimary)
@@ -514,7 +443,7 @@ struct HomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Choose a model")
                     .font(.ouisprBody)
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -529,7 +458,7 @@ struct HomeView: View {
     // MARK: - New Dictation Button
 
     /// The ink mic that starts a dictation, only shown when a model is ready: a plain
-    /// disc, the mode being the button's at the top left.
+    /// disc, the mode being the button's under the character.
     ///
     /// WHY a button that starts dictation instead of a NavigationLink to TestDictationView:
     /// MainTabView shows a RecordingView overlay when coordinator.status != .idle, and a
@@ -564,38 +493,21 @@ struct HomeView: View {
 
     // MARK: - Mode menu
 
-    /// Re-read what the mode button shows from the App Group.
+    /// Re-read what the mode button shows from the App Group, and the menu's rows with it.
+    ///
+    /// WHY here and not when the menu opens: a system menu builds its rows from the
+    /// body, with no moment of its own to read the App Group. Read on appear, on the way
+    /// back to the foreground and after each change, which is when the keyboard, the Pro
+    /// hub or a dictation can have moved it; this also keeps `SystemLanguageModel` off
+    /// every body pass.
     private func refreshSmartMode() {
         smartModeMic = SmartModeHomeMic.current
         defaultModeID = SmartModeDefault.identifier
-    }
-
-    /// Resolved at open: armability cannot change while the menu is up, and reading it
-    /// once keeps `SystemLanguageModel` off every body pass.
-    private func openModeMenu() {
-        guard let picker = SmartModeHomePicker.current() else { return }
-        HapticFeedback.keyTapped()
-        modeMenu = picker
-    }
-
-    @ViewBuilder
-    private var modeMenuOverlay: some View {
-        if let modeMenu {
-            HomeModeMenu(
-                picker: modeMenu,
-                defaultIdentifier: defaultModeID,
-                onChoose: choose,
-                onSetDefault: setDefault,
-                onClose: { self.modeMenu = nil }
-            )
-            // On the button's own corner: Home's 16 pt margin.
-            .padding(16)
-        }
+        modePicker = smartModeMic.isOffered ? SmartModeHomePicker.current() : nil
     }
 
     /// A row of the menu: arm it (Normal disarms), or open the Pro window.
     private func choose(_ entry: SmartModeFanEntry) {
-        modeMenu = nil
         guard let picker = SmartModeHomePicker.current() else { return }
         switch picker.choose(entry) {
         case .openPaywall:
@@ -612,58 +524,13 @@ struct HomeView: View {
         ))
     }
 
-    /// A long press on a row: it becomes the default the app returns to after each
-    /// dictation, and the mode of the next one too.
+    /// « Mode par défaut » in the menu: the mode becomes the default the app returns to
+    /// after each dictation, and the mode of the next one too.
     private func setDefault(_ entry: SmartModeFanEntry) {
+        HapticFeedback.keyTapped()
         SmartModeDefault.set(entry.smartMode)
         SmartModeDefault.returnToDefault()
         refreshSmartMode()
-        if let picker = SmartModeHomePicker.current() { modeMenu = picker }
-    }
-}
-
-/// A card leaving the character for the first row.
-private struct Arrival: Equatable {
-    let record: TranscriptionRecord
-    let from: CGPoint
-}
-
-/// The arriving card's flight: from the character's middle, small and transparent, to
-/// the first row's head, on the cards' spring. Reduce Motion fades it in place.
-private struct ArrivingCard: View {
-    let record: TranscriptionRecord
-    let from: CGPoint
-    let to: CGPoint
-    let onLanded: () -> Void
-
-    @State private var landed = false
-    /// The words' reveal, played once the card has landed. Under Reduce Motion the card
-    /// only fades in, its words already sharp.
-    @State private var reveal = 0.0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let at = landed || reduceMotion ? to : from
-        DictationCloudCard(record: record, reveal: reduceMotion ? nil : reveal)
-            .scaleEffect(landed || reduceMotion ? 1 : 0.3)
-            .opacity(landed ? 1 : 0)
-            .position(at)
-            .onAppear {
-                withAnimation(reduceMotion ? .easeOut(duration: Motion.standard)
-                                           : DictationCloudCard.spring) {
-                    landed = true
-                } completion: {
-                    guard !reduceMotion else { return onLanded() }
-                    // Linear: the renderer eases each word itself. The row takes the
-                    // card over once every word is sharp, drawn the same way.
-                    let duration = WordRevealPlan(text: DictationCloud.title(for: record.text)).totalDuration
-                    withAnimation(.linear(duration: duration)) {
-                        reveal = 1
-                    } completion: {
-                        onLanded()
-                    }
-                }
-            }
     }
 }
 
