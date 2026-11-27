@@ -4,7 +4,8 @@ import Foundation
 
 /// The keyboard's listening face (lot 1.4, Alex's keyboard bench of 27 Nov 2026): only the
 /// character's two eyes, at their own sizes, stretched by the voice, glancing aside while
-/// the words are worked out, and the laughing eyes of `held(.done)` at the end.
+/// the words are worked out. Lot 1.5 dropped the laughing eyes at the end: the keyboard
+/// comes back the moment the text is ready.
 ///
 /// WHY EYES AND NOT THE APP'S WAVE: the keyboard's listening area is about a third of the
 /// app's screen. The wave needs its 128 pt to read as the logo; two eyes read at any size,
@@ -43,5 +44,29 @@ public extension InkGeometry {
     /// The glance while transcribing: a slow sway from one side to the other, 2.4 s a cycle.
     static func keyboardSweep(at time: Double) -> Double {
         keyboardSweepReach * sin(2 * .pi * time / 2.4)
+    }
+
+    // MARK: - The voice's wave (lot 1.5)
+
+    /// The quietest the wave gets while listening, as a share of its full height: a
+    /// silent room still shows a line that breathes, so the screen does not read as frozen.
+    static let keyboardWaveFloor = 0.08
+
+    /// The wave under the eyes while listening (lot 1.5, 27 Nov 2026): one fine line in the
+    /// eyes' ink, as tall as the voice is loud.
+    ///
+    /// Returns `samples` heights from -1 to 1, left to right, for a line `phase` radians
+    /// along. One and a half periods across, tapered to zero at both ends so the line
+    /// starts and ends on the axis like a stroke of ink, never cut off at a frame edge.
+    ///
+    /// WHY HERE: the keyboard extension has no test bundle (see `TranscribingStageHold`).
+    static func keyboardWave(level: Double, phase: Double, samples: Int) -> [Double] {
+        guard samples > 1 else { return Array(repeating: 0, count: max(samples, 0)) }
+        let amplitude = keyboardWaveFloor + (1 - keyboardWaveFloor) * clamp01(level)
+        return (0..<samples).map { index in
+            let t = Double(index) / Double(samples - 1)
+            let taper = pow(sin(.pi * t), 1.5)
+            return amplitude * taper * sin(2 * .pi * 1.5 * t + phase)
+        }
     }
 }

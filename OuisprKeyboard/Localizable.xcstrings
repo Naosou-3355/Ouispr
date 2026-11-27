@@ -189,6 +189,17 @@
         }
       }
     },
+    "Confirm" : {
+      "comment" : "VoiceOver name of the ✓ that ends a dictation and writes it, on the keyboard's listening screen: « Valider » (lot 1.5).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valider"
+          }
+        }
+      }
+    },
     "Delete voice note" : {
       "comment" : "Accessibility label of the keyboard voice note reader's button that removes the note from the keyboard; it stays in the app (#639).",
       "localizations" : {
@@ -649,16 +660,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les modes exigent iOS 26 ou plus récent."
-          }
-        }
-      }
-    },
-    "Stop" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arrêter"
           }
         }
       }
