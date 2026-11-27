@@ -357,7 +357,7 @@ struct ModelLoadingOverlay: View {
 
     /// One line saying what is happening (lot 1.1, « Une seule ligne »): the megabytes
     /// while downloading, the load with the #533 countdown when there is one, then
-    /// « Prêt ». The compile and the load read as one step: to the user both are the
+    /// nothing. The compile and the load read as one step: to the user both are the
     /// model getting ready on the phone.
     private func statusLine(for phase: Phase, at date: Date) -> Text {
         switch phase {
@@ -390,7 +390,9 @@ struct ModelLoadingOverlay: View {
                 )
             }
         case .ready:
-            return Text("Ready")
+            // Empty once ready (Alex, 27 Nov 2026): the title and the friendly line say it
+            // already. The slot keeps its room, so nothing moves, and the words fade out.
+            return Text(verbatim: "")
         }
     }
 
