@@ -1,209 +1,196 @@
 // OuisprApp/Views/ModelPreparationParts.swift
-// The pieces of the model preparation screen: the ring around the logo and a row of the
-// two-step card. Issue #708.
+// The pieces of the model preparation screen: its spacing, and the character whose eyes
+// fill with ink as the model gets ready. Lot 1.1 (Alex's bench of 27 Nov 2026).
 import SwiftUI
 import OuisprCore
 
-/// Sizes of the preparation screen, from the validated mock-up (#708).
+/// Spacing of the preparation screen, on the 8 pt grid (lot 1.1).
 ///
-/// WHY EVERY BLOCK HAS A FIXED HEIGHT: a phase change swaps the content of a block and
-/// never its size, so nothing on the screen moves vertically between the download, the
-/// optimization and the ready state. The screen it replaces moved three times: the bar
-/// under the download disappeared at the compile (#533), and the completion state was a
-/// third layout swapped in with a scale.
+/// One centred block, top to bottom: the character, the percentage, the title, the
+/// subtitle, the status line and the friendly line. The gaps say what belongs together:
+/// 8 pt inside a pair (eyes and figure, title and subtitle, status and its friendly line),
+/// 32 pt between the face and the words, 16 pt between what the screen is and what it is
+/// doing.
 enum ModelPreparationMetrics {
-    static let ringDiameter: CGFloat = 168
-    /// Inner radius at about 90 % of the outer one.
-    static let ringLineWidth: CGFloat = 8.5
-    static let discDiameter: CGFloat = 100
-    static let logoHeight: CGFloat = 40
-
-    static let ringToTitle: CGFloat = 32
-    /// Two lines of the title, bottom-aligned, so a one-line title sits where the second
-    /// line of a two-line one would.
-    static let titleHeight: CGFloat = 72
-    static let titleToSubtitle: CGFloat = 10
-    /// Three lines of the subtitle, top-aligned.
-    static let subtitleHeight: CGFloat = 72
-    static let subtitleToCard: CGFloat = 20
-    static let rowHeight: CGFloat = 22
-    static let rowSpacing: CGFloat = 12
-    static let cardVerticalPadding: CGFloat = 16
-    static let cardHorizontalPadding: CGFloat = 18
-    static let cardCornerRadius: CGFloat = 18
-    static let cardToCaption: CGFloat = 14
-    /// Two caption lines.
-    static let captionHeight: CGFloat = 42
-
-    /// Side margins of the text and the card (32 pt in the mock-up).
-    static let horizontalPadding: CGFloat = 32
-
-    /// One full turn of the spinning arc. The brief asks for a continuous linear turn and
-    /// names no speed; this is the pace of the system's own activity indicators.
-    static let spinPeriod: TimeInterval = 1.2
-
-    /// The grey track under the arc: the mock-up's `surface-2`.
-    static let track = Color(light: Color(hex: 0xE5E5EA), dark: Color(hex: 0x232B3B))
+    static let faceToPercent: CGFloat = 8
+    static let percentToTitle: CGFloat = 32
+    static let titleToSubtitle: CGFloat = 8
+    static let subtitleToStatus: CGFloat = 16
+    static let statusToMessage: CGFloat = 8
+    /// The notice at the foot of the screen, above the home indicator.
+    static let footerBottom: CGFloat = 16
+    /// Beyond this the lines get too long to read in one glance (an iPad, a landscape phone).
+    static let maxTextWidth: CGFloat = 440
 }
 
-// MARK: - Ring
+// MARK: - Face
 
-/// The ring around the Ouispr logo (#708).
+/// The ink character's two eyes, filled from the bottom with the preparation's progress,
+/// alive as laughing eyes once the model is ready (lot 1.1, « Les yeux se remplissent »).
 ///
-/// - downloading: the real fraction, from 12 o'clock clockwise, eased between ticks like
-///   the onboarding's download pill.
-/// - optimizing or loading: a short arc that turns continuously. No percentage, because
-///   Core ML reports none for a compile (#432, #533): the ring says the app is working and
-///   claims nothing about how far along it is.
-/// - ready: the arc closes to a full circle, then turns green.
+/// WHY THE SAME SIZE AS ON HOME: the screen introduces the character the user then meets
+/// on Home. Home draws it at 1.2 times the bench's size (`InkCharacterView`, 240 pt
+/// frame), so these eyes are drawn at the same scale, every proportion
+/// from `InkGeometry`. The frame is cut close around the eyes, so the percentage sits
+/// right under them.
 ///
-/// WHY A TIMELINE AND NOT `repeatForever`: a repeating animation keeps running, or jumps,
-/// when the state it was started from changes under it, and this ring changes state twice.
-/// An angle computed from the clock is exact at every frame and stops where it is told.
-struct ModelPreparationRingView: View {
-    let ring: ModelPreparationRing
+/// - Filling: each eye is a capsule outline, thin and at 55 % of the ink, and the ink
+///   rises inside it. A change of figure eases over 0.35 s rather than stepping. The
+///   gaze drifts a little, slowly, as on the bench, so a long compile does not look
+///   frozen.
+/// - Ready: the full eyes come alive (`InkGeometry.brighten`), driven by a spring that
+///   does not overshoot (0.45 s, Alex: « attention à la transition, il faut que ce soit
+///   fluide »). The drift eases back to the centre during it, so nothing jumps.
+/// - Reduce Motion: no drift, the ink stands at its level, the laughing eyes fade in.
+struct ModelPreparationFace: View {
+    /// The preparation's progress, 0 to 1.
+    let fraction: Double
+    let isReady: Bool
 
-    /// When the current turn started, so a new spin starts at 12 o'clock, where the
-    /// download's arc started.
-    @State private var spinStart = Date()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
-    /// Where the arc stood when it stopped turning, so the closing arc grows from there
-    /// instead of jumping back to 12 o'clock.
-    @State private var frozenAngle: Double = 0
+    @State private var fill = FillTween()
+    /// When the eyes started coming alive. `.distantPast` for a screen opened on a model
+    /// already ready: nothing to watch, the eyes laugh from the first frame.
+    @State private var readyAt: Date?
+    /// Where the drift had taken the eyes when they started coming alive.
+    @State private var readyGaze = 0.0
+    /// True while the passage runs, so it is drawn at the display's full rate.
+    @State private var isBrightening = false
 
-    /// Set a beat after the ring closes: first the circle completes, then it turns green.
-    @State private var isGreen = false
-
-    private typealias Metrics = ModelPreparationMetrics
+    /// Home's scale: 240 / 200 (`InkCharacterView.referenceSide`).
+    static let scale: CGFloat = 1.2
+    /// Cut close around the eyes and their laughing arcs.
+    static let size = CGSize(width: 104, height: 40)
+    fileprivate static let fillDuration = 0.35
+    private static let brightenResponse = 0.45
+    /// The bench's outline: 1.6 pt in the character's space, 55 % of the ink.
+    private static let outlineWidth = 1.6
+    private static let outlineOpacity = 0.55
+    /// The bench's drift: 0.12 of the gaze's reach, one swing in about 20 s.
+    private static let driftAmplitude = 0.12 * 0.16 * 180
+    private static let driftSpeed = 0.31
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: ring != .spinning)) { context in
-            ZStack {
-                Circle()
-                    .inset(by: Metrics.ringLineWidth / 2)
-                    .stroke(Metrics.track, lineWidth: Metrics.ringLineWidth)
-
-                Circle()
-                    .inset(by: Metrics.ringLineWidth / 2)
-                    .trim(from: 0, to: ring.arcEnd)
-                    .stroke(
-                        isGreen ? Color.ouisprSuccess : Color.ouisprAccent,
-                        style: StrokeStyle(lineWidth: Metrics.ringLineWidth, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90 + angle(at: context.date)))
-
-                Circle()
-                    .fill(Color.ouisprSurface)
-                    .frame(width: Metrics.discDiameter, height: Metrics.discDiameter)
-
-                OuisprLogo(height: Metrics.logoHeight)
-            }
-        }
-        .frame(width: Metrics.ringDiameter, height: Metrics.ringDiameter)
-        .animation(.easeInOut(duration: Motion.emphasized), value: ring.arcEnd)
-        .onChange(of: ring) { oldValue, newValue in
-            switch newValue {
-            case .spinning where oldValue != .spinning:
-                spinStart = Date()
-            case .closed:
-                frozenAngle = oldValue == .spinning ? spinAngle(at: Date()) : 0
-                // The brief: closes to 360°, then turns green in about 200 ms, ease-out.
-                // The close is the 0.35 s above; the colour waits for it.
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    withAnimation(.easeOut(duration: Motion.quick)) {
-                        isGreen = true
+        Group {
+            if reduceMotion {
+                ZStack {
+                    Canvas { context, size in
+                        draw(level: fraction, offset: 0, in: &context, size: size)
+                    }
+                    .opacity(isReady ? 0 : 1)
+                    Canvas { context, size in
+                        Self.prepare(&context, size: size)
+                        InkCharacterView.drawShapes(InkGeometry.brighten(1), in: &context)
+                    }
+                    .opacity(isReady ? 1 : 0)
+                }
+                .animation(.easeOut(duration: Motion.standard), value: isReady)
+            } else {
+                // 30 frames a second are plenty for a level easing and a slow drift; the
+                // passage to laughing eyes gets the full rate.
+                TimelineView(.animation(minimumInterval: isBrightening ? nil : 1.0 / 30,
+                                        paused: scenePhase != .active)) { timeline in
+                    Canvas { context, size in
+                        let date = timeline.date
+                        if let readyAt, date >= readyAt {
+                            let tau = springProgress(date.timeIntervalSince(readyAt))
+                            Self.prepare(&context, size: size)
+                            context.translateBy(x: readyGaze * (1 - tau), y: 0)
+                            InkCharacterView.drawShapes(InkGeometry.brighten(tau), in: &context)
+                        } else if let readyAt {
+                            // The drift is held where it will be when the passage starts.
+                            let offset = Self.drift(at: min(date, readyAt))
+                            draw(level: fill.level(at: date), offset: offset, in: &context, size: size)
+                        } else {
+                            draw(level: fill.level(at: date), offset: Self.drift(at: date), in: &context, size: size)
+                        }
                     }
                 }
-            default:
-                break
             }
         }
-        .onAppear {
-            // A screen that opens already closed (a model loaded before it appeared) is
-            // green from the first frame: there is no close to watch.
-            if ring == .closed { isGreen = true }
-        }
-        // The steps card says the same thing in words, so VoiceOver reads it there.
+        .frame(width: Self.size.width, height: Self.size.height)
+        // The percentage under it says the same thing, and VoiceOver reads it there.
         .accessibilityHidden(true)
-    }
-
-    private func angle(at date: Date) -> Double {
-        switch ring {
-        case .spinning: return spinAngle(at: date)
-        case .closed: return frozenAngle
-        case .fraction: return 0
+        .onChange(of: fraction, initial: true) { _, newValue in
+            fill = fill.retargeted(to: newValue, at: Date())
+        }
+        .onChange(of: isReady, initial: true) { oldValue, ready in
+            guard ready, readyAt == nil else { return }
+            // `initial: true` passes the same value twice on the first call: a screen
+            // that opens on a ready model.
+            if oldValue == ready {
+                readyAt = .distantPast
+                return
+            }
+            // The ink first rises to the top, then the full eyes come alive: the passage
+            // starts from full eyes, so a fill left below full would pop to it.
+            let now = Date()
+            fill = fill.retargeted(to: 1, at: now)
+            readyAt = now.addingTimeInterval(Self.fillDuration)
+            readyGaze = reduceMotion ? 0 : Self.drift(at: now.addingTimeInterval(Self.fillDuration))
+            isBrightening = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                isBrightening = false
+            }
         }
     }
 
-    private func spinAngle(at date: Date) -> Double {
-        let elapsed = date.timeIntervalSince(spinStart)
-        return (elapsed / Metrics.spinPeriod).truncatingRemainder(dividingBy: 1) * 360
+    private static func drift(at date: Date) -> Double {
+        driftAmplitude * sin(date.timeIntervalSinceReferenceDate * driftSpeed)
+    }
+
+    /// 0 → 1 along a critically damped spring: quick, settling, never past 1.
+    private func springProgress(_ elapsed: Double) -> Double {
+        guard elapsed > 0 else { return 0 }
+        let omega = 2 * Double.pi / Self.brightenResponse
+        return min(1, 1 - exp(-omega * elapsed) * (1 + omega * elapsed))
+    }
+
+    /// Moves the context to the eyes' centre, at the character's scale.
+    private static func prepare(_ context: inout GraphicsContext, size: CGSize) {
+        context.translateBy(x: size.width / 2, y: size.height / 2 - InkGeometry.eyeCentre.y * scale)
+        context.scaleBy(x: scale, y: scale)
+    }
+
+    private func draw(level: Double, offset: Double, in context: inout GraphicsContext, size: CGSize) {
+        Self.prepare(&context, size: size)
+        let ink = Color.ouisprInk
+        let radius = InkGeometry.eyeWidth / 2
+        let height = 2 * InkGeometry.eyeStrokeHalfLength + InkGeometry.eyeWidth
+        let level = min(1, max(0, level))
+        for side in [-1.0, 1] {
+            let centre = InkGeometry.eyeCentre
+            let rect = CGRect(x: side * centre.x + offset - radius, y: centre.y - height / 2,
+                              width: 2 * radius, height: height)
+            var inside = context
+            inside.clip(to: Path(roundedRect: rect, cornerRadius: radius))
+            inside.fill(
+                Path(CGRect(x: rect.minX, y: rect.maxY - height * level, width: rect.width, height: height * level)),
+                with: .color(ink)
+            )
+            let outline = Path(roundedRect: rect.insetBy(dx: Self.outlineWidth / 2, dy: Self.outlineWidth / 2),
+                               cornerRadius: radius - Self.outlineWidth / 2)
+            context.stroke(outline, with: .color(ink.opacity(Self.outlineOpacity)), lineWidth: Self.outlineWidth)
+        }
     }
 }
 
-// MARK: - Step row
+/// The ink's level easing from where it was to the new figure.
+private struct FillTween {
+    var from = 0.0
+    var to = 0.0
+    var start = Date.distantPast
 
-/// One row of the two-step card: an icon, a label and an optional value on the right.
-///
-/// - pending: empty circle, tertiary label
-/// - running: spinner in the accent colour, semibold primary label
-/// - done: green check, secondary label
-struct ModelPreparationStepRow: View {
-    let state: ModelPreparationStepState
-    let label: Text
-    /// The download's percentage while it runs. nil otherwise.
-    var value: Text?
-
-    private typealias Metrics = ModelPreparationMetrics
-
-    var body: some View {
-        HStack(spacing: 12) {
-            icon
-                .frame(width: Metrics.rowHeight, height: Metrics.rowHeight)
-
-            label
-                .font(.system(size: 17, weight: state == .running ? .semibold : .regular))
-                .foregroundStyle(labelStyle)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-
-            Spacer(minLength: 8)
-
-            if let value {
-                value
-                    .font(.system(size: 17, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(Color.ouisprAccentText)
-                    .lineLimit(1)
-            }
-        }
-        .frame(height: Metrics.rowHeight)
-        .accessibilityElement(children: .combine)
+    func level(at date: Date) -> Double {
+        let t = min(1, max(0, date.timeIntervalSince(start) / ModelPreparationFace.fillDuration))
+        // Ease out: the ink rises quickly, then settles.
+        return from + (to - from) * (1 - pow(1 - t, 3))
     }
 
-    @ViewBuilder
-    private var icon: some View {
-        switch state {
-        case .pending:
-            Image(systemName: "circle")
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(.tertiary)
-        case .running:
-            ProgressView()
-                .controlSize(.small)
-                .tint(Color.ouisprAccent)
-        case .done:
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(Color.ouisprSuccess)
-        }
-    }
-
-    private var labelStyle: HierarchicalShapeStyle {
-        switch state {
-        case .pending: return .tertiary
-        case .running: return .primary
-        case .done: return .secondary
-        }
+    func retargeted(to target: Double, at date: Date) -> FillTween {
+        FillTween(from: level(at: date), to: target, start: date)
     }
 }

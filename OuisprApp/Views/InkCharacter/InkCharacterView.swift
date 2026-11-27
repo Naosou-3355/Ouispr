@@ -81,7 +81,12 @@ struct InkCharacterView: View {
         let scale = min(size.width, size.height) / referenceSide
         context.translateBy(x: size.width / 2, y: size.height / 2)
         context.scaleBy(x: scale, y: scale)
+        drawShapes(frame, in: &context)
+    }
 
+    /// Draws a frame in a context already moved to the character's centre and scaled to
+    /// its points. Shared with the model preparation screen's eyes.
+    static func drawShapes(_ frame: InkFrame, in context: inout GraphicsContext) {
         // The logo's shading, in one ink: left .6, centre 1, right .8, faded in as the
         // stroke becomes the wave and out as it becomes eyes again.
         let ink = Color.ouisprInk

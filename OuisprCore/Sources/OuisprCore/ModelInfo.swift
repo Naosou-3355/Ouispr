@@ -61,7 +61,7 @@ public struct ModelInfo: Identifiable {
         formatter.unitOptions = .providedUnit
         formatter.unitStyle = .medium
         formatter.numberFormatter.maximumFractionDigits = 0
-        // No grouping, to match the "%lld MB of %lld MB" download counter.
+        // No grouping, to match the preparation screen's download counter.
         formatter.numberFormatter.usesGroupingSeparator = false
         let megabytes = Measurement(value: Double(sizeBytes / 1_000_000), unit: UnitInformationStorage.megabytes)
         return "~" + formatter.string(from: megabytes)

@@ -222,17 +222,6 @@
         }
       }
     },
-    "%lld MB of %lld MB" : {
-      "comment" : "Byte counter shown under the download percentage (issue #207). Arguments are downloaded and total megabytes.",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Mo sur %lld Mo"
-          }
-        }
-      }
-    },
     "%lld days free, then %@" : {
       "localizations" : {
         "fr" : {
@@ -802,17 +791,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Environ 99 langues (multilingue)"
-          }
-        }
-      }
-    },
-    "About %lld minutes left" : {
-      "comment" : "Preparation screen countdown, above the cycling phrases, during a first model compile (issue #533). The argument is a number of minutes, always 2 or more: the countdown goes from 2 straight to 'Less than a minute left'. An estimate, not a measurement.",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Environ %lld minutes restantes"
           }
         }
       }
@@ -1595,6 +1573,28 @@
         }
       }
     },
+    "Downloading · %lld of %lld MB" : {
+      "comment" : "Model preparation status while downloading: megabytes done, then the total (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Téléchargement · %1$lld sur %2$lld Mo"
+          }
+        }
+      }
+    },
+    "Downloading…" : {
+      "comment" : "Model preparation status, before the first downloaded byte (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Téléchargement…"
+          }
+        }
+      }
+    },
     "Finished" : {
       "comment" : "Recording screen stage label once the text is ready (design V2).",
       "localizations" : {
@@ -1606,6 +1606,28 @@
         }
       }
     },
+    "Halfway there. The coffee is still hot." : {
+      "comment" : "Friendly line on the model preparation screen at 50 % (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À mi-chemin. Le café est encore chaud."
+          }
+        }
+      }
+    },
+    "Just a few more words to learn." : {
+      "comment" : "Friendly line on the model preparation screen at 75 % (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore quelques mots à apprendre."
+          }
+        }
+      }
+    },
     "Listening" : {
       "comment" : "Recording screen stage label while the microphone is open (design V2).",
       "localizations" : {
@@ -1613,6 +1635,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Écoute"
+          }
+        }
+      }
+    },
+    "Loading the model · about %lld min left" : {
+      "comment" : "Model preparation status with the countdown of a long first preparation (lot 1.1, #533).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement du modèle · encore %lld min environ"
+          }
+        }
+      }
+    },
+    "Loading the model · under a minute left" : {
+      "comment" : "Model preparation status, last minute of a long first preparation (lot 1.1, #533).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement du modèle · moins d’une minute"
+          }
+        }
+      }
+    },
+    "Loading the model…" : {
+      "comment" : "Model preparation status after the download (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement du modèle…"
           }
         }
       }
@@ -2282,6 +2337,28 @@
         }
       }
     },
+    "Progress" : {
+      "comment" : "VoiceOver name of the model preparation percentage (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avancement"
+          }
+        }
+      }
+    },
+    "Ready to listen to you." : {
+      "comment" : "Friendly line on the model preparation screen once the model is ready (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prêt à vous écouter."
+          }
+        }
+      }
+    },
     "Recent" : {
       "localizations" : {
         "fr" : {
@@ -2491,6 +2568,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le délai d’inactivité est la durée pendant laquelle Ouispr reste prêt après votre dernière dictée. Plus court, il économise la batterie et la Dynamic Island disparaît plus tôt. Plus long, votre prochaine dictée au clavier démarre plus vite. Illimité dure jusqu’à ce qu’iOS y mette fin."
+          }
+        }
+      }
+    },
+    "The parakeet is warming up its voice." : {
+      "comment" : "Friendly line on the model preparation screen at 25 % (lot 1.1).",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La perruche s’échauffe la voix."
           }
         }
       }
@@ -2821,17 +2909,6 @@
         }
       }
     },
-    "Download complete" : {
-      "comment" : "Model preparation step, download done, when the model's size is unknown (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Téléchargement terminé"
-          }
-        }
-      }
-    },
     "Download incomplete. Tap to finish it." : {
       "comment" : "Model card, for a model listed as downloaded whose files are incomplete on disk (issue #558). Tapping the card downloads only the missing files.",
       "localizations" : {
@@ -2849,17 +2926,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Téléchargés"
-          }
-        }
-      }
-    },
-    "Downloaded · %@" : {
-      "comment" : "Model preparation step, download done. The placeholder is the model's size (483 MB) (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Téléchargé · %@"
           }
         }
       }
@@ -3688,17 +3754,6 @@
         }
       }
     },
-    "Less than a minute left" : {
-      "comment" : "Preparation screen countdown, the floor it holds for as long as a first model compile overruns its estimate (issue #533). Must never promise the end is near: no 'almost ready'.",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moins d’une minute restante"
-          }
-        }
-      }
-    },
     "Licenses" : {
       "localizations" : {
         "fr" : {
@@ -3771,17 +3826,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chargement en mémoire…"
-          }
-        }
-      }
-    },
-    "Loading the model" : {
-      "comment" : "Model preparation step: the model loading into memory (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chargement du modèle"
           }
         }
       }
@@ -4281,28 +4325,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L’optimisation n’a pas fini en %lld s. Elle continue, réessayez dans un instant."
-          }
-        }
-      }
-    },
-    "Optimized for this iPhone" : {
-      "comment" : "Model preparation step, done (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optimisé pour cet iPhone"
-          }
-        }
-      }
-    },
-    "Optimizing for this iPhone" : {
-      "comment" : "Model preparation step: the Core ML compile, pending or running (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optimisation pour cet iPhone"
           }
         }
       }
