@@ -249,7 +249,13 @@ struct MainTabView: View {
                             .coversHomeSphere()
                     }
                 }
-                .tint(.ouisprAccent)
+                // The text accent, not the fill one: this tint draws words and glyphs
+                // (the sheets' close chevron, links, system menus' ticks), which must
+                // read at 4.5:1 in both appearances (contrôle V1.1, 27 Nov 2026). The
+                // switches and progress bars that want the fill set `.ouisprAccent`
+                // themselves. `AccentColor` in the asset catalogue holds the same two
+                // values for what UIKit tints outside SwiftUI (alerts, share sheets).
+                .tint(.ouisprAccentText)
                 // Dismissing a sheet is the app becoming idle again: a voice note that
                 // waited behind it may come up now (`VoiceNoteStackPresentationPolicy`).
                 .onChange(of: showsPaywall) { _, shown in
