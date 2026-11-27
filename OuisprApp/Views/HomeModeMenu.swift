@@ -73,8 +73,6 @@ struct HomeModeMenu: View {
             label
         }
         .menuOrder(.fixed)
-        .accessibilityLabel("Dictation mode")
-        .accessibilityValue(Text(HomeSmartModeCopy.name(of: mode)))
         .accessibilityIdentifier("home.mode")
     }
 
@@ -94,6 +92,11 @@ struct HomeModeMenu: View {
         // Apple's 44 pt minimum touch target (HIG, Accessibility).
         .frame(minHeight: 44)
         .contentShape(Rectangle())
+        // On the label, not on the `Menu`: set there, VoiceOver read the button with no
+        // name at all (measured on iOS 26.3, 27 Nov 2026).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Dictation mode"))
+        .accessibilityValue(Text(HomeSmartModeCopy.name(of: mode)))
     }
 
     private func row(_ entry: SmartModeFanEntry) -> some View {

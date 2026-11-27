@@ -22,10 +22,10 @@ enum RecordingMode {
 /// Elements appearing/disappearing causes jarring layout shifts. The label, the sphere
 /// and the control row keep their place across all states — only what they show changes:
 /// - Idle: resting sphere, mic
-/// - Recording: "Listening", the sphere follows the voice, cancel / stop
-/// - Transcribing, processing: "Cleaning up", the sphere breathes, cancel
+/// - Recording: "Listening", the sphere follows the voice, stop, cancel under it
+/// - Transcribing, processing: "Cleaning up", the sphere breathes, cancel under the mic
 /// - Result: "Finished", calm sphere, the text comes into focus word by word,
-///   copy / mic / share
+///   copy / mic / share, close under the mic
 ///
 /// Design V2 (20 Nov 2026). The sphere replaces the waveform this screen used to draw:
 /// it is the same object as on Home, so starting a dictation changes what the sphere
@@ -136,17 +136,31 @@ struct RecordingView: View {
     /// the top: close to the text it acts on (Alex, Beta 45 feedback, 25 Nov 2026).
     private static let controlsCentreFraction: CGFloat = 0.75
 
-    /// From the mic's centre to the centre of the pictograms on either side of it.
+    /// From the mic's centre to the centre of copy (left) and share (right).
     private static let sideControlDistance: CGFloat = 88
-    /// Between the centres of copy and share, side by side right of the mic: their two
-    /// 44 pt targets and 8 pt of air.
-    private static let sideControlSpacing: CGFloat = 52
+    /// From the mic's centre down to the ✕'s centre: half the mic's slot, 8 pt of air,
+    /// half the ✕'s 44 pt target. Drawn by offset, in the room the row's bottom spacer
+    /// already holds, so the ✕ coming or going never moves anything (lot 1.1, 27 Nov 2026).
+    private static let closeControlDrop: CGFloat = micSlotHeight / 2 + 8 + 22
 
-    /// Copy and share come and go in a short fade: only the character's drop moves.
-    private static let sideControlTransition = AnyTransition.asymmetric(
-        insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.15)),
-        removal: .opacity.animation(.easeOut(duration: 0.15))
-    )
+    /// Copy and share come out of the mic like a drop: from its centre, small, to their
+    /// place on either side (Alex, lot 1.1). A fade alone under Reduce Motion.
+    ///
+    /// WHY a scale alone: the transition wraps the control's `.offset`, and its layout
+    /// frame sits on the mic, so scaling about that frame's centre starts the glyph on
+    /// the mic's centre and grows it out to its place. An extra offset transition would
+    /// depend on the order SwiftUI composes the two, and could start it on the far side.
+    private var sideControlTransition: AnyTransition {
+        let insertion: AnyTransition = reduceMotion
+            ? .opacity
+            : .opacity.combined(with: .scale(scale: 0.01))
+        return .asymmetric(
+            insertion: insertion.animation(reduceMotion
+                ? .easeOut(duration: 0.2).delay(0.15)
+                : .spring(response: 0.38, dampingFraction: 0.78).delay(0.1)),
+            removal: .opacity.animation(.easeOut(duration: 0.15))
+        )
+    }
 
     init(mode: RecordingMode, onComplete: (() -> Void)? = nil) {
         self.mode = mode
@@ -305,8 +319,8 @@ struct RecordingView: View {
     // MARK: - Top Row
 
     /// The room the top bar used to take, kept so nothing below moves. The ✕ is in the
-    /// control row now, beside the mic, at every stage (validated design, audit of
-    /// 26 Nov 2026); the stage words are under the character.
+    /// control row now, under the mic, at every stage (audit of 26 Nov 2026, lot 1.1);
+    /// the stage words are under the character.
     private var topRow: some View {
         Color.clear.frame(height: 44)
     }
@@ -570,13 +584,16 @@ struct RecordingView: View {
 
     // MARK: - Controls
 
-    /// The mic in the middle, a bare pictogram on either side: cancel on its left while
-    /// a dictation runs, copy on its left and share on its right with a result.
+    /// The mic in the middle; with a result, copy on its left and share on its right,
+    /// the same distance away; the ✕ centred under the mic in every stage (Alex, lot 1.1,
+    /// 27 Nov 2026: cancelling is not a peer of the main button, so it sits apart).
     ///
     /// The mic is the one filled shape; the pictograms are ink at half strength, with no
     /// disc or circle, so nothing competes with it (Alex, Beta 45 feedback, 25 Nov 2026:
-    /// the black ✕ disc read as the main button). They fade in and out: the only drop
-    /// left on this screen is the character's, at the end of a dictation.
+    /// the black ✕ disc read as the main button). Every control is drawn by offset around
+    /// the mic, so none of them coming or going moves anything.
+    ///
+    /// VoiceOver reads them left to right, then the ✕: Copy, the mic, Share, Close.
     ///
     /// From Home the mic starts on Home's own mic and travels up to this row, as the
     /// character does, so the button the user tapped never jumps (#788).
@@ -584,6 +601,20 @@ struct RecordingView: View {
         let result = shareableResult
         return ZStack {
             Group {
+                if let result {
+                    sideControl(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
+                        .offset(x: -Self.sideControlDistance)
+                        .transition(sideControlTransition)
+                        .accessibilitySortPriority(4)
+                    ShareLink(item: result) {
+                        sideControlGlyph("square.and.arrow.up")
+                    }
+                    .buttonStyle(GlassPressStyle())
+                    .accessibilityLabel("Share")
+                    .offset(x: Self.sideControlDistance)
+                    .transition(sideControlTransition)
+                    .accessibilitySortPriority(2)
+                }
                 // One ✕, always in the same place, named for what it does at the time.
                 // The onboarding has no way out of this screen but its own pages.
                 if mode == .standalone {
@@ -592,19 +623,8 @@ struct RecordingView: View {
                         label: isDictationInFlight ? "Cancel" : "Close",
                         action: cancelOrClose
                     )
-                    .offset(x: -Self.sideControlDistance)
-                }
-                if let result {
-                    sideControl(symbol: "doc.on.doc", label: "Copy") { copyToPasteboard(result) }
-                        .offset(x: Self.sideControlDistance)
-                        .transition(Self.sideControlTransition)
-                    ShareLink(item: result) {
-                        sideControlGlyph("square.and.arrow.up")
-                    }
-                    .buttonStyle(GlassPressStyle())
-                    .accessibilityLabel("Share")
-                    .offset(x: Self.sideControlDistance + Self.sideControlSpacing)
-                    .transition(Self.sideControlTransition)
+                    .offset(y: Self.closeControlDrop)
+                    .accessibilitySortPriority(1)
                 }
             }
             .opacity(contentOpacity)
@@ -612,8 +632,10 @@ struct RecordingView: View {
             mic
                 .offset(y: micFlightOffset(in: geo))
                 .opacity(micFlies ? 1 : contentOpacity)
+                .accessibilitySortPriority(3)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
     }
 
     /// Whether the mic travels between Home's mic and this row. Reduce Motion fades.
