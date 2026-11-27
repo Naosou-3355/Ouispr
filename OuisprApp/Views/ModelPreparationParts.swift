@@ -4,19 +4,23 @@
 import SwiftUI
 import OuisprCore
 
-/// Spacing of the preparation screen, on the 8 pt grid (lot 1.1).
+/// Spacing of the preparation screen, on the 8 pt grid (lot 1.3).
 ///
-/// One centred block, top to bottom: the character, the percentage, the title, the
-/// subtitle, the status line and the friendly line. The gaps say what belongs together:
-/// 8 pt inside a pair (eyes and figure, title and subtitle, status and its friendly line),
-/// 32 pt between the face and the words, 16 pt between what the screen is and what it is
-/// doing.
+/// One block on one vertical axis, top to bottom: the eyes, 8, the figure, 4, the status
+/// line that goes with it, 40, the title, 8, the subtitle. The figure and its status are
+/// one reading, so they touch; the 40 pt gap separates what the screen measures from what
+/// it says.
 enum ModelPreparationMetrics {
     static let faceToPercent: CGFloat = 8
-    static let percentToTitle: CGFloat = 32
+    static let percentToStatus: CGFloat = 4
+    static let statusToTitle: CGFloat = 40
     static let titleToSubtitle: CGFloat = 8
-    static let subtitleToStatus: CGFloat = 16
-    static let statusToMessage: CGFloat = 8
+    /// The subtitle's measure: two balanced lines rather than one long and one short.
+    static let subtitleWidth: CGFloat = 300
+    /// Where the block's centre sits, as a fraction of the height it has (lot 1.3).
+    static let opticalCentre: CGFloat = 0.45
+    /// The least room above the block and between it and the notice.
+    static let minimumMargin: CGFloat = 24
     /// The notice at the foot of the screen, above the home indicator.
     static let footerBottom: CGFloat = 16
     /// Beyond this the lines get too long to read in one glance (an iPad, a landscape phone).

@@ -108,6 +108,14 @@ struct ModelLoadingOverlay: View {
     /// than before, and the percentage never goes back.
     @State private var downloadHighWater = 0.0
 
+    /// The block's and the notice's measured heights, to put the block's centre at the
+    /// optical centre without pushing the notice off the screen.
+    @State private var blockHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = 0
+
+    /// Larger text lets the subtitle take the lines it needs instead of being cut.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private typealias Phase = ModelPreparationPhase
     private typealias Metrics = ModelPreparationMetrics
 
@@ -147,18 +155,21 @@ struct ModelLoadingOverlay: View {
                     Color.clear.frame(height: OnboardingMetrics.topRowHeight)
                 }
 
-                // Centred in the height left, the notice at the foot. With the largest text
-                // sizes the whole can be taller than the screen: it scrolls then, notice
-                // included, rather than being cut. One tree for both cases, so the face
-                // keeps its state if the text size changes under it.
+                // The block's centre at 45 % of the height left (lot 1.3: optical centre,
+                // a little above the middle, where the eye expects it), the notice at the
+                // foot. With the largest text sizes the whole can be taller than the
+                // screen: it scrolls then, notice included, rather than being cut. One tree
+                // for both cases, so the face keeps its state if the text size changes.
                 GeometryReader { geo in
                     ScrollView {
                         VStack(spacing: 0) {
-                            Spacer(minLength: Metrics.percentToTitle)
+                            Color.clear.frame(height: topRoom(in: geo.size.height))
                             content
-                            Spacer(minLength: Metrics.percentToTitle)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { blockHeight = $0 }
+                            Spacer(minLength: Metrics.minimumMargin)
                             footer
                                 .padding(.bottom, Metrics.footerBottom)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { footerHeight = $0 }
                         }
                         .frame(minHeight: geo.size.height)
                     }
@@ -205,8 +216,10 @@ struct ModelLoadingOverlay: View {
 
     // MARK: - Layout
 
-    /// The one block (lot 1.1): the face, its figure, the title, the subtitle, the status
-    /// and its friendly line, on the 8 pt grid (`ModelPreparationMetrics`).
+    /// The one block, on one vertical axis (lot 1.3): the face; the figure and, right
+    /// under it, the status line that goes with it; the title; and under the title the
+    /// friendly line of the quarter reached, which is the subtitle. On the 8 pt grid
+    /// (`ModelPreparationMetrics`).
     ///
     /// WHY EVERY TEXT HOLDS THE ROOM OF ITS LONGEST WORDING: the block is centred, so a
     /// line that grew or shrank between phases would move everything above and below it.
@@ -228,6 +241,17 @@ struct ModelLoadingOverlay: View {
                     .padding(.top, Metrics.faceToPercent)
 
                 ZStack {
+                    // The longest wordings, with wide figures, hold the room.
+                    Text("Downloading · \(888) of \(888) MB").hidden()
+                    Text("Loading the model · about \(88) min left").hidden()
+                    Text("Loading the model · under a minute left").hidden()
+                    statusLine(for: phase, at: timeline.date)
+                }
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(Color.ouisprTextTertiary)
+                .padding(.top, Metrics.percentToStatus)
+
+                ZStack {
                     title(for: .downloading).hidden()
                     title(for: .ready).hidden()
                     title(for: phase)
@@ -235,32 +259,14 @@ struct ModelLoadingOverlay: View {
                 }
                 .font(.title.bold())
                 .foregroundStyle(Color.ouisprTextPrimary)
-                .padding(.top, Metrics.percentToTitle)
+                .padding(.top, Metrics.statusToTitle)
 
-                ZStack {
-                    subtitle(for: .downloading).hidden()
-                    subtitle(for: .ready).hidden()
-                    subtitle(for: phase)
-                }
-                .font(.body)
-                .foregroundStyle(Color.ouisprTextSecondary)
-                .padding(.top, Metrics.titleToSubtitle)
-
-                ZStack {
-                    // The longest wordings, with wide figures, hold the room.
-                    Text("Downloading · \(888) of \(888) MB").hidden()
-                    Text("Loading the model · about \(88) min left").hidden()
-                    Text("Loading the model · under a minute left").hidden()
-                    statusLine(for: phase, at: timeline.date)
-                }
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(Color.ouisprTextSecondary)
-                .padding(.top, Metrics.subtitleToStatus)
-
-                milestoneLine(ModelPreparationMilestone.reached(percent: percent, isReady: phase == .ready))
-                    .font(.subheadline)
-                    .foregroundStyle(Color.ouisprTextTertiary)
-                    .padding(.top, Metrics.statusToMessage)
+                subtitle(ModelPreparationMilestone.reached(percent: percent, isReady: phase == .ready))
+                    .font(.body)
+                    .foregroundStyle(Color.ouisprTextSecondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .frame(maxWidth: Metrics.subtitleWidth)
+                    .padding(.top, Metrics.titleToSubtitle)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: Metrics.maxTextWidth)
@@ -270,16 +276,39 @@ struct ModelLoadingOverlay: View {
         .animation(.easeInOut(duration: Motion.standard), value: phase)
     }
 
-    /// « 42 % », formatted for the locale (a narrow space before the sign in French), in
-    /// tabular figures so the number keeps its width as it counts.
+    /// « 42 % » with the figure centred on the screen's axis and the sign hung after it,
+    /// smaller (Alex, lot 1.3: « il y a un décalage, ne serait-ce que sur les pourcents »).
+    /// Centring « 42 % » as one string put the axis between the figure and the sign.
+    /// The digits are tabular, so the figure keeps its width as it counts and only moves by
+    /// half a digit at 10 and at 100. Reserving the room of « 100 » was tried and rejected:
+    /// at two digits it left a gap between the figure and the sign, the very offset to fix.
     private func percentLabel(_ percent: Int) -> some View {
-        Text(Double(percent) / 100, format: .percent.precision(.fractionLength(0)))
+        Text(verbatim: "\(percent)")
+            // Each value replaces the last: no morph when the phase animation runs.
+            .contentTransition(.identity)
             .font(.title3.weight(.semibold).monospacedDigit())
             .foregroundStyle(Color.ouisprInk.opacity(0.7))
-            .contentTransition(.identity)
+            .overlay(alignment: Alignment(horizontal: .trailing, vertical: .lastTextBaseline)) {
+                Text(verbatim: "%")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.ouisprInk.opacity(0.7))
+                    .fixedSize()
+                    // Its leading edge 2 pt after the figure.
+                    .alignmentGuide(.trailing) { dimensions in dimensions[.leading] - 2 }
+            }
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("Progress", comment: "VoiceOver name of the model preparation percentage (lot 1.1)."))
             .accessibilityValue(Text(Double(percent) / 100, format: .percent.precision(.fractionLength(0))))
             .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// The room above the block: its centre at 45 % of the height, unless the notice would
+    /// then leave the screen, in which case the block rises just enough to keep it; never
+    /// less than the margin, and the whole scrolls when even that does not fit.
+    private func topRoom(in height: CGFloat) -> CGFloat {
+        let centred = height * Metrics.opticalCentre - blockHeight / 2
+        let keepsNotice = height - blockHeight - Metrics.minimumMargin - footerHeight
+        return max(Metrics.minimumMargin, min(centred, keepsNotice))
     }
 
     /// The preparation's progress, 0 to 1, by `ModelPreparationProgress`'s rules.
@@ -301,52 +330,9 @@ struct ModelLoadingOverlay: View {
             : Text("Preparing your model", comment: "Model preparation screen title, while downloading, optimizing or loading (#708).")
     }
 
-    /// The subtitle names the model, and in the onboarding the language it was picked for
-    /// (#649 decision 4: the screen says the model is the best one for the user's language
-    /// and iPhone).
-    private func subtitle(for phase: Phase) -> Text {
-        if phase == .ready {
-            return Text(
-                "\(modelName) runs on your iPhone. Dictation works even without a network.",
-                comment: "Model preparation screen subtitle, once ready. The placeholder is the model's name (Parakeet v3) (#708)."
-            )
-        }
-        guard context == .onboarding else {
-            return Text(
-                "\(modelName). Once ready, everything runs offline.",
-                comment: "Model preparation screen subtitle in the app (model switch, keyboard cold start). The placeholder is the model's name (#708)."
-            )
-        }
-        if let language = spokenLanguagePhrase {
-            return Text(
-                "\(modelName), picked for \(language) and this iPhone. After that, everything runs offline.",
-                comment: "Onboarding model preparation subtitle (#708). First placeholder: the model's name (Parakeet v3). Second: the spoken language with its article in French (le français, l'anglais)."
-            )
-        }
-        return Text(
-            "\(modelName), picked for your language and this iPhone. After that, everything runs offline.",
-            comment: "Onboarding model preparation subtitle when the language cannot be named in the sentence (#708). The placeholder is the model's name."
-        )
-    }
-
+    /// The model's name: « Parakeet v3 ».
     private var modelName: String {
         ModelInfo.forIdentifier(modelIdentifier)?.localizedDisplayName ?? String(localized: "Voice model")
-    }
-
-    /// The language the onboarding picked this model for, ready to slot into the sentence,
-    /// or nil for the sentence that does not name it. The rules are
-    /// `ModelPreparationLanguagePhrase`'s.
-    ///
-    /// WHY `SpokenLanguage.forRecommendation()`: it is the input
-    /// `ModelInfo.recommendedIdentifier()` chose this model from, so the sentence names the
-    /// language that actually decided it. Named in the interface's language, which is the
-    /// app's localization and not the device locale: a German iPhone reads the app in
-    /// English, and "picked for Französisch" would be wrong twice.
-    private var spokenLanguagePhrase: String? {
-        let interfaceLanguage = Bundle.main.preferredLocalizations.first ?? "en"
-        let name = Locale(identifier: interfaceLanguage)
-            .localizedString(forLanguageCode: SpokenLanguage.forRecommendation())
-        return ModelPreparationLanguagePhrase.phrase(languageName: name, interfaceLanguage: interfaceLanguage)
     }
 
     private var downloadFraction: Double? {
@@ -396,20 +382,34 @@ struct ModelLoadingOverlay: View {
         }
     }
 
-    /// The friendly line, one per quarter (Alex, 27 Nov 2026). It fades in at its
-    /// milestone and stays until the next one; under 25 % its room stays empty.
-    private func milestoneLine(_ milestone: ModelPreparationMilestone?) -> some View {
+    /// The subtitle (lot 1.3): the model and its promise until 25 %, then the friendly
+    /// line of each quarter (Alex, 27 Nov 2026), each fading in at its milestone and staying
+    /// until the next. Every wording holds the room, two lines at most.
+    private func subtitle(_ milestone: ModelPreparationMilestone?) -> some View {
         ZStack {
+            modelLine.hidden()
             ForEach(ModelPreparationMilestone.allCases, id: \.self) { candidate in
                 milestoneText(candidate).hidden()
             }
-            if let milestone {
-                milestoneText(milestone)
-                    .id(milestone)
-                    .transition(.opacity)
+            Group {
+                if let milestone {
+                    milestoneText(milestone)
+                } else {
+                    modelLine
+                }
             }
+            .id(milestone)
+            .transition(.opacity)
         }
         .animation(.easeInOut(duration: 0.3), value: milestone)
+    }
+
+    /// « Parakeet v3, entièrement hors ligne. »
+    private var modelLine: Text {
+        Text(
+            "\(modelName), fully offline.",
+            comment: "Model preparation subtitle before 25 %. The placeholder is the model's name (Parakeet v3) (lot 1.3)."
+        )
     }
 
     private func milestoneText(_ milestone: ModelPreparationMilestone) -> Text {
@@ -452,7 +452,7 @@ struct ModelLoadingOverlay: View {
                 leaveNotice(isDownloading: phase == .downloading)
             }
         }
-        .font(.subheadline)
+        .font(.footnote)
         .foregroundStyle(Color.ouisprTextTertiary)
         .multilineTextAlignment(.center)
         .frame(maxWidth: Metrics.maxTextWidth)

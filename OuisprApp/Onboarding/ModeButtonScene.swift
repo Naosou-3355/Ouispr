@@ -36,7 +36,7 @@ struct ModeButtonScenePage: View {
 /// The scene's clock, in seconds of its 5 s loop.
 enum ModeButtonScript {
     static let loop = 5.0
-    /// Under Reduce Motion: the menu open, Aucun ticked, the finger on Liste.
+    /// Under Reduce Motion: the menu open, Normal ticked, the finger on Liste.
     static let still = 2.2
     static let firstTap = 1.0
     static let chooseList = 2.6
@@ -49,7 +49,7 @@ private struct ModeButtonScene: View {
     private typealias Script = ModeButtonScript
 
     private static let rows: [(icon: String, name: LocalizedStringKey)] = [
-        ("circle", "None"), ("list.bullet", "List"), ("character.bubble", "Translate")
+        ("text.alignleft", "Normal"), ("list.bullet", "List"), ("globe", "Translate")
     ]
 
     /// The width the mock-ups are drawn at, as in the other scenes, and the part of the
@@ -89,19 +89,21 @@ private struct ModeButtonScene: View {
 
     // MARK: Pieces
 
-    /// The glyph, the name and the chevron, as `HomeModeMenu` draws them.
+    /// « Mode Normal ⌄ » in its glass capsule, as `HomeModeMenu` draws it.
     private var modeLabel: some View {
         HStack(spacing: 6) {
-            Image(systemName: listChosen ? "list.bullet" : "circle")
-                .foregroundStyle(listChosen ? Color.ouisprAccentText : Color.ouisprTextSecondary)
-            Text(listChosen ? "List" : "None")
+            Image(systemName: listChosen ? "list.bullet" : "text.alignleft")
+                .foregroundStyle(Color.ouisprAccentText)
+            Text("Mode \(Text(listChosen ? "List" : "Normal").foregroundStyle(Color.ouisprTextPrimary))")
                 .foregroundStyle(Color.ouisprTextSecondary)
             Image(systemName: "chevron.down")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.ouisprTextTertiary)
         }
         .font(.subheadline.weight(.medium))
+        .padding(.horizontal, 16)
         .frame(height: 44)
+        .ouisprGlassBar()
     }
 
     /// The system menu: the tick on the mode that runs, the glyph on the others.

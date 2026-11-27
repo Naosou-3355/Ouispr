@@ -53,7 +53,7 @@ The smallest model that downloads and transcribes is **Small (quantifié)**, `op
 .claude/skills/verify-ouispr-ios/scripts/drive.sh wait-log '<APP> modelLoadStateChanged from=loading to=ready' 300
 ```
 
-`app.models.loading` (« On prépare votre modèle ») covers the screen until the model is ready. Its percentage is the download's real fraction for the first 90 %, then an estimate of the compile and the load that stops at 99 %; only a ready model reads 100 % (`ModelPreparationProgress`). VoiceOver reads it as « Avancement » with its value; the eyes are hidden from it. Measured on 2026-10-20: `modelDownloadStarted size=217MB` → `modelDownloadCompleted` 14 s, `modelCompilationCompleted duration=7658ms`, ready 24 s after the tap.
+`app.models.loading` (« On prépare votre modèle ») covers the screen until the model is ready. Its percentage is the download's real fraction for the first 90 %, then an estimate of the compile and the load that stops at 99 %; only a ready model reads 100 % (`ModelPreparationProgress`). Layout (lot 1.3): the block's centre at 45 % of the height, the « % » hung after the digits so the figure stays on the axis, the subtitle the model line under 25 % then each quarter's friendly line. VoiceOver reads it as « Avancement » with its value; the eyes are hidden from it. Measured on 2026-10-20: `modelDownloadStarted size=217MB` → `modelDownloadCompleted` 14 s, `modelCompilationCompleted duration=7658ms`, ready 24 s after the tap.
 
 ## Gotchas
 

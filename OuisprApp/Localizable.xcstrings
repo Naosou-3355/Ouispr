@@ -17,13 +17,12 @@
         }
       }
     },
-    "%@ runs on your iPhone. Dictation works even without a network." : {
-      "comment" : "Model preparation screen subtitle, once ready. The placeholder is the model's name (Parakeet v3) (#708).",
+    "%@, fully offline." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ tourne sur votre iPhone. La dictée marche même sans réseau."
+            "value" : "%@, entièrement hors ligne."
           }
         }
       }
@@ -35,39 +34,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, un seul paiement"
-          }
-        }
-      }
-    },
-    "%@, picked for %@ and this iPhone. After that, everything runs offline." : {
-      "comment" : "Onboarding model preparation subtitle (#708). First placeholder: the model's name (Parakeet v3). Second: the spoken language with its article in French (le français, l'anglais).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, choisi pour %2$@ et cet iPhone. Ensuite, tout se passe hors ligne."
-          }
-        }
-      }
-    },
-    "%@, picked for your language and this iPhone. After that, everything runs offline." : {
-      "comment" : "Onboarding model preparation subtitle when the language cannot be named in the sentence (#708). The placeholder is the model's name.",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, choisi pour votre langue et cet iPhone. Ensuite, tout se passe hors ligne."
-          }
-        }
-      }
-    },
-    "%@. Once ready, everything runs offline." : {
-      "comment" : "Model preparation screen subtitle in the app (model switch, keyboard cold start). The placeholder is the model's name (#708).",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@. Une fois prêt, tout se passe hors ligne."
           }
         }
       }
@@ -398,6 +364,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un fichier du modèle n’a pas pu être téléchargé (erreur %lld)."
+          }
+        }
+      }
+    },
+    "A short, direct message" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un message court et direct"
           }
         }
       }
@@ -1672,13 +1648,22 @@
         }
       }
     },
-    "None" : {
-      "comment" : "Home's mode menu and Réglages: the row that arms no Smart Mode, so the dictation goes in as said.",
+    "Mode %@" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun"
+            "value" : "Mode %@"
+          }
+        }
+      }
+    },
+    "Mode for the next dictation" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode de la prochaine dictée"
           }
         }
       }
@@ -2337,6 +2322,16 @@
         }
       }
     },
+    "Polished sentences, ready to send" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phrases soignées, prêtes à envoyer"
+          }
+        }
+      }
+    },
     "Progress" : {
       "comment" : "VoiceOver name of the model preparation percentage (lot 1.1).",
       "localizations" : {
@@ -2561,6 +2556,16 @@
         }
       }
     },
+    "The gist in a few lines" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'essentiel en quelques lignes"
+          }
+        }
+      }
+    },
     "The inactivity timeout is how long Ouispr stays ready after your last dictation. A shorter one saves battery and ends the Dynamic Island sooner. A longer one starts your next keyboard dictation faster. Unlimited lasts until iOS ends it." : {
       "comment" : "Settings footer under the inactivity timeout picker (#380).",
       "localizations" : {
@@ -2568,6 +2573,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le délai d’inactivité est la durée pendant laquelle Ouispr reste prêt après votre dernière dictée. Plus court, il économise la batterie et la Dynamic Island disparaît plus tôt. Plus long, votre prochaine dictée au clavier démarre plus vite. Illimité dure jusqu’à ce qu’iOS y mette fin."
+          }
+        }
+      }
+    },
+    "The key points as a list" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les points clés en liste"
           }
         }
       }
@@ -2655,6 +2670,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour arrêter Ouispr"
+          }
+        }
+      }
+    },
+    "Translated into the chosen language" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traduit dans la langue choisie"
           }
         }
       }
@@ -2840,6 +2865,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vos orthographes, écrites autrement"
+          }
+        }
+      }
+    },
+    "Your text, cleaned up" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre texte, nettoyé"
           }
         }
       }

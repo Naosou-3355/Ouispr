@@ -19,7 +19,7 @@
 - `onboarding.stop-standby`: How to stop Ouispr from the Dynamic Island.
 - `onboarding.completion`: « C'est prêt ».
 - `onboarding.resume`: An interrupted onboarding resumes at the same step.
-- `onboarding.whats-new`: An existing user sees the new scenes once. The first is Home's mode button (« Choisissez le mode avant de parler »: a drawn scene of the mode's name under the character opening the system menu, Aucun → Liste; the line says the default is in the same menu), not the keyboard's Smart Modes fan, which only the onboarding plays.
+- `onboarding.whats-new`: An existing user sees the new scenes once. The first is Home's mode button (« Choisissez le mode avant de parler »: a drawn scene of the mode's name under the character opening the system menu, « Mode Normal » → « Mode Liste »; the line says the default is in the same menu), not the keyboard's Smart Modes fan, which only the onboarding plays.
 
 ## How to get to it (user POV)
 

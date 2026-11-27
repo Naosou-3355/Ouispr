@@ -1,5 +1,6 @@
 // OuisprApp/Views/HomeModeMenu.swift
-// Home's mode button: the mode's name under the character, opening the system menu.
+// Home's mode button: a glass capsule under the character, « Mode Normal ⌄ », opening the
+// system menu.
 import SwiftUI
 import OuisprCore
 
@@ -14,7 +15,13 @@ import OuisprCore
 /// dicter »; it is now said once, where the eye already is (Apple HIG, Pop-up buttons:
 /// the button shows the current choice).
 ///
-/// The menu: Aucun, then the pinned modes, then the Ouispr Pro row for a non-subscriber —
+/// LOT 1.3 (Alex, 27 Nov 2026: « ○ Aucun ⌄ ne veut rien dire »): no mode is « Normal »
+/// now, the button says « Mode » before the name and sits in a glass capsule, and the menu
+/// has a title and a line under each mode saying what it does — the pattern of ChatGPT's
+/// and Claude's model pickers and of Apple's pull-down buttons (HIG, Pull-down buttons:
+/// a title, an icon and a short description per item).
+///
+/// The menu: Normal, then the pinned modes, then the Ouispr Pro row for a non-subscriber —
 /// the keyboard fan's rows (`SmartModeHomePicker`) — then the default mode and the
 /// transcription style as submenus.
 ///
@@ -35,16 +42,17 @@ struct HomeModeMenu: View {
 
     var body: some View {
         Menu {
-            // The reason modes cannot run, as the section's title: a system menu draws a
-            // header, not a footer.
+            // The first section's header is the menu's title. Under it, when modes cannot
+            // run, the reason, ahead of the rows it greys out.
             Section {
+                if let reason = picker.unavailableReason {
+                    Text(verbatim: HomeSmartModeCopy.reasonText(reason))
+                }
                 ForEach(picker.entries) { entry in
                     row(entry)
                 }
             } header: {
-                if let reason = picker.unavailableReason {
-                    Text(verbatim: HomeSmartModeCopy.reasonText(reason))
-                }
+                Text("Mode for the next dictation", comment: "Title of Home's mode menu (lot 1.3).")
             }
 
             // At the menu's foot: the default the app returns to after each dictation,
@@ -76,22 +84,31 @@ struct HomeModeMenu: View {
         .accessibilityIdentifier("home.mode")
     }
 
-    /// The glyph, the name and the chevron, on the line under the character.
+    /// « [glyph] Mode Normal ⌄ » in a glass capsule: the mode's glyph, « Mode » in the
+    /// secondary ink, the name in the primary one, a small chevron.
     private var label: some View {
         HStack(spacing: 6) {
-            Image(systemName: mode?.icon ?? "circle")
-                .foregroundStyle(mode == nil ? Color.ouisprTextSecondary : Color.ouisprAccentText)
-            Text(verbatim: HomeSmartModeCopy.name(of: mode))
-                .foregroundStyle(Color.ouisprTextSecondary)
+            Image(systemName: HomeSmartModeCopy.icon(of: mode))
+                .foregroundStyle(Color.ouisprAccentText)
+            // One sentence, so a language can put the name first; the name in the primary
+            // ink, the rest in the secondary one.
+            Text(
+                "Mode \(Text(verbatim: HomeSmartModeCopy.name(of: mode)).foregroundStyle(Color.ouisprTextPrimary))",
+                comment: "Home's mode button. The placeholder is the mode's name: « Mode Normal » (lot 1.3)."
+            )
+            .foregroundStyle(Color.ouisprTextSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
             Image(systemName: "chevron.down")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.ouisprTextTertiary)
         }
         .font(.subheadline.weight(.medium))
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         // Apple's 44 pt minimum touch target (HIG, Accessibility).
         .frame(minHeight: 44)
-        .contentShape(Rectangle())
+        .ouisprGlassBar()
+        .contentShape(Capsule())
         // On the label, not on the `Menu`: set there, VoiceOver read the button with no
         // name at all (measured on iOS 26.3, 27 Nov 2026).
         .accessibilityElement(children: .ignore)
@@ -104,19 +121,24 @@ struct HomeModeMenu: View {
         return Button {
             onChoose(entry)
         } label: {
-            // The system menu draws the image on the row's trailing edge: the tick on
-            // the mode that runs, the mode's glyph on the others.
-            Label {
-                Text(verbatim: HomeSmartModeCopy.shortName(of: entry))
-                // A second text is the row's subtitle in a system menu.
-                if let tag = HomeSmartModeCopy.tagLabel(picker.tag(for: entry)) {
-                    Text(verbatim: tag)
-                }
-            } icon: {
-                Image(systemName: selected ? "checkmark" : icon(of: entry))
+            // A system menu row reads the label's direct children: the first text is the
+            // title, a second text the subtitle, the image the glyph. Inside a `Label` the
+            // second text was dropped (measured on iOS 26.3, lot 1.3). The tick replaces the
+            // glyph on the mode that runs.
+            Text(verbatim: HomeSmartModeCopy.shortName(of: entry))
+            // The tag first when there is one (« PRO », « Off »), then what the mode does.
+            if let subtitle = subtitle(of: entry) {
+                Text(verbatim: subtitle)
             }
+            Image(systemName: selected ? "checkmark" : icon(of: entry))
         }
         .disabled(!picker.canChoose(entry))
+    }
+
+    private func subtitle(of entry: SmartModeFanEntry) -> String? {
+        let parts = [HomeSmartModeCopy.tagLabel(picker.tag(for: entry)), HomeSmartModeCopy.summary(of: entry)]
+            .compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// The rows a default may be: the armable ones, without Ouispr Pro. Nil when there
@@ -130,7 +152,7 @@ struct HomeModeMenu: View {
     private func defaultSelection(in choices: [SmartModeFanEntry]) -> Binding<String> {
         Binding(
             get: {
-                // A default since unpinned reads as Aucun, as in Réglages.
+                // A default since unpinned reads as Normal, as in Réglages.
                 let id = defaultIdentifier ?? SmartModeFanEntry.normal.id
                 return choices.contains { $0.id == id } ? id : SmartModeFanEntry.normal.id
             },
@@ -143,9 +165,9 @@ struct HomeModeMenu: View {
 
     private func icon(of entry: SmartModeFanEntry) -> String {
         switch entry {
-        case .normal: return "circle"
+        case .normal: return HomeSmartModeCopy.icon(of: nil)
         case .pro: return "sparkles"
-        case .mode(let mode): return mode.icon
+        case .mode(let mode): return HomeSmartModeCopy.icon(of: mode)
         }
     }
 }
@@ -156,7 +178,8 @@ struct HomeModeMenu: View {
 enum HomeSmartModeCopy {
 
     /// A mode's name as Home and Réglages show it: « Rédigé », « Liste »,
-    /// « Traduire → EN », or « Aucun » for no mode.
+    /// « Traduire → EN », or « Normal » for no mode (« Aucun » until lot 1.3: it named
+    /// an absence, Normal names what the dictation does, and is the keyboard's word).
     ///
     /// Not the fan's names: the keyboard's 46 pt rows keep « → EN » and « Normal »,
     /// while a menu row has the width for a verb (validated sheet, 25 Nov 2026). Only
@@ -164,9 +187,45 @@ enum HomeSmartModeCopy {
     static func name(of mode: SmartMode?) -> String {
         mode.map(SmartModeListView.listName(for:))
             ?? String(
-                localized: "None",
-                comment: "Home's mode menu and Réglages: the row that arms no Smart Mode, so the dictation goes in as said."
+                localized: "Normal",
+                comment: "The Smart Mode fan row that clears the armed mode and returns to the free polish. Same text as the keyboard's (#679)."
             )
+    }
+
+    /// The glyph Home's button and menu show for a mode (lot 1.3). Normal is a plain
+    /// paragraph; Rédigé gets a pen rather than the catalogue's paragraph, which Normal
+    /// now uses, so no two rows of the menu share a glyph. The keyboard keeps the
+    /// catalogue's glyphs.
+    static func icon(of mode: SmartMode?) -> String {
+        guard let mode else { return "text.alignleft" }
+        if mode.id == SmartModeCatalogue.structuredIdentifier { return "pencil.line" }
+        return mode.icon
+    }
+
+    /// What a mode does, in one line, under its name in the menu (lot 1.3). Nil for a
+    /// mode the app does not know (a later build's) and for the Ouispr Pro row.
+    static func summary(of entry: SmartModeFanEntry) -> String? {
+        switch entry {
+        case .pro:
+            return nil
+        case .normal:
+            return String(localized: "Your text, cleaned up", comment: "Under « Normal » in Home's mode menu (lot 1.3).")
+        case .mode(let mode):
+            switch mode.id {
+            case SmartModeCatalogue.structuredIdentifier:
+                return String(localized: "Polished sentences, ready to send", comment: "Under « Rédigé » in Home's mode menu (lot 1.3).")
+            case SmartModeCatalogue.notesIdentifier:
+                return String(localized: "The key points as a list", comment: "Under « Liste » in Home's mode menu (lot 1.3).")
+            case SmartModeCatalogue.messageIdentifier:
+                return String(localized: "A short, direct message", comment: "Under « Message » in Home's mode menu (lot 1.3).")
+            case SmartModeCatalogue.summaryIdentifier:
+                return String(localized: "The gist in a few lines", comment: "Under « Résumé » in Home's mode menu (lot 1.3).")
+            case let id where id.hasPrefix("translate."):
+                return String(localized: "Translated into the chosen language", comment: "Under a « Traduire » mode in Home's mode menu (lot 1.3).")
+            default:
+                return nil
+            }
+        }
     }
 
     /// A menu row's name, the Ouispr Pro row included.

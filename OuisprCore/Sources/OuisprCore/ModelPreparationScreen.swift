@@ -1,6 +1,6 @@
 // OuisprCore/Sources/OuisprCore/ModelPreparationScreen.swift
 // What the model preparation screen draws for each phase: the opening phase, the one
-// figure of progress, its milestones, and the language named in the onboarding subtitle.
+// figure of progress and its milestones.
 import Foundation
 
 /// The phase the preparation screen is showing.
@@ -113,46 +113,5 @@ public enum ModelPreparationMilestone: Int, CaseIterable, Sendable {
     public static func reached(percent: Int, isReady: Bool) -> Self? {
         if isReady { return .done }
         return [.threeQuarters, .half, .quarter].first { percent >= $0.rawValue }
-    }
-}
-
-/// The spoken language as the onboarding subtitle names it: "picked for French", "choisi
-/// pour le français" (#708, #649 decision 4).
-///
-/// WHY A PHRASE AND NOT A NAME: French puts an article in front of a language name and
-/// elides it before a vowel ("le français", "l'anglais"). A sentence that took the bare
-/// name would read "choisi pour français", and a fixed "le" would read "le anglais".
-///
-/// WHY SOME LANGUAGES GET NO PHRASE: the brief's fallback is "chosen for your language",
-/// for wherever the named form is awkward. In French that is every name starting with h:
-/// whether the h is mute ("l'hébreu") or aspirated ("le hongrois") is a fact about each
-/// word, and getting it wrong in a sentence the user reads on their first launch is worse
-/// than not naming the language. Any interface language other than French and English gets
-/// the fallback too: those are the only two the app is translated into, and the rule for a
-/// third is not one to guess.
-public enum ModelPreparationLanguagePhrase {
-
-    /// - Parameters:
-    ///   - languageName: the spoken language's name in the interface language, as
-    ///     `Locale.localizedString(forLanguageCode:)` returns it.
-    ///   - interfaceLanguage: the interface's language code ("fr", "en").
-    /// - Returns: the phrase to slot into the sentence, or nil for the fallback sentence.
-    public static func phrase(languageName: String?, interfaceLanguage: String) -> String? {
-        guard let languageName, !languageName.isEmpty else { return nil }
-        switch interfaceLanguage {
-        case "en":
-            return languageName
-        case "fr":
-            let name = languageName.lowercased(with: Locale(identifier: "fr"))
-            // Folded so "é", "î" and the rest count as the vowels they are.
-            guard let first = name.folding(options: .diacriticInsensitive, locale: nil).first else {
-                return nil
-            }
-            if first == "h" { return nil }
-            // No y: it starts a consonant sound in "le yiddish", "le yoruba".
-            return "aeiou".contains(first) ? "l'\(name)" : "le \(name)"
-        default:
-            return nil
-        }
     }
 }
