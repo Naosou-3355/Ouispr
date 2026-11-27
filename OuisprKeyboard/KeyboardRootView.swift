@@ -304,7 +304,6 @@ struct KeyboardRootView: View {
                 RecordingOverlay(
                     dictationStatus: state.displayedDictationStatus,
                     waveformEnergy: state.waveformEnergy,
-                    elapsedSeconds: state.recordingElapsed,
                     waveformDriver: waveformDriver,
                     onCancel: { state.requestCancel() },
                     onStop: { state.requestStop() },

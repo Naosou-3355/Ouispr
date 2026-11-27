@@ -113,7 +113,7 @@ struct SuggestionBarView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .frame(maxWidth: .infinity)
         .frame(height: 36)
         .background(

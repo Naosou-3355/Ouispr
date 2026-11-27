@@ -385,11 +385,10 @@ struct ToolbarView: View {
     /// long-press delay. See `fanGestureDidOpen` for how the two are kept from
     /// firing on the same release.
     private var micPill: some View {
-        AnimatedMicButton(
+        // The logo's bars in ink, no pill around them (lot 1.4, « juste l'icône pleine »).
+        InkBarsMicButton(
             status: dictationStatus,
-            isPill: true,
             badge: effectiveSmartMode?.badge,
-            animatesIdleGlow: false,
             onTap: {
                 guard !fanGestureDidOpen else {
                     fanGestureDidOpen = false
@@ -494,18 +493,14 @@ struct ToolbarView: View {
     /// that was settled on a device. The bar is empty at that moment anyway, and it
     /// sits directly above the first row.
     private var fanTitle: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 11, weight: .semibold))
-
-            Text(
-                "Choose a Smart Mode",
-                comment: "Toolbar title shown while the long-press Smart Mode fan is open."
-            )
-            .font(.system(size: 13, weight: .semibold))
-            .lineLimit(1)
-        }
-        .foregroundColor(.ouisprAccent)
+        // The app's menu title (lot 1.4): 13 pt, quiet, no glyph.
+        Text(
+            "Mode for the next dictation",
+            comment: "Toolbar title shown while the long-press Smart Mode fan is open, as in the app's mode menu (lot 1.4)."
+        )
+        .font(.footnote)
+        .foregroundStyle(Color.ouisprTextSecondary)
+        .lineLimit(1)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -530,7 +525,7 @@ struct ToolbarView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -725,7 +720,7 @@ struct ToolbarView: View {
     /// pill carries the Smart Mode fan's long press, which starts a dictation on
     /// release. This one carries nothing.
     private var disabledMic: some View {
-        AnimatedMicButton(status: .idle, isPill: true, animatesIdleGlow: false, onTap: {})
+        InkBarsMicButton(status: .idle, onTap: {})
             .disabled(true)
             .opacity(0.4)
     }
@@ -828,7 +823,7 @@ struct ToolbarView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
             }
-            .foregroundColor(.ouisprAccent)
+            .foregroundColor(.ouisprAccentText)
             .padding(.horizontal, 14)
             .frame(height: iconDiameter)
             .background(
@@ -865,7 +860,7 @@ struct ToolbarView: View {
                 Image(systemName: "arrow.up.forward.app")
                     .font(.system(size: 13, weight: .semibold))
             }
-            .foregroundColor(.ouisprAccent)
+            .foregroundColor(.ouisprAccentText)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: iconDiameter)
             .background(Capsule().fill(Color.ouisprAccent.opacity(0.12)))
@@ -996,7 +991,7 @@ struct ToolbarView: View {
     ) -> some View {
         Image(systemName: systemName)
             .font(.system(size: size, weight: .medium))
-            .foregroundColor(ringed ? .ouisprAccent : .ouisprPillIconSecondary)
+            .foregroundColor(ringed ? .ouisprAccentText : .ouisprPillIconSecondary)
             .frame(width: width, height: iconDiameter)
             .ouisprGlass(in: shape == .capsule ? AnyShape(Capsule()) : AnyShape(Circle()))
             .background {

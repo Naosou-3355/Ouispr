@@ -22,7 +22,7 @@
 
 1. Install Ouispr, add the keyboard in Réglages → Général → Clavier → Claviers, turn on Accès complet.
 2. In any text field, long-press the globe and choose Ouispr.
-3. Tap the blue mic pill at the top right of the keyboard, speak, tap ✓.
+3. Tap the ink mic bars at the top right of the keyboard, speak, tap the ink stop disc under the eyes.
 
 ## Driving it with axe + Argent
 
@@ -50,7 +50,7 @@ M=$(.claude/skills/verify-ouispr-ios/scripts/drive.sh log-mark)
 .claude/skills/verify-ouispr-ios/scripts/drive.sh kbd mic
 .claude/skills/verify-ouispr-ios/scripts/drive.sh wait-log '<KBD> statusChanged .*to=recording' 20 "$M"
 say -v Eddy -r 150 "Bonjour, ceci est un test de dictée sur le simulateur."   # the Mac's speakers, heard by its mic
-axe tap -x 357 -y 559 --udid <udid>     # ✓: the overlay's right pill, same place as the mic (inputView at y=531)
+axe tap -x <inputView centre x> -y <inputView y + 185> --udid <udid>     # the stop disc, centred under the eyes (lot 1.4; was the ✓ pill at the mic's place)
 .claude/skills/verify-ouispr-ios/scripts/drive.sh wait-log '<KBD> keyboardTextInserted' 30 "$M"
 xcrun simctl io <udid> screenshot <run>/undo.png    # at once: « Annuler » lasts 8 s
 ```

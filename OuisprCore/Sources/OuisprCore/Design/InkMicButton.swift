@@ -29,6 +29,9 @@ public struct InkMicButton: View {
     }
 
     public let phase: Phase
+    /// The disc's diameter: 72 pt in the app, 56 pt in the keyboard's listening screen
+    /// (lot 1.4). The bars and the stop square keep their proportion to it.
+    public let size: CGFloat
     public let showsPressFeedback: Bool
     public let onTap: () -> Void
 
@@ -39,9 +42,11 @@ public struct InkMicButton: View {
     public static let diameter: CGFloat = 72
 
     public init(phase: Phase,
+                size: CGFloat = InkMicButton.diameter,
                 showsPressFeedback: Bool = true,
                 onTap: @escaping () -> Void) {
         self.phase = phase
+        self.size = size
         self.showsPressFeedback = showsPressFeedback
         self.onTap = onTap
     }
@@ -56,7 +61,7 @@ public struct InkMicButton: View {
                 // Beta 45, 25 Nov 2026). No ring around it.
                 Circle()
                     .fill(Color.ouisprInk)
-                    .frame(width: Self.diameter, height: Self.diameter)
+                    .frame(width: size, height: size)
                 glyph
                     .foregroundStyle(Color.ouisprBackground)
                     .opacity(phase == .working ? 0.4 : 1)
@@ -75,12 +80,18 @@ public struct InkMicButton: View {
                     SpringKeyframe(1, duration: 0.45, spring: .init(response: 0.32, dampingRatio: 0.5))
                 }
             }
-            .frame(width: OuisprHalo.size(isPill: false).width, height: OuisprHalo.size(isPill: false).height)
+            .frame(width: slot, height: slot)
             .contentShape(Circle())
         }
         .buttonStyle(GlassPressStyle(pressedScale: showsPressFeedback ? 0.94 : 1,
                                      pressedOpacity: showsPressFeedback ? 0.85 : 1))
         .disabled(phase == .working)
+    }
+
+    /// The square the button is laid out in: the app's 92 pt mic anchor (#788) around the
+    /// 72 pt disc, the disc itself anywhere else.
+    private var slot: CGFloat {
+        size == Self.diameter ? OuisprHalo.size(isPill: false).width : size
     }
 
     /// The bars give way to the stop square, both inside the disc.
@@ -96,6 +107,7 @@ public struct InkMicButton: View {
                 .scaleEffect(listening ? 1 : 0.5)
                 .opacity(listening ? 1 : 0)
         }
+        .scaleEffect(size / Self.diameter)
         .animation(glyphAnimation, value: phase)
     }
 
@@ -109,8 +121,10 @@ public struct InkMicButton: View {
 }
 
 /// The logo's three bars (heights 18 / 42 / 27, capsule ends), in a 24 pt box.
-struct InkMicBars: Shape {
-    func path(in rect: CGRect) -> Path {
+public struct InkMicBars: Shape {
+    public init() {}
+
+    public func path(in rect: CGRect) -> Path {
         // The tallest bar 21.3 pt, 5 pt wide, 9 pt apart.
         let unit = min(rect.width, rect.height) / 24
         let heights = [9.1, 21.3, 13.7]

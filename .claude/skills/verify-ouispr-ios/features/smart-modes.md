@@ -7,7 +7,7 @@
 
 ## Sub-features
 
-- `smart-modes.fan`: Hold the mic, drag up, release on a mode: the dictation is rewritten in it; « Normal » clears it.
+- `smart-modes.fan`: Hold the mic, drag up, release on a mode: the dictation is rewritten in it; « Normal » clears it. Since lot 1.4 the fan is a plain list in one glass panel, titled « Mode de la prochaine dictée » in the bar: ink icon (text.alignleft, pencil.line, list.bullet, globe), name, one-line sub-text, a tick on the current mode, a neutral highlight under the finger. « Aucun » reads « Normal » everywhere.
 - `smart-modes.structured`: Rédigé (formerly Structuré; identifier unchanged): a long dictation put in order.
 - `smart-modes.list`: Liste: ideas as bullet points.
 - `smart-modes.message`: Message: a clear message, ready to send.
