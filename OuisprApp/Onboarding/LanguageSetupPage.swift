@@ -164,7 +164,7 @@ struct LanguageSetupPage: View {
         HStack(spacing: 16) {
             Text(verbatim: code.uppercased())
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(Color.ouisprAccent.opacity(0.12)))
                 .accessibilityHidden(true)
@@ -185,7 +185,7 @@ struct LanguageSetupPage: View {
             } label: {
                 Text("Change")
                     .font(.body)
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
             }
         }
         .padding(.horizontal, 20)

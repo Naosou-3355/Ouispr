@@ -95,7 +95,7 @@ struct SwipeBackOverlayView: View {
                 // Bottom instruction
                 Text("Swipe right at the bottom of your screen\nto return to your app")
                     .font(.callout.weight(.medium))
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 40)
             }

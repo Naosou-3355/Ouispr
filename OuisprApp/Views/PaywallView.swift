@@ -489,7 +489,7 @@ struct PaywallView: View {
         } label: {
             Text("See all plans")
                 .font(.ouisprCaption.weight(.semibold))
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
         }
@@ -856,7 +856,7 @@ struct PaywallView: View {
                 .font(.ouisprSubheading)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
                 .ouisprGlass()
         }
         .buttonStyle(GlassPressStyle())

@@ -279,7 +279,7 @@ struct GlobeKeyTutorialPage: View {
             Text("Continue")
                 .font(.footnote.weight(.semibold))
                 .lineLimit(1)
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("onboarding.firstDictation.continue")

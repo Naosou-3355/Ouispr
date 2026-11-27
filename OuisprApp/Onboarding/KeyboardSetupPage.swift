@@ -230,7 +230,7 @@ struct KeyboardSetupPage: View {
                 Button(action: openSettingsToCheckFullAccess) {
                     Text("Check Full Access in Settings")
                         .font(.footnote)
-                        .foregroundStyle(Color.ouisprAccent)
+                        .foregroundStyle(Color.ouisprAccentText)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -287,7 +287,7 @@ struct KeyboardSetupPage: View {
                 Button(action: openFullAccessExplainer) {
                     Text("Why Full Access?")
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Color.ouisprAccent)
+                        .foregroundStyle(Color.ouisprAccentText)
                 }
                 .accessibilityIdentifier("onboarding.fullAccess.why")
             }
@@ -318,7 +318,7 @@ struct KeyboardSetupPage: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "info.circle")
                 .font(.ouisprBody)
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
 
             Text(device.deviceModelIdentifier.hasPrefix("iPad")
                  ? String(
@@ -366,7 +366,7 @@ struct KeyboardSetupPage: View {
                 Text(verbatim: "Apps")
             }
             .font(.body)
-            .foregroundStyle(Color.ouisprAccent)
+            .foregroundStyle(Color.ouisprAccentText)
             .padding(.bottom, 12)
 
             Text(verbatim: "Ouispr")

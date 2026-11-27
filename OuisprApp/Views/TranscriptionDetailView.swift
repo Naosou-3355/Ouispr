@@ -99,7 +99,7 @@ struct TranscriptionDetailView: View {
                 Label("Share", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .ouisprGlass(in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(GlassPressStyle())

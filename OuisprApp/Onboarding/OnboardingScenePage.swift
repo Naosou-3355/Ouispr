@@ -154,7 +154,7 @@ struct OnboardingSceneLayout<Card: View>: View {
             if let eyebrow {
                 eyebrow
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
             }
             OnboardingHeader(title: title, subtitle: line)
         }

@@ -136,7 +136,7 @@ private struct VoiceNotesChapterHeader: View {
         HStack(spacing: 5) {
             Text(verbatim: "\(number)")
                 .fontWeight(.bold)
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
             label
                 .foregroundStyle(.primary)
         }
@@ -462,7 +462,7 @@ private struct VoiceNotesShareSheet: View {
         HStack(spacing: 12) {
             Image(systemName: "waveform")
                 .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .frame(width: 44, height: 44)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.ouisprSurface))
             VStack(alignment: .leading, spacing: 2) {

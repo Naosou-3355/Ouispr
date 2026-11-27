@@ -172,7 +172,7 @@ struct VocabularyScene: View {
 
             SceneListRow {
                 Label("Add a term", systemImage: "plus")
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                 Spacer()
             }
             .sceneGroup()
@@ -181,7 +181,7 @@ struct VocabularyScene: View {
 
             SceneListRow {
                 Label("Analyze my transcriptions", systemImage: "text.magnifyingglass")
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                 Spacer()
             }
             .sceneGroup()
@@ -430,7 +430,7 @@ private struct VocabularySceneSuggestions: View {
                     .foregroundColor(.secondary)
                 HStack(spacing: 20) {
                     Text("Accept")
-                        .foregroundStyle(Color.ouisprAccent)
+                        .foregroundStyle(Color.ouisprAccentText)
                         .sceneTapTarget(Target.accept)
                     Text("Ignore")
                         .foregroundStyle(.secondary)
@@ -604,7 +604,7 @@ struct SceneNavigationBar<Trailing: View>: View {
         if Trailing.self != EmptyView.self {
             trailing
                 .font(.system(size: 17))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .padding(.horizontal, 14)
                 .frame(height: 44)
                 .ouisprGlass(in: Capsule())

@@ -354,7 +354,7 @@ struct ModelLoadingOverlay: View {
             }
             captionSecondLine(for: phase)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .multilineTextAlignment(.center)
                 .lineLimit(hasFirstLine ? 1 : 2)
                 .minimumScaleFactor(0.75)

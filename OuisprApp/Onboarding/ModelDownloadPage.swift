@@ -274,7 +274,7 @@ struct ModelDownloadPage: View {
 
             Text("Recommended for your language and iPhone")
                 .font(.ouisprCaption)
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

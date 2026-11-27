@@ -186,7 +186,7 @@ struct ProTrialOfferSection: View {
                 } label: {
                     Text("See the plans")
                         .font(.ouisprCaption.weight(.semibold))
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .contentShape(Rectangle())
                 }

@@ -288,7 +288,7 @@ struct ProHubMembershipCard: View {
                         .font(.ouisprSubheading)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.ouisprAccent.opacity(0.12))
@@ -329,7 +329,7 @@ struct ProHubMembershipCard: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Upgrade to lifetime")
                                 .font(.ouisprBody.weight(.semibold))
-                                .foregroundColor(.ouisprAccent)
+                                .foregroundColor(.ouisprAccentText)
                             Text("\(price), one payment")
                                 .font(.ouisprCaption)
                                 .foregroundColor(.secondary)

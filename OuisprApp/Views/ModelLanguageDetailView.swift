@@ -39,7 +39,7 @@ struct ModelLanguageDetailView: View {
                             .font(.ouisprSubheading)
                     } icon: {
                         Image(systemName: "globe")
-                            .foregroundStyle(Color.ouisprAccent)
+                            .foregroundStyle(Color.ouisprAccentText)
                     }
                 }
 

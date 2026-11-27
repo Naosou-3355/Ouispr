@@ -373,7 +373,7 @@ struct AppleIntelligencePage: View {
                     Spacer(minLength: 4)
                     Image(systemName: "checkmark")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.ouisprAccent)
+                        .foregroundStyle(Color.ouisprAccentText)
                         .opacity(litStep == 3 ? 1 : 0)
                 }
                 .padding(.horizontal, 14)
@@ -409,7 +409,7 @@ struct AppleIntelligencePage: View {
             title
         }
         .font(.body)
-        .foregroundStyle(Color.ouisprAccent)
+        .foregroundStyle(Color.ouisprAccentText)
         .padding(.bottom, 10)
     }
 
@@ -650,7 +650,7 @@ private struct SettingUpHalo: View {
                 .frame(width: 140, height: 140)
             Image(systemName: UIImage(systemName: "apple.intelligence") != nil ? "apple.intelligence" : "sparkles")
                 .font(.system(size: 52, weight: .medium))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
         }
         .accessibilityHidden(true)
     }

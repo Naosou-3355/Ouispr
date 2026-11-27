@@ -173,7 +173,7 @@ struct ModelPreparationStepRow: View {
             if let value {
                 value
                     .font(.system(size: 17, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                     .lineLimit(1)
             }
         }

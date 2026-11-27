@@ -26,6 +26,18 @@ public extension Color {
         Color(light: Color(hex: 0x2756D6), dark: Color(hex: 0x3D7EFF))
     }
 
+    /// The accent for words and glyphs drawn in it (links, « Tout voir », icons): #2756D6
+    /// on light, #6BA3FF on dark.
+    ///
+    /// WHY a second token: in dark, `ouisprAccent` (#3D7EFF) on the surface (#26272C) is
+    /// 3.99:1, under WCAG's 4.5:1 for text (contrôle V1.1, 27 Nov 2026). #6BA3FF there is
+    /// 5.9:1, and 6.7:1 on the background. `ouisprAccent` itself stays for fills, where
+    /// white sits on it: white on #6BA3FF would be 2.5:1. Light is unchanged, 5.8:1 on the
+    /// background and 6.2:1 on white.
+    static var ouisprAccentText: Color {
+        Color(light: Color(hex: 0x2756D6), dark: Color(hex: 0x6BA3FF))
+    }
+
     /// Lighter accent highlight (#6BA3FF)
     static let ouisprAccentHighlight = Color(hex: 0x6BA3FF)
 

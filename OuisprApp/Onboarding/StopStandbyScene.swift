@@ -148,7 +148,7 @@ private struct StopStandbyChips: View {
     private func chip(_ step: StopStandbySceneScript.Chip, _ label: Text) -> some View {
         HStack(spacing: 6) {
             Text(verbatim: "\(step.rawValue)")
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
             label
                 .foregroundStyle(.primary)
         }

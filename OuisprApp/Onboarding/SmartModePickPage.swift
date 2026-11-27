@@ -90,7 +90,7 @@ struct SmartModePickPage: View {
     private var counter: some View {
         Text(verbatim: "\(pick.selected.count) / \(SmartModePick.maximum)")
             .font(.headline.monospacedDigit())
-            .foregroundStyle(Color.ouisprAccent)
+            .foregroundStyle(Color.ouisprAccentText)
             .fixedSize()
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
@@ -172,7 +172,7 @@ struct SmartModePickPage: View {
             HStack(spacing: 10) {
                 Image(systemName: "globe")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                 Text("Translate")
                     .font(.headline)
                     .foregroundStyle(.primary)

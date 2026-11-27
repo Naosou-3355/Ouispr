@@ -457,7 +457,7 @@ private struct SceneToolbar: View {
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.horizontal, 14)
         .frame(height: Metrics.pillHeight)
         .background(Capsule().fill(Color.ouisprAccent.opacity(0.12)))
@@ -472,7 +472,7 @@ private struct SceneToolbar: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -639,7 +639,7 @@ private struct SceneRecordingOverlay: View {
                             .font(.system(size: 14, weight: .semibold))
                             .lineLimit(1)
                     }
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .padding(.horizontal, 12)
                     .frame(height: 28)
                     .background(Capsule().fill(Color.ouisprAccent.opacity(0.14)))

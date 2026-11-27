@@ -268,7 +268,7 @@ struct ModelCardView: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Color.ouisprAccent.opacity(0.15))
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                         .cornerRadius(4)
                 }
             }

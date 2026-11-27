@@ -290,7 +290,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "crown.fill")
-                                .foregroundColor(.ouisprAccent)
+                                .foregroundColor(.ouisprAccentText)
                             Text("Ouispr Pro")
                                 .foregroundColor(.primary)
                             Spacer()

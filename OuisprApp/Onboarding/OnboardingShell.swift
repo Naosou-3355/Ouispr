@@ -128,7 +128,7 @@ struct OnboardingTopBar: View {
                         Image(systemName: "chevron.backward")
                             .font(.body.weight(.semibold))
                             // The accent, as the system tints its own back chevron.
-                            .foregroundStyle(Color.ouisprAccent)
+                            .foregroundStyle(Color.ouisprAccentText)
                             .frame(
                                 width: OnboardingMetrics.topBarHeight,
                                 height: OnboardingMetrics.topBarHeight,

@@ -66,7 +66,7 @@ struct ProBannerView: View {
             HStack(spacing: 12) {
                 Image(systemName: "crown.fill")
                     .font(.title3)
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Ouispr Pro")
@@ -105,7 +105,7 @@ struct ProBannerView: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
 
                 VStack(alignment: .leading, spacing: 2) {
                     title
