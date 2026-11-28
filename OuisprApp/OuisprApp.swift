@@ -588,18 +588,15 @@ struct OuisprApp: App {
     private static let recordingWaitCeilingMs = ForegroundAudioRecoveryPolicy.recordingWaitCeilingMilliseconds
 
     private func returnToHostApp(hostId: String?, coordinator: DictationCoordinator) {
-        guard let hostId else {
-            PersistentLog.log(.hostReturn(hostId: "unknown", outcome: "table-miss"))
-            return
-        }
-        guard let target = KnownAppSchemes.returnURL(forHostId: hostId) else {
-            // `isWorthReporting` keeps the system pseudo-hosts — the in-app browser, the
-            // share-sheet composer, Spotlight — out of the log. They are dead ends, not
-            // gaps in the catalogue, and reporting them at every triage pass costs
-            // attention forever.
-            let outcome = KnownAppSchemes.isWorthReporting(hostId) ? "no-scheme" : "no-scheme-known"
-            PersistentLog.log(.hostReturn(hostId: hostId, outcome: outcome))
-            return
+        // Lot 1.8: no early return any more. An unknown host, or one with no scheme in
+        // `KnownAppSchemes` (Claude, Safari: Alex's « ◀ Claude » capture of 28 Nov 2026),
+        // used to stop here and leave the user on the gesture screen. The chain in
+        // `HostReturnNavigator` tries iOS's own back link and the app's bundle first.
+        let loggedHostId = hostId ?? "unknown"
+        // A previous dictation's give-up must not show its gesture on this one.
+        HostReturnProgress.shared.reset()
+        if let hostId, KnownAppSchemes.returnURL(forHostId: hostId) == nil, KnownAppSchemes.isWorthReporting(hostId) {
+            PersistentLog.log(.hostReturn(hostId: hostId, outcome: "no-scheme"))
         }
 
         let startedAt = Date()
@@ -628,12 +625,10 @@ struct OuisprApp: App {
             // Sampling and reporting in the same breath removes the illusion.
             let waitedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
             PersistentLog.log(.hostReturn(
-                hostId: hostId,
+                hostId: loggedHostId,
                 outcome: "opening via=\(trigger) recState=\(coordinator.status.rawValue) waitedMs=\(waitedMs)"
             ))
-            UIApplication.shared.open(target, options: [:]) { opened in
-                PersistentLog.log(.hostReturn(hostId: hostId, outcome: opened ? "returned" : "open-failed"))
-            }
+            HostReturnNavigator.returnToHost(hostId: hostId)
         }
 
         // The coordinator already publishes its status, so the wait rides that rather
@@ -664,7 +659,7 @@ struct OuisprApp: App {
             }
             let waitedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
             PersistentLog.log(.hostReturn(
-                hostId: hostId,
+                hostId: loggedHostId,
                 outcome: "holding reason=audioSessionRecovering waitedMs=\(waitedMs) holdCeilingMs=\(holdCeilingMs)"
             ))
             // `.recording` is already covered by `readyCancellable`. A failure opens too:
@@ -694,7 +689,7 @@ struct OuisprApp: App {
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 let waitedMs = Int(Date().timeIntervalSince(startedAt) * 1000)
-                PersistentLog.log(.hostReturn(hostId: hostId, outcome: "recordingObserved waitedMs=\(waitedMs)"))
+                PersistentLog.log(.hostReturn(hostId: loggedHostId, outcome: "recordingObserved waitedMs=\(waitedMs)"))
                 // Reading it before clearing is what keeps the subscription alive until
                 // it fires: nothing else holds this cancellable, so the closure's own
                 // capture of it is the retain, and the compiler only sees that as a use

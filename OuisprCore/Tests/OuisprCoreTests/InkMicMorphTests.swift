@@ -69,4 +69,32 @@ final class InkMicMorphTests: XCTestCase {
         vector.values[4] = -0.4
         XCTAssertEqual(vector.strokes[0].width, 0)
     }
+
+    func testTheLaughingEyesAreRoundHalfMoonsNotPoints() {
+        // Lot 1.8 (Alex: « trop pointus »): each eye is two quarter arcs meeting at its
+        // top, both arriving level there, so the top is a curve and not an angle.
+        let smile = InkMicGlyph.smile.strokes
+        for (rising, falling) in [(smile[0], smile[3]), (smile[1], smile[2])] {
+            XCTAssertEqual(rising.end, falling.start, "the two halves meet at the top")
+            XCTAssertEqual(rising.control.y, rising.end.y, "the rising half arrives level")
+            XCTAssertEqual(falling.control.y, falling.start.y, "the falling half leaves level")
+            XCTAssertEqual(rising.control.x, rising.start.x, "it leaves its foot upright")
+            XCTAssertEqual(falling.control.x, falling.end.x, "it reaches its foot upright")
+            let width = abs(falling.end.x - rising.start.x), height = abs(rising.start.y - rising.end.y)
+            XCTAssertEqual(Double(height / (width / 2)), 0.95, accuracy: 1e-9, "the app's happy eye's proportion")
+        }
+        XCTAssertLessThan(smile[0].start.x, smile[1].start.x, "stroke 1 is the left eye, 2 the right")
+    }
+
+    func testABlendCarriesTheBendSoTheBarsSpringIntoTheArcs() {
+        let bars = InkStrokeVector(InkMicGlyph.bars.strokes)
+        let smile = InkStrokeVector(InkMicGlyph.smile.strokes)
+        XCTAssertEqual(smile.strokes, InkMicGlyph.smile.strokes)
+        var half = smile - bars
+        half.scale(by: 0.5)
+        let middle = (bars + half).strokes[0]
+        let from = InkMicGlyph.bars.strokes[0].control, to = InkMicGlyph.smile.strokes[0].control
+        XCTAssertEqual(Double(middle.control.x), Double(from.x + to.x) / 2, accuracy: 1e-9)
+        XCTAssertEqual(Double(middle.control.y), Double(from.y + to.y) / 2, accuracy: 1e-9)
+    }
 }

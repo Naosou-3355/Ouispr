@@ -33,12 +33,17 @@ struct InkCharacterView: View {
     private static let referenceSide: CGFloat = 200
 
     init(mood: ParticleSphereMood, voiceLevel: Double = 0, isPaused: Bool = false, isAmbient: Bool = false,
-         sharesMotion: Bool = false) {
+         sharesMotion: Bool = false, startsInMood: Bool = false) {
         self.mood = mood
         self.isAmbient = isAmbient
         self.voiceLevel = voiceLevel
         self.isPaused = isPaused
-        _driver = State(initialValue: sharesMotion ? InkCharacterDriver.shared : InkCharacterDriver())
+        // `startsInMood`: already in `mood`, with no passage from rest first. The screen a
+        // keyboard dictation shows is up for about a second (lot 1.8): the 0.9 s opening
+        // arch would fill it, and the wave would barely show.
+        let driver = sharesMotion ? InkCharacterDriver.shared
+            : startsInMood ? InkCharacterDriver(settledIn: mood) : InkCharacterDriver()
+        _driver = State(initialValue: driver)
     }
 
     var body: some View {

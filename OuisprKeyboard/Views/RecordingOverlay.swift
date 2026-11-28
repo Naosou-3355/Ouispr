@@ -72,9 +72,10 @@ struct RecordingOverlay: View {
             // keyboard's. Fixed sizes between Spacers are centred from the first frame.
             Spacer(minLength: 0)
 
-            KeyboardInkWave(status: dictationStatus, driver: waveformDriver)
-                .frame(height: isCompactHeight ? 40 : 64)
-                .padding(.horizontal, 32)
+            // The frame holds the wave at full voice (about 60 pt each side of its axis at
+            // the app's size), so a loud syllable never runs into « J'écoute » below.
+            KeyboardInkWave(status: dictationStatus, driver: waveformDriver, scale: isCompactHeight ? 0.42 : 1)
+                .frame(height: isCompactHeight ? 52 : 124)
 
             stateWord
                 .padding(.top, 12)
@@ -324,101 +325,69 @@ struct RecordingOverlay: View {
 
 // MARK: - Wave
 
-/// The ample ink wave in the centre: one 2 pt line, the sum of three sines (lot 1.7), as
-/// tall as the voice is loud while listening, breathing at silence, a calm travelling line
-/// while the words are worked out.
+/// The listening wave in the centre: the app's own (lot 1.8, Alex: « trop différente de
+/// celle de l'app »). One `InkCharacterDriver`, the same code as the app's character,
+/// in `.listening` while recording and `.working` while the words are worked out, fed
+/// the same voice level as the app's (`DictationLevels.recentPeak`: the peak of the last
+/// four energy buckets). So the wave is the app's at the app's size, 8 pt thick and about
+/// 108 pt wide, its three middle ondulations rising one by one with the voice.
 ///
-/// A stroked `Shape` in flat ink, never a `Canvas` with a gradient: the 1.4 eyes, drawn
-/// that way, did not show on Alex's iPhone while the simulator drew them.
+/// A filled `Shape` in flat ink, never a `Canvas` with a gradient: the 1.4 eyes, drawn
+/// that way, did not show on Alex's iPhone while the simulator drew them. So the logo's
+/// left / centre / right shading the app gives the wave is the one difference left.
 ///
 /// Redrawn on each tick of the driver's display link, which runs from the tap to the end
-/// of the transcription and stops otherwise. Reduce Motion keeps it still at its floor.
-///
-/// The voice goes through `InkWaveEnvelope` (rise in about 50 ms, fall in about 275 ms):
-/// the driver's own smoothing falls back in about 100 ms, which made every gap between
-/// syllables a drop to the floor.
+/// of the transcription and stops otherwise. Reduce Motion shows the wave still.
 private struct KeyboardInkWave: View {
     let status: DictationStatus
     @ObservedObject var driver: KeyboardWaveformDriver
+    /// 1 is the app's size; less in a compact height (landscape).
+    let scale: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let samples = 97
-
-    /// The envelope's state between frames: one per process, since one wave is on screen
+    /// The character's state between frames: one per process, since one wave is on screen
     /// at a time, and a reference, so moving it while the body is evaluated does not
     /// invalidate the view (the driver's tick is what redraws). Static rather than
-    /// `@State` so the overlay's frequent re-initialisations allocate nothing.
-    @MainActor private static let envelope = EnvelopeBox()
+    /// `@State` so the overlay's frequent re-initialisations allocate nothing; replaced
+    /// by a fresh one each time the wave appears.
+    @MainActor private static let holder = InkDriverHolder()
 
     var body: some View {
         // Read so that each tick of the display link redraws the wave.
         _ = driver.renderTick
-        return InkWaveLine(heights: heights(time: CACurrentMediaTime()))
-            .stroke(Color.ouisprInk, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        let frame = Self.holder.driver.frame(
+            at: CACurrentMediaTime(),
+            mood: mood,
+            voiceLevel: status == .recording ? voiceLevel : 0,
+            reduceMotion: reduceMotion,
+            advancing: !reduceMotion
+        )
+        return InkFrameShape(frame, scale: scale)
+            .fill(Color.ouisprInk)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+            .onAppear { Self.holder.driver = InkCharacterDriver(settledIn: .listening) }
     }
 
-    private func heights(time: CFTimeInterval) -> [Double] {
-        guard !reduceMotion else {
-            return InkGeometry.keyboardWave(level: 0, time: 0, samples: Self.samples)
-        }
-        let target: Double
+    private var mood: ParticleSphereMood {
         switch status {
-        case .recording:
-            target = voiceLevel
         case .transcribing, .processing:
-            target = InkGeometry.keyboardWaveWorkingLevel
-        case .idle, .requested, .ready, .failed:
-            target = 0
+            return .working
+        case .recording, .idle, .requested, .ready, .failed:
+            return .listening
         }
-        let level = Self.envelope.advance(toward: target, at: time)
-        return InkGeometry.keyboardWave(level: level, time: time, samples: Self.samples)
     }
 
-    /// The voice's level, 0 to 1: the mean of the driver's smoothed levels, doubled
-    /// because speech sits mostly under 0.5. A level that is not a number reads as silence.
+    /// The voice's level, 0 to 1, as the app reads it: the loudest of the last four
+    /// levels. A level that is not a number reads as silence.
     private var voiceLevel: Double {
-        let levels = driver.displayLevels
-        guard !levels.isEmpty else { return 0 }
-        let mean = Double(levels.reduce(0, +)) / Double(levels.count)
-        guard mean.isFinite else { return 0 }
-        return min(1, max(0, 2 * mean))
+        let peak = Double(driver.displayLevels.suffix(4).max() ?? 0)
+        return peak.isFinite ? min(1, max(0, peak)) : 0
     }
 }
 
-/// Holds the wave's envelope and the time of its last frame.
-private final class EnvelopeBox {
-    private var envelope = InkWaveEnvelope()
-    private var lastTime: CFTimeInterval?
-
-    func advance(toward target: Double, at time: CFTimeInterval) -> Double {
-        let elapsed = lastTime.map { time - $0 } ?? 0
-        lastTime = time
-        return envelope.advance(toward: target, elapsed: elapsed)
-    }
-}
-
-/// A line through evenly spaced heights, -1 at the top of its frame and 1 at the bottom.
-private struct InkWaveLine: Shape {
-    let heights: [Double]
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard heights.count > 1 else { return path }
-        let halfHeight = rect.height / 2
-        for (index, height) in heights.enumerated() {
-            let point = CGPoint(
-                x: rect.minX + rect.width * CGFloat(index) / CGFloat(heights.count - 1),
-                y: rect.midY - halfHeight * CGFloat(height)
-            )
-            if index == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
-        }
-        return path
-    }
+/// Holds the keyboard wave's driver between frames.
+private final class InkDriverHolder {
+    var driver = InkCharacterDriver(settledIn: .listening)
 }

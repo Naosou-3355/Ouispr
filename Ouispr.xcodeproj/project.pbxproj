@@ -47,6 +47,7 @@
 		AA000361 /* DictationHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100361 /* DictationHandoff.swift */; };
 		AA000428 /* DictationCoordinator+ModelLoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100428 /* DictationCoordinator+ModelLoad.swift */; };
 		AA000775 /* DictationCoordinator+SessionActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100775 /* DictationCoordinator+SessionActivation.swift */; };
+		AA00F801 /* HostReturnNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10F801 /* HostReturnNavigator.swift */; };
 		RR260000001 /* DictationCoordinator+RecordingReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = RR260100001 /* DictationCoordinator+RecordingReadiness.swift */; };
 		AA000380 /* DictationCoordinator+WarmEngineTimeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100380 /* DictationCoordinator+WarmEngineTimeout.swift */; };
 		AA000851 /* DictationCoordinator+StageWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100851 /* DictationCoordinator+StageWatchdog.swift */; };
@@ -292,6 +293,7 @@
 		AA100361 /* DictationHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationHandoff.swift; sourceTree = "<group>"; };
 		AA100428 /* DictationCoordinator+ModelLoad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictationCoordinator+ModelLoad.swift"; sourceTree = "<group>"; };
 		AA100775 /* DictationCoordinator+SessionActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictationCoordinator+SessionActivation.swift"; sourceTree = "<group>"; };
+		AA10F801 /* HostReturnNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostReturnNavigator.swift; sourceTree = "<group>"; };
 		RR260100001 /* DictationCoordinator+RecordingReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictationCoordinator+RecordingReadiness.swift"; sourceTree = "<group>"; };
 		AA100380 /* DictationCoordinator+WarmEngineTimeout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictationCoordinator+WarmEngineTimeout.swift"; sourceTree = "<group>"; };
 		AA100851 /* DictationCoordinator+StageWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DictationCoordinator+StageWatchdog.swift"; sourceTree = "<group>"; };
@@ -583,6 +585,7 @@
 				AA423003 /* SmartModeDisplayName.swift */,
 				AA100428 /* DictationCoordinator+ModelLoad.swift */,
 				AA100775 /* DictationCoordinator+SessionActivation.swift */,
+				AA10F801 /* HostReturnNavigator.swift */,
 				RR260100001 /* DictationCoordinator+RecordingReadiness.swift */,
 				AA100380 /* DictationCoordinator+WarmEngineTimeout.swift */,
 				AA100851 /* DictationCoordinator+StageWatchdog.swift */,
@@ -1341,6 +1344,7 @@
 				AA423004 /* SmartModeDisplayName.swift in Sources */,
 				AA000428 /* DictationCoordinator+ModelLoad.swift in Sources */,
 				AA000775 /* DictationCoordinator+SessionActivation.swift in Sources */,
+				AA00F801 /* HostReturnNavigator.swift in Sources */,
 				RR260000001 /* DictationCoordinator+RecordingReadiness.swift in Sources */,
 				AA000380 /* DictationCoordinator+WarmEngineTimeout.swift in Sources */,
 				AA000851 /* DictationCoordinator+StageWatchdog.swift in Sources */,

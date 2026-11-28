@@ -1,128 +1,99 @@
 // OuisprApp/Views/SwipeBackOverlayView.swift
-// Full-screen overlay teaching the swipe-back gesture during cold start dictation.
+// The screen a dictation started from the keyboard shows while Ouispr holds the microphone.
 import SwiftUI
 import OuisprCore
 
-/// Full-screen overlay shown when the app is opened from the keyboard during cold start.
+/// What the user sees for the moment Ouispr is in front during a dictation started from
+/// the keyboard, before it sends them back to their app (lot 1.8).
 ///
-/// WHY Wispr Flow-style redesign (Phase 26):
-/// A real user tester did not know the iOS swipe-back gesture existed. The overlay must
-/// TEACH the gesture visually with an iPhone mockup, animated waveform, and a hand
-/// showing the swipe direction — not just mention it in words.
-///
-/// WHY a single parameter: recording happens in DictationCoordinator, and this view is
-/// purely visual. The one thing it reads is whether the audio session is still being
-/// recovered (#853), passed in by MainTabView.
+/// WHY this shape (Alex, 28 Nov 2026: « le même design et les mêmes standards que
+/// l'application »): the night-blue gradient, the iPhone mockup, the blue dot and the hand
+/// were the last screen in the old look, and they taught a gesture the user now almost
+/// never needs, since `HostReturnNavigator` sends them back by itself.
+/// - The app's own backdrop and ink character, in `.listening` and fed by the voice, as
+///   on the app's dictation screen (`RecordingView`): the screen is the dictation, seen
+///   from Ouispr. Apple HIG, *Feedback*, and NN/g's first heuristic (visibility of system
+///   status): the moving ink says the microphone is live better than a title alone.
+/// - Nothing to read at first. The return normally happens within a second, and HIG
+///   *Launching* asks for a screen that does not compete with the content coming next.
+///   The sentence on why Ouispr had to open appears only if the user is still here after
+///   a second; the gesture line only once every automatic way back has failed.
+/// - Room for both is reserved from the start (their opacity changes, never the layout),
+///   so nothing jumps when they appear. No looping animation: HIG *Motion* (motion that
+///   serves no purpose distracts), and Reduce Motion shows the same screen, still.
 struct SwipeBackOverlayView: View {
     /// The cold start's audio session is recovering from an audio server reset, and the
     /// return to the host app is held for it (#853). That can take about three seconds, so
     /// the title says the microphone is being prepared rather than that dictation runs.
     var isPreparingMicrophone = false
+    /// The voice level, read by the character itself so the rest of the screen does not
+    /// redraw at the meter's rate.
+    @ObservedObject var levels: DictationLevels
 
-    @State private var isWaveformAnimating = false
-    @State private var swipeProgress: CGFloat = 0
-    /// The swipe loop's timer, kept so it stops with the overlay: it used to repeat
-    /// for the rest of the process once the overlay had been shown.
-    @State private var swipeTimer: Timer?
+    @ObservedObject private var progress = HostReturnProgress.shared
+    @State private var showsExplanation = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// How long the user is on this screen before the sentence on why appears. The return
+    /// usually lands sooner, so most people never read it.
+    static let explanationDelay: Duration = .seconds(1)
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(hex: 0x0D2040), Color(hex: 0x071020)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            OuisprBackdrop()
 
             VStack(spacing: 0) {
-                Text(isPreparingMicrophone ? preparingMicrophoneTitle : dictationInProgressTitle)
-                    .font(.title2.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.top, 60)
+                Spacer(minLength: 24)
 
-                Spacer()
+                OverlayCharacter(levels: levels, preparing: isPreparingMicrophone)
+                    .frame(width: 200, height: 200)
+                    .accessibilityHidden(true)
 
-                // iPhone mockup with BrandWaveform-style bars
-                ZStack(alignment: .bottom) {
-                    IPhoneMockupView(isAnimating: isWaveformAnimating)
-                        .frame(width: 180, height: 390)
+                Text(isPreparingMicrophone ? preparingMicrophoneTitle : listeningTitle)
+                    .font(.ouisprHeading)
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 28)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("swipeback.title")
 
-                    // Glowing blue dot + chevron trail on the bottom edge of the phone
-                    // Straddles the outline — half inside, half outside
-                    // Slides left→right in sync with the hand to show WHERE to swipe
-                    ZStack {
-                        // Chevron trail behind the blue dot
-                        ForEach(0..<3, id: \.self) { i in
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(
-                                    Color.ouisprAccent.opacity(
-                                        (0.5 - Double(i) * 0.15) * Double(swipeProgress)
-                                    )
-                                )
-                                .offset(x: -CGFloat(10 + i * 10))
-                        }
-
-                        Circle()
-                            .fill(Color.ouisprAccent)
-                            .frame(width: 14, height: 14)
-                            .shadow(color: Color.ouisprAccent.opacity(0.7), radius: 10)
-                            .shadow(color: Color.ouisprAccent.opacity(0.4), radius: 20)
-                    }
-                    .offset(
-                        x: -30 + swipeProgress * 80,
-                        y: 7 // half below the phone outline
-                    )
-                }
-
-                // Swipe hand gesture below the phone mockup (no chevrons — they're on the dot now)
-                SwipeHandView(progress: swipeProgress)
-                    .frame(width: 140, height: 48)
-                    .padding(.top, 2)
-
-                // Empathetic explanation — short key to avoid Xcode xcstrings duplicate bug
                 Text("swipeback_empathy_text")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.ouisprBody)
+                    .foregroundStyle(Color.ouisprTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                    .padding(.top, 16)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 12)
+                    .opacity(showsExplanation ? 1 : 0)
+                    .accessibilityHidden(!showsExplanation)
+                    .accessibilityIdentifier("swipeback.explanation")
 
-                Spacer()
+                Spacer(minLength: 24)
 
-                // Bottom instruction
-                Text("Swipe right at the bottom of your screen\nto return to your app")
-                    .font(.callout.weight(.medium))
-                    .foregroundColor(.ouisprAccentText)
+                Label(gestureHint, systemImage: "arrow.right")
+                    .font(.ouisprStageLabel)
+                    .foregroundStyle(Color.ouisprTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.bottom, 40)
+                    .opacity(progress.needsManualReturn ? 1 : 0)
+                    .accessibilityHidden(!progress.needsManualReturn)
+                    .accessibilityIdentifier("swipeback.gesture")
+                    .padding(.bottom, 24)
             }
+            .padding(.horizontal, 32)
         }
-        .onAppear {
-            // Under Reduce Motion nothing loops (audit, 22 Nov 2026, finding 14): the
-            // hand rests at the end of its swipe, and the text below gives the gesture.
-            guard !reduceMotion else {
-                swipeProgress = 1
-                return
-            }
-            withAnimation(
-                .easeInOut(duration: 0.7)
-                .repeatForever(autoreverses: true)
-            ) {
-                isWaveformAnimating = true
-            }
-            startSwipeLoop()
+        .animation(reduceMotion ? nil : .easeOut(duration: Motion.standard), value: showsExplanation)
+        .animation(reduceMotion ? nil : .easeOut(duration: Motion.standard), value: progress.needsManualReturn)
+        .task {
+            try? await Task.sleep(for: Self.explanationDelay)
+            guard !Task.isCancelled else { return }
+            showsExplanation = true
         }
-        .onDisappear {
-            swipeTimer?.invalidate()
-            swipeTimer = nil
-        }
+        .accessibilityIdentifier("swipeback.screen")
     }
 
-    private var dictationInProgressTitle: String {
-        String(localized: "Dictation in progress")
+    private var listeningTitle: String {
+        String(localized: "I'm listening",
+               comment: "Title of the screen Ouispr shows for a moment while a dictation started from the keyboard begins, before it returns to the user's app.")
     }
 
     private var preparingMicrophoneTitle: String {
@@ -130,146 +101,33 @@ struct SwipeBackOverlayView: View {
                comment: "Swipe-back overlay title while a cold start waits for iOS to bring the audio system back, which can take about three seconds; replaces 'Dictation in progress' until recording starts (issue #853).")
     }
 
-    /// Repeating hand swipe animation with pause between cycles.
-    ///
-    /// WHY Timer-based instead of .repeatForever:
-    /// .repeatForever(autoreverses: false) causes an instant jump-back that looks jarring.
-    /// A Timer lets us: animate forward (1.2s) → pause (0.8s) → reset → repeat.
-    private func startSwipeLoop() {
-        animateSwipeForward()
-        swipeTimer?.invalidate()
-        swipeTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                animateSwipeForward()
-            }
-        }
-    }
-
-    /// WHY timingCurve(0.4, 0, 0.2, 1):
-    /// Material Design "emphasized" easing — slow start, acceleration through the middle,
-    /// gentle deceleration at the end. Feels like a natural human swipe gesture rather
-    /// than mechanical linear motion.
-    private func animateSwipeForward() {
-        swipeProgress = 0
-        withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.2)) {
-            swipeProgress = 1
-        }
+    private var gestureHint: String {
+        String(localized: "Swipe right along the bottom edge to go back",
+               comment: "One line shown only when Ouispr could not return to the user's app by itself: the iOS gesture that switches back to the previous app.")
     }
 }
 
-// MARK: - Swipe Hand View
-
-/// Animated hand icon sliding right to teach the swipe-back gesture.
-///
-/// WHY hand.point.up instead of a circle:
-/// User testing showed that a blue circle didn't communicate "swipe gesture" clearly.
-/// A pointing finger is universally understood as "touch here and drag".
-private struct SwipeHandView: View {
-    var progress: CGFloat
+/// The ink character, reading the voice level itself (as `RecordingView`'s sphere does).
+private struct OverlayCharacter: View {
+    @ObservedObject var levels: DictationLevels
+    let preparing: Bool
 
     var body: some View {
-        // Hand icon only — chevrons are now on the blue dot above
-        Image(systemName: "hand.point.up")
-            .font(.system(size: 28, weight: .light))
-            .foregroundColor(.white.opacity(0.85))
-            .offset(x: -30 + progress * 80)
-            .opacity(1.0 - progress * 0.3)
-    }
-}
-
-// MARK: - iPhone Mockup View
-
-/// iPhone mockup with BrandWaveform-style animated bars and home indicator.
-///
-/// WHY 17 bars with brand color scheme:
-/// Matches the real BrandWaveform visual identity — blue gradient center bars,
-/// white opacity edge bars. 17 bars fit the 140pt mockup width cleanly.
-///
-/// WHY fixed-height waveform container:
-/// The bars animate height changes. Without a fixed container, the VStack would
-/// recalculate layout on each frame, causing the "Listening..." text below to bounce.
-/// A fixed 60pt frame contains the animation within its bounds.
-private struct IPhoneMockupView: View {
-    var isAnimating: Bool
-
-    // 17 bars — symmetric: outer white → inner blue gradient → outer white
-    private let barHeightsIdle: [CGFloat] = [
-        6, 10, 5, 12, 8, 16, 22, 14, 28, 14, 22, 16, 8, 12, 5, 10, 6
-    ]
-    private let barHeightsActive: [CGFloat] = [
-        12, 18, 10, 22, 16, 30, 40, 24, 46, 24, 38, 28, 14, 20, 8, 16, 10
-    ]
-
-    /// Bar colors matching BrandWaveform: gradient blue center, white opacity edges.
-    private func barColor(at index: Int) -> Color {
-        let center: CGFloat = 8
-        let distance = abs(CGFloat(index) - center) / center
-
-        if distance < 0.35 {
-            return .ouisprGradientStart
-        } else if distance < 0.55 {
-            return .ouisprAccent
-        } else {
-            let opacity = (1.0 - distance) * 0.7 + 0.2
-            return .white.opacity(opacity)
-        }
-    }
-
-    var body: some View {
-        ZStack {
-            // Device outline
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .stroke(Color.white.opacity(0.3), lineWidth: 2.5)
-
-            VStack(spacing: 0) {
-                // Dynamic Island — tight to top edge like a real iPhone
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 58, height: 16)
-                    .padding(.top, 14)
-
-                Spacer()
-
-                // BrandWaveform-style bars in a FIXED height container
-                // so the text below doesn't bounce when bars animate
-                HStack(spacing: 2) {
-                    ForEach(0..<17, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 1.5)
-                            .fill(barColor(at: i))
-                            .frame(
-                                width: 3,
-                                height: isAnimating
-                                    ? barHeightsActive[i]
-                                    : barHeightsIdle[i]
-                            )
-                    }
-                }
-                .frame(height: 50) // Fixed container — bars animate within
-                .animation(
-                    .easeInOut(duration: 0.7).repeatForever(autoreverses: true),
-                    value: isAnimating
-                )
-
-                // Listening label — FIXED position below the waveform container
-                Text("Listening...")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding(.top, 10)
-
-                Spacer()
-
-                // Home indicator bar
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.white.opacity(0.4))
-                    .frame(width: 60, height: 5)
-                    .padding(.bottom, 16)
-            }
-        }
+        InkCharacterView(
+            mood: preparing ? .working : .listening,
+            voiceLevel: preparing ? 0 : levels.recentPeak,
+            startsInMood: true
+        )
     }
 }
 
 // MARK: - Previews
 
-#Preview {
-    SwipeBackOverlayView()
+#Preview("Light") {
+    SwipeBackOverlayView(levels: DictationLevels())
+}
+
+#Preview("Dark") {
+    SwipeBackOverlayView(levels: DictationLevels())
+        .preferredColorScheme(.dark)
 }

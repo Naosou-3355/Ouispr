@@ -83,6 +83,14 @@ public final class InkCharacterDriver {
 
     public init() {}
 
+    /// A driver already settled in `mood`, with no passage to play first: the keyboard's
+    /// listening screen starts on the wave, its own mic having just turned into it (lot 1.8).
+    public init(settledIn mood: ParticleSphereMood) {
+        settled = mood
+        target = mood
+        snap()
+    }
+
     /// True while a passage is playing.
     public var isMoving: Bool { passage != nil }
 

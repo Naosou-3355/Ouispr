@@ -236,4 +236,31 @@ final class InkCharacterTests: XCTestCase {
             XCTAssertEqual(paused.shapes, held, "stopped at \(stop) s")
         }
     }
+
+    func testADriverSettledInListeningStartsOnTheWaveWithNoArch() {
+        // Lot 1.8: the keyboard's listening screen and the « J'écoute » hand-off start on
+        // the wave; a fresh driver would spend 0.9 s opening from the eyes first.
+        let driver = InkCharacterDriver(settledIn: .listening)
+        let first = driver.frame(at: 0, mood: .listening, voiceLevel: 0, reduceMotion: false)
+        let next = driver.frame(at: 0.05, mood: .listening, voiceLevel: 0, reduceMotion: false)
+        for frame in [first, next] {
+            XCTAssertEqual(frame.shapes.count, 1, "one stroke: the wave, not two eyes")
+            XCTAssertEqual(frame.shade, 1)
+        }
+        XCTAssertFalse(driver.isMoving)
+    }
+
+    func testTheWaveRisesWithTheVoice() {
+        func height(voice: Double) -> Double {
+            let driver = InkCharacterDriver(settledIn: .listening)
+            var frame = driver.frame(at: 0, mood: .listening, voiceLevel: voice, reduceMotion: false)
+            for step in 1...60 {
+                frame = driver.frame(at: Double(step) / 60, mood: .listening, voiceLevel: voice, reduceMotion: false)
+            }
+            guard case let .stroke(points, _) = frame.shapes.first else { return 0 }
+            return points.map { abs($0.y) }.max() ?? 0
+        }
+        XCTAssertGreaterThan(height(voice: 0.8), 2 * height(voice: 0))
+    }
 }
+

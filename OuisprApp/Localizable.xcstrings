@@ -6952,10 +6952,22 @@
     },
     "swipeback_empathy_text" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir würden diesen Schritt gern vermeiden, aber iOS verlangt, Ouispr zu öffnen, um das Mikrofon zu aktivieren."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "We’d love to skip this step, but iOS requires opening Ouispr to activate the microphone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nos gustaría evitar este paso, pero iOS exige abrir Ouispr para activar el micrófono."
           }
         },
         "fr" : {
@@ -7527,6 +7539,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touchez le nom du mode sous le personnage : vous choisissez le mode de la prochaine dictée. Votre mode par défaut est dans le même menu."
+          }
+        }
+      }
+    },
+    "I'm listening" : {
+      "comment" : "Title of the screen Ouispr shows for a moment while a dictation started from the keyboard begins, before it returns to the user's app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich höre zu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te escucho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'écoute"
+          }
+        }
+      }
+    },
+    "Swipe right along the bottom edge to go back" : {
+      "comment" : "One line shown only when Ouispr could not return to the user's app by itself: the iOS gesture that switches back to the previous app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unten am Bildschirmrand nach rechts wischen, um zurückzukehren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza hacia la derecha en el borde inferior para volver"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glissez vers la droite en bas de l'écran pour revenir"
           }
         }
       }
