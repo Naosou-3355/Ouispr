@@ -114,9 +114,16 @@ public struct InkStrokeVector: Equatable, Sendable {
     public var values: [Double]
 
     public init(_ strokes: [InkStroke]) {
-        values = strokes.flatMap { stroke in
-            [stroke.start.x, stroke.start.y, stroke.end.x, stroke.end.y, stroke.width].map(Double.init)
+        var flat: [Double] = []
+        flat.reserveCapacity(strokes.count * 5)
+        for stroke in strokes {
+            flat.append(Double(stroke.start.x))
+            flat.append(Double(stroke.start.y))
+            flat.append(Double(stroke.end.x))
+            flat.append(Double(stroke.end.y))
+            flat.append(Double(stroke.width))
         }
+        values = flat
     }
 
     init(values: [Double]) {
@@ -125,13 +132,19 @@ public struct InkStrokeVector: Equatable, Sendable {
 
     /// The strokes back. A width the spring's overshoot pushed below zero draws nothing.
     public var strokes: [InkStroke] {
-        stride(from: 0, to: values.count - values.count % 5, by: 5).map { index in
-            InkStroke(
-                CGPoint(x: values[index], y: values[index + 1]),
-                CGPoint(x: values[index + 2], y: values[index + 3]),
-                width: CGFloat(max(0, values[index + 4]))
-            )
+        // Split into typed steps: as one expression it timed out the type checker on CI.
+        let whole: Int = values.count - values.count % 5
+        var result: [InkStroke] = []
+        result.reserveCapacity(whole / 5)
+        var index: Int = 0
+        while index < whole {
+            let start = CGPoint(x: CGFloat(values[index]), y: CGFloat(values[index + 1]))
+            let end = CGPoint(x: CGFloat(values[index + 2]), y: CGFloat(values[index + 3]))
+            let width: CGFloat = CGFloat(Swift.max(0.0, values[index + 4]))
+            result.append(InkStroke(start, end, width: width))
+            index += 5
         }
+        return result
     }
 
     private static func combine(_ lhs: [Double], _ rhs: [Double], _ op: (Double, Double) -> Double) -> [Double] {
