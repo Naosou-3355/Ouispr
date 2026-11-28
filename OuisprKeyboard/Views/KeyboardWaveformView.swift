@@ -87,13 +87,16 @@ final class KeyboardWaveformDriver: ObservableObject {
     /// Which animation `status` calls for.
     private func resolvedAnimation(for status: DictationStatus) -> WaveformAnimation {
         switch status {
-        case .recording:
+        // `.requested` too (lot 1.7): the listening screen's wave breathes from the tap,
+        // before the first level arrives, so it never shows a frozen line. Its levels
+        // are zeros until the recording starts.
+        case .requested, .recording:
             return .micLevels
         case .transcribing:
             return .sweep
         case .processing:
             return .travellingPeak
-        case .idle, .requested, .ready, .failed:
+        case .idle, .ready, .failed:
             return .still
         }
     }

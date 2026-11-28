@@ -13,8 +13,8 @@ import OuisprCore
 /// word under it. When the text is in, the keys come back at once and the mic plays the
 /// laughing eyes on its own (`InkBarsMicButton`): nothing here waits for it.
 ///
-/// - .requested: the bars turn into ✕ and ✓ (✓ greyed, nothing to end yet), a still
-///   wave, « J'écoute »
+/// - .requested: the bars turn into ✕ and ✓ (✓ in full ink but inert until the recording
+///   starts), a breathing wave, « J'écoute »
 /// - .recording: ✕ and ✓, the wave follows the voice, « J'écoute »
 /// - .transcribing / .processing: ✓ greyed, no ✕ (neither stage can be cancelled, #267),
 ///   a calm travelling wave, « Transcription »
@@ -119,6 +119,7 @@ struct RecordingOverlay: View {
             ))
         }
         .onChange(of: dictationStatus) { _, newStatus in
+            morph()
             PersistentLog.log(.diagnosticProbe(
                 component: "RecordingOverlay",
                 instanceID: instanceID,
@@ -134,9 +135,20 @@ struct RecordingOverlay: View {
     /// the wave drops from 64 to 40 pt.
     private var isCompactHeight: Bool { verticalSizeClass == .compact }
 
-    /// Whether the bars have turned into ✕ and ✓. False only for the first frame of an
+    /// Whether the bars have turned into ✕ and ✓. False only for the first frames of an
     /// overlay that opens on a tap, where it is the mic as the bar drew it.
     @State private var isMorphed = false
+
+    /// How long the start (the mic as the bar drew it) stays on screen before the spring.
+    ///
+    /// WHY a delay at all (lot 1.7, Alex's iPhone video of the 1.6): setting `isMorphed`
+    /// in `onAppear` lands in the same pass that inserts the overlay, so SwiftUI never
+    /// draws the start and the screen arrived with ✕ and ✓ already in place. Even the next
+    /// main-queue turn can run before Core Animation commits the frame. 50 ms is three
+    /// frames at 60 Hz: the start is drawn for certain, and too short to read as a wait.
+    private static let morphStartHold: TimeInterval = 0.05
+    /// Set by `morph()` when the spring is to play; the task above plays it.
+    @State private var morphRequested = false
     /// The glyphs' opacity, which is all that changes under Reduce Motion.
     @State private var glyphOpacity: Double = 1
 
@@ -163,13 +175,35 @@ struct RecordingOverlay: View {
         .padding(.top, 4)
         .frame(height: 52)
         .onAppear(perform: morph)
+        // The spring after the start hold. A task, so it is cancelled with the overlay.
+        .task(id: morphRequested) {
+            guard morphRequested else { return }
+            try? await Task.sleep(nanoseconds: UInt64(Self.morphStartHold * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            withAnimation(InkBarsMicButton.morphSpring) { isMorphed = true }
+        }
     }
 
-    /// Starts the morph. Only an overlay that opens on the tap plays it; one that opens
-    /// later (the keyboard shown again during a dictation) starts as ✕ and ✓.
+    /// Starts the morph, when `ListeningMorph` says this opening plays it: within its
+    /// window of a mic tap, in `.requested` or already in `.recording` after the trip to
+    /// the app (once per tap there). Otherwise the screen starts as ✕ and ✓.
     private func morph() {
-        if dictationStatus == .requested && !reduceMotion {
-            withAnimation(InkBarsMicButton.morphSpring) { isMorphed = true }
+        guard !isMorphed, !morphRequested else { return }
+        // The overlay is inserted as soon as the real stage owns the keyboard area, but
+        // the stage it draws (`displayedDictationStatus`) can still read `.idle` in that
+        // pass: measured on the simulator, 28 Nov 2026, and the reason the 1.6's
+        // `.requested` check never played the morph. Decide on the first real stage, from
+        // `onChange`; meanwhile the bars stay as the mic drew them.
+        guard dictationStatus != .idle else { return }
+        let plays = !reduceMotion && ListeningMorph.claimMorph(status: dictationStatus)
+        PersistentLog.log(.diagnosticProbe(
+            component: "RecordingOverlay",
+            instanceID: instanceID,
+            action: "morph",
+            details: "plays=\(plays) status=\(dictationStatus.rawValue) reduceMotion=\(reduceMotion)"
+        ))
+        if plays {
+            morphRequested = true
         } else {
             isMorphed = true
             if reduceMotion {
@@ -205,15 +239,26 @@ struct RecordingOverlay: View {
     }
 
     /// The ✓: the mic's centre and right bars, which turn into the tick in place. It ends
-    /// the dictation and writes it; greyed while that would do nothing.
+    /// the dictation and writes it.
+    ///
+    /// Greyed only while the words are worked out, a stage that lasts and is labelled
+    /// « Transcription ». In `.requested`, which lasts about 100 ms, it stays in full ink:
+    /// a grey that flashed for 100 ms read as a flicker on Alex's iPhone (NN/g: a state too
+    /// short to read is noise, not status).
+    ///
+    /// A tap in `.requested` is ignored, with no press effect (disabled), rather than
+    /// remembered: a remembered stop would end a recording the moment it began, keeping
+    /// nothing, and turn a hesitant double tap into a lost dictation. Ignored, the user
+    /// sees the wave answer and taps again.
     private var confirmButton: some View {
         let confirmable = dictationStatus == .recording
+        let greyed = dictationStatus == .transcribing || dictationStatus == .processing
         return Button {
             HapticFeedback.recordingStopped()
             onStop()
         } label: {
             glyph(isMorphed ? InkMicGlyph.check.strokes : InkMicGlyph.barsWithoutLeft)
-                .opacity(confirmable || !isMorphed ? 1 : 0.35)
+                .opacity(greyed && isMorphed ? 0.35 : 1)
         }
         .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.7))
         .disabled(!confirmable)
@@ -279,14 +324,19 @@ struct RecordingOverlay: View {
 
 // MARK: - Wave
 
-/// The ample ink wave in the centre (lot 1.6): one 2 pt line, as tall as the voice is loud
-/// while listening, a calm travelling line while the words are worked out.
+/// The ample ink wave in the centre: one 2 pt line, the sum of three sines (lot 1.7), as
+/// tall as the voice is loud while listening, breathing at silence, a calm travelling line
+/// while the words are worked out.
 ///
 /// A stroked `Shape` in flat ink, never a `Canvas` with a gradient: the 1.4 eyes, drawn
 /// that way, did not show on Alex's iPhone while the simulator drew them.
 ///
-/// Redrawn on each tick of the driver's display link, which runs while recording and
-/// transcribing and stops otherwise. Reduce Motion keeps it still at its quiet floor.
+/// Redrawn on each tick of the driver's display link, which runs from the tap to the end
+/// of the transcription and stops otherwise. Reduce Motion keeps it still at its floor.
+///
+/// The voice goes through `InkWaveEnvelope` (rise in about 50 ms, fall in about 275 ms):
+/// the driver's own smoothing falls back in about 100 ms, which made every gap between
+/// syllables a drop to the floor.
 private struct KeyboardInkWave: View {
     let status: DictationStatus
     @ObservedObject var driver: KeyboardWaveformDriver
@@ -294,6 +344,12 @@ private struct KeyboardInkWave: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let samples = 97
+
+    /// The envelope's state between frames: one per process, since one wave is on screen
+    /// at a time, and a reference, so moving it while the body is evaluated does not
+    /// invalidate the view (the driver's tick is what redraws). Static rather than
+    /// `@State` so the overlay's frequent re-initialisations allocate nothing.
+    @MainActor private static let envelope = EnvelopeBox()
 
     var body: some View {
         // Read so that each tick of the display link redraws the wave.
@@ -306,18 +362,19 @@ private struct KeyboardInkWave: View {
 
     private func heights(time: CFTimeInterval) -> [Double] {
         guard !reduceMotion else {
-            return InkGeometry.keyboardWave(level: 0, phase: 0, samples: Self.samples)
+            return InkGeometry.keyboardWave(level: 0, time: 0, samples: Self.samples)
         }
-        // About one period a second, travelling right to left.
-        let phase = -2 * Double.pi * 0.8 * time.truncatingRemainder(dividingBy: 1000)
+        let target: Double
         switch status {
         case .recording:
-            return InkGeometry.keyboardWave(level: voiceLevel, phase: phase, samples: Self.samples)
+            target = voiceLevel
         case .transcribing, .processing:
-            return InkGeometry.keyboardWave(level: InkGeometry.keyboardWaveWorkingLevel, phase: phase, samples: Self.samples)
+            target = InkGeometry.keyboardWaveWorkingLevel
         case .idle, .requested, .ready, .failed:
-            return InkGeometry.keyboardWave(level: 0, phase: 0, samples: Self.samples)
+            target = 0
         }
+        let level = Self.envelope.advance(toward: target, at: time)
+        return InkGeometry.keyboardWave(level: level, time: time, samples: Self.samples)
     }
 
     /// The voice's level, 0 to 1: the mean of the driver's smoothed levels, doubled
@@ -328,6 +385,18 @@ private struct KeyboardInkWave: View {
         let mean = Double(levels.reduce(0, +)) / Double(levels.count)
         guard mean.isFinite else { return 0 }
         return min(1, max(0, 2 * mean))
+    }
+}
+
+/// Holds the wave's envelope and the time of its last frame.
+private final class EnvelopeBox {
+    private var envelope = InkWaveEnvelope()
+    private var lastTime: CFTimeInterval?
+
+    func advance(toward target: Double, at time: CFTimeInterval) -> Double {
+        let elapsed = lastTime.map { time - $0 } ?? 0
+        lastTime = time
+        return envelope.advance(toward: target, elapsed: elapsed)
     }
 }
 

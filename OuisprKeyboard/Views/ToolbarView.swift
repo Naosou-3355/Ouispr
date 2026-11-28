@@ -112,6 +112,9 @@ struct ToolbarView: View {
     /// Whether the "long-press for Smart Modes" hint is still worth showing. The
     /// policy is `SmartModeDiscovery`'s; this is only the answer.
     var offersSmartModeHint: Bool = false
+    /// Called when this bar draws the discovery hint, for its display cap (lot 1.7). Nil
+    /// for a bar that is not the visible owner's, which must not count.
+    var onSmartModeHintDrawn: (() -> Void)?
 
     /// Opens the long-press fan. Returns whether it opened — a refusal (a dictation
     /// in flight, nothing pinned) leaves the gesture inert rather than arming on a
@@ -283,6 +286,15 @@ struct ToolbarView: View {
                 disabledMic
             }
         }
+        .onAppear(perform: reportHintIfDrawn)
+        .onChange(of: centreSlot == .discoveryHint) { _, _ in reportHintIfDrawn() }
+        .onChange(of: onSmartModeHintDrawn == nil) { _, _ in reportHintIfDrawn() }
+    }
+
+    /// Tells the keyboard the hint is on screen, for its display cap (lot 1.7).
+    private func reportHintIfDrawn() {
+        guard centreSlot == .discoveryHint else { return }
+        onSmartModeHintDrawn?()
     }
 
     /// The one occupant of the centre slot, resolved by the priority table in

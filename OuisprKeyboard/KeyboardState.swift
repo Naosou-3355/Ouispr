@@ -1195,7 +1195,9 @@ class KeyboardState: ObservableObject {
             "registerControllerAppearance",
             details: "controllerID=\(controllerID) previousOwner=\(activeControllerID ?? "none") ownership=\(ownership.logDescription) wasVisible=\(isKeyboardVisible) \(sessionDetails())"
         )
+        let previous = ownership
         ownership = ownership.appearing(controllerID: controllerID)
+        if ownership.opensKeyboard(appearingAfter: previous) { MainActor.assumeIsolated { KeyboardSmartModeState.shared.keyboardOpened() } }
 
         // A locally-owned stage with no generation behind it is stale by construction
         // (#361). Discarded here rather than narrowed by the drawing rule alone, so a
