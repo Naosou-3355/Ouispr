@@ -5,30 +5,32 @@ import OuisprCore
 
 /// The listening screen that replaces the keyboard while a dictation runs.
 ///
-/// Lot 1.4 (Alex's keyboard bench, 27 Nov 2026, « épuré ») put the ink character's two eyes
-/// in the middle and a one-word state under them, in place of the waveform, the timer and
-/// the glass pills. Lot 1.5 (Alex's device feedback, same day) adds a fine ink wave that
-/// follows the voice under the eyes, and puts the two actions side by side below: ✕ on
-/// the left, ✓ on the right.
+/// Lot 1.6 (Alex's bench of 28 Nov 2026, « micro qui se transforme »): when the mic is
+/// tapped, its three bars change in place. The two on the right spring into the ✓ that
+/// ends the dictation, where the user tapped; the left one flies to the far left, where
+/// the ☰ was, and becomes the ✕ that cancels it. Both are bare ink glyphs, no disc. That
+/// leaves the centre to one ample ink wave that follows the voice, with a quiet state
+/// word under it. When the text is in, the keys come back at once and the mic plays the
+/// laughing eyes on its own (`InkBarsMicButton`): nothing here waits for it.
 ///
-/// - .requested: the eyes at rest, the wave hidden, « J'écoute », ✓ greyed, ✕
-/// - .recording: the eyes stretch with the voice and blink, the wave follows it,
-///   « J'écoute », ✓ and ✕
-/// - .transcribing / .processing: the eyes glance from side to side, « Transcription »,
-///   ✓ greyed and no ✕ (neither stage can be cancelled, #267)
+/// - .requested: the bars turn into ✕ and ✓ (✓ greyed, nothing to end yet), a still
+///   wave, « J'écoute »
+/// - .recording: ✕ and ✓, the wave follows the voice, « J'écoute »
+/// - .transcribing / .processing: ✓ greyed, no ✕ (neither stage can be cancelled, #267),
+///   a calm travelling wave, « Transcription »
 ///
-/// .ready has no face of its own: the overlay leaves as soon as the text is in and the
-/// keys come back at once (lot 1.5 dropped the laughing eyes that would have held them).
-/// For the instant it may linger, it shows the resting eyes and a greyed ✓.
+/// WHY the top row copies the bar's layout to the point: the overlay replaces the bar in
+/// one frame, so the bars it starts from must sit exactly where the mic's were. Then the
+/// swap cannot be seen and the morph reads as the mic itself changing.
 ///
 /// WHY it replaces the keyboard: when recording, the keyboard area turns into the
 /// listening UI. This prevents accidental key presses during dictation and gives clear
 /// feedback that the mic is live.
 ///
-/// WHY the eyes and the wave are driven by `KeyboardWaveformDriver` and not a
-/// `TimelineView`: a `TimelineView` proved fragile inside the keyboard extension after
-/// suspension and resume. The driver's display link starts and stops with the overlay,
-/// and it already carries the voice's levels; both read them on each of its ticks.
+/// WHY the wave is driven by `KeyboardWaveformDriver` and not a `TimelineView`: a
+/// `TimelineView` proved fragile inside the keyboard extension after suspension and
+/// resume. The driver's display link starts and stops with the overlay, and it already
+/// carries the voice's levels; the wave reads them on each of its ticks.
 struct RecordingOverlay: View {
     /// The stage to draw — `KeyboardState.displayedDictationStatus`, not the raw
     /// dictation status (#309). The two differ for at most half a second, while a
@@ -47,6 +49,7 @@ struct RecordingOverlay: View {
     let onStop: () -> Void
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The armed Smart Mode, or nil for Normal (#79).
     ///
@@ -62,30 +65,24 @@ struct RecordingOverlay: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // The armed mode, at the top where the toolbar's mode name was. The band
-            // keeps its height when there is no mode, so nothing below moves.
-            armedModeBadge
-                .frame(height: isCompactHeight ? 24 : 32)
-                .padding(.top, 8)
+            topRow
 
-            // WHY Spacers and no GeometryReader: on the first frame the hosting view may
-            // still be at toolbar height (52 pt) before growing to the keyboard's. A
-            // GeometryReader would measure the old frame and draw everything squeezed at
-            // the top for a frame; fixed sizes between Spacers are centred from the first.
+            // WHY Spacers and no GeometryReader around the whole: on the first frame the
+            // hosting view may still be at toolbar height (52 pt) before growing to the
+            // keyboard's. Fixed sizes between Spacers are centred from the first frame.
             Spacer(minLength: 0)
 
-            KeyboardInkFace(status: dictationStatus, driver: waveformDriver, isCompactHeight: isCompactHeight)
+            KeyboardInkWave(status: dictationStatus, driver: waveformDriver)
+                .frame(height: isCompactHeight ? 40 : 64)
+                .padding(.horizontal, 32)
 
             stateWord
-                .padding(.top, 8)
-                // Capped so a large text size cannot push the buttons under the
-                // keyboard's edge in landscape, where the room is about 4 pt.
+                .padding(.top, 12)
+                // Capped so a large text size cannot push the word under the keyboard's
+                // edge in landscape.
                 .dynamicTypeSize(...DynamicTypeSize.xxLarge)
 
             Spacer(minLength: 0)
-
-            actionRow
-                .padding(.bottom, isCompactHeight ? 8 : 16)
         }
         .frame(maxWidth: .infinity)
         .background(GeometryReader { proxy in
@@ -96,7 +93,7 @@ struct RecordingOverlay: View {
                     component: "RecordingOverlay",
                     instanceID: instanceID,
                     action: "laidOut",
-                    details: "size=\(Int(proxy.size.width))x\(Int(proxy.size.height)) status=\(dictationStatus.rawValue) compact=\(isCompactHeight)"
+                    details: "size=\(Int(proxy.size.width))x\(Int(proxy.size.height)) status=\(dictationStatus.rawValue) compact=\(isCompactHeight) reduceMotion=\(reduceMotion)"
                 ))
             }
         })
@@ -133,19 +130,112 @@ struct RecordingOverlay: View {
 
     // MARK: - Pieces
 
-    /// True in iPhone landscape, where the keyboard and its bar are about 222 pt tall.
-    ///
-    /// WHY: the portrait sizes add up to about 242 pt and the hosting view does not clip,
-    /// so in landscape the buttons would hang under the keyboard's edge. They drop to
-    /// 48 pt, the wave to 16 pt and the band and paddings tighten (about 205 pt).
+    /// True in iPhone landscape, where the keyboard and its bar are about 222 pt tall:
+    /// the wave drops from 64 to 40 pt.
     private var isCompactHeight: Bool { verticalSizeClass == .compact }
 
-    /// The two buttons' diameter: 56 pt, 48 pt in landscape. Both on the 8 pt grid and
-    /// above Apple's 44 pt minimum target.
-    private var buttonDiameter: CGFloat { isCompactHeight ? 48 : 56 }
+    /// Whether the bars have turned into ✕ and ✓. False only for the first frame of an
+    /// overlay that opens on a tap, where it is the mic as the bar drew it.
+    @State private var isMorphed = false
+    /// The glyphs' opacity, which is all that changes under Reduce Motion.
+    @State private var glyphOpacity: Double = 1
 
-    /// One word under the eyes, 13 pt in the quiet grey. It holds the room of the longer
-    /// word, so the eyes above never move when it changes, and it says nothing at the end.
+    /// ✕ where the ☰ was, the armed mode in the middle, ✓ where the mic was.
+    ///
+    /// The same paddings, height and slot widths as `ToolbarView`'s bar (12 pt sides,
+    /// 4 pt top, 52 pt, 56 × 44 slots), so the bars the morph starts from sit exactly on
+    /// the mic it replaces.
+    private var topRow: some View {
+        GeometryReader { proxy in
+            // From the ✓'s slot to the ✕'s: the distance the left bar flies.
+            let travel = max(0, proxy.size.width - 56)
+            ZStack {
+                armedModeBadge
+                HStack(spacing: 0) {
+                    cancelButton(travel: travel)
+                    Spacer(minLength: 0)
+                    confirmButton
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .frame(height: 52)
+        .onAppear(perform: morph)
+    }
+
+    /// Starts the morph. Only an overlay that opens on the tap plays it; one that opens
+    /// later (the keyboard shown again during a dictation) starts as ✕ and ✓.
+    private func morph() {
+        if dictationStatus == .requested && !reduceMotion {
+            withAnimation(InkBarsMicButton.morphSpring) { isMorphed = true }
+        } else {
+            isMorphed = true
+            if reduceMotion {
+                // Reduce Motion: no stroke moves, the glyphs fade in.
+                glyphOpacity = 0
+                // Next run-loop turn, or the fade starts from the 1 already drawn.
+                DispatchQueue.main.async {
+                    withAnimation(.easeOut(duration: 0.2)) { glyphOpacity = 1 }
+                }
+            }
+        }
+    }
+
+    /// The ✕: the mic's left bar, which flies from the mic's slot to this one and splits
+    /// into the cross. Shown while a cancel can do something; hidden, its room kept, while
+    /// the words are worked out (#267).
+    private func cancelButton(travel: CGFloat) -> some View {
+        // Also after a failure: if the overlay is still up then, the ✕ is the way out.
+        let cancellable = dictationStatus == .requested || dictationStatus == .recording
+            || dictationStatus == .failed
+        return Button {
+            HapticFeedback.recordingStopped()
+            onCancel()
+        } label: {
+            glyph(isMorphed ? InkMicGlyph.cross.strokes : InkMicGlyph.leftBarOnly)
+                .offset(x: isMorphed ? 0 : travel)
+        }
+        .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.7))
+        .opacity(cancellable ? 1 : 0)
+        .disabled(!cancellable)
+        .accessibilityHidden(!cancellable)
+        .accessibilityLabel(Text("Cancel", comment: "VoiceOver name of the ✕ that cancels a dictation on the keyboard's listening screen (lot 1.4)."))
+    }
+
+    /// The ✓: the mic's centre and right bars, which turn into the tick in place. It ends
+    /// the dictation and writes it; greyed while that would do nothing.
+    private var confirmButton: some View {
+        let confirmable = dictationStatus == .recording
+        return Button {
+            HapticFeedback.recordingStopped()
+            onStop()
+        } label: {
+            glyph(isMorphed ? InkMicGlyph.check.strokes : InkMicGlyph.barsWithoutLeft)
+                .opacity(confirmable || !isMorphed ? 1 : 0.35)
+        }
+        .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.7))
+        .disabled(!confirmable)
+        .accessibilityLabel(Text("Confirm", comment: "VoiceOver name of the ✓ that ends a dictation and writes it, on the keyboard's listening screen: « Valider » (lot 1.5)."))
+    }
+
+    /// One bare ink glyph in the mic's 26 pt box, centred in a 56 × 44 target (Apple's
+    /// 44 pt minimum), the mic's own slot.
+    private func glyph(_ strokes: [InkStroke]) -> some View {
+        InkStrokesShape(strokes)
+            .fill(Color.ouisprInk)
+            .frame(width: 26, height: 26)
+            .opacity(glyphOpacity)
+            .frame(width: 56, height: 44)
+            // A keyboard extension delivers no touch on fully transparent pixels: without
+            // this fill only the glyph's strokes would answer.
+            .background(Color.black.opacity(0.001))
+            .contentShape(Rectangle())
+    }
+
+    /// One word under the wave, 13 pt in the quiet grey. It holds the room of the longer
+    /// word, so the wave above never moves when it changes, and it says nothing at the end.
     private var stateWord: some View {
         ZStack {
             Text("Listening", comment: "One word under the eyes on the keyboard's listening screen, while it listens: « J'écoute » (lot 1.4).").hidden()
@@ -162,42 +252,6 @@ struct RecordingOverlay: View {
         .font(.footnote)
         .foregroundStyle(Color.ouisprTextTertiary)
         .lineLimit(1)
-    }
-
-    /// ✕ on the left, ✓ on the right, the same size, symmetric about the centre line.
-    ///
-    /// WHY 64 pt between them (lot 1.5): the brief asked for well-separated targets,
-    /// centres about 120 pt apart. 56 + 64 = 120 at the default size; in landscape the
-    /// 48 pt buttons keep the same gap. Each target is the whole disc, so no touch can
-    /// land on both, and the gap is wide enough for a thumb that misses by half a disc.
-    private var actionRow: some View {
-        // Also after a failure: if the overlay is still up then, the ✕ is the way out.
-        let cancellable = dictationStatus == .requested || dictationStatus == .recording
-            || dictationStatus == .failed
-        let confirmable = dictationStatus == .recording
-        return HStack(spacing: 64) {
-            ListeningActionButton(
-                kind: .cancel,
-                diameter: buttonDiameter,
-                isEnabled: cancellable
-            ) {
-                HapticFeedback.recordingStopped()
-                onCancel()
-            }
-            // Hidden but holding its room while the words are worked out, which cannot
-            // be cancelled (#267): the ✓ stays where it was.
-            .opacity(cancellable ? 1 : 0)
-            .accessibilityHidden(!cancellable)
-
-            ListeningActionButton(
-                kind: .confirm,
-                diameter: buttonDiameter,
-                isEnabled: confirmable
-            ) {
-                HapticFeedback.recordingStopped()
-                onStop()
-            }
-        }
     }
 
     /// The armed mode's name (#79). Renders nothing for Normal: an "off" state announced
@@ -223,157 +277,57 @@ struct RecordingOverlay: View {
     }
 }
 
-// MARK: - Buttons
+// MARK: - Wave
 
-/// One of the listening screen's two round buttons (lot 1.5).
+/// The ample ink wave in the centre (lot 1.6): one 2 pt line, as tall as the voice is loud
+/// while listening, a calm travelling line while the words are worked out.
 ///
-/// ✓ is the main action, a full ink disc with the tick in the background's colour, like
-/// the app's ink buttons. ✕ is the secondary one: a quiet neutral disc with the cross in
-/// the primary text colour, the same size so the row reads as a pair.
-private struct ListeningActionButton: View {
-    enum Kind {
-        case cancel, confirm
-    }
-
-    let kind: Kind
-    let diameter: CGFloat
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(kind == .confirm ? Color.ouisprInk : Color.ouisprTextPrimary.opacity(0.08))
-                Image(systemName: kind == .confirm ? "checkmark" : "xmark")
-                    .font(.system(size: diameter * 0.36, weight: .semibold))
-                    .foregroundStyle(kind == .confirm ? Color.ouisprBackground : Color.ouisprTextPrimary)
-            }
-            .frame(width: diameter, height: diameter)
-            .contentShape(Circle())
-            // Greyed while a tap would do nothing: ✓ before the mic is live and while
-            // the words are worked out.
-            .opacity(isEnabled ? 1 : 0.35)
-        }
-        .buttonStyle(GlassPressStyle(pressedScale: 0.92, pressedOpacity: 0.75))
-        .disabled(!isEnabled)
-        .accessibilityLabel(label)
-    }
-
-    private var label: Text {
-        switch kind {
-        case .cancel:
-            return Text("Cancel", comment: "VoiceOver name of the ✕ that cancels a dictation on the keyboard's listening screen (lot 1.4).")
-        case .confirm:
-            return Text("Confirm", comment: "VoiceOver name of the ✓ that ends a dictation and writes it, on the keyboard's listening screen: « Valider » (lot 1.5).")
-        }
-    }
-}
-
-// MARK: - Face
-
-/// The ink character's two eyes and, under them while listening, the voice's wave.
+/// A stroked `Shape` in flat ink, never a `Canvas` with a gradient: the 1.4 eyes, drawn
+/// that way, did not show on Alex's iPhone while the simulator drew them.
 ///
-/// WHY SHAPE VIEWS AND NOT A CANVAS (lot 1.5): in lot 1.4 the eyes were a `Canvas`
-/// stroking with a gradient shading, the app's renderer. On Alex's iPhone they did not
-/// appear at all, while the simulator drew them in both Debug and Release. Everything
-/// the keyboard has shown on device (the mic bars, the ink disc, the old waveform's flat
-/// colours) is a flat fill. So the eyes are two `Capsule`s and the wave one stroked
-/// `Shape`, both in flat ink, the drawing the keyboard already proved on the device. The
-/// geometry is unchanged: it still comes from `InkGeometry`.
-///
-/// Redrawn on each tick of the driver's display link (`renderTick`), which runs while
-/// recording and transcribing and stops otherwise: the face then holds its shape and
-/// costs nothing. Reduce Motion keeps the eyes still and unstretched and the wave still at
-/// its quiet floor; only the state word and the buttons change.
-private struct KeyboardInkFace: View {
+/// Redrawn on each tick of the driver's display link, which runs while recording and
+/// transcribing and stops otherwise. Reduce Motion keeps it still at its quiet floor.
+private struct KeyboardInkWave: View {
     let status: DictationStatus
     @ObservedObject var driver: KeyboardWaveformDriver
-    let isCompactHeight: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The eyes' drawing scale: the app's resting eyes at 1.25, about 12 pt wide and
-    /// 22 pt tall each, 48 pt apart. Fully stretched, an eye's top sits about 33 pt above
-    /// the centre, inside the 72 pt frame's 36.
-    private static let scale: CGFloat = 1.25
-    private static let eyesHeight: CGFloat = 72
-    private static let waveWidth: CGFloat = 144
-    private static let waveSamples = 49
+    private static let samples = 97
 
     var body: some View {
-        // Read so that each tick of the display link redraws the face.
+        // Read so that each tick of the display link redraws the wave.
         _ = driver.renderTick
-        let level = voiceLevel
-        let time = CACurrentMediaTime()
-        return VStack(spacing: isCompactHeight ? 4 : 8) {
-            eyes(level: level, time: time)
-                .frame(width: 144, height: Self.eyesHeight)
-            InkWaveLine(heights: waveHeights(level: level, time: time))
-                .stroke(Color.ouisprInk, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                .frame(width: Self.waveWidth, height: isCompactHeight ? 16 : 24)
-                // Only while listening: it holds its room otherwise, so nothing moves.
-                .opacity(status == .recording ? 1 : 0)
+        return InkWaveLine(heights: heights(time: CACurrentMediaTime()))
+            .stroke(Color.ouisprInk, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private func heights(time: CFTimeInterval) -> [Double] {
+        guard !reduceMotion else {
+            return InkGeometry.keyboardWave(level: 0, phase: 0, samples: Self.samples)
         }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        // About one period a second, travelling right to left.
+        let phase = -2 * Double.pi * 0.8 * time.truncatingRemainder(dividingBy: 1000)
+        switch status {
+        case .recording:
+            return InkGeometry.keyboardWave(level: voiceLevel, phase: phase, samples: Self.samples)
+        case .transcribing, .processing:
+            return InkGeometry.keyboardWave(level: InkGeometry.keyboardWaveWorkingLevel, phase: phase, samples: Self.samples)
+        case .idle, .requested, .ready, .failed:
+            return InkGeometry.keyboardWave(level: 0, phase: 0, samples: Self.samples)
+        }
     }
 
     /// The voice's level, 0 to 1: the mean of the driver's smoothed levels, doubled
     /// because speech sits mostly under 0.5. A level that is not a number reads as silence.
     private var voiceLevel: Double {
-        guard status == .recording, !reduceMotion else { return 0 }
         let levels = driver.displayLevels
         guard !levels.isEmpty else { return 0 }
         let mean = Double(levels.reduce(0, +)) / Double(levels.count)
         guard mean.isFinite else { return 0 }
         return min(1, max(0, 2 * mean))
-    }
-
-    private func eyes(level: Double, time: CFTimeInterval) -> some View {
-        let shapes = eyesFrame(level: level, time: time).shapes
-        return ZStack {
-            ForEach(shapes.indices, id: \.self) { index in
-                if case let .stroke(points, width) = shapes[index], let first = points.first, let last = points.last {
-                    // A vertical stroke with round caps is a capsule: as long as the line
-                    // plus one width, as wide as the stroke, centred on its midpoint.
-                    Capsule()
-                        .fill(Color.ouisprInk)
-                        .frame(
-                            width: width * Self.scale,
-                            height: (abs(last.y - first.y) + width) * Self.scale
-                        )
-                        .offset(
-                            x: (first.x + last.x) / 2 * Self.scale,
-                            y: (first.y + last.y) / 2 * Self.scale
-                        )
-                }
-            }
-        }
-    }
-
-    private func eyesFrame(level: Double, time: CFTimeInterval) -> InkFrame {
-        guard !reduceMotion else {
-            return InkGeometry.listeningEyes(stretch: 0, gazeX: 0, blink: 0)
-        }
-        switch status {
-        case .recording:
-            return InkGeometry.listeningEyes(
-                stretch: level,
-                gazeX: 0,
-                blink: InkGeometry.keyboardBlink(at: time)
-            )
-        case .transcribing, .processing:
-            return InkGeometry.listeningEyes(stretch: 0, gazeX: InkGeometry.keyboardSweep(at: time), blink: 0)
-        case .idle, .requested, .ready, .failed:
-            return InkGeometry.listeningEyes(stretch: 0, gazeX: 0, blink: 0)
-        }
-    }
-
-    /// The wave travels at about one period a second; under Reduce Motion it stays put.
-    private func waveHeights(level: Double, time: CFTimeInterval) -> [Double] {
-        let phase = reduceMotion ? 0 : -2 * Double.pi * 0.8 * time.truncatingRemainder(dividingBy: 1000)
-        return InkGeometry.keyboardWave(level: level, phase: phase, samples: Self.waveSamples)
     }
 }
 

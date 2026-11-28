@@ -186,6 +186,10 @@ struct KeyboardRootView: View {
         ToolbarView(
             hasFullAccess: state.controller?.hasFullAccess ?? false,
             dictationStatus: state.dictationStatus,
+            // Only the visible owner may play the laughing eyes: iOS keeps hidden root
+            // views mounted, and one of them could otherwise use the celebration up.
+            dictationCelebrationID: state.activeControllerID == controllerID && state.isKeyboardVisible
+                ? state.dictationInsertedCount : 0,
             supportsDictation: KeyboardState.deviceSupportsDictation,
             onMicTap: { state.startRecording() },
             statusMessage: state.statusMessage,

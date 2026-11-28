@@ -28,6 +28,8 @@ import OuisprCore
 struct ToolbarView: View {
     let hasFullAccess: Bool
     let dictationStatus: DictationStatus
+    /// `KeyboardState.dictationInsertedCount`: the mic smiles once for each new value.
+    var dictationCelebrationID = 0
 
     /// Whether this device can dictate from the keyboard at all (#635). False on a
     /// pre-A14 chip: the mic is drawn disabled and the centre slot says why. Defaulted
@@ -389,6 +391,7 @@ struct ToolbarView: View {
         InkBarsMicButton(
             status: dictationStatus,
             badge: effectiveSmartMode?.badge,
+            celebrationID: dictationCelebrationID,
             onTap: {
                 guard !fanGestureDidOpen else {
                     fanGestureDidOpen = false
