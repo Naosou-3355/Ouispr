@@ -59,11 +59,11 @@ struct OnboardingSuccessView: View {
         }
         .onAppear {
             // Step 1: Spring the check in (0 -> 1.1 -> 1.0)
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2)) {
+            withAnimation(Motion.gentle.delay(0.2)) {
                 checkmarkScale = 1.0
             }
             // Step 2: Fade in the button after the check lands
-            withAnimation(.easeOut(duration: 0.4).delay(0.6)) {
+            withAnimation(.easeOut(duration: Motion.emphasized).delay(0.6)) {
                 showText = true
             }
         }

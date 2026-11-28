@@ -165,6 +165,12 @@ public enum SharedKeys {
     public static let debugVoiceNoteAutoOpenDisabled = "ouispr.debugVoiceNoteAutoOpenDisabled"
     #endif
 
+    // Free-version preview (Ouispr fork, Pro offer of 25 Nov 2026).
+    /// Bool: when true, `PremiumFlags.proUnlocked` reads false, so the app shows what a
+    /// free user sees: the Pro window's sales state, the 7-day search, locked modes.
+    /// Absent reads false. Set from Settings > About; read at launch.
+    public static let previewFreeVersion = "ouispr.previewFreeVersion"
+
     // Live Activity preference
     /// Whether Live Activity (Dynamic Island + Lock Screen) is enabled, default true
     public static let liveActivityEnabled = "ouispr.liveActivityEnabled"
@@ -272,6 +278,10 @@ public enum SharedKeys {
     /// that one says whether the feature is switched on at all, this one says which
     /// mode the next dictation runs.
     public static let smartModeArmed = "ouispr.smartModeArmed"
+
+    /// The mode the app's next dictation returns to once one has run, or absent for
+    /// Normal. Set from Home's mode menu (long press) or from Settings.
+    public static let smartModeDefault = "ouispr.smartModeDefault"
     /// [String]: identifiers of the modes pinned to the keyboard's long-press fan,
     /// in the user's own order. Absent means they have never chosen, which seeds
     /// from `SmartModeCatalogue.defaultPinnedIdentifiers`; an empty array is a real
@@ -284,6 +294,23 @@ public enum SharedKeys {
     /// it exists, and re-teaching them is what makes a hint into noise. See
     /// `SmartModeDiscovery`.
     public static let smartModeGestureUsed = "ouispr.smartModeGestureUsed"
+    /// Int: how many keyboard openings have shown the long-press discovery hint (lot 1.7).
+    ///
+    /// The hint's display cap, TipKit's `MaxDisplayCount` in shape: after
+    /// `SmartModeDiscovery.maxDisplayCount` openings it retires even if the gesture was
+    /// never used. Counted by the keyboard, once per opening. See `SmartModeDiscovery`.
+    public static let smartModeHintShownCount = "ouispr.smartModeHintShownCount"
+    /// Double: when the keyboard's mic was last tapped, as seconds since 1970 (lot 1.7).
+    ///
+    /// Read by the listening screen to decide whether to play the mic's morph into ✕ and
+    /// ✓. In the App Group rather than in memory because the tap often sends the user to
+    /// OuisprApp and back, and the keyboard process does not always survive the trip.
+    /// See `ListeningMorph`.
+    public static let keyboardMicTappedAt = "ouispr.keyboardMicTappedAt"
+    /// Double: the `keyboardMicTappedAt` whose morph has already played on a listening
+    /// screen opened in `.recording` (lot 1.7), so a screen rebuilt later in the same
+    /// dictation (a controller reclaim, #260) does not play it again. See `ListeningMorph`.
+    public static let keyboardMorphPlayedForTap = "ouispr.keyboardMorphPlayedForTap"
     /// Data: the JSON-encoded `SmartMode` armed for the transcription sitting in
     /// `lastTranscription`, or absent when the dictation runs Normal.
     ///

@@ -33,7 +33,12 @@ extension DefaultKeyboardLayer {
 struct KeyboardRootView: View {
     let controllerID: String
     @ObservedObject private var state = KeyboardState.shared
-    @ObservedObject private var waveformDriver = KeyboardWaveformDriver.shared
+    /// Not observed here: the driver publishes every frame while the waveform moves,
+    /// and an observing root re-ran its whole body (keyboard, toolbar, overlay) sixty
+    /// times a second in each of the ~9 live keyboard roots (audit, 22 Nov 2026,
+    /// finding 15). Only `KeyboardWaveformView`, the leaf that draws the bars,
+    /// observes it.
+    private let waveformDriver = KeyboardWaveformDriver.shared
     /// Everything Smart Mode: the armed mode's name, the discovery hint, and the
     /// fan while the mic is held. A second observed object beside `KeyboardState`,
     /// exactly as the waveform driver above is — see `KeyboardSmartModeState`.
@@ -181,8 +186,17 @@ struct KeyboardRootView: View {
         ToolbarView(
             hasFullAccess: state.controller?.hasFullAccess ?? false,
             dictationStatus: state.dictationStatus,
+            // Only the visible owner may play the laughing eyes: iOS keeps hidden root
+            // views mounted, and one of them could otherwise use the celebration up.
+            dictationCelebrationID: state.activeControllerID == controllerID && state.isKeyboardVisible
+                ? state.dictationInsertedCount : 0,
             supportsDictation: KeyboardState.deviceSupportsDictation,
-            onMicTap: { state.startRecording() },
+            onMicTap: {
+                // Before the tap is handled, so the listening screen it opens, here or
+                // after the trip to the app, knows to play the mic's morph (lot 1.7).
+                ListeningMorph.noteMicTap()
+                state.startRecording()
+            },
             statusMessage: state.statusMessage,
             messageProbeRootViewID: instanceID,
             messageProbeControllerID: controllerID,
@@ -205,6 +219,9 @@ struct KeyboardRootView: View {
             armedSmartMode: smartModes.armedMode,
             effectiveSmartMode: smartModes.effectiveMode,
             offersSmartModeHint: smartModes.offersHint,
+            // Only the visible owner's bar counts toward the hint's cap (lot 1.7).
+            onSmartModeHintDrawn: state.activeControllerID == controllerID && state.isKeyboardVisible
+                ? { smartModes.noteHintDrawn() } : nil,
             onSmartModeFanOpen: { smartModes.open() },
             onSmartModeFanDrag: { y in smartModes.track(y: y) },
             onSmartModeFanRelease: { smartModes.commit() },
@@ -299,7 +316,6 @@ struct KeyboardRootView: View {
                 RecordingOverlay(
                     dictationStatus: state.displayedDictationStatus,
                     waveformEnergy: state.waveformEnergy,
-                    elapsedSeconds: state.recordingElapsed,
                     waveformDriver: waveformDriver,
                     onCancel: { state.requestCancel() },
                     onStop: { state.requestStop() },

@@ -60,8 +60,8 @@ struct HistorySceneCard: View {
 /// The scene: the History sheet as `HistoryView` presents it from the home screen, its
 /// cards, and the search bar at its bottom (`HistorySceneScript`).
 ///
-/// WHAT IS REAL AND WHAT IS DRAWN (#649 decision 13): the cards are the app's own
-/// `HistoryCard`, fed records built for the scene, and the cards that stay while a word is
+/// WHAT IS REAL AND WHAT IS DRAWN (#649 decision 13): the rows are the app's own
+/// `DictationRow`, fed records built for the scene, and the cards that stay while a word is
 /// typed are the ones `TranscriptionSearch` keeps, the screen's own filter. Not the view
 /// itself: `HistoryView` reads the user's real history and its Pro gate, and a scene shows
 /// the same cards to everyone. The sheet's grabber, its navigation bar and the search bar
@@ -110,12 +110,19 @@ struct HistoryScene: View {
             // overlay, so six cards cannot push the bar out of the crop.
             Color.clear
                 .overlay(alignment: .top) {
-                    VStack(spacing: 12) {
+                    // The history's own rows on its plain surface, separated as a
+                    // list separates them.
+                    VStack(spacing: 0) {
                         ForEach(visible) { record in
-                            HistoryCard(record: record)
+                            if record.id != visible.first?.id {
+                                Divider().padding(.leading, 16)
+                            }
+                            DictationRow(record: record)
+                                .padding(.horizontal, 16)
                                 .transition(.opacity)
                         }
                     }
+                    .background(Color.ouisprSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                 }
@@ -127,8 +134,8 @@ struct HistoryScene: View {
         }
         .background(Color.ouisprBackground)
         .sceneFinger(frame.finger)
-        .animation(.easeInOut(duration: 0.25), value: visible.map(\.id))
-        .animation(.easeOut(duration: 0.25), value: frame.isSearching)
+        .animation(.easeInOut(duration: Motion.standard), value: visible.map(\.id))
+        .animation(.easeOut(duration: Motion.standard), value: frame.isSearching)
     }
 
     /// iOS 26's search bar at the bottom of a `.searchable` screen: a glass capsule with

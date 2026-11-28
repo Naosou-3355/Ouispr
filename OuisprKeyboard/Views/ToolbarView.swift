@@ -28,6 +28,8 @@ import OuisprCore
 struct ToolbarView: View {
     let hasFullAccess: Bool
     let dictationStatus: DictationStatus
+    /// `KeyboardState.dictationInsertedCount`: the mic smiles once for each new value.
+    var dictationCelebrationID = 0
 
     /// Whether this device can dictate from the keyboard at all (#635). False on a
     /// pre-A14 chip: the mic is drawn disabled and the centre slot says why. Defaulted
@@ -110,6 +112,9 @@ struct ToolbarView: View {
     /// Whether the "long-press for Smart Modes" hint is still worth showing. The
     /// policy is `SmartModeDiscovery`'s; this is only the answer.
     var offersSmartModeHint: Bool = false
+    /// Called when this bar draws the discovery hint, for its display cap (lot 1.7). Nil
+    /// for a bar that is not the visible owner's, which must not count.
+    var onSmartModeHintDrawn: (() -> Void)?
 
     /// Opens the long-press fan. Returns whether it opened — a refusal (a dictation
     /// in flight, nothing pinned) leaves the gesture inert rather than arming on a
@@ -281,6 +286,15 @@ struct ToolbarView: View {
                 disabledMic
             }
         }
+        .onAppear(perform: reportHintIfDrawn)
+        .onChange(of: centreSlot == .discoveryHint) { _, _ in reportHintIfDrawn() }
+        .onChange(of: onSmartModeHintDrawn == nil) { _, _ in reportHintIfDrawn() }
+    }
+
+    /// Tells the keyboard the hint is on screen, for its display cap (lot 1.7).
+    private func reportHintIfDrawn() {
+        guard centreSlot == .discoveryHint else { return }
+        onSmartModeHintDrawn?()
     }
 
     /// The one occupant of the centre slot, resolved by the priority table in
@@ -385,11 +399,11 @@ struct ToolbarView: View {
     /// long-press delay. See `fanGestureDidOpen` for how the two are kept from
     /// firing on the same release.
     private var micPill: some View {
-        AnimatedMicButton(
+        // The logo's bars in ink, no pill around them (lot 1.4, « juste l'icône pleine »).
+        InkBarsMicButton(
             status: dictationStatus,
-            isPill: true,
             badge: effectiveSmartMode?.badge,
-            animatesIdleGlow: false,
+            celebrationID: dictationCelebrationID,
             onTap: {
                 guard !fanGestureDidOpen else {
                     fanGestureDidOpen = false
@@ -494,18 +508,14 @@ struct ToolbarView: View {
     /// that was settled on a device. The bar is empty at that moment anyway, and it
     /// sits directly above the first row.
     private var fanTitle: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 11, weight: .semibold))
-
-            Text(
-                "Choose a Smart Mode",
-                comment: "Toolbar title shown while the long-press Smart Mode fan is open."
-            )
-            .font(.system(size: 13, weight: .semibold))
-            .lineLimit(1)
-        }
-        .foregroundColor(.ouisprAccent)
+        // The app's menu title (lot 1.4): 13 pt, quiet, no glyph.
+        Text(
+            "Mode for the next dictation",
+            comment: "Toolbar title shown while the long-press Smart Mode fan is open, as in the app's mode menu (lot 1.4)."
+        )
+        .font(.footnote)
+        .foregroundStyle(Color.ouisprTextSecondary)
+        .lineLimit(1)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -530,7 +540,7 @@ struct ToolbarView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -653,9 +663,11 @@ struct ToolbarView: View {
             label
             if direction == .right { arrow }
         }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-        .opacity(0.62 + hintDrift * 0.13)
+        .font(.caption2.weight(.medium))
+        // The primary ink at 80 %, steady: `.secondary` breathing down to 62 % fell to
+        // about 2:1 on the keyboard's grey (audit of 26 Nov 2026, n°12). This is about
+        // 9:1 in light and dark; only the drift says it is a hint now.
+        .foregroundStyle(Color.primary.opacity(0.8))
         .offset(x: sign * hintDrift)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
@@ -723,7 +735,7 @@ struct ToolbarView: View {
     /// pill carries the Smart Mode fan's long press, which starts a dictation on
     /// release. This one carries nothing.
     private var disabledMic: some View {
-        AnimatedMicButton(status: .idle, isPill: true, animatesIdleGlow: false, onTap: {})
+        InkBarsMicButton(status: .idle, onTap: {})
             .disabled(true)
             .opacity(0.4)
     }
@@ -826,7 +838,7 @@ struct ToolbarView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
             }
-            .foregroundColor(.ouisprAccent)
+            .foregroundColor(.ouisprAccentText)
             .padding(.horizontal, 14)
             .frame(height: iconDiameter)
             .background(
@@ -863,7 +875,7 @@ struct ToolbarView: View {
                 Image(systemName: "arrow.up.forward.app")
                     .font(.system(size: 13, weight: .semibold))
             }
-            .foregroundColor(.ouisprAccent)
+            .foregroundColor(.ouisprAccentText)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: iconDiameter)
             .background(Capsule().fill(Color.ouisprAccent.opacity(0.12)))
@@ -994,7 +1006,7 @@ struct ToolbarView: View {
     ) -> some View {
         Image(systemName: systemName)
             .font(.system(size: size, weight: .medium))
-            .foregroundColor(ringed ? .ouisprAccent : .ouisprPillIconSecondary)
+            .foregroundColor(ringed ? .ouisprAccentText : .ouisprPillIconSecondary)
             .frame(width: width, height: iconDiameter)
             .ouisprGlass(in: shape == .capsule ? AnyShape(Capsule()) : AnyShape(Circle()))
             .background {

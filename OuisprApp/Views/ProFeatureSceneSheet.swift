@@ -66,7 +66,7 @@ struct ProFeatureDemoLink: View {
         } label: {
             Text("See the demo",
                  comment: "Text link at the end of the \"How it works\" card of each Ouispr Pro feature screen (Smart Modes, History, Vocabulary, Voice notes); opens the feature's animated demo from the onboarding (#686).")
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
         }
         // Borderless, so only the link's own words take the tap, not the whole row.
         .buttonStyle(.borderless)

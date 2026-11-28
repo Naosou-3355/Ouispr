@@ -81,7 +81,7 @@ struct ModelDownloadPage: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: preparingModelID)
+        .animation(.easeInOut(duration: Motion.standard), value: preparingModelID)
         .onAppear {
             // Whether the model is already downloaded, and whether one is in flight.
             syncWithPreparationState()
@@ -274,7 +274,7 @@ struct ModelDownloadPage: View {
 
             Text("Recommended for your language and iPhone")
                 .font(.ouisprCaption)
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

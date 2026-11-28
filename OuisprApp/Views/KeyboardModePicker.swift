@@ -50,7 +50,7 @@ struct DefaultLayerPicker: View {
                         .strokeBorder(Color.ouisprAccent.opacity(0.15), lineWidth: 1)
                 )
                 .allowsHitTesting(false)
-                .animation(.easeInOut(duration: 0.2), value: selectedLayer)
+                .animation(.easeInOut(duration: Motion.quick), value: selectedLayer)
         }
     }
 

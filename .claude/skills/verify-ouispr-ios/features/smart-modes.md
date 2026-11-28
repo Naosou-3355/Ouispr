@@ -7,14 +7,15 @@
 
 ## Sub-features
 
-- `smart-modes.fan`: Hold the mic, drag up, release on a mode: the dictation is rewritten in it; « Normal » clears it.
-- `smart-modes.structured`: Structuré: a long dictation put in order.
+- `smart-modes.fan`: Hold the mic, drag up, release on a mode: the dictation is rewritten in it; « Normal » clears it. Since lot 1.4 the fan is a plain list in one glass panel, titled « Mode de la prochaine dictée » in the bar: ink icon (text.alignleft, pencil.line, list.bullet, globe), name, one-line sub-text, a tick on the current mode, a neutral highlight under the finger. « Aucun » reads « Normal » everywhere.
+- `smart-modes.structured`: Rédigé (formerly Structuré; identifier unchanged): a long dictation put in order.
 - `smart-modes.list`: Liste: ideas as bullet points.
 - `smart-modes.message`: Message: a clear message, ready to send.
 - `smart-modes.summary`: Résumé: the gist in a few sentences.
 - `smart-modes.translate`: Traduction → FR / EN / ES / DE.
 - `smart-modes.pin`: Choose up to three modes shown in the keyboard (add, remove, reorder).
 - `smart-modes.toggle`: « Mode intelligent » on/off switch.
+- `smart-modes.home-menu`: In the app, the mode's name under Home's character (a glass capsule: glyph, « Mode Normal », chevron; `home.mode`, 44 pt; VoiceOver « Mode de dictée, Normal »; lot 1.3, 27 Nov 2026) is the button: it opens iOS's own menu titled « Mode de la prochaine dictée »: Normal, the pinned modes under their app names (Rédigé, Liste, Traduire → EN; the keyboard fan keeps « → EN »), each with a glyph (text.alignleft, pencil.line, list.bullet, globe) and a one-line sub-text, the Pro row for a non-subscriber, the reason modes cannot run as the first row under the title, then two submenus: « Mode par défaut » (only where there is a choice) and « Style de retranscription » (the same setting as Réglages → Style de transcription). The tick marks the mode the next dictation runs. A tap arms a mode for the next dictation only; after it the mode returns to the default. The default is no longer a long press on a row (a system menu has none): it is the submenu, or Réglages → « Mode par défaut » (footer « Mode utilisé au début de chaque dictée. »). Where modes are not offered the line reads « Touchez le micro et parlez. ». What's new's first page (`app.whats-new`) draws this name and its menu.
 
 ## How to get to it (user POV)
 

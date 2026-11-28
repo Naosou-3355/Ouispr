@@ -142,6 +142,9 @@ public enum LogEvent: Sendable {
                                 channel: BuildChannel = .appStore)
     case transcriptionFailed(error: String)
     case recordingTooShort(durationMs: Int)
+    /// Why a recording ended, and what it held (audit of 26 Nov 2026). `cause` is a
+    /// `DictationStopCause` token, `peak` the loudest sample: never anything the user said.
+    case dictationStopped(cause: String, durationMs: Int, peak: Double)
     case transcriptionPerformance(modelName: String, audioDurationMs: Int, transcriptionDurationMs: Int, peakMemoryMB: Int)
 
     // MARK: Model
@@ -791,7 +794,7 @@ public enum LogEvent: Sendable {
              .coldStartURLReceived, .coldStartFlagSet, .coldStartRetry,
              .overlayShown, .overlayHidden, .statusChanged, .stopTiming,
              .waveformAppeared, .waveformDisappeared, .waveformRefreshIDChanged,
-             .waveformEnergyTransition, .overlayBodyEvaluated, .overlayRecreated,
+             .waveformEnergyTransition, .overlayBodyEvaluated, .overlayRecreated, .dictationStopped,
              .audioInterruptionEnded, .audioRouteChanged,
              .warmStateReleased, .idleReleaseArmed, .warmStateRestored, .audioHapticsAllowance, .audioInputMuted,
              .userDictionaryEvicted, .userDictionaryReset, .userDictionaryMigrated,
@@ -930,6 +933,8 @@ public enum LogEvent: Sendable {
             return "error=\(error)"
         case .recordingTooShort(let durationMs):
             return "duration=\(durationMs)ms"
+        case .dictationStopped(let cause, let durationMs, let peak):
+            return "cause=\(cause) duration=\(durationMs)ms peak=\(String(format: "%.3f", peak))"
 
         // Model
         case .modelDownloadStarted(let name, let sizeMB):
@@ -1267,7 +1272,7 @@ extension LogEvent {
              .audioInputMuted, .audioInputMuteFailed:
             return .audio
         case .transcriptionStarted, .transcriptionCompleted, .driftRetrySpanReplaced, .transcriptionFailed,
-             .recordingTooShort, .transcriptionPerformance:
+             .recordingTooShort, .transcriptionPerformance, .dictationStopped:
             return .transcription
         case .modelDownloadStarted, .modelDownloadCompleted, .modelDownloadFailed,
              .modelSelected, .modelCompilationStarted, .modelCompilationCompleted,
@@ -1366,6 +1371,7 @@ extension LogEvent {
         case .driftRetrySpanReplaced: return "driftRetrySpanReplaced"
         case .transcriptionFailed: return "transcriptionFailed"
         case .recordingTooShort: return "recordingTooShort"
+        case .dictationStopped: return "dictationStopped"
         case .modelDownloadStarted: return "modelDownloadStarted"
         case .modelDownloadCompleted: return "modelDownloadCompleted"
         case .modelDownloadFailed: return "modelDownloadFailed"

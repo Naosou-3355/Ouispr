@@ -54,7 +54,7 @@ struct ProBannerView: View {
                 memberCard(activeFeatures: activeFeatures)
             }
         }
-        .animation(.easeOut(duration: 0.3), value: content)
+        .animation(.easeOut(duration: Motion.standard), value: content)
     }
 
     /// The subscriber's card: same family as Home's model status card (glass, no
@@ -66,7 +66,7 @@ struct ProBannerView: View {
             HStack(spacing: 12) {
                 Image(systemName: "crown.fill")
                     .font(.title3)
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Ouispr Pro")
@@ -105,7 +105,7 @@ struct ProBannerView: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
 
                 VStack(alignment: .leading, spacing: 2) {
                     title

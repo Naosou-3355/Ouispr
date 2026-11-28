@@ -13,6 +13,8 @@
 - `pro.trial`: A 14-day trial announced at the end of onboarding.
 - `pro.trial-end`: End-of-trial paywall.
 - `pro.demo`: « Voir la démonstration » on each Pro feature's page.
+- `pro.window` (Pro offer, 25 Nov 2026): for someone being sold Pro, the window leads with the feature that opened it (`ProWindowEntry`: mode menu or keyboard → « Les modes », history search → « Tout votre historique », « Analyser mes transcriptions » → « Votre vocabulaire », Réglages → the four evenly), then « Inclus aussi » over one grouped card, the three-step trial timeline and the ink « Essayer 14 jours gratuitement » button with its one-pass iridescent sheen. The plans sit behind « Voir les formules » while the trial is still available.
+- `pro.free-preview`: Réglages → À propos → « Aperçu de la version gratuite », then relaunch: `PremiumFlags.proUnlocked` reads false, so the sales window, the 7-day search and the Pro vocabulary suggestions can be seen on the fork.
 
 ## How to get to it (user POV)
 

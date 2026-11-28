@@ -16,6 +16,17 @@ import OuisprCore
 /// grouped rows with section headers and footers.
 struct SettingsView: View {
 
+    /// The model manager, when the settings are the way to the models.
+    ///
+    /// Since design V2 the app has no tab bar: the models, which had their own tab,
+    /// are a row of this screen. Optional so a preview or a test can show the
+    /// settings alone; the row is then absent.
+    private let modelManager: ModelManager?
+
+    init(modelManager: ModelManager? = nil) {
+        self.modelManager = modelManager
+    }
+
     @EnvironmentObject var proStatus: ProStatusManager
 
     /// The saved dictations, for the destructive row below (#70).
@@ -152,9 +163,19 @@ struct SettingsView: View {
 
     /// Confirmation dialog for emptying the transcription history (#70).
     @State private var showClearHistoryConfirmation = false
+    /// The Ouispr Pro row's sheen has played since Settings opened (n°20).
+    @State private var proSheenPlayed = false
 
     /// Drives the Ouispr Pro hub's cover, opened by the one Ouispr Pro row (#216).
     @State private var showPaywall = false
+
+    /// The free-version preview (`PremiumFlags.previewsFreeVersion`), mirrored so the
+    /// switch redraws: the flag lives in the App Group, which publishes nothing.
+    @State private var previewsFreeVersion = PremiumFlags.previewsFreeVersion
+
+    /// The preview as this process started with it. A `static let` is read once, on
+    /// first use, which is before the switch can have moved in this process.
+    private static let previewedFreeVersionAtLaunch = PremiumFlags.previewsFreeVersion
 
     /// Whether the Ouispr Pro row renders at all (#236, #577, #216).
     ///
@@ -185,6 +206,37 @@ struct SettingsView: View {
         #else
         return PremiumFlags.paywallVisible
         #endif
+    }
+
+    /// The rows Home's mode menu offers, minus Ouispr Pro, or nil when it offers no
+    /// modes. Read once a visit: it asks Apple Intelligence about the device.
+    @State private var defaultModeChoices: [SmartModeFanEntry]? = SettingsView.resolveDefaultModeChoices()
+
+    /// Bumped by a pick, so the picker redraws: the value lives in the App Group.
+    @State private var defaultModeRevision = 0
+
+    private static func resolveDefaultModeChoices() -> [SmartModeFanEntry]? {
+        guard let picker = SmartModeHomePicker.current(), !picker.offersProUpgrade, picker.modesAreArmable else { return nil }
+        let entries = picker.entries.filter { $0 != .pro }
+        return entries.count > 1 ? entries : nil
+    }
+
+    private var defaultModeSelection: Binding<String> {
+        Binding(
+            get: {
+                _ = defaultModeRevision
+                // A default since unpinned reads as Normal here, as it does in Home.
+                let id = SmartModeDefault.identifier ?? SmartModeFanEntry.normal.id
+                return defaultModeChoices?.contains { $0.id == id } == true ? id : SmartModeFanEntry.normal.id
+            },
+            set: { id in
+                let mode = defaultModeChoices?.first { $0.id == id }?.smartMode
+                SmartModeDefault.set(mode)
+                // The next dictation starts from the new default, as a long press does.
+                SmartModeDefault.returnToDefault()
+                defaultModeRevision += 1
+            }
+        )
     }
 
     #if DEBUG
@@ -238,7 +290,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "crown.fill")
-                                .foregroundColor(.ouisprAccent)
+                                .foregroundColor(.ouisprAccentText)
                             Text("Ouispr Pro")
                                 .foregroundColor(.primary)
                             Spacer()
@@ -258,7 +310,50 @@ struct SettingsView: View {
                             // the rows around it.
                             listDisclosureIndicator
                         }
+                        // The Pro signature, once per opening of Settings and behind the
+                        // text: replayed on every reappearance of the row while scrolling,
+                        // and drawn over the words, it read as a flicker (audit of
+                        // 26 Nov 2026, n°20).
+                        .proSheen(behindContent: true, played: $proSheenPlayed)
+                        .clipped()
                     }
+                }
+            }
+
+            // The models, which were a tab of their own before design V2.
+            if let modelManager {
+                Section {
+                    NavigationLink("Models") {
+                        ModelManagerView(modelManager: modelManager)
+                    }
+                    .accessibilityIdentifier("settings.models")
+                }
+            }
+
+            // The user's own terms are free since the Pro offer of 25 Nov 2026, so
+            // they need a way in that is not the Pro hub. The suggestions inside stay
+            // Pro, and the screen says so where they are.
+            Section {
+                NavigationLink("Vocabulary") {
+                    VocabularyListView()
+                        .environmentObject(proStatus)
+                }
+                .accessibilityIdentifier("settings.vocabulary")
+            }
+
+            // The mode Home's mode button returns to after each dictation, the same
+            // value a long press sets in Home's menu (« bouton mode » bench). Only where
+            // modes can be chosen at all.
+            if let modes = defaultModeChoices {
+                Section {
+                    Picker("Default mode", selection: defaultModeSelection) {
+                        ForEach(modes) { entry in
+                            Text(verbatim: HomeSmartModeCopy.shortName(of: entry)).tag(entry.id)
+                        }
+                    }
+                    .accessibilityIdentifier("settings.defaultMode")
+                } footer: {
+                    Text("Mode used at the start of every dictation.")
                 }
             }
 
@@ -281,7 +376,7 @@ struct SettingsView: View {
                     }
                 }
                 if isParakeetActive {
-                    Text("Parakeet automatically detects the spoken language. This setting only applies to Whisper models.")
+                    Text("The current model detects the spoken language by itself. This setting applies to the other models.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -321,7 +416,7 @@ struct SettingsView: View {
                 if transcriptionLanguage == TranscriptionLanguageMode.autoStoredValue {
                     VStack(alignment: .leading, spacing: 4) {
                         if describesWhisperAutoDetect {
-                            Text("Auto-detect lets you dictate in any language Whisper supports. Polish adapts to the language you speak.")
+                            Text("Auto-detect lets you dictate in nearly a hundred languages. Polish adapts to the language you speak.")
                         }
                         Text("Language support varies by model. Tap ⓘ on a model card in Models for details.")
                     }
@@ -534,6 +629,18 @@ struct SettingsView: View {
                     DictationCollectionView()
                 }
 
+                // Ouispr reads as Pro in every build; this is the one way to see what a
+                // free user sees (Pro offer, 25 Nov 2026). Read at launch.
+                Toggle("Preview the free version", isOn: $previewsFreeVersion)
+                    .onChange(of: previewsFreeVersion) { _, preview in
+                        PremiumFlags.previewsFreeVersion = preview
+                    }
+                if previewsFreeVersion != Self.previewedFreeVersionAtLaunch {
+                    Text("Relaunch Ouispr to apply.")
+                        .font(.ouisprCaption)
+                        .foregroundColor(.secondary)
+                }
+
                 NavigationLink("Licenses") {
                     LicensesView()
                 }
@@ -607,19 +714,21 @@ struct SettingsView: View {
     /// inside a sentence has to agree with it in both languages, and "1
     /// transcriptions" is the bug that always ships. As a trailing detail it is a
     /// number next to a label, which is also how iOS writes it.
+    ///
+    /// The count has a row of its own, a plain one: next to the red label it read as a
+    /// setting of the button, « Effacer l'historique 30 » (audit of 26 Nov 2026, n°18).
+    @ViewBuilder
     private var clearHistoryRow: some View {
+        LabeledContent("Saved dictations") {
+            // `format:` rather than an interpolated literal: the latter would put a
+            // "%lld" key in the string catalogue for a number that has nothing to
+            // translate, and this way the digits group per the user's locale.
+            Text(history.count, format: .number)
+        }
         Button(role: .destructive) {
             showClearHistoryConfirmation = true
         } label: {
-            HStack {
-                Text("Clear history")
-                Spacer()
-                // `format:` rather than an interpolated literal: the latter would put
-                // a "%lld" key in the string catalogue for a number that has nothing
-                // to translate, and this way the digits group per the user's locale.
-                Text(history.count, format: .number)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Clear history")
         }
         .disabled(history.isEmpty)
         .confirmationDialog(

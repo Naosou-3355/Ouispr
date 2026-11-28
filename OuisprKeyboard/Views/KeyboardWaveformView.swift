@@ -87,13 +87,16 @@ final class KeyboardWaveformDriver: ObservableObject {
     /// Which animation `status` calls for.
     private func resolvedAnimation(for status: DictationStatus) -> WaveformAnimation {
         switch status {
-        case .recording:
+        // `.requested` too (lot 1.7): the listening screen's wave breathes from the tap,
+        // before the first level arrives, so it never shows a frozen line. Its levels
+        // are zeros until the recording starts.
+        case .requested, .recording:
             return .micLevels
         case .transcribing:
             return .sweep
         case .processing:
             return .travellingPeak
-        case .idle, .requested, .ready, .failed:
+        case .idle, .ready, .failed:
             return .still
         }
     }
@@ -191,7 +194,7 @@ final class KeyboardWaveformDriver: ObservableObject {
 
         switch animation {
         case .micLevels:
-            tickRecording()
+            tickRecording(elapsed: elapsed)
         case .sweep, .travellingPeak:
             processingPhase += ProcessingWaveform.phaseAdvance(for: animation, elapsedSeconds: elapsed)
         case .still:
@@ -202,18 +205,25 @@ final class KeyboardWaveformDriver: ObservableObject {
         logHeartbeatIfNeeded()
     }
 
-    private func tickRecording() {
+    /// Eases each bar toward its target. The factors are per 60 Hz frame and scaled
+    /// to the time that actually passed, so the bars move at the same speed whatever
+    /// rate the display link runs at, and a late frame catches up instead of lagging
+    /// (audit, 22 Nov 2026, finding 15: the easing depended on the frame rate).
+    private func tickRecording(elapsed: CFTimeInterval) {
         let targets = targetLevels()
         var updated = displayLevels
+        let frames = Float(min(max(elapsed, 0), 0.1) * 60)
+        let rise = 1 - pow(1 - smoothingFactor, frames)
+        let fall = pow(decayFactor, frames)
 
         for index in 0..<barCount {
             let target = targets[index]
             let current = updated[index]
 
             if target > current {
-                updated[index] = current + (target - current) * smoothingFactor
+                updated[index] = current + (target - current) * rise
             } else {
-                updated[index] = target + (current - target) * decayFactor
+                updated[index] = target + (current - target) * fall
             }
 
             if updated[index] < 0.005 {
@@ -324,17 +334,32 @@ struct KeyboardWaveformView: View {
     private let barCount = 30
     private let barSpacing: CGFloat = 2
 
+    /// One `Canvas` for the 30 bars rather than 30 `Capsule` views: the row is
+    /// redrawn every frame while it moves, and a Canvas replays one drawing instead
+    /// of having SwiftUI diff and lay out 30 views each time (audit, 22 Nov 2026,
+    /// finding 15). Same geometry as the `HStack` it replaces: equal widths, 2 pt
+    /// gaps, each bar centred vertically with fully rounded ends.
     var body: some View {
-        HStack(spacing: barSpacing) {
-            ForEach(0..<barCount, id: \.self) { index in
+        Canvas { context, size in
+            let gaps = barSpacing * CGFloat(barCount - 1)
+            let barWidth = max((size.width - gaps) / CGFloat(barCount), 0)
+            for index in 0..<barCount {
                 let height = barHeight(at: index)
-
-                Capsule()
-                    .fill(resolvedBarColor(at: index))
-                    .frame(height: height)
+                let rect = CGRect(
+                    x: CGFloat(index) * (barWidth + barSpacing),
+                    y: (size.height - height) / 2,
+                    width: barWidth,
+                    height: height
+                )
+                let radius = min(barWidth, height) / 2
+                context.fill(
+                    Path(roundedRect: rect, cornerRadius: radius, style: .circular),
+                    with: .color(resolvedBarColor(at: index))
+                )
             }
         }
         .frame(height: maxHeight)
+        .accessibilityHidden(true)
     }
 
     /// Height of one bar under whichever animation is running.
@@ -370,7 +395,10 @@ struct KeyboardWaveformView: View {
         let distanceFromCenter = abs(Float(index) - center) / center
 
         if distanceFromCenter < 0.4 {
-            return .ouisprGradientStart
+            // The sphere's colours, blue to blue-violet across the centre bars, so the
+            // keyboard's waveform and the app's sphere read as one product (design V2).
+            let signedDistance = (Float(index) - center) / center
+            return OuisprSphereGradient.color(at: Double(0.5 + signedDistance / 0.8))
         }
 
         let opacity = Double(1.0 - distanceFromCenter) * 0.9 + 0.15

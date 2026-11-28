@@ -327,12 +327,12 @@ struct VoiceNoteCardView: View {
                     }
                 } label: {
                     Image(systemName: copiedTarget == target ? "checkmark" : "doc.on.doc")
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                 }
                 .accessibilityLabel(copiedTarget == target ? Text("Copied!") : Text("Copy"))
                 ShareLink(item: text) {
                     Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                 }
                 .accessibilityLabel(Text("Share"))
             }
@@ -359,7 +359,7 @@ struct VoiceNoteCardView: View {
         VStack(spacing: 12) {
             Image(systemName: "waveform.slash")
                 .font(.system(size: 40))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
+                .foregroundColor(.ouisprAccentText.opacity(0.7))
             Text("This voice note is no longer available.")
                 .font(.ouisprSubheading)
                 .multilineTextAlignment(.center)

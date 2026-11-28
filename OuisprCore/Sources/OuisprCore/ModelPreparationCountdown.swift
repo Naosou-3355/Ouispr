@@ -3,7 +3,7 @@
 // says is left of it. Issue #533.
 import Foundation
 
-/// The coarse "time left" line shown above the cycling phrases while a model compiles.
+/// The coarse "time left" the preparation screen's status line adds while a model compiles.
 ///
 /// WHY A COUNTDOWN AND NOT A BAR (decided on #533, 2026-09-09):
 /// the download phase already ends on a full bar, and a second bar starting again at 0 %
@@ -49,8 +49,8 @@ public enum ModelPreparationCountdown: Equatable, Sendable {
         // Integer ceiling, as in `ModelPreparationWait`, so the boundaries are exact and
         // the figure at second 0 is the notice's figure.
         let roundedUpMinutes = (remaining + 59) / 60
-        // WHY NEVER 1: the catalogue carries no plural rule for "About %lld minutes left",
-        // so a 1 would ship "About 1 minutes left". Going straight from 2 to the floor
+        // WHY NEVER 1: the status line reads "about %lld min left" and the catalogue
+        // carries no plural rule; a single minute reads better as "under a minute". Going straight from 2 to the floor
         // removes the case instead of adding a plural variation to translate.
         guard roundedUpMinutes >= ModelPreparationWait.minimumNamedMinutes else {
             return .underAMinute

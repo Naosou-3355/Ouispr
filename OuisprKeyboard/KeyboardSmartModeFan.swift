@@ -158,6 +158,11 @@ final class KeyboardSmartModeState: ObservableObject {
     /// that changes about twice in a device's lifetime.
     @Published private(set) var offersHint = false
 
+    /// The hint's display cap, per opening (lot 1.7): see `HintDisplayTally`.
+    private var hintTally = HintDisplayTally(displayCount: SmartModeDiscovery.displayCount)
+    /// The hint policy's two device inputs, from the last refresh.
+    private var hintInputs = (deviceCanRunModes: false, fanIsReachable: false)
+
     /// Height of the area the fan draws into, i.e. everything below the toolbar.
     ///
     /// Written by `KeyboardViewController.applyLayout` in the same synchronous turn
@@ -226,14 +231,34 @@ final class KeyboardSmartModeState: ObservableObject {
         effectiveMode = dictation.isArmable ? armed : nil
         // The hint teaches the long press, so it goes when the long press stops
         // opening anything (#460).
-        offersHint = SmartModeDiscovery.offersHint(
-            deviceCanRunModes: SmartModeAvailability.deviceCanRunModes,
-            fanIsReachable: fanIsReachable
-        )
+        hintInputs = (SmartModeAvailability.deviceCanRunModes, fanIsReachable)
+        updateHint()
         // Through `close()` rather than by clearing the value, so the backstop timer
         // goes with it. `presentAreaMode` refuses while a dictation owns the area,
         // which is the correct no-op here — the overlay already has the area.
         if status.ownsKeyboardArea { close() }
+    }
+
+    // MARK: - Hint display cap (lot 1.7)
+
+    /// The keyboard opened (`KeyboardState`, once per opening, at the ownership change).
+    func keyboardOpened() {
+        hintTally.keyboardOpened(displayCount: SmartModeDiscovery.displayCount)
+        updateHint()
+    }
+
+    /// The visible owner's bar drew the hint. Counted once per opening.
+    func noteHintDrawn() {
+        guard hintTally.hintDrawn() else { return }
+        SmartModeDiscovery.noteHintShown()
+    }
+
+    private func updateHint() {
+        offersHint = SmartModeDiscovery.offersHint(
+            deviceCanRunModes: hintInputs.deviceCanRunModes,
+            fanIsReachable: hintInputs.fanIsReachable,
+            displaysBeforeThisOpening: hintTally.displaysBeforeThisOpening
+        )
     }
 
     // MARK: - Opening
@@ -470,6 +495,7 @@ final class KeyboardSmartModeState: ObservableObject {
         // and all. A gesture refused there leaves the mode armed and the user taps
         // the mic — the arming is the durable half, and re-doing the long-press to
         // recover a swallowed tap would be the worse outcome.
+        ListeningMorph.noteMicTap()
         keyboard.startRecording()
     }
 

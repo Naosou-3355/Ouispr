@@ -1,20 +1,30 @@
 // OuisprApp/Views/HistoryView.swift
-// The saved dictations, newest first, reached by swiping up from the home screen.
+// The saved dictations as a native list, sorted by period, reached from Home.
 import SwiftUI
 import OuisprCore
 
-/// The transcription history (#70): every saved dictation as a glass card.
+/// The transcription history (#70): every saved dictation as a flat row, under the
+/// period it was dictated in.
+///
+/// « Banc Ouispr épuré » (Alex, 27 Nov 2026): a large native title, sections Aujourd'hui,
+/// Hier, Cette semaine, Plus ancien, the rows Home shows (`DictationRow`), and the
+/// system's search field. It replaces the drifting cloud and its period bar: a list
+/// reads top to bottom and is searched, a cloud had to be watched.
+///
+/// WHY the search is the system's `.searchable`: on iOS 26 the iPhone puts it at the
+/// bottom of the screen, in thumb reach, which is what Alex asked for; on iOS 17 to 18 it
+/// sits under the title, where those versions put every search field.
+///
+/// Pushed from the Ouispr Pro hub (#216) it carries the feature's switch first: that
+/// screen is about the feature, not about reading.
 ///
 /// WHY it is presented as a sheet by `HomeView` rather than pushed or given a tab:
 /// the issue asks for a vertical transition out of the home screen and a swipe-down
 /// back to it, and a sheet is both of those natively — including the interactive,
-/// interruptible drag that a hand-rolled transition would have to reimplement. The
-/// tab bar stays at three entries, which the brief is explicit about.
+/// interruptible drag that a hand-rolled transition would have to reimplement.
 ///
-/// WHY a `List` and not a `ScrollView` of cards: swipe-to-delete is the interaction
-/// the issue names, and `List` is the only thing on iOS that gives it — with the
-/// right hit area, the right rubber-banding and the right row-removal animation. The
-/// glass look survives it: clear row backgrounds, no separators, no list background.
+/// A `List`: swipe-to-delete is the interaction #70 names, and `List` is the only thing
+/// on iOS that gives it. A long press offers Copy and Delete.
 struct HistoryView: View {
 
     @EnvironmentObject var history: TranscriptionHistoryStore
@@ -22,8 +32,7 @@ struct HistoryView: View {
     @Environment(\.dismiss) private var dismiss
 
     /// The record whose full text is on screen, driving the push. Not a
-    /// `NavigationLink` per row: the link would draw its own disclosure chevron
-    /// outside the card and take the row's tap area away from the card itself.
+    /// `NavigationLink` per row: the link would draw its own disclosure chevron.
     @State private var selection: TranscriptionRecord?
 
     /// Whether this screen is pushed onto someone else's stack, as the Ouispr Pro hub
@@ -37,10 +46,40 @@ struct HistoryView: View {
     /// What the search field holds (#621). Empty shows every record.
     @State private var query = ""
 
-    /// The records the query finds, newest first. Recomputed on every body pass,
-    /// which is a linear scan of a capped in-memory list; see `TranscriptionSearch`.
+    /// The rows' minimum height, grown with the text size as `DictationRow`'s is.
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 72
+
+    /// Opens the Ouispr Pro window from the "older dictations" row, on its history.
+    @State private var showsPaywall = false
+
+    /// What the query finds: free, the last `HistoryAvailability.freeSearchDays`
+    /// days, with a count of the older matches; with Pro, everything (Pro offer,
+    /// 25 Nov 2026). An empty query lists the whole history for everyone.
+    ///
+    /// Recomputed on every body pass, a linear scan of an in-memory list; see
+    /// `TranscriptionSearch`. The Pro status and the switch are touched first so the
+    /// window widens the moment either moves: the gate reads the App Group.
+    private var searchResult: TranscriptionSearch.Result {
+        _ = proStatus.isProActive
+        _ = switches.isOn(.history)
+        return TranscriptionSearch.search(
+            history.records,
+            query: query,
+            now: Date(),
+            windowDays: HistoryAvailability.freeSearchDays,
+            unlimited: HistoryAvailability.searchIsUnlimited
+        )
+    }
+
+    /// The records the query finds, newest first, in a stable order: a letter typed
+    /// narrows the list, it does not reshuffle it (audit of 26 Nov 2026, n°4). Without
+    /// the records that have no words and the repeats that follow each other, as on Home.
     private var visibleRecords: [TranscriptionRecord] {
-        TranscriptionSearch.filter(history.records, query: query)
+        let sorted = searchResult.found.enumerated()
+            .sorted { $0.element.createdAt != $1.element.createdAt
+                ? $0.element.createdAt > $1.element.createdAt : $0.offset < $1.offset }
+            .map(\.element)
+        return DictationList.shown(sorted) { $0.text }
     }
 
     var body: some View {
@@ -61,26 +100,25 @@ struct HistoryView: View {
                     }
             }
             // The grabber says the sheet is draggable, which is the same statement the
-            // hint on the home screen makes about the swipe that opened it.
+            // swipe up on the home screen makes about the gesture that opened it.
             .presentationDragIndicator(.visible)
         }
     }
 
     private var content: some View {
         Group {
-            if !hasPro {
-                lockedState
-            } else if isPushed {
+            if isPushed {
                 pushedList
-            } else if history.records.isEmpty {
+            } else if !history.records.contains(where: { DictationList.hasWords($0.text) }) {
+                // No record with words: every row would be left out (`DictationList`).
                 emptyState
             } else {
-                recordList
+                sheetList
             }
         }
-        .background(Color.ouisprBackground.ignoresSafeArea())
+        .background(OuisprBackdrop())
         .navigationTitle("History")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .navigationDestination(item: $selection) { record in
             // A shared voice note opens on its Summary + Transcript screen (#620).
             if record.source == .sharedFile {
@@ -89,21 +127,39 @@ struct HistoryView: View {
                 TranscriptionDetailView(record: record)
             }
         }
+        .paywallCover(isPresented: $showsPaywall, entry: .feature(.history))
     }
 
-    /// Whether the user has Ouispr Pro at all. Without it the screen is locked.
+    // MARK: - Sheet list
+
+    /// Home's sheet: the records by period, searched from the system's field.
     ///
-    /// WHY Pro and not `HistoryAvailability.isEntitled`, which also folds in the
-    /// feature's switch (#216): a subscriber who switched History off is not being
-    /// sold anything, and "History is part of Ouispr Pro" would be false to them.
-    /// Switched off, the records stay on screen, dimmed and locked, under the switch
-    /// that brings them back.
-    ///
-    /// Touching the observed Pro status is what makes this react: `FeatureGate` reads
-    /// the App Group, which publishes nothing. Same device as `HomeView.entryPoint`.
-    private var hasPro: Bool {
-        _ = proStatus.isProActive
-        return FeatureGate.isProActive
+    /// WHY the no-results state is an overlay on the empty `List` rather than a view
+    /// swapped in for it: the list keeps its place while the results come and go.
+    private var sheetList: some View {
+        List {
+            recordRows
+        }
+        .listStyle(.insetGrouped)
+        // Home's row height, 72 pt at the default text size (`DictationRow`).
+        .environment(\.defaultMinListRowHeight, rowHeight)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
+        .modifier(HistorySearchField(isEnabled: searchIsEnabled, query: $query))
+        .overlay {
+            if showsNoResults {
+                noResultsState
+            }
+        }
+    }
+
+    private func periodName(_ period: DictationList.Period) -> LocalizedStringKey {
+        switch period {
+        case .today: return "Today"
+        case .yesterday: return "Yesterday"
+        case .week: return "This week"
+        case .older: return "Older"
+        }
     }
 
     /// The feature's switch, observed so the content dims and unlocks as it moves
@@ -117,57 +173,7 @@ struct HistoryView: View {
         return HistoryAvailability.isEntitled
     }
 
-    // MARK: - Locked
-
-    /// What a lapsed subscriber sees if this screen is open when the entitlement
-    /// goes away, or if it is ever reached without one.
-    ///
-    /// **It names the way out.** Locking the reading of the history is the point of
-    /// the gate; locking someone out of deleting a plaintext record of everything
-    /// they have dictated is not, and a locked screen that said only "subscribe"
-    /// would be exactly that. Settings keeps the destructive row for as long as
-    /// there is anything to delete (`HistoryAvailability.clearRowIsVisible`), and
-    /// this sentence is how the user learns it is there.
-    private var lockedState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "lock.fill")
-                .font(.system(size: 40))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
-            Text("History is part of Ouispr Pro")
-                .font(.ouisprSubheading)
-                .multilineTextAlignment(.center)
-            Text("Your saved transcriptions stay on this device and are never sent anywhere. You can delete them at any time from Settings.")
-                .font(.ouisprCaption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: - List
-
-    /// WHY `.searchable` sits on the list and not on the whole screen: the field has
-    /// nothing to search on the locked and empty states, and a search bar above
-    /// "No transcriptions yet" would promise something the screen cannot do.
-    ///
-    /// WHY the no-results state is an overlay on the empty `List` rather than a
-    /// view swapped in for it: swapping would tear down the view that owns the
-    /// search field, and the field would lose focus on the keystroke that empties
-    /// the results.
-    private var recordList: some View {
-        List {
-            recordRows
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .searchable(text: $query, prompt: Text("Search transcriptions"))
-        .overlay {
-            if visibleRecords.isEmpty {
-                noResultsState
-            }
-        }
-    }
 
     /// The Ouispr Pro hub's version (#216): the feature's switch first, as in the hub's
     /// other feature screens, then "How it works" and its demo (#686), then the records,
@@ -197,81 +203,137 @@ struct HistoryView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .modifier(HistorySearchField(isEnabled: pushedSearchIsEnabled, query: $query))
+        .modifier(HistorySearchField(isEnabled: searchIsEnabled, query: $query))
         .overlay {
-            if pushedSearchIsEnabled && visibleRecords.isEmpty {
+            if searchIsEnabled && showsNoResults {
                 noResultsState
             }
         }
         // A query left in place when the switch goes off would keep the locked list
         // filtered by a field the user can no longer see.
-        .onChange(of: pushedSearchIsEnabled) { _, enabled in
+        .onChange(of: searchIsEnabled) { _, enabled in
             if !enabled { query = "" }
         }
     }
 
-    /// Whether the pushed history offers its search field: records to search, and
-    /// History switched on.
-    private var pushedSearchIsEnabled: Bool {
+    /// Nothing found at all. With older matches past the free window the list is not
+    /// empty in truth, and the row that says so stays visible instead.
+    private var showsNoResults: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && visibleRecords.isEmpty && searchResult.olderMatches == 0
+    }
+
+    /// Whether the history offers its search field: records to search, and History
+    /// switched on.
+    private var searchIsEnabled: Bool {
         !history.records.isEmpty && isAvailable
     }
 
+    /// The records under their periods, newest first, then the row that counts the
+    /// older matches.
     private var recordRows: some View {
         Group {
-            // Rows act on the record's id, never on its position, so swipe-to-delete
-            // and the context menu work the same on a filtered list.
-            ForEach(visibleRecords) { record in
-                Button {
-                    // Guarded as well as locked below: a switched-off history is
-                    // shown, not opened (#216 decision 5).
-                    guard isAvailable else { return }
-                    selection = record
-                } label: {
-                    HistoryCard(record: record)
-                }
-                .buttonStyle(GlassPressStyle(pressedScale: 0.98))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                // No action at all while History is switched off (#216): the
-                // `disabled` below stops taps, and an empty builder is what stops a
-                // swipe or a long-press from offering Delete on a locked list.
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    if isAvailable {
-                        Button(role: .destructive) {
-                            delete(record)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        // Explicit, because the destructive role is not enough here:
-                        // MainTabView tints the whole tab hierarchy `.ouisprAccent`,
-                        // the sheet inherits that environment, and it wins over the
-                        // role. Measured on the simulator — the delete action drew
-                        // brand blue, which reads as an ordinary action.
-                        .tint(.red)
+            ForEach(DictationList.sections(visibleRecords, now: Date()) { $0.createdAt }, id: \.period) { section in
+                Section {
+                    // Rows act on the record's id, never on its position, so
+                    // swipe-to-delete and the context menu work the same on a filtered list.
+                    ForEach(section.items) { record in
+                        row(record)
                     }
+                } header: {
+                    Text(periodName(section.period))
                 }
-                .contextMenu {
-                    // The long-press half of the issue's "long-press or swipe to
-                    // delete", with the copy the detail screen also offers: a
-                    // long-press that only ever destroys is a trap to open by accident.
-                    if isAvailable {
-                        Button {
-                            UIPasteboard.general.string = record.text
-                            HapticFeedback.recordingStopped()
-                        } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                        }
-                        Button(role: .destructive) {
-                            delete(record)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+            }
+
+            if searchResult.olderMatches > 0 && PremiumFlags.paywallVisible {
+                Section {
+                    olderMatchesRow(count: searchResult.olderMatches)
                 }
             }
         }
         .proFeatureContent(isAvailable: isAvailable)
+    }
+
+    private func row(_ record: TranscriptionRecord) -> some View {
+        Button {
+            // Guarded as well as locked below: a switched-off history is shown, not
+            // opened (#216 decision 5).
+            guard isAvailable else { return }
+            selection = record
+        } label: {
+            DictationRow(record: record, pads: false)
+        }
+        // Flat (contrôle V1.1): the list's own surface, no glass on a row.
+        .listRowBackground(Color.ouisprSurface)
+        // No action at all while History is switched off (#216): the `disabled` that
+        // `proFeatureContent` sets stops taps, and an empty builder is what stops a
+        // swipe or a long-press from offering Delete on a locked list.
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            if isAvailable {
+                Button(role: .destructive) {
+                    delete(record)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                // Explicit, because the destructive role is not enough here:
+                // MainTabView tints the whole tab hierarchy `.ouisprAccent`, the sheet
+                // inherits that environment, and it wins over the role. Measured on the
+                // simulator — the delete action drew brand blue.
+                .tint(.red)
+            }
+        }
+        .contextMenu {
+            // The long-press half of the issue's "long-press or swipe to delete", with
+            // the copy the detail screen also offers: a long-press that only ever
+            // destroys is a trap to open by accident.
+            if isAvailable {
+                Button {
+                    UIPasteboard.general.string = record.text
+                    HapticFeedback.recordingStopped()
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                Button(role: .destructive) {
+                    delete(record)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    /// Says how many older dictations match, under the free window's results, and
+    /// opens the Pro window on its history.
+    ///
+    /// WHY a row and not a silent cut: a search that hides what it found reads as a
+    /// broken search. Stating the count is what makes the 7-day limit an offer.
+    private func olderMatchesRow(count: Int) -> some View {
+        Button {
+            showsPaywall = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: ProFeature.history.icon)
+                    .font(.title3)
+                    .foregroundColor(.ouisprAccentText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(count) older dictations match")
+                        .font(.ouisprBody.weight(.semibold))
+                        .foregroundColor(.primary)
+                    Text("Search your whole history with Ouispr Pro")
+                        .font(.ouisprCaption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.vertical, 8)
+        }
+        .listRowBackground(Color.ouisprSurface)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 
     private func delete(_ record: TranscriptionRecord) {
@@ -292,12 +354,9 @@ struct HistoryView: View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
-            Text("No results")
+                .foregroundColor(.ouisprAccentText.opacity(0.7))
+            Text("No results for “\(query.trimmingCharacters(in: .whitespacesAndNewlines))”")
                 .font(.ouisprSubheading)
-            Text("No transcription contains “\(query.trimmingCharacters(in: .whitespacesAndNewlines))”.")
-                .font(.ouisprCaption)
-                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(32)
@@ -313,7 +372,7 @@ struct HistoryView: View {
         VStack(spacing: 12) {
             Image(systemName: "text.bubble")
                 .font(.system(size: 44))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
+                .foregroundColor(.ouisprAccentText.opacity(0.7))
             Text("No transcriptions yet")
                 .font(.ouisprSubheading)
             Text("Your dictations are saved here automatically. The last 200 are kept, on this device only.")
@@ -323,62 +382,6 @@ struct HistoryView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Card
-
-/// One saved dictation: two lines of the text, then the date, the language and how
-/// long the recording was.
-///
-/// Not private: the onboarding's history scene (#680) shows this very card, so the
-/// scene and the screen it stands for cannot drift apart.
-struct HistoryCard: View {
-
-    let record: TranscriptionRecord
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(record.text)
-                .font(.ouisprBody)
-                .foregroundColor(.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-
-            HStack(spacing: 6) {
-                // Marked as a shared file, not a dictation (#620 decision 7).
-                if record.source == .sharedFile {
-                    Image(systemName: ProFeature.voiceNotes.icon)
-                        .accessibilityLabel(Text("Voice note"))
-                }
-                Text(dateLabel)
-                Text("·")
-                Text(record.languageBadge)
-                Text("·")
-                Text(record.durationLabel)
-                Spacer()
-            }
-            .font(.ouisprCaption)
-            .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .ouisprGlass()
-    }
-
-    /// Today reads as a time, this year as a day and month, anything older carries
-    /// the year. Formatted by Foundation rather than by a string in the catalogue:
-    /// the order of the parts and the month's abbreviation are the user's locale's
-    /// business, not a translation.
-    private var dateLabel: String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(record.createdAt) {
-            return record.createdAt.formatted(date: .omitted, time: .shortened)
-        }
-        if calendar.isDate(record.createdAt, equalTo: Date(), toGranularity: .year) {
-            return record.createdAt.formatted(.dateTime.day().month(.abbreviated))
-        }
-        return record.createdAt.formatted(.dateTime.day().month(.abbreviated).year())
     }
 }
 

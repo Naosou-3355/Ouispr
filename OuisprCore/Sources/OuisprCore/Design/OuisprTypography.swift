@@ -1,6 +1,6 @@
 #if os(iOS)
 // OuisprCore/Sources/OuisprCore/Design/OuisprTypography.swift
-// Typography system using SF Pro Rounded for headings and SF Pro Text for body.
+// Typography system: SF Pro for headings and body.
 import SwiftUI
 
 /// Typography scale for Ouispr.
@@ -11,21 +11,27 @@ import SwiftUI
 /// text size. Using these styles means Ouispr respects the user's accessibility
 /// preferences without any extra code.
 ///
-/// WHY SF Pro Rounded for headings:
-/// Rounded fonts feel friendlier and more approachable. SF Pro Rounded is Apple's
-/// system rounded font, so it's available on all iOS devices without bundling a
-/// custom font. Body text uses the default SF Pro Text for readability.
+/// WHY plain SF Pro for headings (design V2, bench 1):
+/// The rounded design read as friendly but not as sober. The straight SF Pro in
+/// semibold is the system's own voice, which is what a very plain interface wants.
 public extension Font {
-    /// Large heading -- SF Pro Rounded Bold
-    static let ouisprHeading: Font = .system(.title, design: .rounded, weight: .bold)
+    /// Large heading -- SF Pro Semibold
+    static let ouisprHeading: Font = .system(.title, design: .default, weight: .semibold)
 
-    /// Section subheading -- SF Pro Rounded Semibold
-    static let ouisprSubheading: Font = .system(.title3, design: .rounded, weight: .semibold)
+    /// Section subheading -- SF Pro Semibold
+    static let ouisprSubheading: Font = .system(.title3, design: .default, weight: .semibold)
 
     /// Body text -- SF Pro Text (system default)
     static let ouisprBody: Font = .system(.body)
 
     /// Caption text -- SF Pro Text small
     static let ouisprCaption: Font = .system(.caption)
+
+    /// The dictated text on the recording screen: 28 pt at the default text size
+    /// (bench 3), and it follows Dynamic Type.
+    static let ouisprDictation: Font = .system(.title, design: .default, weight: .regular)
+
+    /// A stage label ("Listening", "Cleaning up"): 15 pt at the default text size.
+    static let ouisprStageLabel: Font = .system(.subheadline)
 }
 #endif

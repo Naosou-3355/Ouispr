@@ -1,0 +1,97 @@
+// OuisprApp/DictationCoordinator+RecordingReadiness.swift
+// The listening state is shown only once the microphone delivers audio, and every stop
+// says why it happened (audit of 26 Nov 2026: a dictation cut after one second with
+// « Aucun mot détecté »).
+//
+// WHY a file of its own: DictationCoordinator.swift sits at the file-length budget of #146,
+// the reason `DictationCoordinator+SessionActivation.swift` exists. The engine is passed in
+// rather than exposed.
+import Foundation
+import OuisprCore
+
+extension DictationCoordinator {
+
+    /// How long a start waits for the first buffer before it says the microphone is live
+    /// anyway. A warm engine delivers its first buffer in about 20 ms; a route that is
+    /// still settling (a headset just connected) can take a few hundred.
+    static let firstAudioTimeout: Duration = .milliseconds(1500)
+
+    /// How a wait for the first audio ended.
+    enum FirstAudio {
+        case arrived
+        case timedOut
+        /// The start's task was cancelled: the user stopped, or a newer start replaced it.
+        case cancelled
+    }
+
+    /// Wait until the engine has delivered its first samples, so the listening state is
+    /// never shown over a microphone that is not capturing yet.
+    ///
+    /// WHY wait rather than fail: a start that is merely slow is not broken. When the
+    /// timeout passes with nothing, the caller goes on to `verifyAudioFlow`, whose zombie
+    /// recovery restarts the engine; failing here would only duplicate it, sooner.
+    ///
+    /// WHY not `try await Task.sleep`: its `CancellationError` would reach the start's
+    /// catch and show a failure for a dictation the user stopped (the trap of PR #777,
+    /// see `sleepUnlessCancelled`). A cancel is reported as such.
+    func awaitFirstAudio(from engine: UnifiedAudioEngine) async -> FirstAudio {
+        let clock = ContinuousClock()
+        let deadline = clock.now + Self.firstAudioTimeout
+        while engine.currentSampleCount == 0 {
+            guard !Task.isCancelled else { return .cancelled }
+            guard clock.now < deadline else {
+                PersistentLog.log(.dictationDeferred(reason: "no audio 1.5 s after start: listening shown anyway"))
+                return .timedOut
+            }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return .arrived
+    }
+
+    /// Start the microphone, then wait for its first audio and check the session is
+    /// still current: what a start does before it shows the listening state. False when
+    /// the start was stopped or replaced meanwhile: the caller then returns quietly.
+    func startsListening(_ engine: UnifiedAudioEngine, session: Int, _ what: String) async throws -> Bool {
+        try engine.startRecording()
+        guard await awaitFirstAudio(from: engine) != .cancelled else {
+            PersistentLog.log(.dictationDeferred(reason: "\(what): cancelled while waiting for the first audio"))
+            return false
+        }
+        return mayReport(session, what)
+    }
+
+    /// After an interruption during the opening silence, the microphone comes back and
+    /// the recording goes on. A call still holding the microphone makes `startRecording`
+    /// throw (its call guard), and the recording then ends the way it did before.
+    ///
+    /// - Returns: whether the recording goes on.
+    func resumesListening(_ engine: UnifiedAudioEngine) -> Bool {
+        do {
+            try engine.startRecording()
+            PersistentLog.log(.dictationDeferred(reason: "interruption during the opening silence: kept listening"))
+            return true
+        } catch {
+            PersistentLog.log(.dictationFailed(error: "keep listening refused: \(DictationFailureMessage.diagnostic(for: error))"))
+            return false
+        }
+    }
+
+    /// One line per stop: what ended the recording and what it held. The peak, never the
+    /// audio or the words, is what tells "stopped before speaking" from "spoke, heard
+    /// nothing".
+    func logStop(cause: DictationStopCause, samples: [Float]) {
+        let durationMs = samples.count * 1000 / 16000
+        let peak = Double(UnifiedAudioEngine.peak(of: samples))
+        PersistentLog.log(.dictationStopped(cause: cause.rawValue, durationMs: durationMs, peak: peak))
+        OuisprLogger.app.notice(
+            "Dictation stopped: cause=\(cause.rawValue, privacy: .public) duration=\(durationMs, privacy: .public)ms peak=\(peak, privacy: .public)"
+        )
+    }
+}
+
+extension UnifiedAudioEngine {
+    /// The loudest sample of a clip, as a fraction of full scale.
+    static func peak(of samples: [Float]) -> Float {
+        samples.reduce(0) { max($0, abs($1)) }
+    }
+}

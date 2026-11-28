@@ -26,9 +26,36 @@ public enum SmartModeDiscovery {
         defaults.synchronize()
     }
 
+    /// How many keyboard openings may show the hint before it retires on its own
+    /// (lot 1.7). Apple's TipKit gives a tip the same two ends: invalidated by the action
+    /// it teaches, or retired after `MaxDisplayCount` displays. Five openings is a week of
+    /// light use; a hint read five times and never acted on has become furniture.
+    public static let maxDisplayCount = 5
+
+    /// How many keyboard openings have shown the hint so far.
+    public static var displayCount: Int {
+        max(0, defaults.integer(forKey: SharedKeys.smartModeHintShownCount))
+    }
+
+    /// Record one keyboard opening that showed the hint. The caller counts each opening
+    /// once, however many times the bar is redrawn in it. Stops counting at the cap.
+    public static func noteHintShown() {
+        let count = displayCount
+        guard count < maxDisplayCount else { return }
+        defaults.set(count + 1, forKey: SharedKeys.smartModeHintShownCount)
+        defaults.synchronize()
+    }
+
     /// Whether the hint should be offered the centre slot.
     ///
-    /// Three subtractions from "always":
+    /// `displaysBeforeThisOpening` is `displayCount` as it stood when the keyboard
+    /// opened, before this opening was counted: the opening that brings the count to the
+    /// cap still shows the hint to the end, instead of losing it on the next redraw.
+    ///
+    /// Four subtractions from "always":
+    ///
+    /// - **After `maxDisplayCount` openings, the hint retires too** (lot 1.7), used or
+    ///   not: the long press keeps working, the bar simply stops saying so.
     ///
     /// - **Once the gesture has been used, the hint retires.** It taught what it had
     ///   to teach. Nothing brings it back, including unpinning every mode: the user
@@ -59,7 +86,12 @@ public enum SmartModeDiscovery {
     /// Neither parameter carries a default, and the zero-argument convenience that
     /// used to sit below this was removed with the second one: a hint policy that
     /// answers on one of its two inputs is what #460 found in the fan.
-    public static func offersHint(deviceCanRunModes: Bool, fanIsReachable: Bool) -> Bool {
+    public static func offersHint(
+        deviceCanRunModes: Bool,
+        fanIsReachable: Bool,
+        displaysBeforeThisOpening: Int
+    ) -> Bool {
         deviceCanRunModes && fanIsReachable && !hasUsedGesture
+            && displaysBeforeThisOpening < maxDisplayCount
     }
 }

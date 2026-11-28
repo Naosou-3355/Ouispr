@@ -62,58 +62,22 @@ public struct AnimatedMicButton: View {
     /// dictation, where the motion carries state the user needs.
     public let animatesIdleGlow: Bool
 
-    /// What the resting button shows instead of the plain mic, or nil for the mic.
-    ///
-    /// The app's Home mic only (#489): there the button is 72 pt across and the mode
-    /// dial sits around it, so it can carry the mode's own glyph and the brand's deep
-    /// blue. The keyboard pill never passes one — its 36 pt and the rule #79 set for
-    /// it (a badge, never a second colour) stand. Ignored outside the resting states:
-    /// recording and transcribing keep their own fills.
-    public let face: MicFace?
-
-    /// Whether the button shrinks and fades under the finger. True everywhere but on the
-    /// Home mic while its Smart Mode dial is open (#489): the finger is still down, so the
-    /// press would keep the mic shrunk while the dial grows it.
-    public let showsPressFeedback: Bool
-
     public let onTap: () -> Void
 
     public init(status: DictationStatus,
                 isPill: Bool = false,
                 badge: SmartModeBadge? = nil,
                 animatesIdleGlow: Bool = true,
-                face: MicFace? = nil,
-                showsPressFeedback: Bool = true,
                 onTap: @escaping () -> Void) {
         self.status = status
         self.isPill = isPill
         self.badge = badge
         self.animatesIdleGlow = animatesIdleGlow
-        self.face = face
-        self.showsPressFeedback = showsPressFeedback
         self.onTap = onTap
     }
 
-    /// A resting face for the round mic: a glyph, an optional caption under it (a
-    /// translation's target code), and the fill.
-    public struct MicFace: Equatable {
-        public let symbol: String
-        public let caption: String?
-        public let fill: Color
-
-        public init(symbol: String, caption: String? = nil, fill: Color) {
-            self.symbol = symbol
-            self.caption = caption
-            self.fill = fill
-        }
-    }
-
-    /// The face in force: only at rest, where `isTappable` is true.
-    private var restingFace: MicFace? { isTappable ? face : nil }
-
     // MARK: - Animation State
 
-    @State private var pulseScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.3
     @State private var shimmerOffset: CGFloat = -1.0
     @State private var showSuccessFlash: Bool = false
@@ -160,7 +124,7 @@ public struct AnimatedMicButton: View {
 
                 // Main button shape (circle or pill)
                 mainShape()
-                    .fill(buttonFillColor)
+                    .fill(buttonFill)
                     .frame(width: buttonWidth, height: buttonHeight)
 
                 // Shimmer overlay for the two post-recording stages
@@ -175,39 +139,24 @@ public struct AnimatedMicButton: View {
                         .frame(width: buttonWidth, height: buttonHeight)
                 }
 
-                // Mic icon, or the armed mode's face on the Home mic
-                if let restingFace {
-                    VStack(spacing: 1) {
-                        Image(systemName: restingFace.symbol)
-                            .font(.system(size: 22, weight: .medium))
-                        if let caption = restingFace.caption {
-                            Text(verbatim: caption)
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .lineLimit(1)
-                        }
-                    }
+                Image(systemName: "mic.fill")
+                    .font(.system(size: isPill ? 14 : 24, weight: .medium))
                     .foregroundColor(.white)
-                } else {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: isPill ? 14 : 16, weight: .medium))
-                        .foregroundColor(.white)
-                        .scaleEffect(status == .recording ? pulseScale * 0.9 + 0.1 : 1.0)
-                }
 
                 // Armed Smart Mode, last so nothing draws over it
                 armedBadge
             }
         }
-        .buttonStyle(GlassPressStyle(pressedScale: showsPressFeedback ? 0.88 : 1,
-                                     pressedOpacity: showsPressFeedback ? 0.85 : 1))
+        .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.85))
         .disabled(!isTappable)
         .onChange(of: status) { newStatus in
             handleStatusChange(from: previousStatus, to: newStatus)
             previousStatus = newStatus
         }
         .onChange(of: reduceMotion) { _ in
-            guard isTappable else { return }
-            startIdleAnimation()
+            // Restart whatever the status runs, so a loop already going stops (or
+            // starts) when Reduce Motion changes.
+            handleStatusChange(from: status, to: status)
         }
         .onAppear {
             startIdleAnimation()
@@ -276,9 +225,10 @@ public struct AnimatedMicButton: View {
             OuisprHalo(isPill: isPill, color: .ouisprAccent, opacity: glowOpacity, lineWidth: 2)
 
         case .recording:
-            // Red pulse ring scaling 1.0-1.3 over 0.8s
+            // A still red ring. It used to swell 1.0-1.3 every 0.8 s, a beat tied to
+            // nothing the mic heard, next to a sphere and a waveform that follow the
+            // voice itself (audit, 22 Nov 2026, finding 12). The red says recording.
             OuisprHalo(isPill: isPill, color: .ouisprRecording, opacity: 0.5, lineWidth: 3)
-                .scaleEffect(pulseScale)
 
         case .transcribing, .processing, .requested:
             // Static glass ring during transcription and the LLM stage
@@ -311,6 +261,20 @@ public struct AnimatedMicButton: View {
 
     // MARK: - Helpers
 
+    /// What fills the button.
+    ///
+    /// The round mic at rest wears the sphere's gradient (design V2, bench 2): it is
+    /// the app's main action and the sphere is the app's face, so they share a
+    /// colour. The keyboard pill does not: #79's rule for it stands, and a 56 x 36
+    /// pill is too small for a gradient to read as anything but a stain. Every
+    /// status that is not rest keeps its own fill.
+    private var buttonFill: AnyShapeStyle {
+        if !isPill, isTappable {
+            return AnyShapeStyle(OuisprSphereGradient.linear)
+        }
+        return AnyShapeStyle(buttonFillColor)
+    }
+
     private var buttonFillColor: Color {
         switch status {
         case .recording:
@@ -318,7 +282,7 @@ public struct AnimatedMicButton: View {
         case .transcribing, .processing:
             return .ouisprAccentHighlight.opacity(0.5)
         default:
-            return restingFace?.fill ?? .ouisprAccent
+            return .ouisprAccent
         }
     }
 
@@ -338,7 +302,6 @@ public struct AnimatedMicButton: View {
         // Reset ALL animation state to concrete values WITHOUT animation first.
         // WHY: This cancels any existing repeating animations that could stack
         // with the new ones, causing jitter or incorrect visual state.
-        pulseScale = 1.0
         glowOpacity = 0.3
         shimmerOffset = -1.0
 
@@ -347,7 +310,7 @@ public struct AnimatedMicButton: View {
         // from true to false over 0.3s, eliminating the timer race condition.
         if (oldStatus == .transcribing || oldStatus == .processing) && newStatus == .ready {
             showSuccessFlash = true
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.easeOut(duration: Motion.standard)) {
                 showSuccessFlash = false
             }
         }
@@ -367,8 +330,6 @@ public struct AnimatedMicButton: View {
     }
 
     private func startIdleAnimation() {
-        pulseScale = 1.0
-
         guard animatesIdleGlow, !reduceMotion else {
             // 0.45 is the midpoint of the 0.3-0.6 range the animation sweeps, so the
             // static ring reads as the average of what was breathing there rather than
@@ -389,15 +350,14 @@ public struct AnimatedMicButton: View {
 
     private func startRecordingAnimation() {
         glowOpacity = 0.5
-        withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-            pulseScale = 1.3
-        }
     }
 
     private func startTranscribingAnimation() {
-        pulseScale = 1.0
         glowOpacity = 0.4
         shimmerOffset = -1.0
+        // Under Reduce Motion the shimmer does not sweep: the washed accent and the
+        // stage label already say the phone is working.
+        guard !reduceMotion else { return }
         withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
             shimmerOffset = 2.0
         }

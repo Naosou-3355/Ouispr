@@ -153,7 +153,7 @@ struct TrialRunningNotice: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "gift.fill")
-                .foregroundColor(.ouisprAccent)
+                .foregroundColor(.ouisprAccentText)
             VStack(alignment: .leading, spacing: 2) {
                 if let daysLeft {
                     Text("\(daysLeft) days left in your free trial")
@@ -261,7 +261,7 @@ struct MonthlyPlanOfferSheet: View {
                     .font(.ouisprSubheading)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .ouisprGlass()
             }
             .buttonStyle(GlassPressStyle())

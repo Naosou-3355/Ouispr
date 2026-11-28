@@ -63,6 +63,7 @@ struct SmartModeFanView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(panel)
         // See the type's doc comment. This is what keeps the drag on the mic's
         // recogniser instead of letting a row swallow it.
         .allowsHitTesting(false)
@@ -70,53 +71,59 @@ struct SmartModeFanView: View {
 
     // MARK: - Rows
 
-    /// One fan row: icon, name, and the highlight that says where the finger is.
+    /// One row, as the app's mode menu draws it (lot 1.4): the mode's glyph in ink, its
+    /// name at 17 pt with one line under it at 13 pt saying what it does, and the tag or
+    /// the tick at the trailing edge.
     ///
-    /// ### Why every row has a surface, not only the highlighted one
+    /// ### Why the rows sit on one panel and the highlight is neutral
     ///
-    /// The keyboard container is translucent, and what normally gives the eye
-    /// something opaque to sit on is the *keys*. The fan replaces them, so before
-    /// this the rows were text floating on the host app's own text — legible enough
-    /// to read the wrong thing through, on the captures of 2026-08-24. One glass
-    /// panel behind the whole fan was tried and refused on sight: it came out lighter
-    /// than the keyboard with hard edges top and bottom, a square laid over the
-    /// product rather than part of it. A capsule per row is the fix that belongs
-    /// here, because it is the shape the keys already have — the fan reads as a
-    /// column of wide keys instead of as a sheet.
+    /// The fan stands in for the keys, on a translucent keyboard, so the rows need a
+    /// surface (captures of 2026-08-24: text floating on the host app's text). Until
+    /// lot 1.4 each row had its own glass capsule and the row under the finger turned
+    /// blue. Alex's bench chose the app's menu instead: one rounded panel, rows without
+    /// their own shapes, and a neutral grey under the finger. The panel's corners are
+    /// rounded like the menu's, which is what the 2026-08 hard-edged sheet lacked.
     ///
-    /// ### Why the highlight is a filled capsule and not a tint on the text
+    /// The thumb covers the row it is choosing, so the highlight spans the whole row:
+    /// its edges are what stays visible.
     ///
-    /// The thumb is covering this row while choosing it. Only the edges are visible,
-    /// so the signal has to be at the edges.
-    ///
-    /// A disabled row still draws its name and icon rather than being hidden. The
-    /// user is entitled to see what the feature is before being told they cannot have
-    /// it here — that is the same honesty the paywall's capability filter applies
-    /// (#79), one surface earlier.
+    /// A disabled row still draws its name and icon rather than being hidden. The user
+    /// is entitled to see what the feature is before being told they cannot have it
+    /// here — the same honesty the paywall's capability filter applies (#79), one
+    /// surface earlier.
     private func row(_ entry: SmartModeFanEntry, isHighlighted: Bool) -> some View {
         // `modesAreArmable` and not `showsReason`: the non-subscriber's fan refuses
         // every mode and shows no sentence, so inferring one from the other would draw
         // its rows enabled (#404).
         let isEnabled = entry.smartMode == nil || state.modesAreArmable
-        // Icon and label centred as one group, not the label centred inside a
-        // leading-aligned row (device feedback, 2026-08-24): the highlight capsule
-        // spans the full width, and a label pinned to its left edge reads as text
-        // that happens to sit on a pill rather than as the pill's own label.
-        return HStack(spacing: 10) {
-            Image(systemName: entry.icon)
+        return HStack(spacing: 14) {
+            Image(systemName: icon(entry))
                 .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Color.ouisprInk)
+                .frame(width: 24)
 
-            Text(name(entry))
-                .font(.system(size: 17, weight: isHighlighted ? .semibold : .regular))
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name(entry))
+                    .font(.system(size: 17))
+                    .foregroundStyle(.primary)
+                if let summary = summary(entry) {
+                    Text(summary)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+            // The summary gives way on a narrow screen before the name does.
+            .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 8)
 
             marker(for: entry)
         }
-        .foregroundColor(foreground(isHighlighted: isHighlighted, isEnabled: isEnabled))
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 22)
         .frame(maxWidth: .infinity)
         .frame(height: rowHeight)
-        .background(rowSurface(isHighlighted: isHighlighted))
+        .background(highlight(isHighlighted))
         .opacity(isEnabled ? 1 : 0.4)
     }
 
@@ -142,7 +149,8 @@ struct SmartModeFanView: View {
         switch state.tag(for: entry) {
         case .effective:
             Image(systemName: "checkmark")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.ouisprInk)
         case .inactive:
             tagCapsule(Text(
                 "Off",
@@ -169,39 +177,22 @@ struct SmartModeFanView: View {
             .background(Capsule().fill(Color.secondary.opacity(0.18)))
     }
 
-    /// The capsule under a row: glass at rest, washed accent under the finger.
-    ///
-    /// The accent fill goes *over* the glass rather than replacing it, so the
-    /// highlighted row keeps the same opacity as its neighbours and only gains
-    /// colour. Swapping the material out instead made the chosen row look like a
-    /// hole in the column.
-    private func rowSurface(isHighlighted: Bool) -> some View {
-        Capsule()
-            .fill(Color.ouisprAccent.opacity(isHighlighted ? 0.25 : 0))
-            .ouisprGlass(in: Capsule())
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+    /// The neutral grey under the finger, inset like a menu row's.
+    private func highlight(_ isHighlighted: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color.primary.opacity(isHighlighted ? 0.1 : 0))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 2)
     }
 
-    /// The colour of a row's glyph and label.
-    ///
-    /// ### Why only the highlighted row is blue
-    ///
-    /// Between #79's visual pass and #399 every enabled row was accent blue. The
-    /// commit that did it was getting the old Smart Mode colour out of the keyboard,
-    /// which was right; it took `.primary` with it, which was not. Three blue rows
-    /// on three pale capsules read as three chosen things, and the highlight was
-    /// left saying "this one" against two neighbours wearing its own colour.
-    ///
-    /// ### Why the resting rows are `.primary` rather than a near-black literal
-    ///
-    /// The fan stands in for the keys, so its resting rows should read as key
-    /// glyphs — and those invert: the vendored theme paints them black on a light
-    /// keyboard and white on a dark one. `.primary` is that pair, already resolved
-    /// by the environment; a literal would be right in one appearance only.
-    private func foreground(isHighlighted: Bool, isEnabled: Bool) -> Color {
-        guard isEnabled else { return .secondary }
-        return isHighlighted ? .ouisprAccent : .primary
+    /// The one panel behind the rows: the app menu's rounded platter, in the keyboard's
+    /// glass.
+    private var panel: some View {
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
+            .fill(Color.clear)
+            .ouisprGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
     }
 
     /// The Ouispr Pro row: the last of the four in a non-subscriber's fan (#404).
@@ -241,20 +232,65 @@ struct SmartModeFanView: View {
                 endPoint: .trailing
             )
         )
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 22)
         .frame(maxWidth: .infinity)
         .frame(height: rowHeight)
-        .background(rowSurface(isHighlighted: isHighlighted))
+        .background(highlight(isHighlighted))
     }
 
-    /// Normal is named here rather than on the entry: OuisprCore ships no string
-    /// catalog, and every other mode's label is the catalogue's own — deliberately
-    /// language-neutral, so "→ EN" reads the same in every UI locale.
+    /// The row's name, as the app's menu says it: Normal, Rédigé, Liste, Traduire → EN.
+    ///
+    /// Normal is named here rather than on the entry: OuisprCore ships no string catalog.
+    /// A translation mode gets its verb back (lot 1.4): the fan's rows are now as wide as
+    /// the menu's, and « → EN » alone was the 46 pt row's shorthand.
     private func name(_ entry: SmartModeFanEntry) -> String {
-        entry.smartMode?.localizedDisplayName
-            ?? String(
+        guard let mode = entry.smartMode else {
+            return String(
                 localized: "Normal",
                 comment: "The Smart Mode fan row that clears the armed mode and returns to the free polish."
             )
+        }
+        guard mode.id.hasPrefix("translate.") else { return mode.localizedDisplayName }
+        return String(
+            localized: "Translate \(mode.displayName)",
+            comment: "Keyboard fan name of a translation Smart Mode; the placeholder is the arrow and target, e.g. « → EN » (lot 1.4)."
+        )
+    }
+
+    /// The glyph the app's menu uses for the mode (lot 1.3): a paragraph for Normal, a
+    /// pen for Rédigé, the catalogue's own glyph otherwise.
+    private func icon(_ entry: SmartModeFanEntry) -> String {
+        switch entry {
+        case .normal: return "text.alignleft"
+        case .pro: return "sparkles"
+        case .mode(let mode):
+            return mode.id == SmartModeCatalogue.structuredIdentifier ? "pencil.line" : mode.icon
+        }
+    }
+
+    /// What the mode does, in one line, as the app's menu says it. Nil for a mode this
+    /// build does not know.
+    private func summary(_ entry: SmartModeFanEntry) -> String? {
+        switch entry {
+        case .pro:
+            return nil
+        case .normal:
+            return String(localized: "Your text, cleaned up", comment: "Under « Normal » in the keyboard's mode list (lot 1.4).")
+        case .mode(let mode):
+            switch mode.id {
+            case SmartModeCatalogue.structuredIdentifier:
+                return String(localized: "Polished sentences, ready to send", comment: "Under « Rédigé » in the keyboard's mode list (lot 1.4).")
+            case SmartModeCatalogue.notesIdentifier:
+                return String(localized: "The key points as a list", comment: "Under « Liste » in the keyboard's mode list (lot 1.4).")
+            case SmartModeCatalogue.messageIdentifier:
+                return String(localized: "A short, direct message", comment: "Under « Message » in the keyboard's mode list (lot 1.4).")
+            case SmartModeCatalogue.summaryIdentifier:
+                return String(localized: "The gist in a few lines", comment: "Under « Résumé » in the keyboard's mode list (lot 1.4).")
+            case let id where id.hasPrefix("translate."):
+                return String(localized: "Translated into the chosen language", comment: "Under a « Traduire » mode in the keyboard's mode list (lot 1.4).")
+            default:
+                return nil
+            }
+        }
     }
 }

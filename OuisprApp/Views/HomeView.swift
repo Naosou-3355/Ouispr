@@ -1,14 +1,18 @@
 // OuisprApp/Views/HomeView.swift
-// Home dashboard showing model status, last transcription, and the new-dictation mic.
+// Home: the character, the mode under it, the three latest dictations, the mic, and the settings.
 import SwiftUI
 import OuisprCore
 
-/// Home tab dashboard — the first screen users see after onboarding.
+/// Home — the app's single screen, and the first one users see after onboarding.
 ///
-/// WHY a dedicated HomeView instead of reusing ContentView:
-/// ContentView combined navigation, diagnostics, and model prompts in one view.
-/// HomeView is focused: it's a dashboard showing current status and quick actions.
-/// Diagnostics move to Settings (Plan 04-02), model management is its own tab.
+/// « Banc Ouispr épuré » (Alex, 27 Nov 2026), top to bottom: the settings (top right);
+/// the character, and under it the mode of the next dictation, which is the button that
+/// changes it; « Récentes », the three latest dictations as flat rows, with « Tout voir »
+/// for the history; the ink mic. Nothing on it moves but the character: the background is
+/// a still veil (`OuisprBackdrop`), the rows stay where they are.
+///
+/// The history is not Home: it opens from « Tout voir » or a swipe up (#70), and has no
+/// mic of its own. One dictates from here.
 struct HomeView: View {
     @EnvironmentObject var coordinator: DictationCoordinator
     @EnvironmentObject var proStatus: ProStatusManager
@@ -18,61 +22,64 @@ struct HomeView: View {
     /// Raises the model preparation screen when a tap arrives during a load (#484).
     @Environment(\.presentModelPreparation) private var presentModelPreparation
 
-    @State private var showCopiedFeedback = false
+    /// The sheet on screen, if any: the history (#70), the settings, the models or a
+    /// recent dictation.
+    ///
+    /// WHY one optional and not a Boolean per sheet: two Booleans can both be true,
+    /// and SwiftUI presents one sheet per view. An optional cannot name two.
+    @State private var sheet: HomeSheet?
 
-    /// Drives the history sheet (#70).
-    @State private var showHistory = false
+    /// What the settings button, « Tout voir », a recent row and the "no model" card
+    /// can open.
+    private enum HomeSheet: Identifiable {
+        case history
+        case settings
+        case models
+        case record(TranscriptionRecord)
 
-    /// Drives the Ouispr Pro hub: from the Pro banner, or when a non-subscriber
-    /// reaches for the history. One cover on a view that never leaves the screen (#216).
+        var id: String {
+            switch self {
+            case .history: return "history"
+            case .settings: return "settings"
+            case .models: return "models"
+            case .record(let record): return "record.\(record.id)"
+            }
+        }
+    }
+
+    /// Drives the Ouispr Pro hub: from the Pro banner, the mode menu's Ouispr Pro row, or
+    /// a locked history. One cover on a view that never leaves the screen (#216).
     @State private var showPaywall = false
 
-    /// What the home mic says about Smart Modes: whether the surface is offered, and
-    /// which mode the next dictation runs (#489). A copy of the App Group, refreshed by
-    /// `refreshSmartMode()` rather than read per body evaluation, because the keyboard
-    /// writes it from another process and nothing publishes that write.
+    /// What the mode button says: whether modes are offered, and which mode the next
+    /// dictation runs (#489). A copy of the App Group, refreshed by `refreshSmartMode()`
+    /// rather than read per body evaluation, because the keyboard writes it from another
+    /// process and nothing publishes that write.
     @State private var smartModeMic = SmartModeHomeMic(isOffered: false, effectiveMode: nil)
 
-    /// The rows VoiceOver's actions on the mic offer, resolved with `smartModeMic` so a
-    /// body evaluation never asks Apple Intelligence anything (#489).
-    @State private var smartModeChoices: SmartModeHomePicker?
+    /// The mode menu's rows, read with `smartModeMic` so the menu opens on what the App
+    /// Group says now. Nil when modes are not offered.
+    @State private var modePicker: SmartModeHomePicker?
 
-    /// The open dial: one long press, from the ring opening to the release (#489).
-    @State private var ringSession: SmartModeRingSession?
-
-    /// When the last dial closed. The release of a long press can still reach the mic's
-    /// button and the dashboard's swipe as a tap and a drag; neither may act on it.
-    @State private var ringClosedAt: Date?
-
-    /// Whether the mic's long-press-then-slide gesture is in flight. Resets on its own
-    /// when the touch ends or is cancelled, which is how a dial whose drag never began
-    /// still closes.
-    @GestureState private var ringGestureActive = false
-
-    /// The mic's frame in the dashboard's coordinate space: the drag is measured from
-    /// its centre.
-    @State private var micFrame: CGRect = .zero
-
-    /// The dashboard's width, which the dial's band is sized from (#489).
-    @State private var dashboardWidth: CGFloat = 0
+    /// The default mode's identifier, as the menu's « Mode par défaut » says it.
+    @State private var defaultModeID: String?
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Observed so a Smart Mode switch flipped in the Pro hub moves the badge and the
-    /// mic's face on the way back here: the switch writes the App Group, which publishes nothing.
+    /// Whether a sheet or a cover hides this screen, which pauses the character.
+    @ObservedObject private var sphereCover = SphereCover.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Observed so a Smart Mode switch flipped in the Pro hub moves the mode button on
+    /// the way back here: the switch writes the App Group, which publishes nothing.
     @ObservedObject private var switches = ProFeatureSwitches.shared
 
-    private static let dashboardSpace = "home.dashboard"
-
-    /// What the history offers this user (#70, corrected 2026-08-28): the feature is
-    /// Pro, so the hint and the gesture are open, locked, or absent.
+    /// What the history offers this user (#70): open, locked (the Pro window), or
+    /// absent while the paywall is unreachable.
     ///
-    /// Recomputed on every body evaluation rather than stored, and read through
-    /// `proStatus.isProActive` first so SwiftUI actually re-renders: `FeatureGate`
-    /// goes straight to the App Group, which publishes nothing. Without touching the
-    /// observed object here, a subscription that arrived or lapsed while this screen
-    /// was on show would not move the hint until something else redrew it.
+    /// Read through `proStatus.isProActive` first so SwiftUI actually re-renders:
+    /// `FeatureGate` goes straight to the App Group, which publishes nothing.
     private var entryPoint: HistoryEntryPoint {
         _ = proStatus.isProActive
         return HistoryAvailability.entryPoint
@@ -81,442 +88,396 @@ struct HomeView: View {
     /// How far up the finger has to travel before the history opens.
     ///
     /// WHY 60pt and not the 20pt that would already register as a drag: this gesture
-    /// sits over the whole dashboard, including two buttons and a card. A short flick
-    /// while reaching for one of them must not open another screen.
+    /// sits over the whole dashboard, including buttons and cards. A short flick while
+    /// reaching for one of them must not open another screen.
     private let swipeUpThreshold: CGFloat = 60
 
-    /// Read active model name from App Group for display.
-    private var activeModelName: String? {
-        AppGroup.defaults.string(forKey: SharedKeys.activeModel)
-    }
-
     var body: some View {
-        VStack(spacing: 24) {
-            // The cards scroll only when they do not fit: a short screen (iPhone SE, or
-            // the iPhone layout an iPad runs in), a last transcription, a large Dynamic
-            // Type. Since #788 the mic below is 92 pt tall with its halo, and without
-            // this the cards pushed it and the history hint under the tab bar.
+        VStack(spacing: 16) {
+            topBar
+
+            // The content scrolls only when nothing else fits: an iPhone SE, a large
+            // Dynamic Type. The Pro card goes first, then the scroll.
             //
             // WHY `ViewThatFits` and not a permanent ScrollView: a scroll view takes
             // every vertical drag that starts on it, which would take the swipe up to
-            // the history (#70) away from most of the screen. Here it exists only on
-            // the screens that need it, and there the mic and the hint below it,
-            // which stay outside, are still where the swipe starts.
+            // the history (#70) away from most of the screen.
             ViewThatFits(in: .vertical) {
-                // Centred in the space above the mic. A frame and not a `Spacer` on
-                // each side: two collapsed spacers in a 24 pt stack still cost 64 pt,
-                // which is what tipped an iPhone SE height into scrolling.
-                dashboardCards
-                    .frame(maxHeight: .infinity)
+                // Hung from the top, not centred: a third dictation adds a row under the
+                // others and moves nothing above it.
+                dashboard(showsProCard: true)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                dashboard(showsProCard: false)
+                    .frame(maxHeight: .infinity, alignment: .top)
                 ScrollView {
-                    dashboardCards
+                    dashboard(showsProCard: false)
                 }
             }
-            .homeSmartModeRingBackdrop(ringSession != nil)
 
-            // The primary action, a round mic since #788. At the bottom of the content
-            // rather than among the cards: it is within thumb reach, it stays put when
-            // the last-transcription card comes and goes, and it sits where the
-            // recording screen's own mic sits.
+            // The primary action, at the bottom: within thumb reach, and where the
+            // recording screen's mic leaves from and comes back to (#788).
             if modelManager.isModelReady {
-                micRow
-                    // Above the hint below it, which the dial's line overlaps.
-                    .zIndex(1)
+                newDictationButton
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 24)
             }
-
-            // The affordance for the history (#70), last so it sits at the bottom
-            // edge the swipe starts from. Absent entirely on `.hidden`: while the
-            // paywall is unreachable the app must look like there is no subscription
-            // at all (#236), and a lock leading nowhere is the one place that would
-            // break it.
-            Group {
-                switch entryPoint {
-                case .open:
-                    SwipeUpHintView { showHistory = true }
-                case .locked:
-                    SwipeUpHintView(isLocked: true) { showPaywall = true }
-                case .hidden:
-                    EmptyView()
-                }
-            }
-            // Gone rather than blurred while the dial's line is drawn over it.
-            .opacity(ringSession != nil && HomeSmartModeRingStyle.showsReleaseHint ? 0 : 1)
-            .homeSmartModeRingBackdrop(ringSession != nil)
         }
-        .padding()
-        .background(Color.ouisprBackground.ignoresSafeArea())
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.width
-        } action: { width in
-            dashboardWidth = width
-        }
-        .coordinateSpace(.named(Self.dashboardSpace))
-        // The swipe itself. Attached to the whole dashboard rather than to the hint,
-        // because the issue asks for a swipe up "from the home screen" — the hint
-        // says where, it is not the only place the gesture is allowed to start.
-        //
-        // `.gesture` and not `.simultaneousGesture`: a simultaneous drag would fire
-        // alongside the buttons underneath instead of losing to their taps, which is
-        // exactly backwards. With `minimumDistance` set, a tap never reaches here.
-        //
-        // Installed only when the gesture leads somewhere. On `.hidden` there is no
-        // gesture at all, so nothing on this screen behaves differently for someone
-        // who has never heard of the feature; on `.locked` the same swipe opens the
-        // paywall, because a user who performed the gesture has asked for the thing.
+        // The system's margins (16 pt on most iPhones), not a value of Home's own.
+        .scenePadding(.horizontal)
+        .padding(.top, 8)
+        .background(OuisprBackdrop())
+        // Home pushes nothing and has no title: an empty navigation bar would only
+        // take 44 pt from the top of the app's single screen.
+        .toolbar(.hidden, for: .navigationBar)
+        // The swipe up to the history. `.gesture` and not `.simultaneousGesture`: a
+        // simultaneous drag would fire alongside the buttons underneath instead of
+        // losing to their taps. With `minimumDistance` set, a tap never reaches here.
+        // Off where it leads nowhere.
         .gesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
-                    // A finger sliding up from the mic to the dial's Normal sector is
-                    // a 60 pt swipe up; it chose a mode, it did not ask for the history.
-                    guard !isRingBusy else { return }
-                    // The predicted end is what makes a fast flick work: the finger
-                    // may lift after 30pt while still travelling. Either the actual
-                    // or the predicted travel clearing the threshold opens the sheet.
+                    // The predicted end is what makes a fast flick work.
                     let travelled = min(value.translation.height, value.predictedEndTranslation.height)
                     guard travelled < -swipeUpThreshold else { return }
-                    if entryPoint == .open {
-                        showHistory = true
-                    } else {
-                        showPaywall = true
-                    }
+                    openHistory()
                 },
-            // `.none` rather than an optional gesture: `gesture(_:)` takes a
-            // concrete `Gesture`, and the mask is the API's own way to say "declared
-            // but not receiving". On `.hidden` no touch on this screen reaches the
-            // drag at all.
-            //
-            // Off as well while the Smart Mode dial is open (#489).
-            including: entryPoint == .hidden || ringSession != nil ? .none : .all
+            including: entryPoint == .hidden ? .none : .all
         )
-        .sheet(isPresented: $showHistory) {
-            // A sheet is the vertical transition the issue asks for, and it brings
-            // the swipe-down back to the home screen with it. See HistoryView.
-            //
-            // The store is handed over explicitly rather than left to the ambient
-            // environment: a sheet is presented from a different part of the view
-            // tree, and an `@EnvironmentObject` that resolves today because the root
-            // happens to publish it is a crash waiting for someone to move it.
-            HistoryView()
-                .environmentObject(history)
-                .environmentObject(proStatus)
-        }
-        .paywallCover(isPresented: $showPaywall)
+        .sheet(item: $sheet, onDismiss: {
+            // Coming back from a sheet does not re-fire `onAppear`, and the models and
+            // the settings are where the model, the modes and the default change.
+            modelManager.loadState()
+            refreshSmartMode()
+        }, content: { presented in
+            Group {
+                switch presented {
+                case .history:
+                    // The store is handed over explicitly: a sheet is presented from a
+                    // different part of the view tree.
+                    HistoryView()
+                        .environmentObject(history)
+                        .environmentObject(proStatus)
+                case .settings:
+                    secondarySheet {
+                        SettingsView(modelManager: modelManager)
+                    }
+                    .environmentObject(history)
+                    .environmentObject(proStatus)
+                case .models:
+                    secondarySheet {
+                        ModelManagerView(modelManager: modelManager)
+                    }
+                case .record(let record):
+                    // A recent row opens the dictation's own screen, as in the history.
+                    secondarySheet {
+                        if record.source == .sharedFile {
+                            VoiceNoteResultView(noteID: record.id)
+                        } else {
+                            TranscriptionDetailView(record: record)
+                        }
+                    }
+                }
+            }
+            // While a sheet is up, Home's character is hidden: it stops drawing.
+            .coversHomeSphere()
+        })
+        .paywallCover(isPresented: $showPaywall, entry: .feature(.smartMode))
         .onAppear {
-            // Refresh model state every time HomeView appears.
             modelManager.loadState()
             refreshSmartMode()
         }
         // The keyboard arms modes from another app, so the change lands while this
-        // screen is in the background. Coming back to the foreground is when the badge
-        // has to catch up — the keyboard does the same on every appearance
-        // (`KeyboardState.refreshFromDefaults`), which is what makes the two agree.
+        // screen is in the background.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshSmartMode() }
         }
+        // A reason that clears by itself (Apple Intelligence downloading, or busy) is
+        // re-read every 30 s while Home is up: the menu builds its rows from the last
+        // read, and nothing announces the moment the reason goes.
+        .task(id: modePicker?.unavailableReason) {
+            while let reason = modePicker?.unavailableReason,
+                  reason == .modelNotReady || reason == .engineRefusing {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { return }
+                refreshSmartMode()
+            }
+        }
         .onChange(of: proStatus.isProActive) { _, _ in refreshSmartMode() }
         .onChange(of: switches.values) { _, _ in refreshSmartMode() }
-        // A dial left open behind another tab would come back stale.
-        .onDisappear { ringSession = nil }
+        // Back from a dictation: the mode has returned to its default
+        // (`DictationCoordinator`).
+        .onChange(of: coordinator.status) { _, status in
+            guard status == .idle else { return }
+            refreshSmartMode()
+        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OuisprOnboardingCompleted"))) { _ in
-            // WHY onReceive in addition to onAppear:
-            // HomeView mounts behind the onboarding fullScreenCover, so onAppear fires
-            // before the model is downloaded. When onboarding completes and dismisses
-            // the cover, onAppear does NOT re-fire. This notification-based refresh
-            // ensures HomeView shows the correct model state immediately.
+            // HomeView mounts behind the onboarding cover, so onAppear fires before the
+            // model is downloaded, and does not fire again when the cover goes.
             modelManager.loadState()
         }
     }
 
-    // MARK: - Dashboard Cards
+    // MARK: - Top Bar
 
-    /// Logo, model, last transcription and Pro card.
-    private var dashboardCards: some View {
-        VStack(spacing: 24) {
-            // Logo mark
-            logoSection
+    /// The settings, top right: a glass circle of 44 pt, the screen's one control up
+    /// there. The mode is said and chosen under the character (`HomeModeMenu`).
+    private var topBar: some View {
+        HStack {
+            Spacer()
+            Button {
+                sheet = .settings
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .frame(width: 44, height: 44)
+                    .ouisprGlass(in: Circle())
+            }
+            .buttonStyle(GlassPressStyle())
+            .accessibilityLabel("Settings")
+            .accessibilityIdentifier("home.settings")
+        }
+        .frame(height: 44)
+    }
 
-            // Model status card
-            modelStatusCard
+    /// A settings-style screen in a sheet: its own navigation stack, a close button,
+    /// and the grabber that says it can be dragged down.
+    private func secondarySheet<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationStack {
+            content()
+                // Inline: a large title scrolled up under the leading close button
+                // before collapsing, and read "⌄glages" for a moment (audit, 22 Nov 2026,
+                // finding 9). Tried large again for the « version épurée » (27 Nov 2026):
+                // under the opaque bar below, the large title drew washed out at rest on
+                // iOS 26.3. A sheet with a close button carries its title in the bar.
+                .navigationBarTitleDisplayMode(.inline)
+                // A bar that hides what scrolls under it: through the light material
+                // the rows stayed readable behind the title (audit of 26 Nov 2026, n°17).
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(Color.ouisprBackground.opacity(0.94), for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            sheet = nil
+                        } label: {
+                            // Its own ink and weight: left to the bar's tint, the glyph
+                            // vanished and the button read as an empty white circle.
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(Color.ouisprTextPrimary)
+                        }
+                        .accessibilityLabel("Close")
+                    }
+                }
+        }
+        .presentationDragIndicator(.visible)
+    }
 
-            // Last transcription preview
-            if let result = coordinator.lastResult {
-                transcriptionCard(result: result)
+    // MARK: - Dashboard
+
+    /// The character, the mode, the recent dictations and, where it fits, the Pro card.
+    private func dashboard(showsProCard: Bool) -> some View {
+        VStack(spacing: 16) {
+            character
+
+            if modelManager.isModelReady {
+                readySection
+            } else {
+                modelPromptCard
             }
 
-            // The Home Pro card: the offer, the trial reminder, or since #216 decision
-            // 16 a subscriber's way into the hub. Gated behind
-            // PremiumFlags.paywallVisible until the first Pro
-            // feature ships and ASC setup is done (#236, #79, #215).
-            if PremiumFlags.paywallVisible {
+            let recent = recentRecords
+            if !recent.isEmpty {
+                recentSection(recent)
+                    .padding(.top, 8)
+            }
+
+            // The Home Pro card: the offer, the trial reminder, or a subscriber's way
+            // into the hub (#216 decision 16). Only where the screen has room for it.
+            if showsProCard && PremiumFlags.paywallVisible {
                 ProBannerView { showPaywall = true }
             }
         }
     }
 
-    // MARK: - Logo Section
-
-    /// Static 3-bar brand logo at the top of the home screen.
-    /// Subscribers see the Ouispr Pro gradient wordmark from the paywall hero,
-    /// a quiet permanent reminder of what they unlocked.
-    private var logoSection: some View {
-        VStack(spacing: 8) {
-            OuisprLogo(height: 60)
-                .padding(.top, 8)
-            if proStatus.isProActive {
-                Text("Ouispr Pro")
-                    .font(.ouisprHeading)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.ouisprGradientStart, .ouisprGradientEnd],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                // During the reverse trial, the one indicator it gets on this screen
-                // (#593): discreet, never a nag, and honest about the wordmark above
-                // it, which would otherwise read as a subscription.
-                if let daysLeft = proStatus.trialBadgeDaysLeft {
-                    ProTrialBadge(daysLeft: daysLeft)
-                }
-            } else {
-                Text("Ouispr")
-                    .font(.ouisprHeading)
-                    .foregroundColor(.ouisprAccent)
-            }
-        }
-        .padding(.bottom, 8)
-    }
-
-    // MARK: - Model Status Card
-
-    /// Shows active model name and ready status, or prompts to download.
+    /// The app's face. While a dictation is up, the recording screen carries this same
+    /// character (`sharesMotion`) on this very spot (`HomeSphereAnchor`); this copy is
+    /// then hidden and paused, so the two are never seen at once.
     ///
-    /// WHY a prominent card for "no model" state:
-    /// First-time users need clear guidance. Without a model, the app can't transcribe.
-    /// The card makes the first required action obvious (navigate to Models tab).
-    private var modelStatusCard: some View {
-        Group {
-            if modelManager.isModelReady, let modelName = activeModelName {
-                // Active model display using ModelInfo for human-readable name/size.
-                // WHY ModelInfo.forIdentifier: The raw identifier (e.g. "openai_whisper-small")
-                // is not user-friendly. ModelInfo maps it to "Small" + "~250 MB".
-                HStack {
-                    let info = ModelInfo.forIdentifier(modelName)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Active model")
-                            .font(.ouisprCaption)
-                            .foregroundColor(.secondary)
-                        Text(info?.localizedDisplayName ?? modelName)
-                            .font(.ouisprSubheading)
-                        if let size = info?.sizeLabel {
-                            Text(size)
-                                .font(.ouisprCaption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.ouisprSuccess)
+    /// Drawn in a 240 pt square (Alex's 1A, the bench's character 20 % larger) laid out
+    /// 180 pt tall: the ink is 160 × 120 pt in the middle of the square, so the 30 pt
+    /// above and below it are empty and give their room to the mode and the list. The
+    /// recording screen knows this overlap (`RecordingView.homeHeadingGap`).
+    private var character: some View {
+        let side: CGFloat = dynamicTypeSize.isAccessibilitySize ? 160 : 240
+        let away = coordinator.status != .idle
+        return InkCharacterView(
+            mood: .resting,
+            isPaused: away || sphereCover.isCovered,
+            isAmbient: true,
+            sharesMotion: true
+        )
+        .frame(width: side, height: side)
+        .reportsHomeSphere()
+        .opacity(away ? 0 : 1)
+        // No animation: the hand-over back is invisible only because the recording
+        // screen's character has just landed on this spot. Reduce Motion has no flight,
+        // so there this one fades back in instead of popping.
+        .animation(reduceMotion ? .easeOut(duration: Motion.standard) : nil, value: away)
+        .frame(height: side * 0.75)
+    }
+
+    // MARK: - Ready Section
+
+    /// Under the character: the mode the next dictation runs, which is also the button
+    /// that changes it, or, where modes are not offered, the one sentence that says how.
+    private var readySection: some View {
+        VStack(spacing: 8) {
+            Group {
+                if let modePicker {
+                    HomeModeMenu(
+                        picker: modePicker,
+                        mode: smartModeMic.effectiveMode,
+                        defaultIdentifier: defaultModeID,
+                        onChoose: choose,
+                        onSetDefault: setDefault
+                    )
+                } else {
+                    Text("Tap the mic and speak.")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.ouisprTextSecondary)
                 }
-                .padding()
-                .ouisprGlass()
-            } else {
-                // No model — prompt to download
-                VStack(spacing: 12) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.ouisprAccent)
-                    Text("Download a model to get started")
-                        .font(.ouisprSubheading)
-                        .multilineTextAlignment(.center)
-                    Text("Go to the Models tab to download your first transcription model.")
-                        .font(.ouisprCaption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
-                .ouisprGlass()
             }
+            // One height either way, so the list under it never moves.
+            .frame(minHeight: 44)
+            // During the reverse trial, the one indicator it gets on this screen
+            // (#593): discreet, never a nag.
+            if let daysLeft = proStatus.trialBadgeDaysLeft {
+                ProTrialBadge(daysLeft: daysLeft)
+            }
+        }
+        .multilineTextAlignment(.center)
+        // Gone as soon as a dictation starts, before the recording screen writes its
+        // stage on this same line, and back only once that screen has left: the two
+        // never show at once (Beta 45 feedback, 25 Nov 2026).
+        .opacity(coordinator.status == .idle ? 1 : 0)
+        .animation(.easeOut(duration: Motion.quick), value: coordinator.status == .idle)
+    }
+
+    // MARK: - Recent dictations
+
+    /// The latest three dictations with words, without the repeats that follow each other.
+    private var recentRecords: [TranscriptionRecord] {
+        Array(DictationList.shown(history.records) { $0.text }.prefix(DictationList.homeCount))
+    }
+
+    /// « Récentes » with « Tout voir », then the three latest dictations as flat rows on
+    /// one plain surface (« Banc Ouispr épuré », 27 Nov 2026). Nothing moves: a new
+    /// dictation is a new first row, there when the recording screen leaves.
+    private func recentSection(_ records: [TranscriptionRecord]) -> some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Recent")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if entryPoint != .hidden {
+                    Button("See all", action: openHistory)
+                        .font(.body)
+                        .foregroundStyle(Color.ouisprAccentText)
+                        // Apple's 44 pt minimum touch target.
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("home.history")
+                }
+            }
+            .frame(minHeight: 44)
+
+            VStack(spacing: 0) {
+                ForEach(records) { record in
+                    if record.id != records.first?.id {
+                        Divider().padding(.leading, 16)
+                    }
+                    Button {
+                        sheet = .record(record)
+                    } label: {
+                        DictationRow(record: record)
+                            .padding(.horizontal, 16)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home.recent.\(record.id)")
+                }
+            }
+            // Flat: a plain surface, the glass is for the controls (contrôle V1.1).
+            .background(Color.ouisprSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
     }
 
-    // MARK: - Last Transcription Card
+    private func openHistory() {
+        switch entryPoint {
+        case .open: sheet = .history
+        case .locked: showPaywall = true
+        case .hidden: break
+        }
+    }
 
-    /// Shows the most recent transcription result in a tappable glass card.
-    /// Tap to copy to clipboard (same behavior as RecordingView result).
-    private func transcriptionCard(result: String) -> some View {
+    // MARK: - Model Prompt Card
+
+    /// Without a model the app cannot transcribe, and there is no mic to tap: this
+    /// card is then the screen's one action, and it opens the models.
+    private var modelPromptCard: some View {
         Button {
-            UIPasteboard.general.string = result
-            HapticFeedback.recordingStopped()
-            showCopiedFeedback = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showCopiedFeedback = false
-            }
+            sheet = .models
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(showCopiedFeedback ? "Copied!" : "Last transcription")
-                        .font(.ouisprCaption)
-                        .foregroundColor(showCopiedFeedback ? .ouisprSuccess : .secondary)
-                        .animation(.easeOut(duration: 0.2), value: showCopiedFeedback)
-                    Spacer()
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary.opacity(0.6))
-                }
-                Text(result)
+            VStack(spacing: 12) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.ouisprAccentText)
+                Text("Download a model to get started")
+                    .font(.ouisprSubheading)
+                    .foregroundStyle(Color.ouisprTextPrimary)
+                    .multilineTextAlignment(.center)
+                    // Wraps instead of truncating at the largest text sizes.
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Choose a model")
                     .font(.ouisprBody)
-                    .foregroundColor(.primary)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
+                    .foregroundColor(.ouisprAccentText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding()
             .ouisprGlass()
         }
-        .buttonStyle(GlassPressStyle(pressedScale: 0.97))
+        .buttonStyle(GlassPressStyle())
+        .accessibilityIdentifier("home.chooseModel")
     }
 
     // MARK: - New Dictation Button
 
-    /// The mic, centred, with the Smart Mode dial's resting hint around it (#489).
-    ///
-    /// Everything Smart Mode draws here is an overlay or a background on the mic: the
-    /// chevrons, the ring, the line under it. None of it owns layout, so the mic is
-    /// exactly where #788 put it whatever the dial is doing, and the recording screen,
-    /// which lines its own button up on this one, sees no difference.
-    private var micRow: some View {
-        newDictationButton
-            // The ring and the resting hint behind the mic, so the mic draws over both.
-            // Outside the button's accessibility modifiers on purpose: inside them, the
-            // resting hint's symbols inherited the mic's identifier and read as more mics.
-            .background {
-                if let ringSession {
-                    HomeSmartModeRing(session: ringSession)
-                        // The segments spring out on their own (`HomeSmartModeRing`); this is
-                        // the way back into the mic, on release or cancel.
-                        .transition(reduceMotion
-                                    ? .opacity
-                                    : .opacity.combined(with: .scale(scale: HomeSmartModeRingStyle.segmentHiddenScale)))
-                } else if smartModeMic.isOffered {
-                    HomeSmartModeRestHint()
-                }
-            }
-            .overlay(alignment: .top) {
-                if let ringSession, HomeSmartModeRingStyle.showsReleaseHint {
-                    HomeSmartModeRingHint(hint: ringSession.hint)
-                        .fixedSize()
-                        .offset(y: OuisprHalo.size(isPill: false).height + 12)
-                }
-            }
-            .frame(maxWidth: .infinity)
-    }
-
-    /// The round mic that starts a dictation. Only shown when a model is ready.
-    ///
-    /// WHY `AnimatedMicButton` (#788): the onboarding and the recording screen already
-    /// draw their mic with it, so the home action is the same object the user taps on
-    /// the next screen. Its status is pinned to `.idle`: as soon as a dictation starts,
-    /// MainTabView covers this screen with the recording overlay, which carries the
-    /// live states.
-    ///
-    /// The armed Smart Mode (#489) shows on it twice: the mode's glyph in the brand's
-    /// deep blue as its face, and the keyboard pill's own corner badge. Both only when
-    /// the next dictation will actually run it. Normal is a plain mic.
+    /// The ink mic that starts a dictation, only shown when a model is ready: a plain
+    /// disc, the mode being the button's under the character.
     ///
     /// WHY a button that starts dictation instead of a NavigationLink to TestDictationView:
-    /// NavigationLink pushes TestDictationView inside the NavigationStack. Meanwhile,
-    /// MainTabView shows a RecordingView overlay when coordinator.status != .idle.
-    /// This creates TWO stacked RecordingViews. When the overlay dismisses (status → idle),
-    /// the pushed TestDictationView is still there with its nav bar visible.
-    /// A Button just starts dictation — the MainTabView overlay handles the full UI.
+    /// MainTabView shows a RecordingView overlay when coordinator.status != .idle, and a
+    /// pushed screen would stack a second one under it.
     private var newDictationButton: some View {
-        AnimatedMicButton(
-            status: .idle,
-            badge: ringSession == nil ? smartModeMic.effectiveMode?.badge : nil,
-            face: micFace,
-            showsPressFeedback: ringSession == nil
-        ) {
-            // The release of a long press still arrives here as a tap when the finger
-            // lifts on the mic. The dial being open, or having just closed, is what says
-            // so, and it must not also start a recording: lifting on the mic is the
-            // dial's cancel.
-            guard !isRingBusy else { return }
+        InkMicButton(phase: .resting) {
             startDictation()
         }
-        // The mic grows while the dial is open, around its own centre: a render scale,
-        // so the layout, the anchor the recording screen lines up on (#788) and the
-        // dial's geometry do not move.
-        .scaleEffect(ringSession != nil && !reduceMotion ? HomeSmartModeRingStyle.openMicScale : 1)
-        .animation(reduceMotion ? HomeSmartModeRingStyle.reducedMotionFade : HomeSmartModeRingStyle.micSpring,
-                   value: ringSession != nil)
-        // The dial's gesture: hold for the keyboard fan's 0.35 s, then slide. Simultaneous
-        // rather than high-priority so a plain tap pays no delay, the fan's own reasoning
-        // (`ToolbarView.micPill`). The drag is measured in the dashboard's space so the
-        // finger keeps being tracked once it leaves the button.
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.35)
-                .sequenced(before: DragGesture(minimumDistance: 0,
-                                               coordinateSpace: .named(Self.dashboardSpace)))
-                .updating($ringGestureActive) { value, active, _ in
-                    if case .second(true, _) = value { active = true }
-                }
-                .onChanged { value in
-                    guard case .second(true, let drag) = value else { return }
-                    if ringSession == nil { openRing() }
-                    if let drag { moveRing(to: drag.location) }
-                }
-                .onEnded { value in
-                    guard case .second(true, let drag) = value else { return }
-                    if let drag { moveRing(to: drag.location) }
-                    releaseRing()
-                },
-            including: smartModeMic.isOffered ? .all : .none
-        )
-        // A touch the system cancelled, or a long press lifted before the drag began,
-        // never reaches `onEnded`: the gesture state resetting is the one signal left.
-        .onChange(of: ringGestureActive) { _, active in
-            if !active, ringSession != nil { closeRing(cancelled: true) }
-        }
-        .onGeometryChange(for: CGRect.self) { proxy in
-            proxy.frame(in: .named(Self.dashboardSpace))
-        } action: { frame in
-            micFrame = frame
-        }
-        // The visible label went with the rectangle; VoiceOver keeps it, and hears the
-        // mode the dictation will run as the value (#397's missing half, on this mic).
+        // VoiceOver hears the mode the dictation will run as the value (#397).
         .accessibilityLabel("New dictation")
         .accessibilityValue(smartModeMic.isOffered
-                            ? Text(HomeSmartModeCopy.spokenName(of: smartModeMic.effectiveMode))
+                            ? Text(HomeSmartModeCopy.name(of: smartModeMic.effectiveMode))
                             : Text(verbatim: ""))
-        // The dial without the gesture, which VoiceOver takes for itself: one action per
-        // row that may be chosen. Choosing arms the mode and stops there — the
-        // double-tap that follows is the dictation, and VoiceOver reads the new value
-        // first, so the user hears what they picked before anything records.
-        .accessibilityActions {
-            if let choices = smartModeChoices {
-                ForEach(choices.entries.filter(choices.canChoose)) { entry in
-                    Button(accessibilityActionName(for: entry)) { chooseFromAccessibility(entry) }
-                }
-            }
-        }
         .accessibilityIdentifier("home.newDictation")
-        // The recording screen draws its own button at this height, so tapping here
-        // shows no jump (#788).
+        // The recording screen's mic leaves from here and comes back here (#788).
         .reportsPrimaryMicAnchor()
     }
 
-    /// The mic's face: the targeted row's while the dial is open, the armed mode's at
-    /// rest, nil for the plain mic.
-    private var micFace: AnimatedMicButton.MicFace? {
-        if let ringSession {
-            return HomeSmartModeCopy.micFace(for: ringSession.micEntry)
-        }
-        return smartModeMic.effectiveMode.flatMap { HomeSmartModeCopy.micFace(for: .mode($0)) }
-    }
-
-    /// A tap on the mic, or a dial released on a mode after arming it.
+    /// A tap on the mic.
     private func startDictation() {
         // A tap that lands during a model load gets the preparation screen instead of
         // being swallowed by `startDictation`'s guard (#484). The button stays live and
@@ -530,124 +491,46 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Smart Mode Dial
+    // MARK: - Mode menu
 
-    /// Whether the dial is open or closed so recently that its release is still being
-    /// delivered to the mic's tap and the dashboard's swipe.
-    private var isRingBusy: Bool {
-        if ringSession != nil { return true }
-        guard let ringClosedAt else { return false }
-        return Date().timeIntervalSince(ringClosedAt) < 0.4
-    }
-
-    /// Re-read what the home mic shows from the App Group.
+    /// Re-read what the mode button shows from the App Group, and the menu's rows with it.
+    ///
+    /// WHY here and not when the menu opens: a system menu builds its rows from the
+    /// body, with no moment of its own to read the App Group. Read on appear, on the way
+    /// back to the foreground and after each change, which is when the keyboard, the Pro
+    /// hub or a dictation can have moved it; this also keeps `SystemLanguageModel` off
+    /// every body pass.
     private func refreshSmartMode() {
         smartModeMic = SmartModeHomeMic.current
-        smartModeChoices = smartModeMic.isOffered ? SmartModeHomePicker.current() : nil
+        defaultModeID = SmartModeDefault.identifier
+        modePicker = smartModeMic.isOffered ? SmartModeHomePicker.current() : nil
     }
 
-    /// Open the dial when the long press completes.
-    ///
-    /// Resolved at open, as the keyboard fan is: armability cannot change between the
-    /// press and the release, and reading it once keeps `SystemLanguageModel` off the
-    /// per-frame path of the drag.
-    private func openRing() {
-        guard let picker = SmartModeHomePicker.current() else { return }
-        // Sized now, from the screen it opens on: about three quarters of the width, no
-        // taller than the room above the mic.
-        let radii = SmartModeRingLayout.radii(
-            width: dashboardWidth,
-            heightAbove: micFrame.midY - HomeSmartModeRingStyle.topClearance
-        )
-        // A firmer impact than the selection ticks that follow, so the hand tells
-        // "it opened" from "it moved".
-        HapticFeedback.longPressRecognized()
-        withAnimation(reduceMotion ? HomeSmartModeRingStyle.reducedMotionFade : HomeSmartModeRingStyle.micSpring) {
-            ringSession = SmartModeRingSession(
-                picker: picker, innerRadius: radii.inner, outerRadius: radii.outer
-            )
-        }
-        PersistentLog.log(.diagnosticProbe(
-            component: "HomeView", instanceID: "-", action: "smartModeRingOpened",
-            details: "entries=\(picker.entries.count) armed=\(picker.armedIdentifier ?? "normal") "
-                + "radii=\(Int(radii.inner))-\(Int(radii.outer))"
-        ))
-    }
-
-    /// Feed the finger's position, in the dashboard's space, to the dial.
-    private func moveRing(to location: CGPoint) {
-        guard var session = ringSession else { return }
-        let point = CGPoint(x: location.x - micFrame.midX, y: location.y - micFrame.midY)
-        let cue = session.move(to: point)
-        ringSession = session
-        if cue == .tick { HapticFeedback.keyTapped() }
-    }
-
-    /// Lift the finger: arm and record, open the paywall, refuse, or nothing.
-    private func releaseRing() {
-        guard let session = ringSession else { return }
-        let outcome = session.commit()
-        closeRing(cancelled: false)
-        switch outcome {
-        case .cancel:
-            break
-        case .refused:
-            HapticFeedback.actionRefused()
-        case .openPaywall:
-            showPaywall = true
-        case .record:
-            refreshSmartMode()
-            startDictation()
-        }
-        PersistentLog.log(.diagnosticProbe(
-            component: "HomeView", instanceID: "-", action: "smartModeRingReleased",
-            details: "outcome=\(Self.logName(outcome)) source=home"
-        ))
-    }
-
-    private func closeRing(cancelled: Bool) {
-        ringClosedAt = Date()
-        withAnimation(reduceMotion ? HomeSmartModeRingStyle.reducedMotionFade : HomeSmartModeRingStyle.micSpring) {
-            ringSession = nil
-        }
-        if cancelled {
-            PersistentLog.log(.diagnosticProbe(
-                component: "HomeView", instanceID: "-", action: "smartModeRingReleased",
-                details: "outcome=interrupted source=home"
-            ))
-        }
-    }
-
-    /// VoiceOver's action for `entry`: arm it (Normal disarms), or open the paywall.
-    private func chooseFromAccessibility(_ entry: SmartModeFanEntry) {
+    /// A row of the menu: arm it (Normal disarms), or open the Pro window.
+    private func choose(_ entry: SmartModeFanEntry) {
         guard let picker = SmartModeHomePicker.current() else { return }
         switch picker.choose(entry) {
         case .openPaywall:
             showPaywall = true
         case .armed, .disarmed:
+            HapticFeedback.keyTapped()
             refreshSmartMode()
         case .refused:
             HapticFeedback.actionRefused()
         }
         PersistentLog.log(.diagnosticProbe(
             component: "HomeView", instanceID: "-", action: "smartModeChosen",
-            details: "row=\(entry.id) source=homeAccessibility"
+            details: "row=\(entry.id) source=homeMenu"
         ))
     }
 
-    private func accessibilityActionName(for entry: SmartModeFanEntry) -> String {
-        if case .pro = entry { return String(localized: "Ouispr Pro") }
-        return String(localized: "Use \(HomeSmartModeCopy.spokenName(of: entry.smartMode))",
-                      comment: "VoiceOver action on the Home mic that arms this Smart Mode. The placeholder is the mode's name, or Normal.")
-    }
-
-    private static func logName(_ outcome: SmartModeRingRelease) -> String {
-        switch outcome {
-        case .cancel: return "cancel"
-        case .refused: return "refused"
-        case .openPaywall: return "paywall"
-        case .record(let entry): return "record:\(entry.id)"
-        }
+    /// « Mode par défaut » in the menu: the mode becomes the default the app returns to
+    /// after each dictation, and the mode of the next one too.
+    private func setDefault(_ entry: SmartModeFanEntry) {
+        HapticFeedback.keyTapped()
+        SmartModeDefault.set(entry.smartMode)
+        SmartModeDefault.returnToDefault()
+        refreshSmartMode()
     }
 }
 

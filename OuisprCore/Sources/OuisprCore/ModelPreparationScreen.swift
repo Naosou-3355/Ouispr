@@ -1,6 +1,6 @@
 // OuisprCore/Sources/OuisprCore/ModelPreparationScreen.swift
-// What the model preparation screen draws for each phase: the ring, the two step rows,
-// and the language named in the onboarding subtitle. Issue #708.
+// What the model preparation screen draws for each phase: the opening phase, the one
+// figure of progress and its milestones.
 import Foundation
 
 /// The phase the preparation screen is showing.
@@ -42,136 +42,76 @@ public enum ModelPreparationPhase: Equatable, Sendable {
     }
 }
 
-/// The state of one row of the screen's two-step card (#708).
-public enum ModelPreparationStepState: Equatable, Sendable {
-    /// Empty circle, tertiary label.
-    case pending
-    /// Spinner in the accent colour, semibold primary label.
-    case running
-    /// Green check, secondary label.
-    case done
-}
-
-/// What the second row of the card says. The first row always names the download.
-public enum ModelPreparationSecondStep: Equatable, Sendable {
-    /// "Optimizing for this iPhone": the Core ML compile, or the wait before it.
-    case optimizing
-    /// "Loading the model": the load into RAM.
-    case loading
-    /// "Optimized for this iPhone": done.
-    case optimized
-}
-
-/// The card's two rows for a phase (#708).
+/// How far along the whole preparation is, as one number from 0 to 1: what the
+/// percentage under the character says and what fills its eyes (lot 1.1, Alex's bench of
+/// 27 Nov 2026, « Les yeux se remplissent », « Pourcentage seul »).
 ///
-/// WHY ALWAYS TWO ROWS: the card is a fixed-height block, so a phase change only swaps the
-/// rows' content and never moves what sits under it. And the two stages of the wait are
-/// what the user needs to see: a download they can measure, then a preparation they
-/// cannot, which is why the second one shows no percentage.
-public struct ModelPreparationSteps: Equatable, Sendable {
-    public let download: ModelPreparationStepState
-    public let second: ModelPreparationStepState
-    public let secondLabel: ModelPreparationSecondStep
+/// WHY TWO KINDS OF NUMBER IN ONE: the download reports a real fraction, the Core ML
+/// compile and the load report none (#432, #533). The download, when there is one, fills
+/// the first `downloadShare`; the preparation after it fills the rest from the time it
+/// has run, on a curve that slows as it goes and stops at `preparationCeiling`. So the
+/// figure always moves while something really runs, never goes back, and never says
+/// 100 % before the model is really ready: only `.ready` does.
+public enum ModelPreparationProgress {
 
-    public init(phase: ModelPreparationPhase) {
-        switch phase {
-        case .downloading:
-            download = .running
-            second = .pending
-            secondLabel = .optimizing
-        case .compiling:
-            download = .done
-            second = .running
-            secondLabel = .optimizing
-        case .loading:
-            download = .done
-            second = .running
-            secondLabel = .loading
-        case .ready:
-            download = .done
-            second = .done
-            secondLabel = .optimized
-        }
-    }
-}
+    /// The part of the wait the download stands for, when there is one. A download is
+    /// most of the first wait on every model in the catalogue but Turbo.
+    public static let downloadShare = 0.9
 
-/// What the ring around the logo draws for a phase (#708).
-public enum ModelPreparationRing: Equatable, Sendable {
-    /// The real download fraction, from 12 o'clock, clockwise.
-    case fraction(Double)
-    /// A short arc turning continuously. Core ML reports no progress for a compile, so
-    /// the ring says "working" and claims nothing about how far (#432, #533).
-    case spinning
-    /// The full circle, drawn in the success colour.
-    case closed
+    /// The highest figure the preparation's estimate reaches: 99 %.
+    public static let preparationCeiling = 0.99
 
-    /// Shortest arc drawn for a download, so a ring at 0 % still reads as started. Same
-    /// sliver as the onboarding's download pill.
-    public static let minimumFraction = 0.02
-
-    /// Length of the spinning arc, as a fraction of the circle (about 95°, per the brief).
-    public static let spinningArcFraction = 95.0 / 360.0
-
-    /// - Parameter downloadFraction: the download's progress, nil before the first tick.
-    public init(phase: ModelPreparationPhase, downloadFraction: Double?) {
-        switch phase {
-        case .downloading:
-            let fraction = downloadFraction ?? 0
-            self = .fraction(min(1, max(Self.minimumFraction, fraction)))
-        case .compiling, .loading:
-            self = .spinning
-        case .ready:
-            self = .closed
-        }
-    }
-
-    /// Where the arc ends, as a fraction of the circle. The view animates between these.
-    public var arcEnd: Double {
-        switch self {
-        case .fraction(let fraction): return fraction
-        case .spinning: return Self.spinningArcFraction
-        case .closed: return 1
-        }
-    }
-}
-
-/// The spoken language as the onboarding subtitle names it: "picked for French", "choisi
-/// pour le français" (#708, #649 decision 4).
-///
-/// WHY A PHRASE AND NOT A NAME: French puts an article in front of a language name and
-/// elides it before a vowel ("le français", "l'anglais"). A sentence that took the bare
-/// name would read "choisi pour français", and a fixed "le" would read "le anglais".
-///
-/// WHY SOME LANGUAGES GET NO PHRASE: the brief's fallback is "chosen for your language",
-/// for wherever the named form is awkward. In French that is every name starting with h:
-/// whether the h is mute ("l'hébreu") or aspirated ("le hongrois") is a fact about each
-/// word, and getting it wrong in a sentence the user reads on their first launch is worse
-/// than not naming the language. Any interface language other than French and English gets
-/// the fallback too: those are the only two the app is translated into, and the rule for a
-/// third is not one to guess.
-public enum ModelPreparationLanguagePhrase {
+    /// The time constant of the estimate when the model's first preparation has never
+    /// been measured: about 95 % of the way after 30 s.
+    public static let unmeasuredTimeConstant = 10.0
 
     /// - Parameters:
-    ///   - languageName: the spoken language's name in the interface language, as
-    ///     `Locale.localizedString(forLanguageCode:)` returns it.
-    ///   - interfaceLanguage: the interface's language code ("fr", "en").
-    /// - Returns: the phrase to slot into the sentence, or nil for the fallback sentence.
-    public static func phrase(languageName: String?, interfaceLanguage: String) -> String? {
-        guard let languageName, !languageName.isEmpty else { return nil }
-        switch interfaceLanguage {
-        case "en":
-            return languageName
-        case "fr":
-            let name = languageName.lowercased(with: Locale(identifier: "fr"))
-            // Folded so "é", "î" and the rest count as the vowels they are.
-            guard let first = name.folding(options: .diacriticInsensitive, locale: nil).first else {
-                return nil
-            }
-            if first == "h" { return nil }
-            // No y: it starts a consonant sound in "le yiddish", "le yoruba".
-            return "aeiou".contains(first) ? "l'\(name)" : "le \(name)"
-        default:
-            return nil
+    ///   - phase: the phase on screen.
+    ///   - downloadFraction: the download's real progress, nil before its first tick.
+    ///   - includesDownload: whether this preparation started with a download, that is,
+    ///     the model's files were not all on disk when the screen opened.
+    ///   - preparationElapsed: seconds since the compile or the load was first seen, nil
+    ///     before.
+    ///   - measuredSeconds: `ModelInfo.firstPreparationSeconds`, when known.
+    public static func fraction(
+        phase: ModelPreparationPhase,
+        downloadFraction: Double?,
+        includesDownload: Bool,
+        preparationElapsed: Double?,
+        measuredSeconds: Int?
+    ) -> Double {
+        let base = includesDownload ? downloadShare : 0
+        switch phase {
+        case .downloading:
+            return downloadShare * clamp01(downloadFraction ?? 0)
+        case .compiling, .loading:
+            let elapsed = max(0, preparationElapsed ?? 0)
+            // A third of the measured time: 95 % of the way when the measured time is up.
+            let constant = measuredSeconds.map { max(1, Double($0) / 3) } ?? unmeasuredTimeConstant
+            return base + (preparationCeiling - base) * (1 - exp(-elapsed / constant))
+        case .ready:
+            return 1
         }
+    }
+
+    /// The whole percent the screen prints: rounded down, so 99.6 % never reads 100 %.
+    public static func percent(_ fraction: Double) -> Int {
+        Int((clamp01(fraction) * 100).rounded(.down))
+    }
+}
+
+/// The friendly line under the status, one per quarter (Alex, 27 Nov 2026: « un à 25,
+/// 50, 75, 100 % »). Each stays until the next.
+public enum ModelPreparationMilestone: Int, CaseIterable, Sendable {
+    case quarter = 25
+    case half = 50
+    case threeQuarters = 75
+    case done = 100
+
+    /// The last milestone the figure has reached, nil under 25 %. `done` only for a ready
+    /// model, whatever the figure says, since the estimate stops at 99 %.
+    public static func reached(percent: Int, isReady: Bool) -> Self? {
+        if isReady { return .done }
+        return [.threeQuarters, .half, .quarter].first { percent >= $0.rawValue }
     }
 }

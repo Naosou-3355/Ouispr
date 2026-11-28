@@ -19,10 +19,10 @@ public enum ProFeature: String, CaseIterable {
     /// Human-readable name for Settings rows and paywall cards.
     public var displayName: String {
         switch self {
-        case .smartMode: return "Smart Mode"
-        case .history: return "History search"
-        case .vocabulary: return "Vocabulary"
-        case .voiceNotes: return "Voice notes"
+        case .smartMode: return "Modes"
+        case .history: return "Unlimited history"
+        case .vocabulary: return "Learns from you"
+        case .voiceNotes: return "Voice messages"
         }
     }
 
@@ -31,7 +31,7 @@ public enum ProFeature: String, CaseIterable {
         switch self {
         case .smartMode: return "sparkles"
         case .history: return "clock.arrow.trianglehead.counterclockwise.rotate.90"
-        case .vocabulary: return "character.book.closed"
+        case .vocabulary: return "person.wave.2"
         case .voiceNotes: return "waveform"
         }
     }
@@ -39,9 +39,9 @@ public enum ProFeature: String, CaseIterable {
     /// Description shown on paywall feature cards.
     public var paywallDescription: String {
         switch self {
-        case .smartMode: return "Reformulate your text with on-device AI"
-        case .history: return "Find any past dictation in seconds"
-        case .vocabulary: return "Teach Ouispr your technical terms"
+        case .smartMode: return "Polished, List, Translate"
+        case .history: return "Search all your dictations, not just the last 7 days"
+        case .vocabulary: return "Suggestions drawn from your corrections and dictations"
         case .voiceNotes: return "Transcribe the voice messages you receive"
         }
     }
@@ -49,9 +49,9 @@ public enum ProFeature: String, CaseIterable {
     /// Localized description shown on paywall feature cards (French).
     public var paywallDescriptionFR: String {
         switch self {
-        case .smartMode: return "Reformulez vos textes avec une IA embarqu\u{00E9}e"
-        case .history: return "Retrouvez n\u{2019}importe quelle dict\u{00E9}e en quelques secondes"
-        case .vocabulary: return "Apprenez \u{00E0} Ouispr vos termes techniques"
+        case .smartMode: return "R\u{00E9}dig\u{00E9}, Liste, Traduire"
+        case .history: return "Cherchez dans toutes vos dict\u{00E9}es, pas seulement les 7 derniers jours"
+        case .vocabulary: return "Des suggestions tir\u{00E9}es de vos corrections et de vos dict\u{00E9}es"
         case .voiceNotes: return "Transcrivez les messages vocaux que vous recevez"
         }
     }

@@ -221,10 +221,10 @@ struct SmartModesScene: View {
                     .position(fingerPoint(finger))
             }
         }
-        .animation(.easeOut(duration: 0.18), value: frame.isFanOpen)
-        .animation(.easeOut(duration: 0.18), value: frame.keyboard.isOverlay)
-        .animation(.easeOut(duration: 0.2), value: frame.fieldText)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: frame.armedIndex)
+        .animation(.easeOut(duration: Motion.quick), value: frame.isFanOpen)
+        .animation(.easeOut(duration: Motion.quick), value: frame.keyboard.isOverlay)
+        .animation(.easeOut(duration: Motion.quick), value: frame.fieldText)
+        .animation(Motion.snappy, value: frame.armedIndex)
     }
 
     private func fieldText(_ text: SmartModesSceneScript.FieldText?) -> String? {
@@ -457,7 +457,7 @@ private struct SceneToolbar: View {
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.horizontal, 14)
         .frame(height: Metrics.pillHeight)
         .background(Capsule().fill(Color.ouisprAccent.opacity(0.12)))
@@ -472,7 +472,7 @@ private struct SceneToolbar: View {
                 .font(.system(size: 13, weight: .semibold))
                 .lineLimit(1)
         }
-        .foregroundColor(.ouisprAccent)
+        .foregroundColor(.ouisprAccentText)
         .padding(.leading, 6)
         .frame(maxWidth: .infinity)
     }
@@ -639,7 +639,7 @@ private struct SceneRecordingOverlay: View {
                             .font(.system(size: 14, weight: .semibold))
                             .lineLimit(1)
                     }
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .padding(.horizontal, 12)
                     .frame(height: 28)
                     .background(Capsule().fill(Color.ouisprAccent.opacity(0.14)))
@@ -816,6 +816,6 @@ struct SceneFinger: View {
             .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
             .frame(width: 46, height: 46)
             .scaleEffect(isPressed ? 0.86 : 1)
-            .animation(.easeOut(duration: 0.15), value: isPressed)
+            .animation(.easeOut(duration: Motion.quick), value: isPressed)
     }
 }

@@ -142,13 +142,13 @@ private struct StopStandbyChips: View {
         .minimumScaleFactor(0.75)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
-        .animation(.easeInOut(duration: 0.25), value: lit)
+        .animation(.easeInOut(duration: Motion.standard), value: lit)
     }
 
     private func chip(_ step: StopStandbySceneScript.Chip, _ label: Text) -> some View {
         HStack(spacing: 6) {
             Text(verbatim: "\(step.rawValue)")
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
             label
                 .foregroundStyle(.primary)
         }
@@ -272,8 +272,8 @@ private struct StopStandbyIslandScreen: View {
                     .position(fingerPoint(finger))
             }
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.78), value: frame.activity)
-        .animation(.easeInOut(duration: 0.2), value: frame.isPowerLit)
+        .animation(Motion.gentle, value: frame.activity)
+        .animation(.easeInOut(duration: Motion.quick), value: frame.isPowerLit)
     }
 
     private var island: some View {
@@ -454,8 +454,8 @@ private struct StopStandbyLockScreen: View {
                     .position(Metrics.bannerPowerPoint)
             }
         }
-        .animation(.easeOut(duration: 0.3), value: frame.activity)
-        .animation(.easeInOut(duration: 0.2), value: frame.isPowerLit)
+        .animation(.easeOut(duration: Motion.standard), value: frame.activity)
+        .animation(.easeInOut(duration: Motion.quick), value: frame.isPowerLit)
     }
 
     /// `lockScreenView`, `.standby`: logo, "Ouispr / On", power and mic.
@@ -523,7 +523,7 @@ private struct ScenePowerButton: View {
                     .opacity(isLit ? 1 : 0)
             )
             .scaleEffect(isPressed ? 0.92 : 1)
-            .animation(.easeOut(duration: 0.15), value: isPressed)
+            .animation(.easeOut(duration: Motion.quick), value: isPressed)
     }
 }
 

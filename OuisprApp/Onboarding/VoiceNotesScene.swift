@@ -87,7 +87,7 @@ private struct VoiceNotesChapterHeader: View {
         .padding(.bottom, 14)
         .id(chapter)
         .transition(.opacity)
-        .animation(.easeInOut(duration: 0.3), value: chapter)
+        .animation(.easeInOut(duration: Motion.standard), value: chapter)
     }
 
     private var caption: Text {
@@ -136,7 +136,7 @@ private struct VoiceNotesChapterHeader: View {
         HStack(spacing: 5) {
             Text(verbatim: "\(number)")
                 .fontWeight(.bold)
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
             label
                 .foregroundStyle(.primary)
         }
@@ -230,10 +230,10 @@ struct VoiceNotesScene: View {
         // The fades between the chapters and at the loop's end: the screen goes dark on
         // the phone's own background, not on the card.
         .opacity(frame.screenOpacity)
-        .animation(.easeOut(duration: 0.3), value: frame.readerIsOpen)
-        .animation(.easeOut(duration: 0.3), value: frame.sheet)
-        .animation(.easeOut(duration: 0.2), value: frame.contextMenuIsOpen)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: frame.ouisprIsFavourite)
+        .animation(.easeOut(duration: Motion.standard), value: frame.readerIsOpen)
+        .animation(.easeOut(duration: Motion.standard), value: frame.sheet)
+        .animation(.easeOut(duration: Motion.quick), value: frame.contextMenuIsOpen)
+        .animation(Motion.snappy, value: frame.ouisprIsFavourite)
     }
 }
 
@@ -462,7 +462,7 @@ private struct VoiceNotesShareSheet: View {
         HStack(spacing: 12) {
             Image(systemName: "waveform")
                 .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .frame(width: 44, height: 44)
                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.ouisprSurface))
             VStack(alignment: .leading, spacing: 2) {

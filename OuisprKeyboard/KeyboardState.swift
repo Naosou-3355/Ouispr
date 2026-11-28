@@ -883,6 +883,7 @@ class KeyboardState: ObservableObject {
         let transcription = TranscriptionStyle.current(in: defaults).apply(to: dictated)
         controller?.textDocumentProxy.insertText(transcription)
         PersistentLog.log(.keyboardTextInserted)
+        dictationInsertedCount += 1
         HapticFeedback.textInserted()
         onTranscriptionInserted?()
 
@@ -929,6 +930,10 @@ class KeyboardState: ObservableObject {
     /// a host that reports no usable context never shows a control that could not
     /// act (fail closed).
     @Published private(set) var dictationUndoAvailable = false
+
+    /// Goes up by one each time a dictation is written into the field (lot 1.6): the mic
+    /// plays its laughing eyes once for each, after the keys are back.
+    @Published private(set) var dictationInsertedCount = 0
 
     /// Expires the offer a few seconds after the insertion.
     private var dictationUndoTimer: Timer?
@@ -1190,7 +1195,9 @@ class KeyboardState: ObservableObject {
             "registerControllerAppearance",
             details: "controllerID=\(controllerID) previousOwner=\(activeControllerID ?? "none") ownership=\(ownership.logDescription) wasVisible=\(isKeyboardVisible) \(sessionDetails())"
         )
+        let previous = ownership
         ownership = ownership.appearing(controllerID: controllerID)
+        if ownership.opensKeyboard(appearingAfter: previous) { MainActor.assumeIsolated { KeyboardSmartModeState.shared.keyboardOpened() } }
 
         // A locally-owned stage with no generation behind it is stale by construction
         // (#361). Discarded here rather than narrowed by the drawing rule alone, so a

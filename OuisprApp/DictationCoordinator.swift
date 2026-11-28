@@ -29,11 +29,11 @@ class DictationCoordinator: ObservableObject {
     /// lives in `DictationErrorChannel`.
     @Published var lastResult: String?
 
-    /// Forwarded from UnifiedAudioEngine for waveform visualization in RecordingView.
-    @Published var bufferEnergy: [Float] = []
-
-    /// Forwarded from UnifiedAudioEngine for elapsed time display in RecordingView.
-    @Published var bufferSeconds: Double = 0
+    /// The levels and elapsed time, forwarded from UnifiedAudioEngine for the recording
+    /// screen. Published by their own object, not by the coordinator: they change about
+    /// twelve times a second, and every view observing the coordinator re-rendered on
+    /// each change (audit, 22 Nov 2026, finding 7).
+    let levels = DictationLevels()
 
     // MARK: - Private
 
@@ -364,7 +364,7 @@ class DictationCoordinator: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] energy in
                 guard let self else { return }
-                self.bufferEnergy = energy
+                self.levels.energy = energy
                 // Only forward to Dynamic Island when user is actively recording
                 guard self.audioEngine.isRecording else { return }
                 LiveActivityManager.shared.updateWaveform(levels: energy)
@@ -372,7 +372,7 @@ class DictationCoordinator: ObservableObject {
         secondsCancellable = audioEngine.$bufferSeconds
             .receive(on: DispatchQueue.main)
             .sink { [weak self] seconds in
-                self?.bufferSeconds = seconds
+                self?.levels.seconds = seconds
             }
 
         // Observe keyboard-initiated stop/cancel signals via Darwin notifications.
@@ -617,8 +617,8 @@ class DictationCoordinator: ObservableObject {
         // And the previous dictation's "text is in the Ouispr app" banner (#860): a new
         // dictation is the user moving on. The keyboard clears it at its own mic tap too.
         RecoveredTranscriptionChannel.clear()
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         // Cancel any polish still running from the previous dictation (#141).
         PolishCoordinator.shared.cancelInflight()
         polishPrewarmTask?.cancel()
@@ -732,9 +732,12 @@ class DictationCoordinator: ObservableObject {
                     // capturing for a dictation the user called off -- the orphaned
                     // engine of #60, arrived at from the other end.
                     guard mayReport(session, "warm start") else { return }
+                    // The microphone first, the listening state once it delivers audio
+                    // (audit of 26 Nov 2026): the screen used to say « listening » over
+                    // an engine that had not captured its first buffer yet.
+                    guard try await startsListening(audioEngine, session: session, "warm start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
-                    try audioEngine.startRecording()
                     PersistentLog.log(.audioEngineStarted)
                     schedulePolishPrewarm()
                     await verifyAudioFlow()
@@ -781,7 +784,8 @@ class DictationCoordinator: ObservableObject {
                     // Checks `mayReport(session, "cold start")` first, then makes sure the
                     // session is up before the engine waits on its route (#775).
                     guard try await activateSessionForColdStart(after: firstActivation, engine: audioEngine, session: session, origin: origin) else { return }
-                    try audioEngine.startRecording()
+                    // Same order as the warm start: listening is shown over live audio.
+                    guard try await startsListening(audioEngine, session: session, "cold start first audio") else { return }
                     updateStatus(.recording)
                     LiveActivityManager.shared.transitionToRecording()
                     PersistentLog.log(.audioEngineStarted)
@@ -884,7 +888,9 @@ class DictationCoordinator: ObservableObject {
     ///     (#851): the stop sound would play over the call that cut it.
     ///   - stopTrace: the keyboard's stop tap, when a tap is what stopped it. Each step
     ///     up to the start of transcription logs its delay from that tap (#862).
-    func stopDictation(playsStopSound: Bool = true, stopTrace: StopTimingTrace? = nil) {
+    ///   - cause: what ended the recording, written in the log with what it held. No
+    ///     default on purpose: every way in names itself (audit of 26 Nov 2026).
+    func stopDictation(cause: DictationStopCause, playsStopSound: Bool = true, stopTrace: StopTimingTrace? = nil) {
         // Issue #144 re-entry guard: refuse if a transcription is already in flight.
         // Without this, tapping stop multiple times during a long model swap (e.g.
         // turbo load) spawned 3+ concurrent transcribe() calls that cancelled each
@@ -911,6 +917,7 @@ class DictationCoordinator: ObservableObject {
                 // mutes its input (#430), so there is no separate engine-stop step.
                 let samples = audioEngine.collectSamples()
                 stopTrace?.log("samplesCollected")
+                logStop(cause: cause, samples: samples)
 
                 guard !samples.isEmpty else {
                     // Logged before the session gate, like `recordingTooShort` below:
@@ -1053,6 +1060,11 @@ class DictationCoordinator: ObservableObject {
                 // polishing in place (decision 4).
                 switch dictationOrigin {
                 case .app:
+                    // The mode was for this dictation only: Home's mode button goes back
+                    // to Normal, or to the default the user set (« bouton mode » bench,
+                    // 25 Nov 2026). Here, once the mode is snapshotted and the audio is
+                    // transcribed: a dictation cancelled earlier keeps the user's pick.
+                    SmartModeDefault.returnToDefault()
                     // The skipped notice is deliberately not passed here: this
                     // target has no non-fatal notice surface, which is the gap
                     // `finishInApp` already documents against a Smart Mode refusal.
@@ -1117,8 +1129,8 @@ class DictationCoordinator: ObservableObject {
         _ = audioEngine.collectSamples()
 
         // Reset all state
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         cleanupRecordingKeys()
         // Nothing is coming back from the keyboard for a dictation that is over (#361).
         endPolishHandoff(abandonedAs: "cancelled")
@@ -1177,7 +1189,7 @@ class DictationCoordinator: ObservableObject {
                 // (#868): a process started before first unlock can read it false forever.
                 guard self.mayActOnKeyboardSignal(.stop, flagKey: SharedKeys.stopRequested) else { return }
                 stopTrace?.log("appMainHop")
-                self.stopDictation(stopTrace: stopTrace)
+                self.stopDictation(cause: .keyboard, stopTrace: stopTrace)
             }
         }
 
@@ -1238,7 +1250,7 @@ class DictationCoordinator: ObservableObject {
         if let data = try? JSONEncoder().encode(cappedEnergy) {
             defaults.set(data, forKey: SharedKeys.waveformEnergy)
         }
-        defaults.set(bufferSeconds, forKey: SharedKeys.recordingElapsedSeconds)
+        defaults.set(levels.seconds, forKey: SharedKeys.recordingElapsedSeconds)
         defaults.synchronize()
 
         DarwinNotificationCenter.post(DarwinNotificationName.waveformUpdate)
@@ -1998,9 +2010,14 @@ extension DictationCoordinator {
 
         let samples = audioEngine.currentSampleCount
         let decision = InterruptedDictationPolicy.decide(
-            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration
+            status: status, cause: cause, capturedSeconds: Double(samples) / 16000.0, minimum: minimumRecordingDuration, capturedPeak: audioEngine.capturedPeak
         )
         PersistentLog.log(.recordingInterrupted(status: status.rawValue, samples: samples, decision: decision))
+
+        // Nothing has been said yet: the microphone comes back and the recording goes on.
+        // A call still holding the microphone makes `startRecording` throw (its call
+        // guard), and the recording then ends the way it did before the guard existed.
+        if decision == .keepListening, resumesListening(audioEngine) { return }
 
         guard decision == .fail else {
             // The stop path collects the samples and gives a clip under the minimum
@@ -2010,7 +2027,7 @@ extension DictationCoordinator {
             // Timed like a tap (#862), from this handler and under `sessionID=interruption`:
             // the main-thread stalls logged after an interruption fall in this window.
             if decision != .letTranscriptionFinish {
-                stopDictation(playsStopSound: false, stopTrace: .tapped(sessionID: "interruption"))
+                stopDictation(cause: .interruption, playsStopSound: false, stopTrace: .tapped(sessionID: "interruption"))
             }
             return
         }
@@ -2024,8 +2041,8 @@ extension DictationCoordinator {
         isTranscribingInFlight = false
         stopStageWatchdog()
 
-        bufferEnergy = []
-        bufferSeconds = 0
+        levels.energy = []
+        levels.seconds = 0
         cleanupRecordingKeys()
         endPolishHandoff(abandonedAs: "interrupted")
 

@@ -80,7 +80,7 @@ struct OnboardingProgressBar: View {
                     .frame(height: 4)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: current)
+        .animation(.easeInOut(duration: Motion.standard), value: current)
         // One element for VoiceOver instead of five silent capsules.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Step \(current + 1) of \(segmentCount)"))
@@ -128,7 +128,7 @@ struct OnboardingTopBar: View {
                         Image(systemName: "chevron.backward")
                             .font(.body.weight(.semibold))
                             // The accent, as the system tints its own back chevron.
-                            .foregroundStyle(Color.ouisprAccent)
+                            .foregroundStyle(Color.ouisprAccentText)
                             .frame(
                                 width: OnboardingMetrics.topBarHeight,
                                 height: OnboardingMetrics.topBarHeight,
@@ -581,7 +581,7 @@ struct OnboardingDownloadPill: View {
                         .rotationEffect(.degrees(-90))
                 }
                 .frame(width: 16, height: 16)
-                .animation(.easeInOut(duration: 0.3), value: fraction)
+                .animation(.easeInOut(duration: Motion.standard), value: fraction)
 
                 (Text(verbatim: "\(model.displayName) · ")
                     + Text(fraction, format: .percent.precision(.fractionLength(0))))
@@ -798,7 +798,7 @@ struct OnboardingStepBadge: View {
             .foregroundStyle(isLit ? Color.white : Color.secondary)
             .frame(width: 26, height: 26)
             .background(Circle().fill(isLit ? Color.ouisprAccent : Color.primary.opacity(0.08)))
-            .animation(.easeInOut(duration: 0.25), value: isLit)
+            .animation(.easeInOut(duration: Motion.standard), value: isLit)
     }
 }
 

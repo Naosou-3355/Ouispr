@@ -131,12 +131,12 @@ struct VocabularyScene: View {
             }
         }
         .sceneFinger(frame.finger)
-        .animation(.easeOut(duration: 0.35), value: frame.editorIsOpen)
-        .animation(.easeOut(duration: 0.35), value: frame.suggestionsAreOpen)
-        .animation(.easeOut(duration: 0.35), value: frame.reviewIsOpen)
-        .animation(.easeInOut(duration: 0.35), value: frame.suggestionIsListed)
-        .animation(.easeInOut(duration: 0.35), value: frame.manualTermIsListed)
-        .animation(.easeInOut(duration: 0.35), value: frame.suggestedTermIsListed)
+        .animation(.easeOut(duration: Motion.emphasized), value: frame.editorIsOpen)
+        .animation(.easeOut(duration: Motion.emphasized), value: frame.suggestionsAreOpen)
+        .animation(.easeOut(duration: Motion.emphasized), value: frame.reviewIsOpen)
+        .animation(.easeInOut(duration: Motion.emphasized), value: frame.suggestionIsListed)
+        .animation(.easeInOut(duration: Motion.emphasized), value: frame.manualTermIsListed)
+        .animation(.easeInOut(duration: Motion.emphasized), value: frame.suggestedTermIsListed)
     }
 
     /// `VocabularyListView`'s list: the feature's switch, the terms, the footer, *Add a
@@ -172,7 +172,7 @@ struct VocabularyScene: View {
 
             SceneListRow {
                 Label("Add a term", systemImage: "plus")
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                 Spacer()
             }
             .sceneGroup()
@@ -181,7 +181,7 @@ struct VocabularyScene: View {
 
             SceneListRow {
                 Label("Analyze my transcriptions", systemImage: "text.magnifyingglass")
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                 Spacer()
             }
             .sceneGroup()
@@ -430,7 +430,7 @@ private struct VocabularySceneSuggestions: View {
                     .foregroundColor(.secondary)
                 HStack(spacing: 20) {
                     Text("Accept")
-                        .foregroundStyle(Color.ouisprAccent)
+                        .foregroundStyle(Color.ouisprAccentText)
                         .sceneTapTarget(Target.accept)
                     Text("Ignore")
                         .foregroundStyle(.secondary)
@@ -604,7 +604,7 @@ struct SceneNavigationBar<Trailing: View>: View {
         if Trailing.self != EmptyView.self {
             trailing
                 .font(.system(size: 17))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .padding(.horizontal, 14)
                 .frame(height: 44)
                 .ouisprGlass(in: Capsule())

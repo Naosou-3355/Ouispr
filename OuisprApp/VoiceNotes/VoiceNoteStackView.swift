@@ -162,7 +162,7 @@ struct VoiceNoteStackView: View {
         VStack(spacing: 12) {
             Image(systemName: ProFeature.voiceNotes.icon)
                 .font(.system(size: 44))
-                .foregroundColor(.ouisprAccent.opacity(0.7))
+                .foregroundColor(.ouisprAccentText.opacity(0.7))
             Text("No unread voice notes")
                 .font(.ouisprSubheading)
             Text("Voice notes you have read are in History.")

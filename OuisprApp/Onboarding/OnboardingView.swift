@@ -192,7 +192,7 @@ struct OnboardingView: View {
         }
         // Prevent interactive dismiss (swipe down) on the fullScreenCover
         .interactiveDismissDisabled()
-        .animation(.easeInOut(duration: 0.3), value: step)
+        .animation(.easeInOut(duration: Motion.standard), value: step)
     }
 
     // MARK: - Skip

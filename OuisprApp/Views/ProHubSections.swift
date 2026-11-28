@@ -129,13 +129,25 @@ struct ProFeatureSwitchSection: View {
                 get: { switches.isOn(feature) },
                 set: { switches.set(feature, isOn: $0) }
             )) {
-                Text(LocalizedStringKey(feature.displayName))
+                switchTitle
             }
             .tint(.ouisprAccent)
         } footer: {
             if !isOn {
                 offFooter
             }
+        }
+    }
+
+    /// What the switch turns off, which for two features is more than the Pro part
+    /// the hub card sells (Pro offer, 25 Nov 2026): History off stops saving any
+    /// dictation, Vocabulary off stops the user's own terms too. So those two switches
+    /// carry the feature's plain name, not "Unlimited history" or "Learns from you".
+    private var switchTitle: Text {
+        switch feature {
+        case .history: return Text("History")
+        case .vocabulary: return Text("Vocabulary")
+        case .smartMode, .voiceNotes: return Text(LocalizedStringKey(feature.displayName))
         }
     }
 
@@ -276,7 +288,7 @@ struct ProHubMembershipCard: View {
                         .font(.ouisprSubheading)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.ouisprAccent.opacity(0.12))
@@ -317,7 +329,7 @@ struct ProHubMembershipCard: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Upgrade to lifetime")
                                 .font(.ouisprBody.weight(.semibold))
-                                .foregroundColor(.ouisprAccent)
+                                .foregroundColor(.ouisprAccentText)
                             Text("\(price), one payment")
                                 .font(.ouisprCaption)
                                 .foregroundColor(.secondary)

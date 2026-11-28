@@ -48,7 +48,7 @@ struct OnboardingScenePage<Card: View>: View {
     /// The scene's loop is not disturbed: its clock lives in the player's state, and a
     /// resize keeps the player's identity.
     private var pillAnimation: Animation? {
-        reduceMotion ? nil : .easeInOut(duration: 0.45)
+        reduceMotion ? nil : .easeInOut(duration: Motion.emphasized)
     }
 
     init(eyebrow: Text? = nil,
@@ -154,7 +154,7 @@ struct OnboardingSceneLayout<Card: View>: View {
             if let eyebrow {
                 eyebrow
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
             }
             OnboardingHeader(title: title, subtitle: line)
         }

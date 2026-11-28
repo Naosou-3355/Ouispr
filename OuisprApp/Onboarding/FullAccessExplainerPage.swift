@@ -102,7 +102,7 @@ private struct ExplainerPoint: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: systemImage)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.ouisprAccent)
+                .foregroundStyle(Color.ouisprAccentText)
                 .frame(width: 32, height: 32)
                 .background(Circle().fill(Color.ouisprAccent.opacity(0.12)))
                 .accessibilityHidden(true)
@@ -121,7 +121,7 @@ private struct ExplainerPoint: View {
             if showsLinkArrow {
                 Image(systemName: "arrow.up.right")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.ouisprAccent)
+                    .foregroundStyle(Color.ouisprAccentText)
                     .padding(.top, 4)
                     .accessibilityHidden(true)
             }

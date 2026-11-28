@@ -55,11 +55,11 @@ struct SwipeUpHintView: View {
                     // pointing at a paywall would be a lie about the gesture.
                     Image(systemName: "lock.fill")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                 } else {
                     Image(systemName: "chevron.compact.up")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.ouisprAccent)
+                        .foregroundColor(.ouisprAccentText)
                         .offset(y: isBouncing ? -bounceDistance : 0)
                 }
                 label
@@ -82,7 +82,7 @@ struct SwipeUpHintView: View {
             // Turning the setting on mid-session has to stop the loop, not wait for
             // the next launch: the animation is already running with `repeatForever`.
             if isReduced || isLocked {
-                withAnimation(.easeOut(duration: 0.2)) { isBouncing = false }
+                withAnimation(.easeOut(duration: Motion.quick)) { isBouncing = false }
             } else {
                 startBouncing()
             }

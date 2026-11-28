@@ -74,7 +74,7 @@ struct WhatsNewView: View {
                 .id(step)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: step)
+        .animation(.easeInOut(duration: Motion.standard), value: step)
         .onAppear { recordSeenIfOnScreen() }
         .onChange(of: scenePhase) { _, _ in recordSeenIfOnScreen() }
     }
@@ -118,7 +118,9 @@ struct WhatsNewView: View {
     private var page: some View {
         switch step {
         case .smartModesScene:
-            SmartModesScenePage(
+            // Home's mode button, not the keyboard's fan: What's new announced the long
+            // press on Home's mic, which the button replaced (audit of 26 Nov 2026).
+            ModeButtonScenePage(
                 eyebrow: Text("New in Ouispr",
                               comment: "What's new for existing users: small label above the title of its first page, the Smart Modes scene (#685)."),
                 modelManager: modelManager,

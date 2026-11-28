@@ -46,14 +46,25 @@ struct VocabularyListView: View {
     /// Group, which publishes nothing.
     @EnvironmentObject private var proStatus: ProStatusManager
 
-    /// Whether the terms below the switch are live: `FeatureGate.isAvailable`, the one
-    /// predicate. Off, they stay visible and cannot be edited, since the replacement
-    /// pass applies none of them (#216 decision 5).
+    /// Whether the terms below the switch are live: `VocabularyAvailability.isEntitled`,
+    /// the switch alone since the user's own list became free (Pro offer, 25 Nov 2026).
+    /// Off, they stay visible and cannot be edited, since the replacement pass applies
+    /// none of them (#216 decision 5).
     private var isAvailable: Bool {
         _ = switches.isOn(.vocabulary)
-        _ = proStatus.isProActive
-        return FeatureGate.isAvailable(.vocabulary)
+        return VocabularyAvailability.isEntitled
     }
+
+    /// Whether "Analyze my transcriptions" opens the suggestions, the Pro half of the
+    /// feature; without Pro it opens the Ouispr Pro window on it.
+    private var suggestionsAreUnlocked: Bool {
+        _ = switches.isOn(.vocabulary)
+        _ = proStatus.isProActive
+        return VocabularyAvailability.suggestionsAreUnlocked
+    }
+
+    /// Opens the Ouispr Pro window from the suggestions button.
+    @State private var showsPaywall = false
 
     var body: some View {
         List {
@@ -120,9 +131,23 @@ struct VocabularyListView: View {
             // Below **Add a term** because it is another way of adding one.
             Section {
                 Button {
-                    showSuggestions = true
+                    if suggestionsAreUnlocked {
+                        showSuggestions = true
+                    } else if PremiumFlags.paywallVisible {
+                        showsPaywall = true
+                    }
                 } label: {
-                    Label("Analyze my transcriptions", systemImage: "text.magnifyingglass")
+                    HStack {
+                        Label("Analyze my transcriptions", systemImage: "text.magnifyingglass")
+                        Spacer()
+                        // Marked rather than hidden, for #395's reason: a user who
+                        // subscribes would otherwise never learn it was there.
+                        if !suggestionsAreUnlocked && PremiumFlags.paywallVisible {
+                            Text(verbatim: "Pro")
+                                .font(.ouisprCaption.weight(.semibold))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             } footer: {
                 Text("Words from your History that Ouispr may be getting wrong.")
@@ -156,6 +181,7 @@ struct VocabularyListView: View {
                 VocabularySuggestionsView()
             }
         }
+        .paywallCover(isPresented: $showsPaywall, entry: .feature(.vocabulary))
         .confirmationDialog(
             "Reset vocabulary?",
             isPresented: $showResetConfirmation,

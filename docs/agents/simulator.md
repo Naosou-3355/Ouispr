@@ -539,3 +539,17 @@ Two things to know before trying: the simulator captures the **Mac's** input dev
 ```
 
 **What does work**, beyond plain screens: the App Group container and `ouispr_debug.log` (with a signed build), and Live Activities — one started and rendered in the Dynamic Island during this run.
+
+**A voice, without the Mac's microphone.** Since Xcode 27 the simulator receives exact silence from the Mac's microphone: there is no Simulator app left to ask macOS for it. Measured 2026-11-22: every `waveformSnapshot` at `0.000` while a sentence was played next to the Mac, and the dictation ended in `no speech detected`. A Debug build running in a simulator can instead play a recording in place of the microphone (`FakeMicrophone`, wired in `UnifiedAudioEngine`). Only the 16 kHz samples are swapped, buffer by buffer, so the sphere, the waveform and the transcription see a real voice at real speed. Each dictation starts the recording from its first word, and silence follows its end.
+
+```bash
+say -v Thomas -o voice.wav --file-format=WAVE --data-format=LEI16@16000 "Une phrase de dictée ordinaire."
+# For one launch:
+SIMCTL_CHILD_OUISPR_FAKE_MIC="$PWD/voice.wav" xcrun simctl launch <udid> com.pivi.dictus
+# Or for every launch, including one from the home screen:
+xcrun simctl spawn <udid> defaults write com.pivi.dictus OuisprFakeMic "$PWD/voice.wav"
+# Back to the real (silent) microphone:
+xcrun simctl spawn <udid> defaults delete com.pivi.dictus OuisprFakeMic
+```
+
+The app reads the host path directly. Release builds and devices do not contain this code. It is not a device validation: the audio session, the route and the real microphone are not exercised.

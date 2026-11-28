@@ -44,7 +44,20 @@ public enum HistoryAvailability {
     /// entitlement, and a subscriber who turned History off in Settings has said
     /// what they want. Turning it off stops new dictations being stored; it does not
     /// take away what is already stored — see `clearRowIsVisible`.
+    ///
+    /// **Since the Pro offer of 25 Nov 2026 the history itself is free**: keeping,
+    /// showing and deleting it need only the History switch. What Pro adds is the
+    /// search past `freeSearchDays` (`searchIsUnlimited`). The name is kept so every
+    /// existing consumer (the store, Settings, the screen) follows without an edit.
     public static var isEntitled: Bool {
+        FeatureGate.isEnabled(.history)
+    }
+
+    /// How far back the free search reaches, in days (Pro offer, 25 Nov 2026).
+    public static let freeSearchDays = 7
+
+    /// Whether the search covers the whole history: Pro, with History switched on.
+    public static var searchIsUnlimited: Bool {
         FeatureGate.isAvailable(.history)
     }
 

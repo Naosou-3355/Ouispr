@@ -1,24 +1,36 @@
 // OuisprKeyboard/Views/RecordingOverlay.swift
+import QuartzCore
 import SwiftUI
 import OuisprCore
 
-/// Full-screen recording overlay that replaces the keyboard during active recording.
-/// Shows different visual states based on DictationStatus:
-/// - .requested: flat waveform bars, "Démarrage..." text, cancel-only button
-/// - .recording: live waveform, elapsed timer, cancel + stop buttons
-/// - .transcribing: sine-sweep waveform, "Transcription..." text
-/// - .processing: travelling-peak waveform, "Traitement..." text (#267)
+/// The listening screen that replaces the keyboard while a dictation runs.
 ///
-/// WHY this replaces the keyboard:
-/// Wispr Flow-inspired design -- when recording, the keyboard area transforms into
-/// an immersive recording UI. This prevents accidental key presses during dictation
-/// and provides clear visual feedback that the mic is active.
+/// Lot 1.6 (Alex's bench of 28 Nov 2026, « micro qui se transforme »): when the mic is
+/// tapped, its three bars change in place. The two on the right spring into the ✓ that
+/// ends the dictation, where the user tapped; the left one flies to the far left, where
+/// the ☰ was, and becomes the ✕ that cancels it. Both are bare ink glyphs, no disc. That
+/// leaves the centre to one ample ink wave that follows the voice, with a quiet state
+/// word under it. When the text is in, the keys come back at once and the mic plays the
+/// laughing eyes on its own (`InkBarsMicButton`): nothing here waits for it.
 ///
-/// WHY dedicated keyboard waveform driver:
-/// The shared BrandWaveform uses TimelineView, which proved fragile inside the keyboard
-/// extension after suspension/resume. The keyboard now owns a single explicit animation
-/// driver that starts and stops with the overlay lifecycle, while this view stays a thin
-/// container around rendering and controls.
+/// - .requested: the bars turn into ✕ and ✓ (✓ in full ink but inert until the recording
+///   starts), a breathing wave, « J'écoute »
+/// - .recording: ✕ and ✓, the wave follows the voice, « J'écoute »
+/// - .transcribing / .processing: ✓ greyed, no ✕ (neither stage can be cancelled, #267),
+///   a calm travelling wave, « Transcription »
+///
+/// WHY the top row copies the bar's layout to the point: the overlay replaces the bar in
+/// one frame, so the bars it starts from must sit exactly where the mic's were. Then the
+/// swap cannot be seen and the morph reads as the mic itself changing.
+///
+/// WHY it replaces the keyboard: when recording, the keyboard area turns into the
+/// listening UI. This prevents accidental key presses during dictation and gives clear
+/// feedback that the mic is live.
+///
+/// WHY the wave is driven by `KeyboardWaveformDriver` and not a `TimelineView`: a
+/// `TimelineView` proved fragile inside the keyboard extension after suspension and
+/// resume. The driver's display link starts and stops with the overlay, and it already
+/// carries the voice's levels; the wave reads them on each of its ticks.
 struct RecordingOverlay: View {
     /// The stage to draw — `KeyboardState.displayedDictationStatus`, not the raw
     /// dictation status (#309). The two differ for at most half a second, while a
@@ -29,80 +41,63 @@ struct RecordingOverlay: View {
     /// hold itself by its `transcribingHoldArmed` / `transcribingHoldReleased` probes,
     /// so a log still says both what happened and what the user saw.
     let dictationStatus: DictationStatus
+    /// Only reported in the probes: the eyes read the driver's smoothed levels.
     let waveformEnergy: [Float]
-    let elapsedSeconds: Double
-    @ObservedObject var waveformDriver: KeyboardWaveformDriver
+    /// Passed through to the eyes, which observe it; the overlay does not.
+    let waveformDriver: KeyboardWaveformDriver
     let onCancel: () -> Void
     let onStop: () -> Void
 
-    /// Display name of the armed Smart Mode, or nil for Normal (#79).
-    ///
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     /// The armed Smart Mode, or nil for Normal (#79).
     ///
     /// **This is the indicator that makes a sticky mode safe.** The mode survives
-    /// restarts and can have been armed a week ago; the mic pill's badge names it,
-    /// but by the time the overlay is up the mic is gone and the badge with it.
-    /// Naming it here means the user reads "List" while speaking, with the cancel
-    /// button one tap away — which is the difference between a setting they forgot
-    /// and a setting that cost them a dictation.
+    /// restarts and can have been armed a week ago; the mic's badge names it, but by
+    /// the time the overlay is up the mic is gone and the badge with it. Naming it here
+    /// means the user reads "List" while speaking, with the cancel button one tap
+    /// away — which is the difference between a setting they forgot and a setting that
+    /// cost them a dictation.
     var armedSmartMode: SmartMode?
 
     @State private var instanceID = String(UUID().uuidString.prefix(8))
 
-    /// Adaptive foreground color -- dark on light keyboard, light on dark keyboard.
-    @Environment(\.colorScheme) private var colorScheme
-
-    /// Timer font size scales with Dynamic Type.
-    ///
-    /// WHY @ScaledMetric:
-    /// Keyboard extensions should respect Dynamic Type. Using @ScaledMetric makes
-    /// the timer font size scale proportionally with the user's text size setting,
-    /// while keeping monospaced design for proper digit alignment.
-    @ScaledMetric private var timerFontSize: CGFloat = 20
-
-    private var foregroundColor: Color {
-        colorScheme == .dark ? .white : Color(white: 0.15)
-    }
-
-    /// Shared with `ToolbarView`'s pill icons so the two bars stay one system
-    /// (#241). Same values as the local definition it replaces.
-    private var secondaryForeground: Color { .ouisprPillIconSecondary }
-
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar: varies by state but has consistent height. The armed-mode
-            // badge is stacked over it rather than placed inside its branches
-            // because all three reserve the same 52 pt and the badge belongs in the
-            // centre of all three — including `.transcribing` / `.processing`, whose
-            // bar is deliberately empty and whose wait is the longest.
-            ZStack {
-                topBar
-                armedModeBadge
-            }
+            topRow
 
-            // Waveform area fills remaining space between topBar and footer.
-            // WHY no GeometryReader: On the first frame, the hosting view may still be
-            // at toolbar height (52pt) before expanding to full keyboard height.
-            // GeometryReader would measure the old frame, rendering the waveform
-            // compressed at the top for ~1 frame before re-measuring. Using a fixed
-            // maxHeight + Spacers ensures the waveform is centered from the first frame.
-            VStack(spacing: 8) {
-                Spacer(minLength: 0)
+            // WHY Spacers and no GeometryReader around the whole: on the first frame the
+            // hosting view may still be at toolbar height (52 pt) before growing to the
+            // keyboard's. Fixed sizes between Spacers are centred from the first frame.
+            Spacer(minLength: 0)
 
-                KeyboardWaveformView(
-                    maxHeight: 120,
-                    driver: waveformDriver
-                )
-                .padding(.horizontal, 2)
+            // The frame holds the wave at full voice (about 60 pt each side of its axis at
+            // the app's size), so a loud syllable never runs into « J'écoute » below.
+            KeyboardInkWave(status: dictationStatus, driver: waveformDriver, scale: isCompactHeight ? 0.42 : 1)
+                .frame(height: isCompactHeight ? 52 : 124)
 
-                Spacer(minLength: 0)
-            }
-            .frame(maxHeight: .infinity)
+            stateWord
+                .padding(.top, 12)
+                // Capped so a large text size cannot push the word under the keyboard's
+                // edge in landscape.
+                .dynamicTypeSize(...DynamicTypeSize.xxLarge)
 
-            // Footer: varies by state
-            footer
+            Spacer(minLength: 0)
         }
-        .background(Color.clear)
+        .frame(maxWidth: .infinity)
+        .background(GeometryReader { proxy in
+            // The overlay's laid-out size, once per overlay (lot 1.5): the proof on a
+            // device log that the listening screen had its room, the face included.
+            Color.clear.onAppear {
+                PersistentLog.log(.diagnosticProbe(
+                    component: "RecordingOverlay",
+                    instanceID: instanceID,
+                    action: "laidOut",
+                    details: "size=\(Int(proxy.size.width))x\(Int(proxy.size.height)) status=\(dictationStatus.rawValue) compact=\(isCompactHeight) reduceMotion=\(reduceMotion)"
+                ))
+            }
+        })
         .onAppear {
             PersistentLog.log(.diagnosticProbe(
                 component: "RecordingOverlay",
@@ -125,6 +120,7 @@ struct RecordingOverlay: View {
             ))
         }
         .onChange(of: dictationStatus) { _, newStatus in
+            morph()
             PersistentLog.log(.diagnosticProbe(
                 component: "RecordingOverlay",
                 instanceID: instanceID,
@@ -134,82 +130,178 @@ struct RecordingOverlay: View {
         }
     }
 
-    // MARK: - Top bar (varies by state)
+    // MARK: - Pieces
 
-    /// Top bar with recording control buttons.
+    /// True in iPhone landscape, where the keyboard and its bar are about 222 pt tall:
+    /// the wave drops from 64 to 40 pt.
+    private var isCompactHeight: Bool { verticalSizeClass == .compact }
+
+    /// Whether the bars have turned into ✕ and ✓. False only for the first frames of an
+    /// overlay that opens on a tap, where it is the mic as the bar drew it.
+    @State private var isMorphed = false
+
+    /// How long the start (the mic as the bar drew it) stays on screen before the spring.
     ///
-    /// WHY @ViewBuilder: Each state shows different buttons but reserves the same
-    /// vertical space (10pt + 36pt pill + 6pt = 52pt total), so the BrandWaveform
-    /// below never shifts vertically during state transitions.
+    /// WHY a delay at all (lot 1.7, Alex's iPhone video of the 1.6): setting `isMorphed`
+    /// in `onAppear` lands in the same pass that inserts the overlay, so SwiftUI never
+    /// draws the start and the screen arrived with ✕ and ✓ already in place. Even the next
+    /// main-queue turn can run before Core Animation commits the frame. 50 ms is three
+    /// frames at 60 Hz: the start is drawn for certain, and too short to read as a wait.
+    private static let morphStartHold: TimeInterval = 0.05
+    /// Set by `morph()` when the spring is to play; the task above plays it.
+    @State private var morphRequested = false
+    /// The glyphs' opacity, which is all that changes under Reduce Motion.
+    @State private var glyphOpacity: Double = 1
+
+    /// ✕ where the ☰ was, the armed mode in the middle, ✓ where the mic was.
     ///
-    /// WHY 10pt on top and not 6 (#241 device feedback): this bar replaces
-    /// `ToolbarView`, which is 52pt tall with 4pt of top padding and centres its
-    /// pills — putting their top edge at y=10. At 6pt these pills sat 4pt higher,
-    /// so starting a recording made both of them visibly jump up a notch. The
-    /// asymmetric padding is what makes the two bars interchangeable.
-    ///
-    /// Horizontal alignment was already correct: the 17pt trailing inset offsets
-    /// the mic's 66pt ring around its 56pt pill, so the right-hand pill keeps the
-    /// same edge in both bars.
-    @ViewBuilder
-    private var topBar: some View {
-        switch dictationStatus {
-        case .requested:
-            // Cancel only (no stop button -- nothing to stop yet)
-            HStack {
-                PillButton(icon: "xmark", color: secondaryForeground) {
-                    HapticFeedback.recordingStopped()
-                    onCancel()
-                }
-                Spacer()
-            }
-            .padding(.leading, 12)
-            .padding(.trailing, 17)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-
-        case .transcribing, .processing:
-            // Reserve same height as button row so waveform doesn't shift.
-            // The LLM stage is not cancellable (#267), so it shows the same empty
-            // bar as transcription rather than a button that would do nothing.
-            Color.clear
-                .frame(height: 36)
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-
-        default:
-            // Cancel (left) and validate (right) -- pill-shaped Liquid Glass buttons
-            HStack {
-                PillButton(icon: "xmark", color: secondaryForeground) {
-                    HapticFeedback.recordingStopped()
-                    onCancel()
-                }
-
-                Spacer()
-
-                PillButton(icon: "checkmark", color: .ouisprSuccess) {
-                    HapticFeedback.recordingStopped()
-                    onStop()
+    /// The same paddings, height and slot widths as `ToolbarView`'s bar (12 pt sides,
+    /// 4 pt top, 52 pt, 56 × 44 slots), so the bars the morph starts from sit exactly on
+    /// the mic it replaces.
+    private var topRow: some View {
+        GeometryReader { proxy in
+            // From the ✓'s slot to the ✕'s: the distance the left bar flies.
+            let travel = max(0, proxy.size.width - 56)
+            ZStack {
+                armedModeBadge
+                HStack(spacing: 0) {
+                    cancelButton(travel: travel)
+                    Spacer(minLength: 0)
+                    confirmButton
                 }
             }
-            .padding(.leading, 12)
-            .padding(.trailing, 17)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .frame(height: 52)
+        .onAppear(perform: morph)
+        // The spring after the start hold. A task, so it is cancelled with the overlay.
+        .task(id: morphRequested) {
+            guard morphRequested else { return }
+            try? await Task.sleep(nanoseconds: UInt64(Self.morphStartHold * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            withAnimation(InkBarsMicButton.morphSpring) { isMorphed = true }
         }
     }
 
-    /// The armed mode's name, centred between the top bar's two pills (#79).
+    /// Starts the morph, when `ListeningMorph` says this opening plays it: within its
+    /// window of a mic tap, in `.requested` or already in `.recording` after the trip to
+    /// the app (once per tap there). Otherwise the screen starts as ✕ and ✓.
+    private func morph() {
+        guard !isMorphed, !morphRequested else { return }
+        // The overlay is inserted as soon as the real stage owns the keyboard area, but
+        // the stage it draws (`displayedDictationStatus`) can still read `.idle` in that
+        // pass: measured on the simulator, 28 Nov 2026, and the reason the 1.6's
+        // `.requested` check never played the morph. Decide on the first real stage, from
+        // `onChange`; meanwhile the bars stay as the mic drew them.
+        guard dictationStatus != .idle else { return }
+        let plays = !reduceMotion && ListeningMorph.claimMorph(status: dictationStatus)
+        PersistentLog.log(.diagnosticProbe(
+            component: "RecordingOverlay",
+            instanceID: instanceID,
+            action: "morph",
+            details: "plays=\(plays) status=\(dictationStatus.rawValue) reduceMotion=\(reduceMotion)"
+        ))
+        if plays {
+            morphRequested = true
+        } else {
+            isMorphed = true
+            if reduceMotion {
+                // Reduce Motion: no stroke moves, the glyphs fade in.
+                glyphOpacity = 0
+                // Next run-loop turn, or the fade starts from the 1 already drawn.
+                DispatchQueue.main.async {
+                    withAnimation(.easeOut(duration: 0.2)) { glyphOpacity = 1 }
+                }
+            }
+        }
+    }
+
+    /// The ✕: the mic's left bar, which flies from the mic's slot to this one and splits
+    /// into the cross. Shown while a cancel can do something; hidden, its room kept, while
+    /// the words are worked out (#267).
+    private func cancelButton(travel: CGFloat) -> some View {
+        // Also after a failure: if the overlay is still up then, the ✕ is the way out.
+        let cancellable = dictationStatus == .requested || dictationStatus == .recording
+            || dictationStatus == .failed
+        return Button {
+            HapticFeedback.recordingStopped()
+            onCancel()
+        } label: {
+            glyph(isMorphed ? InkMicGlyph.cross.strokes : InkMicGlyph.leftBarOnly)
+                .offset(x: isMorphed ? 0 : travel)
+        }
+        .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.7))
+        .opacity(cancellable ? 1 : 0)
+        .disabled(!cancellable)
+        .accessibilityHidden(!cancellable)
+        .accessibilityLabel(Text("Cancel", comment: "VoiceOver name of the ✕ that cancels a dictation on the keyboard's listening screen (lot 1.4)."))
+    }
+
+    /// The ✓: the mic's centre and right bars, which turn into the tick in place. It ends
+    /// the dictation and writes it.
     ///
-    /// WHY the 2 pt offset: the bar's padding is asymmetric — 10 pt above, 6 pt
-    /// below, which is what makes it interchangeable with `ToolbarView` (see
-    /// `topBar`). So the pills' own centre sits 2 pt below the region's, and a badge
-    /// centred on the region would read as sitting slightly high next to them.
+    /// Greyed only while the words are worked out, a stage that lasts and is labelled
+    /// « Transcription ». In `.requested`, which lasts about 100 ms, it stays in full ink:
+    /// a grey that flashed for 100 ms read as a flicker on Alex's iPhone (NN/g: a state too
+    /// short to read is noise, not status).
     ///
-    /// Renders nothing at all for Normal. An "off" state announced on every dictation
-    /// is noise, and the absence is already unambiguous — the mic that opened this
-    /// was blue.
+    /// A tap in `.requested` is ignored, with no press effect (disabled), rather than
+    /// remembered: a remembered stop would end a recording the moment it began, keeping
+    /// nothing, and turn a hesitant double tap into a lost dictation. Ignored, the user
+    /// sees the wave answer and taps again.
+    private var confirmButton: some View {
+        let confirmable = dictationStatus == .recording
+        let greyed = dictationStatus == .transcribing || dictationStatus == .processing
+        return Button {
+            HapticFeedback.recordingStopped()
+            onStop()
+        } label: {
+            glyph(isMorphed ? InkMicGlyph.check.strokes : InkMicGlyph.barsWithoutLeft)
+                .opacity(greyed && isMorphed ? 0.35 : 1)
+        }
+        .buttonStyle(GlassPressStyle(pressedScale: 0.88, pressedOpacity: 0.7))
+        .disabled(!confirmable)
+        .accessibilityLabel(Text("Confirm", comment: "VoiceOver name of the ✓ that ends a dictation and writes it, on the keyboard's listening screen: « Valider » (lot 1.5)."))
+    }
+
+    /// One bare ink glyph in the mic's 26 pt box, centred in a 56 × 44 target (Apple's
+    /// 44 pt minimum), the mic's own slot.
+    private func glyph(_ strokes: [InkStroke]) -> some View {
+        InkStrokesShape(strokes)
+            .fill(Color.ouisprInk)
+            .frame(width: 26, height: 26)
+            .opacity(glyphOpacity)
+            .frame(width: 56, height: 44)
+            // A keyboard extension delivers no touch on fully transparent pixels: without
+            // this fill only the glyph's strokes would answer.
+            .background(Color.black.opacity(0.001))
+            .contentShape(Rectangle())
+    }
+
+    /// One word under the wave, 13 pt in the quiet grey. It holds the room of the longer
+    /// word, so the wave above never moves when it changes, and it says nothing at the end.
+    private var stateWord: some View {
+        ZStack {
+            Text("Listening", comment: "One word under the eyes on the keyboard's listening screen, while it listens: « J'écoute » (lot 1.4).").hidden()
+            Text("Transcribing", comment: "One word under the eyes on the keyboard's listening screen, while the words are worked out: « Transcription » (lot 1.4).").hidden()
+            switch dictationStatus {
+            case .requested, .recording:
+                Text("Listening", comment: "One word under the eyes on the keyboard's listening screen, while it listens: « J'écoute » (lot 1.4).")
+            case .transcribing, .processing:
+                Text("Transcribing", comment: "One word under the eyes on the keyboard's listening screen, while the words are worked out: « Transcription » (lot 1.4).")
+            case .idle, .ready, .failed:
+                EmptyView()
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(Color.ouisprTextTertiary)
+        .lineLimit(1)
+    }
+
+    /// The armed mode's name (#79). Renders nothing for Normal: an "off" state announced
+    /// on every dictation is noise, and the absence is already unambiguous.
     @ViewBuilder
     private var armedModeBadge: some View {
         if let armedSmartMode {
@@ -221,106 +313,81 @@ struct RecordingOverlay: View {
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
             }
-            .foregroundColor(.ouisprAccent)
+            .foregroundColor(.ouisprAccentText)
             .padding(.horizontal, 12)
             .frame(height: 28)
             .background(Capsule().fill(Color.ouisprAccent.opacity(0.14)))
-            .offset(y: 2)
+        } else {
+            Color.clear
+        }
+    }
+}
+
+// MARK: - Wave
+
+/// The listening wave in the centre: the app's own (lot 1.8, Alex: « trop différente de
+/// celle de l'app »). One `InkCharacterDriver`, the same code as the app's character,
+/// in `.listening` while recording and `.working` while the words are worked out, fed
+/// the same voice level as the app's (`DictationLevels.recentPeak`: the peak of the last
+/// four energy buckets). So the wave is the app's at the app's size, 8 pt thick and about
+/// 108 pt wide, its three middle ondulations rising one by one with the voice.
+///
+/// A filled `Shape` in flat ink, never a `Canvas` with a gradient: the 1.4 eyes, drawn
+/// that way, did not show on Alex's iPhone while the simulator drew them. So the logo's
+/// left / centre / right shading the app gives the wave is the one difference left.
+///
+/// Redrawn on each tick of the driver's display link, which runs from the tap to the end
+/// of the transcription and stops otherwise. Reduce Motion shows the wave still.
+private struct KeyboardInkWave: View {
+    let status: DictationStatus
+    @ObservedObject var driver: KeyboardWaveformDriver
+    /// 1 is the app's size; less in a compact height (landscape).
+    let scale: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The character's state between frames: one per process, since one wave is on screen
+    /// at a time, and a reference, so moving it while the body is evaluated does not
+    /// invalidate the view (the driver's tick is what redraws). Static rather than
+    /// `@State` so the overlay's frequent re-initialisations allocate nothing; replaced
+    /// by a fresh one each time the wave appears.
+    @MainActor private static let holder = InkDriverHolder()
+
+    var body: some View {
+        // Read so that each tick of the display link redraws the wave.
+        _ = driver.renderTick
+        let frame = Self.holder.driver.frame(
+            at: CACurrentMediaTime(),
+            mood: mood,
+            voiceLevel: status == .recording ? voiceLevel : 0,
+            reduceMotion: reduceMotion,
+            advancing: !reduceMotion
+        )
+        return InkFrameShape(frame, scale: scale)
+            .fill(Color.ouisprInk)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear { Self.holder.driver = InkCharacterDriver(settledIn: .listening) }
+    }
+
+    private var mood: ParticleSphereMood {
+        switch status {
+        case .transcribing, .processing:
+            return .working
+        case .recording, .idle, .requested, .ready, .failed:
+            return .listening
         }
     }
 
-    // MARK: - Footer (varies by state)
-
-    /// Footer with status text and optional timer.
-    /// WHY matching heights: Each state reserves the same total footer height
-    /// (timer line + caption line + padding) so the BrandWaveform above never
-    /// shifts vertically during state transitions.
-    @ViewBuilder
-    private var footer: some View {
-        switch dictationStatus {
-        case .requested:
-            // Reserve timer height (invisible) so waveform doesn't shift
-            Color.clear
-                .frame(height: timerFontSize)
-                .padding(.bottom, 4)
-
-            Text("Starting...")
-                .font(.ouisprCaption)
-                .foregroundColor(secondaryForeground)
-                .padding(.bottom, 8)
-
-        case .transcribing:
-            // Reserve timer height (invisible) so waveform doesn't shift
-            Color.clear
-                .frame(height: timerFontSize)
-                .padding(.bottom, 4)
-
-            Text("Transcribing...")
-                .font(.ouisprCaption)
-                .foregroundColor(secondaryForeground)
-                .padding(.bottom, 8)
-
-        case .processing:
-            // Same two lines, same heights, same paddings as every other state --
-            // only the caption differs. Naming the stage is half of #267: the
-            // animation says "something else is happening", the label says what.
-            Color.clear
-                .frame(height: timerFontSize)
-                .padding(.bottom, 4)
-
-            // #79 will want the armed Smart Mode's name here instead of the generic
-            // stage name. There is no armed mode to read today -- `ProFeature`
-            // .smartMode is a paywall flag, not a selection -- so this stays one
-            // string until that state exists.
-            Text("Processing...")
-                .font(.ouisprCaption)
-                .foregroundColor(secondaryForeground)
-                .padding(.bottom, 8)
-
-        default:
-            Text(formattedTime)
-                .font(.system(size: timerFontSize, weight: .medium, design: .monospaced))
-                .foregroundColor(foregroundColor)
-                .padding(.bottom, 4)
-
-            Text("Listening...")
-                .font(.ouisprCaption)
-                .foregroundColor(secondaryForeground)
-                .padding(.bottom, 8)
-        }
+    /// The voice's level, 0 to 1, as the app reads it: the loudest of the last four
+    /// levels. A level that is not a number reads as silence.
+    private var voiceLevel: Double {
+        let peak = Double(driver.displayLevels.suffix(4).max() ?? 0)
+        return peak.isFinite ? min(1, max(0, peak)) : 0
     }
+}
 
-    // MARK: - Helpers
-
-    private var formattedTime: String {
-        let minutes = Int(elapsedSeconds) / 60
-        let seconds = Int(elapsedSeconds) % 60
-        return String(format: "%02d:%02d", minutes, seconds)
-    }
-
-    // MARK: - Pill Button
-
-    /// Pill-shaped recording control button with Liquid Glass styling.
-    ///
-    /// WHY pill shape instead of SF Symbol circles:
-    /// The old xmark.circle.fill / checkmark.circle.fill were small and hard to tap.
-    /// Pill buttons (56x36) match the toolbar mic button shape, create visual consistency
-    /// across the recording UI, and provide a larger hit target.
-    private struct PillButton: View {
-        let icon: String
-        let color: Color
-        let action: () -> Void
-
-        var body: some View {
-            Button(action: action) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(color)
-                    .frame(width: 56, height: 36)
-                    .contentShape(Rectangle())
-                    .ouisprGlass(in: Capsule())
-            }
-            .buttonStyle(GlassPressStyle())
-        }
-    }
+/// Holds the keyboard wave's driver between frames.
+private final class InkDriverHolder {
+    var driver = InkCharacterDriver(settledIn: .listening)
 }

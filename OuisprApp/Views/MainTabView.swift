@@ -1,27 +1,25 @@
 // OuisprApp/Views/MainTabView.swift
-// Root navigation container with 3 tabs and full-screen recording overlay.
+// Root container: the single Home screen and the full-screen recording overlay.
 import SwiftUI
 import OuisprCore
 
-/// Root view presenting the 3-tab navigation structure.
+/// Root view: Home alone, with everything else behind it.
 ///
-/// WHY TabView instead of NavigationStack:
-/// The app has 3 distinct sections (Home, Models, Settings) that the user should be able
-/// to switch between freely. A TabView provides standard iOS navigation for this pattern.
-/// Each tab wraps its content in its own NavigationStack so push navigation works
-/// independently per tab.
+/// WHY no TabView any more (design V2, 20 Nov 2026):
+/// The app has one job, dictating, and it now has one screen for it. The models and
+/// the settings, which were tabs, are sheets Home opens from the icons at its top.
+/// The type keeps its name so the many places that refer to it, in code and in the
+/// docs, stay true; it is the app's root, not a tab bar.
 ///
 /// WHY ZStack overlay for RecordingView:
-/// When dictation is active, the recording UI must cover the entire screen INCLUDING
-/// the tab bar. A ZStack overlay with ignoresSafeArea achieves this, while a sheet or
-/// fullScreenCover would leave the tab bar visible underneath on some iOS versions.
+/// When dictation is active, the recording UI must cover the entire screen. A ZStack
+/// overlay with ignoresSafeArea achieves this without a presentation of its own,
+/// which would compete with Home's sheets.
 struct MainTabView: View {
     @EnvironmentObject var coordinator: DictationCoordinator
     @EnvironmentObject var trialCoordinator: ProTrialCoordinator
     @EnvironmentObject var proStatus: ProStatusManager
     @StateObject private var modelManager = ModelManager()
-
-    @State private var selectedTab: Int = 0
 
     /// In-memory flag: true after the first URL has been handled in this process.
     /// Resets naturally when iOS terminates the process (true cold start).
@@ -31,6 +29,11 @@ struct MainTabView: View {
 
     /// Tracks whether the app was opened from the keyboard for cold start dictation.
     @State private var isColdStartMode: Bool
+
+    /// The recording screen is up.
+    private var recordingShown: Bool {
+        coordinator.status != .idle && !isColdStartMode
+    }
 
     /// Active model preparation shown without starting a recording. The overlay dismisses
     /// itself after its contextual ready state.
@@ -59,11 +62,11 @@ struct MainTabView: View {
     /// `ouispr://open?intent=pro` URL is answered by whichever view is in the tree, and
     /// `SettingsView` only is when the Settings tab is selected. `paywallCover` is
     /// documented as *"one way to open the paywall, shared by every entry point"*, and
-    /// a cover presented here covers the tab bar as well, so which tab the user lands
+    /// a cover presented here covers Home as well, so which screen the user is
     /// on stops mattering.
     @State private var showsPaywall = false
 
-    /// The steps What's new is playing in place of the tabs (#685), nil when it is not on
+    /// The steps What's new is playing in place of Home (#685), nil when it is not on
     /// screen. Set once per install, by `presentWhatsNewIfDue`.
     @State private var whatsNewSteps: [OnboardingStep]?
 
@@ -150,12 +153,12 @@ struct MainTabView: View {
     /// interrupting a dictation.
     ///
     /// Not while What's new is up either (#685): the existing-user announcement comes
-    /// after it, when the tabs come back.
+    /// after it, when Home comes back.
     private var mayRaiseTrialScreens: Bool {
         mayRaiseWhatsNew && whatsNewSteps == nil
     }
 
-    /// Whether nothing owns the display, so What's new may replace the tabs (#685): the
+    /// Whether nothing owns the display, so What's new may replace Home (#685): the
     /// trial screens' own conditions. `presentWhatsNewIfDue` adds what sits on top of the
     /// tabs and would be torn down with them.
     private var mayRaiseWhatsNew: Bool {
@@ -181,10 +184,10 @@ struct MainTabView: View {
         return true
     }
 
-    /// What's new is done: the tabs come back, and their `onAppear` raises the trial
+    /// What's new is done: Home comes back, and its `onAppear` raises the trial
     /// announcement in its existing-user form (#593, #685).
     private func finishWhatsNew() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(.easeInOut(duration: Motion.standard)) {
             whatsNewSteps = nil
         }
     }
@@ -215,9 +218,9 @@ struct MainTabView: View {
                 // WHY SwipeBackOverlayView instead of inline code:
                 // The overlay has its own animation state and bilingual logic -- keeping it
                 // in a separate file follows "one file = one responsibility".
-                SwipeBackOverlayView(isPreparingMicrophone: coordinator.isRecoveringAudioSession)
+                SwipeBackOverlayView(isPreparingMicrophone: coordinator.isRecoveringAudioSession, levels: coordinator.levels)
             } else if let whatsNewSteps {
-                // What's new for existing users (#685), in place of the tabs. Below the
+                // What's new for existing users (#685), in place of Home. Below the
                 // two branches above: a dictation from the keyboard still takes the screen.
                 WhatsNewView(
                     steps: whatsNewSteps,
@@ -227,65 +230,49 @@ struct MainTabView: View {
                 )
                 .transition(.opacity)
             } else {
-                // Main tab navigation (normal launch path)
-                TabView(selection: $selectedTab) {
-                    // Tab 0: Home dashboard
+                // Home, the app's single screen (normal launch path).
+                //
+                // WHY the ZStack around the stack: the voice note sheet hangs off the
+                // navigation stack and the trial's sheet off this container. Two
+                // sheets on one view is a presentation SwiftUI does not promise to
+                // honour; two views is what the tab bar gave them before design V2.
+                ZStack {
                     NavigationStack {
                         HomeView(modelManager: modelManager)
                     }
-                    // On the Home stack rather than the TabView, which already carries
-                    // the trial's sheet: one sheet per view is what SwiftUI honours.
                     // Shown only from the ordinary navigation — never over the cold
                     // start overlay or the preparation screen, which replace it.
                     .sheet(item: voiceNotePresentation) { request in
                         VoiceNoteStackView(request: request)
                             // A new request is a new screen, never the previous one kept.
                             .id(request.id)
+                            .coversHomeSphere()
                     }
-                    .tabItem {
-                        Label("Home", systemImage: "house.fill")
-                    }
-                    .tag(0)
-
-                    // Tab 1: Model management
-                    NavigationStack {
-                        ModelManagerView(modelManager: modelManager)
-                    }
-                    .tabItem {
-                        Label("Models", systemImage: "cpu")
-                    }
-                    .tag(1)
-
-                    // Tab 2: Settings
-                    NavigationStack {
-                        SettingsView()
-                    }
-                    .tabItem {
-                        Label("Settings", systemImage: "gearshape.fill")
-                    }
-                    .tag(2)
                 }
-                .tint(.ouisprAccent)
-                // The voice note sheet hangs off the Home tab; a sheet on a tab that is
-                // not on screen does not present, so a Live Activity tap brings Home
-                // forward first.
-                .onChange(of: voiceNotes.presentation) { _, presentation in
-                    if presentation != nil { selectedTab = 0 }
-                }
+                // The text accent, not the fill one: this tint draws words and glyphs
+                // (the sheets' close chevron, links, system menus' ticks), which must
+                // read at 4.5:1 in both appearances (contrôle V1.1, 27 Nov 2026). The
+                // switches and progress bars that want the fill set `.ouisprAccent`
+                // themselves. `AccentColor` in the asset catalogue holds the same two
+                // values for what UIKit tints outside SwiftUI (alerts, share sheets).
+                .tint(.ouisprAccentText)
                 // Dismissing a sheet is the app becoming idle again: a voice note that
                 // waited behind it may come up now (`VoiceNoteStackPresentationPolicy`).
                 .onChange(of: showsPaywall) { _, shown in
                     if !shown { voiceNotes.evaluatePresentation() }
                 }
-                // The reverse trial's two self-raised screens (#593). On the TabView and
-                // not on the ZStack below, which already carries the user's paywall
+                // The reverse trial's two self-raised screens (#593). On Home's container
+                // and not on the root ZStack, which already carries the user's paywall
                 // cover: two full-screen covers on one view is a presentation SwiftUI
                 // does not promise to honour. Here they also only exist while the
                 // ordinary navigation is on screen, which is the only time they may.
                 .sheet(
                     item: $trialCoordinator.announcement,
                     onDismiss: { trialCoordinator.announcementDismissed() },
-                    content: { announcement in ProTrialAnnouncementView(announcement: announcement) }
+                    content: { announcement in
+                        ProTrialAnnouncementView(announcement: announcement)
+                            .coversHomeSphere()
+                    }
                 )
                 .paywallCover(
                     isPresented: $trialCoordinator.showsEndOfTrialPaywall,
@@ -301,12 +288,16 @@ struct MainTabView: View {
                 }
             }
 
-            // Full-screen recording overlay covers everything including tab bar.
+            // Full-screen recording overlay covers everything.
             // WHY not shown in cold start mode: During cold start, the recording runs
             // in the background while the user sees the SwipeBackOverlayView. Showing
             // RecordingView would cover the swipe-back instructions.
-            if coordinator.status != .idle && !isColdStartMode {
+            if recordingShown {
+                // No transition: the screen animates its own way in and out, because its
+                // sphere must stay opaque while everything else fades (audit, 22 Nov
+                // 2026). A fade here would fade the sphere too, and show Home's through it.
                 RecordingView(mode: .standalone)
+                    .zIndex(1)
             }
         }
         // Detect cold start directly from URL params. MainTabView's onOpenURL fires
@@ -317,8 +308,8 @@ struct MainTabView: View {
         // still runs for it: it is what marks the URL handled, and re-asserting the same
         // state is a no-op. It remains the only path for every URL that arrives while the
         // process is already alive.
-        .paywallCover(isPresented: $showsPaywall)
-        // The preparation screen and the cold-start overlay replace the tab bar without
+        .paywallCover(isPresented: $showsPaywall, entry: .feature(.smartMode))
+        // The preparation screen and the cold-start overlay replace Home without
         // being sheets; the voice note stack waits for them to go.
         // What's new replaces it too (#685).
         .onAppear { voiceNotes.mainScreenBlocked = preparation != nil || isColdStartMode || whatsNewSteps != nil }
@@ -330,7 +321,7 @@ struct MainTabView: View {
             // was drawn before the URL was known, it has not been recorded yet (it is, once
             // the app is active), so it steps aside and stays due for the next activation.
             // If it was already on screen and recorded, it steps aside all the same: the
-            // voice note sheet hangs off the tab bar, which What's new replaces.
+            // voice note sheet hangs off Home, which What's new replaces.
             activationOpenedByURL = true
             if whatsNewSteps != nil {
                 whatsNewSteps = nil
@@ -370,7 +361,6 @@ struct MainTabView: View {
                     component: "recoveredTranscription", instanceID: "0", action: "opened",
                     details: "source=keyboard chars=\(recovered?.count ?? 0)"
                 ))
-                selectedTab = 0
                 return
             }
 
@@ -430,7 +420,7 @@ struct MainTabView: View {
         // was in flight. The decision to present rather than to call `startDictation` was
         // already made at the button — `RecordTapRouting` in OuisprCore, where it is tested —
         // so this handler only presents. It is installed on the ZStack rather than on the
-        // TabView so `RecordingView`, a sibling and the second of the two buttons, sees it too.
+        // Home container so `RecordingView`, a sibling and the second of the two buttons, sees it too.
         .environment(\.presentModelPreparation, PresentModelPreparationAction {
             // A preparation screen with nothing preparing behind it is a dead end (#542).
             // #484's case always had a load in flight — that is what it was refusing for —

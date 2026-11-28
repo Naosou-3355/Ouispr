@@ -64,7 +64,9 @@ public enum VerbalPunctuationPrepass {
                 options: [.regularExpression, .caseInsensitive]
             )
         }
-        return normalize(out)
+        let normalized = normalize(out)
+        // The elision too, so the engine and every fallback start from « l'écoute ».
+        return language == .french ? FrenchElision.apply(normalized) : normalized
     }
 
     // MARK: - Rules

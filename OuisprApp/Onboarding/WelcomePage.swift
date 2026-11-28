@@ -146,16 +146,16 @@ struct WelcomePage: View {
     private func turnPage() {
         let next = page.nextPage
         guard page.wrapsToFirstPage else {
-            withAnimation(.easeInOut(duration: 0.4)) { page = next }
+            withAnimation(.easeInOut(duration: Motion.emphasized)) { page = next }
             return
         }
-        withAnimation(.easeIn(duration: 0.25)) {
+        withAnimation(.easeIn(duration: Motion.standard)) {
             pagesOpacity = 0
         } completion: {
             var jump = Transaction()
             jump.disablesAnimations = true
             withTransaction(jump) { page = next }
-            withAnimation(.easeOut(duration: 0.3)) { pagesOpacity = 1 }
+            withAnimation(.easeOut(duration: Motion.standard)) { pagesOpacity = 1 }
         }
     }
 }
@@ -273,7 +273,7 @@ private struct IntroPageDots: View {
                     .frame(width: scene == current ? 22 : 8, height: 8)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: current)
+        .animation(.easeInOut(duration: Motion.standard), value: current)
         // One element for VoiceOver instead of three silent capsules.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Page \(position(of: current, in: scenes)) of \(scenes.count)"))

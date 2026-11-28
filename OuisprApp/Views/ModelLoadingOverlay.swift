@@ -22,19 +22,17 @@ import OuisprCore
 /// "About 3 minutes left", then "Less than a minute left", held (issue #533). The rules
 /// live in `ModelPreparationCountdown`, where they are tested.
 ///
-/// WHAT IT LOOKS LIKE, AND WHY (#708, mock-up validated 2026-10-12): every new user waits
-/// on this screen, and the onboarding shows it under its new shell (#649, #675), next to
-/// which the old one looked like a different app and moved three times between phases.
-/// From top to bottom: a ring around the Ouispr logo, a title, a subtitle, a card with the
-/// two steps of the wait, and a two-line caption. Every block has a fixed height
-/// (`ModelPreparationMetrics`), so a phase change only swaps content, and the ring sits at
-/// the same y in every phase and every context. No waveform, no button.
+/// WHAT IT LOOKS LIKE, AND WHY (lot 1.1, Alex's bench of 27 Nov 2026, replacing #708's
+/// ring and step card): the ink character the user will meet on Home, whose eyes fill with
+/// ink as the preparation runs and come alive as laughing eyes when it is done; the
+/// percentage right under them; a title and a subtitle; one status line; a friendly line at
+/// each quarter; and a quiet notice at the foot. One centred block on the 8 pt grid
+/// (`ModelPreparationMetrics`), every text slot holding the room of its longest wording, so
+/// a phase change only swaps content and nothing moves. No button.
 ///
-/// WHAT IS GONE FROM IT: the rotating phrases (`CyclingLoadingText`, deleted) and the
-/// #432 duration sentence. The phrases were the screen's way of looking alive; the ring
-/// and the step card do that now and say something true while doing it. The duration
-/// sentence is replaced by the #533 countdown in the caption, which says how long without
-/// a second line saying it again.
+/// WHAT THE PERCENTAGE MEANS: the download's real fraction, then an estimate of the
+/// compile and the load, which report no progress (`ModelPreparationProgress`). It never
+/// reads 100 % before the model is really ready.
 ///
 /// The overlay observes two signals to decide which phase to show:
 /// 1. `ModelManager.modelStates[id]` — `.downloading`, `.prewarming`, `.ready`
@@ -85,7 +83,7 @@ struct ModelLoadingOverlay: View {
     /// The last work phase drawn, held while the model state already reads `.ready` but
     /// the completion has not been decided yet (`checkForCompletion` runs in `onChange`,
     /// after the frame that saw the change). Without it that frame would draw the ready
-    /// copy without the ready ring, or flash back to the opening phase.
+    /// copy over the work phase's eyes, or flash back to the opening phase.
     @State private var lastWorkPhase: ModelPreparationPhase
 
     /// When this screen first saw a COLD preparation of a model measured in minutes —
@@ -100,6 +98,23 @@ struct ModelLoadingOverlay: View {
     /// a compile already running) the anchor is late and the countdown overstates what is
     /// left — the safe direction under #432's rule, so no persisted start time is added.
     @State private var preparationStartedAt: Date?
+
+    /// When this screen first saw the compile or the load running: the clock the
+    /// preparation's share of the percentage runs on (`ModelPreparationProgress`). Unlike
+    /// `preparationStartedAt` it runs for every model, warm or cold, measured or not.
+    @State private var preparationSeenAt: Date?
+
+    /// The highest download fraction seen. A file restarted after a stall can report less
+    /// than before, and the percentage never goes back.
+    @State private var downloadHighWater = 0.0
+
+    /// The block's and the notice's measured heights, to put the block's centre at the
+    /// optical centre without pushing the notice off the screen.
+    @State private var blockHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = 0
+
+    /// Larger text lets the subtitle take the lines it needs instead of being cut.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private typealias Phase = ModelPreparationPhase
     private typealias Metrics = ModelPreparationMetrics
@@ -126,14 +141,13 @@ struct ModelLoadingOverlay: View {
 
     var body: some View {
         ZStack {
-            // Adaptive brand background — auto switches between light/dark
-            // (#F2F2F7 in light, #0A1628 in dark).
-            Color.ouisprBackground.ignoresSafeArea()
+            // The still background Home, the history and the recording screen share.
+            OuisprBackdrop().ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // WHY THIS INSET (#708): in the onboarding the shell's progress bar row sits
                 // above this screen, outside it. The in-app contexts have no bar, so their
-                // content is pushed down by the bar row's height and the ring lands at the
+                // content is pushed down by the bar row's height and the face lands at the
                 // same y in both. The context the screen was raised with decides it, not
                 // `activeContext`: a keyboard request arriving mid-way turns one in-app
                 // context into another and must not move anything.
@@ -141,12 +155,28 @@ struct ModelLoadingOverlay: View {
                     Color.clear.frame(height: OnboardingMetrics.topRowHeight)
                 }
 
-                // Centred in the height left, with fixed blocks between the two spacers, so
-                // the spacers never change size between phases.
-                Spacer(minLength: 0)
-                content
-                Spacer(minLength: 0)
+                // The block's centre at 45 % of the height left (lot 1.3: optical centre,
+                // a little above the middle, where the eye expects it), the notice at the
+                // foot. With the largest text sizes the whole can be taller than the
+                // screen: it scrolls then, notice included, rather than being cut. One tree
+                // for both cases, so the face keeps its state if the text size changes.
+                GeometryReader { geo in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            Color.clear.frame(height: topRoom(in: geo.size.height))
+                            content
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { blockHeight = $0 }
+                            Spacer(minLength: Metrics.minimumMargin)
+                            footer
+                                .padding(.bottom, Metrics.footerBottom)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { footerHeight = $0 }
+                        }
+                        .frame(minHeight: geo.size.height)
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                }
             }
+            .padding(.horizontal)
         }
         .interactiveDismissDisabled(true)
         .onReceive(NotificationCenter.default.publisher(for: .ouisprModelLoadStateChanged)) { note in
@@ -171,53 +201,125 @@ struct ModelLoadingOverlay: View {
             if newPhase != .ready {
                 lastWorkPhase = newPhase
             }
-            anchorCountdownIfCold()
+            startClocksIfWorking()
+        }
+        // The phase on screen does not change when a model already on disk starts its
+        // compile: it was drawn as compiling from the first frame. The model's own state
+        // does, so the clocks also listen to it (review of lot 1.1, finding 1).
+        .onChange(of: rawPhase) { _, _ in
+            startClocksIfWorking()
+        }
+        .onChange(of: downloadFraction) { _, fraction in
+            downloadHighWater = max(downloadHighWater, fraction ?? 0)
         }
     }
 
     // MARK: - Layout
 
+    /// The one block, on one vertical axis (lot 1.3): the face; the figure and, right
+    /// under it, the status line that goes with it; the title; and under the title the
+    /// friendly line of the quarter reached, which is the subtitle. On the 8 pt grid
+    /// (`ModelPreparationMetrics`).
+    ///
+    /// WHY EVERY TEXT HOLDS THE ROOM OF ITS LONGEST WORDING: the block is centred, so a
+    /// line that grew or shrank between phases would move everything above and below it.
+    /// Each slot lays out all its wordings and shows one, so a phase change only swaps
+    /// what is in it, at every text size.
+    ///
+    /// WHY A TIMELINE: the preparation's share of the figure moves with time
+    /// (`ModelPreparationProgress`), and so does the countdown in the status line. Twice a
+    /// second is enough for a whole percent and a minute boundary.
     private var content: some View {
         let phase = displayedPhase
-        return VStack(spacing: 0) {
-            ModelPreparationRingView(ring: ModelPreparationRing(
-                phase: phase,
-                downloadFraction: downloadFraction
-            ))
+        return TimelineView(.periodic(from: .now, by: 0.5)) { timeline in
+            let fraction = progress(of: phase, at: timeline.date)
+            let percent = ModelPreparationProgress.percent(fraction)
+            VStack(spacing: 0) {
+                ModelPreparationFace(fraction: fraction, isReady: phase == .ready)
 
-            title(for: phase)
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .accessibilityAddTraits(.isHeader)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .frame(height: Metrics.titleHeight)
-                .padding(.top, Metrics.ringToTitle)
+                percentLabel(percent)
+                    .padding(.top, Metrics.faceToPercent)
 
-            subtitle(for: phase)
-                .font(.system(size: 17))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .frame(height: Metrics.subtitleHeight)
-                .padding(.top, Metrics.titleToSubtitle)
+                ZStack {
+                    // The longest wordings, with wide figures, hold the room.
+                    Text("Downloading · \(888) of \(888) MB").hidden()
+                    Text("Loading the model · about \(88) min left").hidden()
+                    Text("Loading the model · under a minute left").hidden()
+                    statusLine(for: phase, at: timeline.date)
+                }
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(Color.ouisprTextTertiary)
+                .padding(.top, Metrics.percentToStatus)
 
-            stepsCard(for: phase)
-                .padding(.top, Metrics.subtitleToCard)
+                ZStack {
+                    title(for: .downloading).hidden()
+                    title(for: .ready).hidden()
+                    title(for: phase)
+                        .accessibilityAddTraits(.isHeader)
+                }
+                .font(.title.bold())
+                .foregroundStyle(Color.ouisprTextPrimary)
+                .padding(.top, Metrics.statusToTitle)
 
-            caption(for: phase)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .frame(height: Metrics.captionHeight)
-                .padding(.top, Metrics.cardToCaption)
+                subtitle(ModelPreparationMilestone.reached(percent: percent, isReady: phase == .ready))
+                    .font(.body)
+                    .foregroundStyle(Color.ouisprTextSecondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .frame(maxWidth: Metrics.subtitleWidth)
+                    .padding(.top, Metrics.titleToSubtitle)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: Metrics.maxTextWidth)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, Metrics.horizontalPadding)
-        // Every text block above is a fixed slot: a phase change swaps what is in it, so
-        // the fade is the only movement, and nothing slides.
-        .animation(.easeInOut(duration: 0.25), value: phase)
+        // A phase change swaps what is in each slot: the fade is the only movement.
+        .animation(.easeInOut(duration: Motion.standard), value: phase)
+    }
+
+    /// « 42 % » with the figure centred on the screen's axis and the sign hung after it,
+    /// smaller (Alex, lot 1.3: « il y a un décalage, ne serait-ce que sur les pourcents »).
+    /// Centring « 42 % » as one string put the axis between the figure and the sign.
+    /// The digits are tabular, so the figure keeps its width as it counts and only moves by
+    /// half a digit at 10 and at 100. Reserving the room of « 100 » was tried and rejected:
+    /// at two digits it left a gap between the figure and the sign, the very offset to fix.
+    private func percentLabel(_ percent: Int) -> some View {
+        Text(verbatim: "\(percent)")
+            // Each value replaces the last: no morph when the phase animation runs.
+            .contentTransition(.identity)
+            .font(.title3.weight(.semibold).monospacedDigit())
+            .foregroundStyle(Color.ouisprInk.opacity(0.7))
+            .overlay(alignment: Alignment(horizontal: .trailing, vertical: .lastTextBaseline)) {
+                Text(verbatim: "%")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.ouisprInk.opacity(0.7))
+                    .fixedSize()
+                    // Its leading edge 2 pt after the figure.
+                    .alignmentGuide(.trailing) { dimensions in dimensions[.leading] - 2 }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Progress", comment: "VoiceOver name of the model preparation percentage (lot 1.1)."))
+            .accessibilityValue(Text(Double(percent) / 100, format: .percent.precision(.fractionLength(0))))
+            .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// The room above the block: its centre at 45 % of the height, unless the notice would
+    /// then leave the screen, in which case the block rises just enough to keep it; never
+    /// less than the margin, and the whole scrolls when even that does not fit.
+    private func topRoom(in height: CGFloat) -> CGFloat {
+        let centred = height * Metrics.opticalCentre - blockHeight / 2
+        let keepsNotice = height - blockHeight - Metrics.minimumMargin - footerHeight
+        return max(Metrics.minimumMargin, min(centred, keepsNotice))
+    }
+
+    /// The preparation's progress, 0 to 1, by `ModelPreparationProgress`'s rules.
+    private func progress(of phase: Phase, at date: Date) -> Double {
+        ModelPreparationProgress.fraction(
+            phase: phase,
+            downloadFraction: max(downloadHighWater, downloadFraction ?? 0),
+            includesDownload: !filesOnDiskAtOpen,
+            preparationElapsed: preparationSeenAt.map { date.timeIntervalSince($0) },
+            measuredSeconds: ModelInfo.forIdentifier(modelIdentifier)?.firstPreparationSeconds
+        )
     }
 
     // MARK: - Title and subtitle
@@ -228,192 +330,133 @@ struct ModelLoadingOverlay: View {
             : Text("Preparing your model", comment: "Model preparation screen title, while downloading, optimizing or loading (#708).")
     }
 
-    /// The subtitle names the model, and in the onboarding the language it was picked for
-    /// (#649 decision 4: the screen says the model is the best one for the user's language
-    /// and iPhone).
-    private func subtitle(for phase: Phase) -> Text {
-        if phase == .ready {
-            return Text(
-                "\(modelName) runs on your iPhone. Dictation works even without a network.",
-                comment: "Model preparation screen subtitle, once ready. The placeholder is the model's name (Parakeet v3) (#708)."
-            )
-        }
-        guard context == .onboarding else {
-            return Text(
-                "\(modelName). Once ready, everything runs offline.",
-                comment: "Model preparation screen subtitle in the app (model switch, keyboard cold start). The placeholder is the model's name (#708)."
-            )
-        }
-        if let language = spokenLanguagePhrase {
-            return Text(
-                "\(modelName), picked for \(language) and this iPhone. After that, everything runs offline.",
-                comment: "Onboarding model preparation subtitle (#708). First placeholder: the model's name (Parakeet v3). Second: the spoken language with its article in French (le français, l'anglais)."
-            )
-        }
-        return Text(
-            "\(modelName), picked for your language and this iPhone. After that, everything runs offline.",
-            comment: "Onboarding model preparation subtitle when the language cannot be named in the sentence (#708). The placeholder is the model's name."
-        )
-    }
-
+    /// The model's name: « Parakeet v3 ».
     private var modelName: String {
         ModelInfo.forIdentifier(modelIdentifier)?.localizedDisplayName ?? String(localized: "Voice model")
-    }
-
-    /// The language the onboarding picked this model for, ready to slot into the sentence,
-    /// or nil for the sentence that does not name it. The rules are
-    /// `ModelPreparationLanguagePhrase`'s.
-    ///
-    /// WHY `SpokenLanguage.forRecommendation()`: it is the input
-    /// `ModelInfo.recommendedIdentifier()` chose this model from, so the sentence names the
-    /// language that actually decided it. Named in the interface's language, which is the
-    /// app's localization and not the device locale: a German iPhone reads the app in
-    /// English, and "picked for Französisch" would be wrong twice.
-    private var spokenLanguagePhrase: String? {
-        let interfaceLanguage = Bundle.main.preferredLocalizations.first ?? "en"
-        let name = Locale(identifier: interfaceLanguage)
-            .localizedString(forLanguageCode: SpokenLanguage.forRecommendation())
-        return ModelPreparationLanguagePhrase.phrase(languageName: name, interfaceLanguage: interfaceLanguage)
-    }
-
-    // MARK: - Steps card
-
-    private func stepsCard(for phase: Phase) -> some View {
-        let steps = ModelPreparationSteps(phase: phase)
-        return VStack(spacing: Metrics.rowSpacing) {
-            ModelPreparationStepRow(
-                state: steps.download,
-                label: downloadLabel(steps.download),
-                value: steps.download == .running ? downloadPercentage : nil
-            )
-            ModelPreparationStepRow(
-                state: steps.second,
-                label: secondLabel(steps.secondLabel)
-            )
-        }
-        .padding(.vertical, Metrics.cardVerticalPadding)
-        .padding(.horizontal, Metrics.cardHorizontalPadding)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: Metrics.cardCornerRadius, style: .continuous)
-                .fill(Color.ouisprSurface)
-        )
-    }
-
-    private func downloadLabel(_ state: ModelPreparationStepState) -> Text {
-        guard state == .done else {
-            return Text("Downloading")
-        }
-        // The catalogue's size, the same figure the model card and the language screen
-        // show. The byte counter's total is gone by then: it is cleared with the bar.
-        // Without the card's "~": the mock-up writes a finished download as a size, not an
-        // estimate of one ("Downloaded · 483 MB").
-        guard let label = ModelInfo.forIdentifier(modelIdentifier)?.sizeLabel else {
-            return Text("Download complete", comment: "Model preparation step, download done, when the model's size is unknown (#708).")
-        }
-        let size = label.hasPrefix("~") ? String(label.dropFirst()) : label
-        return Text("Downloaded · \(size)", comment: "Model preparation step, download done. The placeholder is the model's size (483 MB) (#708).")
-    }
-
-    private func secondLabel(_ step: ModelPreparationSecondStep) -> Text {
-        switch step {
-        case .optimizing:
-            return Text("Optimizing for this iPhone", comment: "Model preparation step: the Core ML compile, pending or running (#708).")
-        case .loading:
-            return Text("Loading the model", comment: "Model preparation step: the model loading into memory (#708).")
-        case .optimized:
-            return Text("Optimized for this iPhone", comment: "Model preparation step, done (#708).")
-        }
-    }
-
-    /// "34 %", formatted for the locale (a narrow space before the sign in French).
-    private var downloadPercentage: Text {
-        Text(downloadFraction ?? 0, format: .percent.precision(.fractionLength(0)))
     }
 
     private var downloadFraction: Double? {
         modelManager.downloadProgress[modelIdentifier].map(Double.init)
     }
 
-    // MARK: - Caption
+    // MARK: - Status and friendly line
 
-    /// Line 1: the MB counter while downloading, the #533 countdown while optimizing or
-    /// loading. Line 2: the line about leaving the screen, or, once ready, what to do next.
-    ///
-    /// WHY LINE 2 MAY WRAP ONLY WHEN LINE 1 IS EMPTY: the slot is two lines tall, and the
-    /// completion instructions of the prepare-only contexts are a full sentence each.
-    private func caption(for phase: Phase) -> some View {
-        let hasFirstLine = phase != .ready
-        return VStack(spacing: 4) {
-            if hasFirstLine {
-                captionFirstLine(for: phase)
-                    .font(.system(size: 14).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            captionSecondLine(for: phase)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.ouisprAccent)
-                .multilineTextAlignment(.center)
-                .lineLimit(hasFirstLine ? 1 : 2)
-                .minimumScaleFactor(0.75)
-        }
-    }
-
-    @ViewBuilder
-    private func captionFirstLine(for phase: Phase) -> some View {
+    /// One line saying what is happening (lot 1.1, « Une seule ligne »): the megabytes
+    /// while downloading, the load with the #533 countdown when there is one, then
+    /// nothing. The compile and the load read as one step: to the user both are the
+    /// model getting ready on the phone.
+    private func statusLine(for phase: Phase, at date: Date) -> Text {
         switch phase {
         case .downloading:
-            // Moving byte counter — reads as alive even while the percentage crawls
-            // through the 445 MB Encoder file (#207). An empty line before the first tick:
-            // the slot keeps its height either way.
-            if let bytes = modelManager.downloadByteInfo[modelIdentifier] {
-                Text("\(bytes.downloadedMB) MB of \(bytes.totalMB) MB")
-            } else {
-                Text(verbatim: " ")
+            guard let bytes = modelManager.downloadByteInfo[modelIdentifier] else {
+                return Text("Downloading…", comment: "Model preparation status, before the first downloaded byte (lot 1.1).")
             }
+            return Text(
+                "Downloading · \(bytes.downloadedMB) of \(bytes.totalMB) MB",
+                comment: "Model preparation status while downloading: megabytes done, then the total (lot 1.1)."
+            )
         case .compiling, .loading:
-            if let preparationStartedAt, !loadGaveUp {
-                // Ticks every second so a minute boundary shows within a second of being
-                // crossed; the text itself only changes at those boundaries. Empty when
-                // there is no countdown: an unmeasured or brief model, or a warm cache.
-                TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                    if let countdown = ModelPreparationCountdown.at(
-                        elapsedSeconds: Int(timeline.date.timeIntervalSince(preparationStartedAt)),
-                        measuredSeconds: ModelInfo.forIdentifier(modelIdentifier)?.firstPreparationSeconds
-                    ) {
-                        Text(countdownText(countdown))
-                    } else {
-                        Text(verbatim: " ")
-                    }
-                }
-            } else {
-                Text(verbatim: " ")
+            guard let preparationStartedAt, !loadGaveUp,
+                  let countdown = ModelPreparationCountdown.at(
+                    elapsedSeconds: Int(date.timeIntervalSince(preparationStartedAt)),
+                    measuredSeconds: ModelInfo.forIdentifier(modelIdentifier)?.firstPreparationSeconds
+                  ) else {
+                return Text("Loading the model…", comment: "Model preparation status after the download (lot 1.1).")
+            }
+            switch countdown {
+            case .minutesLeft(let minutes):
+                return Text(
+                    "Loading the model · about \(minutes) min left",
+                    comment: "Model preparation status with the countdown of a long first preparation (lot 1.1, #533)."
+                )
+            case .underAMinute:
+                return Text(
+                    "Loading the model · under a minute left",
+                    comment: "Model preparation status, last minute of a long first preparation (lot 1.1, #533)."
+                )
             }
         case .ready:
-            EmptyView()
+            // Empty once ready (Alex, 27 Nov 2026): the title and the friendly line say it
+            // already. The slot keeps its room, so nothing moves, and the words fade out.
+            return Text(verbatim: "")
         }
     }
 
-    private func countdownText(_ countdown: ModelPreparationCountdown) -> LocalizedStringKey {
-        switch countdown {
-        case .minutesLeft(let minutes):
-            return "About \(minutes) minutes left"
-        case .underAMinute:
-            return "Less than a minute left"
-        }
-    }
-
-    @ViewBuilder
-    private func captionSecondLine(for phase: Phase) -> some View {
-        if phase == .ready {
-            if let completionInstruction {
-                Text(completionInstruction)
+    /// The subtitle (lot 1.3): the model and its promise until 25 %, then the friendly
+    /// line of each quarter (Alex, 27 Nov 2026), each fading in at its milestone and staying
+    /// until the next. Every wording holds the room, two lines at most.
+    private func subtitle(_ milestone: ModelPreparationMilestone?) -> some View {
+        ZStack {
+            modelLine.hidden()
+            ForEach(ModelPreparationMilestone.allCases, id: \.self) { candidate in
+                milestoneText(candidate).hidden()
             }
-        } else {
-            leaveNotice(isDownloading: phase == .downloading)
+            Group {
+                if let milestone {
+                    milestoneText(milestone)
+                } else {
+                    modelLine
+                }
+            }
+            .id(milestone)
+            .transition(.opacity)
         }
+        .animation(.easeInOut(duration: 0.3), value: milestone)
+    }
+
+    /// « Parakeet v3, entièrement hors ligne. »
+    private var modelLine: Text {
+        Text(
+            "\(modelName), fully offline.",
+            comment: "Model preparation subtitle before 25 %. The placeholder is the model's name (Parakeet v3) (lot 1.3)."
+        )
+    }
+
+    private func milestoneText(_ milestone: ModelPreparationMilestone) -> Text {
+        switch milestone {
+        case .quarter:
+            return Text("The parakeet is warming up its voice.", comment: "Friendly line on the model preparation screen at 25 % (lot 1.1).")
+        case .half:
+            return Text("Halfway there. The coffee is still hot.", comment: "Friendly line on the model preparation screen at 50 % (lot 1.1).")
+        case .threeQuarters:
+            return Text("Just a few more words to learn.", comment: "Friendly line on the model preparation screen at 75 % (lot 1.1).")
+        case .done:
+            return Text("Ready to listen to you.", comment: "Friendly line on the model preparation screen once the model is ready (lot 1.1).")
+        }
+    }
+
+    // MARK: - Footer
+
+    /// The foot of the screen: the line about leaving it while the work runs, then, once
+    /// ready, what to do next when there is something to do. Tertiary and not the accent:
+    /// it is a notice, not a link (lot 1.1). Both wordings hold the slot, so the block
+    /// above never moves.
+    private var footer: some View {
+        let phase = displayedPhase
+        return ZStack {
+            // Every wording this footer can show holds the room, whatever the context
+            // becomes on the way (a keyboard request turns one in-app context into another).
+            Group {
+                Text("The download continues if you leave the app.")
+                Text("Please wait for preparation to finish.")
+                Text("Please stay on this page and do not leave the app.")
+                Text("Return to your app and tap the microphone again.")
+                Text("Tap again to start your dictation.")
+            }
+            .hidden()
+            if phase == .ready {
+                if let completionInstruction {
+                    Text(completionInstruction)
+                }
+            } else {
+                leaveNotice(isDownloading: phase == .downloading)
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(Color.ouisprTextTertiary)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: Metrics.maxTextWidth)
+        .animation(.easeInOut(duration: Motion.standard), value: phase)
     }
 
     /// What the user does next, once the model is ready.
@@ -424,10 +467,10 @@ struct ModelLoadingOverlay: View {
     /// about the prepare-only rule — hence `startedFromAnotherApp` and not `isPrepareOnly`
     /// (#484). Onboarding and model selection dismiss into the screen the user was already on.
     ///
-    /// WHY IT SURVIVED #708: the brief leaves the caption empty once ready, drawn for the
+    /// WHY IT SURVIVED #708 AND LOT 1.1: neither brief draws it, both drawn for the
     /// onboarding, which has no instruction to give. For a user who tapped the keyboard's mic
     /// and was sent here, the instruction is the only thing on the ready screen that says the
-    /// tap did not start a dictation, so it keeps the caption's second line there.
+    /// tap did not start a dictation, so it takes the footer's place there.
     private var completionInstruction: LocalizedStringKey? {
         switch activeContext {
         case .onboarding, .modelSelection:
@@ -451,16 +494,14 @@ struct ModelLoadingOverlay: View {
     /// THE THIRD is the onboarding variant (#675, #649 decision 6): while the onboarding's
     /// download runs, it survives leaving the app, so the screen says that instead.
     ///
-    /// WHY ALL THREE IN THE ACCENT COLOUR NOW (#708): the mock-up draws the caption's second
-    /// line as one style, whatever it says. It used to be the onboarding line alone, drawn
-    /// apart because it is the one that gives the user something rather than asks for
-    /// something; on the new screen the line is the caption's call to the user, so it reads
-    /// as one.
+    /// WHY NOT IN THE ACCENT ANY MORE (lot 1.1): #708 drew it in the accent as the
+    /// caption's call to the user. Blue text reads as a link on iOS, and this one does
+    /// nothing when tapped, so it is a quiet notice at the foot of the screen now.
     ///
     /// WHY THE ONBOARDING LINE IS SHORTER THAN IT WAS: it said "…but much more slowly" (the
     /// cost of a backgrounded transfer, decided 2026-10-09). The validated #708 brief and
-    /// mock-up give the line as "The download continues if you leave the app." and hold the
-    /// caption to two single lines, which the longer sentence did not fit.
+    /// mock-up give the line as "The download continues if you leave the app.", and the
+    /// shorter line still reads at a glance at the foot of the lot 1.1 screen.
     private func leaveNotice(isDownloading: Bool) -> Text {
         switch activeContext.leaveNotice(isDownloading: isDownloading) {
         case .downloadContinuesInBackground:
@@ -481,6 +522,15 @@ struct ModelLoadingOverlay: View {
         if showCompletion { return .ready }
         let phase = currentPhase
         return phase == .ready ? lastWorkPhase : phase
+    }
+
+    /// Starts the percentage's clock for the compile or the load, and the countdown's when
+    /// it applies, once each.
+    private func startClocksIfWorking() {
+        if preparationSeenAt == nil, rawPhase == .compiling || rawPhase == .loading {
+            preparationSeenAt = Date()
+        }
+        anchorCountdownIfCold()
     }
 
     /// Starts the countdown's clock, once, if this preparation deserves one (issue #533).
@@ -597,7 +647,7 @@ struct ModelLoadingOverlay: View {
         }
 
         // No `withAnimation` here: the content animates its own phase change in place
-        // (`content`), and the ring times its own close and colour (#708). A transaction
+        // (`content`), and the eyes time their own passage (lot 1.1). A transaction
         // around this flag used to drive a scale transition between two layouts.
         showCompletion = true
 
@@ -605,7 +655,7 @@ struct ModelLoadingOverlay: View {
         // onboarding moves on by itself (#708: no Continue button).
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: Motion.emphasized)) {
                 isPresented = false
             }
         }

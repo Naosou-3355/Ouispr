@@ -89,7 +89,7 @@ struct TranscriptionDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(GlassPressStyle())
-            .animation(.easeOut(duration: 0.2), value: showCopiedFeedback)
+            .animation(.easeOut(duration: Motion.quick), value: showCopiedFeedback)
 
             // ShareLink rather than the UIActivityViewController wrapper the log
             // export uses: that one exists because it shares a file URL and needs the
@@ -99,7 +99,7 @@ struct TranscriptionDetailView: View {
                 Label("Share", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .foregroundColor(.ouisprAccent)
+                    .foregroundColor(.ouisprAccentText)
                     .ouisprGlass(in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(GlassPressStyle())

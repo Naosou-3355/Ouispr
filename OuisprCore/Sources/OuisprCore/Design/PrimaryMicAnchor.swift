@@ -4,8 +4,8 @@ import Combine
 import CoreGraphics
 import SwiftUI
 
-/// Where the app's primary mic is on screen, so the recording screen draws its own big
-/// button at exactly the same height and tapping the Home mic shows no jump (#788).
+/// Where the app's primary mic is on screen, so the recording screen's own big button
+/// starts exactly there and travels to its place: tapping the Home mic shows no jump (#788).
 ///
 /// WHY a measured position and not a shared constant: on Home the mic sits above the
 /// history hint and the tab bar, and neither has a height of ours. The tab bar's is the
@@ -35,24 +35,26 @@ public final class PrimaryMicAnchor: ObservableObject {
         self.centerY = rounded
     }
 
-    /// The space to leave under a button slot so its centre lands on `anchorY`.
+    /// The space to leave under a button slot so its centre sits at `centreFraction`
+    /// of the container's height, from the top.
     ///
-    /// - Parameters:
-    ///   - anchorY: the reported centre, in window coordinates, or nil.
-    ///   - containerMaxY: the bottom edge, in window coordinates, of the area the slot is
-    ///     stacked in.
-    ///   - slotHeight: the height of the slot holding the button, centred in it.
-    ///   - fallback: the space to leave when there is nothing to line up on.
-    /// - Returns: never negative: a mic reported lower than the slot can go stays as low
-    ///   as it can rather than overflowing its container.
+    /// The recording screen's row sits at three quarters of the screen, close to the
+    /// text it acts on, rather than at the height of Home's mic (Alex, Beta 45 feedback,
+    /// 25 Nov 2026). Never negative.
     public nonisolated static func bottomSpacing(
-        anchorY: CGFloat?,
-        containerMaxY: CGFloat,
+        containerHeight: CGFloat,
         slotHeight: CGFloat,
-        fallback: CGFloat
+        centreFraction: CGFloat
     ) -> CGFloat {
-        guard let anchorY else { return fallback }
-        return max(0, containerMaxY - anchorY - slotHeight / 2)
+        max(0, containerHeight * (1 - centreFraction) - slotHeight / 2)
+    }
+
+    /// How far a button centred at `slotCentreY` has to be moved down to sit on the
+    /// anchor, both in window coordinates: the recording screen's mic starts on Home's
+    /// and travels to its own place, so the button the user tapped never jumps.
+    public nonisolated static func flightOffset(anchorY: CGFloat?, slotCentreY: CGFloat?) -> CGFloat {
+        guard let anchorY, let slotCentreY else { return 0 }
+        return anchorY - slotCentreY
     }
 }
 
